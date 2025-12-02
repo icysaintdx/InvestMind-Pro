@@ -1,0 +1,123 @@
+# TradingAgents 集成所需依赖包
+
+# ===================
+# 核心框架
+# ===================
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.0.0
+python-dotenv>=1.0.0
+
+# ===================
+# AI与LLM相关
+# ===================
+langchain>=0.1.0
+langchain-community>=0.0.10
+langchain-core>=0.1.0
+# 如需OpenAI支持，取消下行注释
+# langchain-openai>=0.0.5
+
+# ===================
+# 数据获取
+# ===================
+# A股数据源
+tushare>=1.4.0
+akshare>=1.12.0
+# 国际市场数据（可选）
+yfinance>=0.2.0
+# finnhub-python>=2.4.0  # 需要API密钥
+
+# ===================
+# 数据处理
+# ===================
+pandas>=2.0.0
+numpy>=1.24.0
+# 技术指标计算
+ta>=0.11.0
+stockstats>=0.6.0
+
+# ===================
+# 网络请求
+# ===================
+httpx>=0.25.0
+aiohttp>=3.9.0
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+
+# ===================
+# 缓存和存储
+# ===================
+redis>=5.0.0
+sqlalchemy>=2.0.0
+# PostgreSQL驱动
+psycopg2-binary>=2.9.0
+# 或使用异步驱动
+# asyncpg>=0.28.0
+
+# ===================
+# 日志和监控
+# ===================
+colorlog>=6.7.0
+rich>=13.0.0
+
+# ===================
+# 工具类
+# ===================
+python-dateutil>=2.8.0
+pytz>=2023.3
+# 中文分词（新闻分析用）
+jieba>=0.42.0
+# 情绪分析（可选）
+# textblob>=0.17.0
+# snownlp>=0.12.0
+
+# ===================
+# 异步支持
+# ===================
+asyncio>=3.4.3
+aiofiles>=23.0.0
+
+# ===================
+# 数据验证
+# ===================
+jsonschema>=4.19.0
+pyyaml>=6.0
+
+# ===================
+# 测试相关（开发环境）
+# ===================
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+
+# ===================
+# 可选：向量数据库（用于memory功能）
+# ===================
+# chromadb>=0.4.0  # 需要额外配置
+# faiss-cpu>=1.7.0  # 或 faiss-gpu
+
+# ===================
+# 可选：新闻API客户端
+# ===================
+# newsapi-python>=0.2.0  # NewsAPI
+# alpha-vantage>=2.3.0  # Alpha Vantage
+
+# ===================
+# 注意事项
+# ===================
+# 1. 某些包可能需要C++编译器（Windows用户需要Visual Studio Build Tools）
+# 2. PostgreSQL需要单独安装数据库服务
+# 3. Redis需要单独安装Redis服务
+# 4. 部分API需要申请密钥（如Tushare、FinnHub等）
+
+# ===================
+# 安装命令
+# ===================
+# pip install -r requirements_trading.txt
+# 
+# 或分步安装：
+# 1. 基础依赖：pip install fastapi uvicorn pandas numpy httpx
+# 2. 数据源：pip install tushare akshare
+# 3. AI相关：pip install langchain langchain-community
+# 4. 根据需要安装其他包

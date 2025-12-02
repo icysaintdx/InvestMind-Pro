@@ -1,0 +1,74 @@
+{
+  "agents": [
+    {
+      "id": "macro",
+      "modelName": "Qwen/Qwen3-8B",
+      "modelProvider": "AUTO",
+      "temperature": 0.3
+    },
+    {
+      "id": "industry",
+      "modelName": "Qwen/Qwen3-8B",
+      "modelProvider": "AUTO",
+      "temperature": 0.3
+    },
+    {
+      "id": "technical",
+      "modelName": "Qwen/Qwen3-8B",
+      "modelProvider": "AUTO",
+      "temperature": 0.3
+    },
+    {
+      "id": "funds",
+      "modelName": "Qwen/Qwen3-8B",
+      "modelProvider": "AUTO",
+      "temperature": 0.3
+    },
+    {
+      "id": "fundamental",
+      "modelName": "Qwen/Qwen3-8B",
+      "modelProvider": "AUTO",
+      "temperature": 0.3
+    },
+    {
+      "id": "manager_fundamental",
+      "modelName": "Qwen/Qwen3-8B",
+      "modelProvider": "AUTO",
+      "temperature": 0.3
+    },
+    {
+      "id": "manager_momentum",
+      "modelName": "Qwen/Qwen3-8B",
+      "modelProvider": "AUTO",
+      "temperature": 0.3
+    },
+    {
+      "id": "risk_system",
+      "modelName": "Qwen/Qwen3-8B",
+      "modelProvider": "AUTO",
+      "temperature": 0.3
+    },
+    {
+      "id": "risk_portfolio",
+      "modelName": "Qwen/Qwen3-8B",
+      "modelProvider": "AUTO",
+      "temperature": 0.3
+    },
+    {
+      "id": "gm",
+      "modelName": "Qwen/Qwen3-8B",
+      "modelProvider": "AUTO",
+      "temperature": 0.3
+    }
+  ],
+  "selectedModels": [
+    "gemini-2.0-flash-exp",
+    "deepseek-chat",
+    "qwen-plus",
+    "Qwen/Qwen2.5-7B-Instruct",
+    "Qwen/Qwen3-8B",
+    "deepseek-ai/DeepSeek-V3.2-Exp",
+    "Pro/deepseek-ai/DeepSeek-V3.1-Terminus",
+    "deepseek-ai/DeepSeek-V3.1-Terminus"
+  ]
+}

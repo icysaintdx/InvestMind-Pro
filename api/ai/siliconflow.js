@@ -1,0 +1,69 @@
+import fetch from 'node-fetch';
+
+const SILICONFLOW_API_KEY = process.env.SILICONFLOW_API_KEY;
+
+if (!SILICONFLOW_API_KEY) {
+  console.error('[SiliconFlow] 未配置 SILICONFLOW_API_KEY 环境变量');
+}
+
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({ success: false, error: 'Method not allowed' });
+  }
+
+  const { model, systemPrompt, prompt, temperature, apiKey } = req.body;
+
+  const effectiveApiKey = apiKey || SILICONFLOW_API_KEY;
+
+  if (!effectiveApiKey) {
+    return res.status(500).json({
+      success: false,
+      error: '未配置 SiliconFlow API Key。请在前端输入 API Key 或联系管理员设置环境变量 SILICONFLOW_API_KEY'
+    });
+  }
+
+  try {
+    const response = await fetch('https://api.siliconflow.cn/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${effectiveApiKey}`
+      },
+      body: JSON.stringify({
+        model: model || 'Qwen/Qwen2.5-7B-Instruct',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: prompt }
+        ],
+        temperature: temperature || 0.7,
+        max_tokens: 2048,
+        stream: false
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`SiliconFlow API 错误: ${error.error?.message || response.statusText}`);
+    }
+
+    const data = await response.json();
+    return res.json({
+      success: true,
+      text: data.choices?.[0]?.message?.content || ''
+    });
+  } catch (error) {
+    console.error('[SiliconFlow] 请求失败:', error.message);
+    return res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+}
