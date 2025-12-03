@@ -197,7 +197,7 @@ def test_news_analyst():
         init_logging(level="INFO")
         
         # 导入新闻分析相关模块
-        from agents.analysts.news_analyst import create_news_analyst
+        from backend.agents.analysts.news_analyst import create_news_analyst
         
         print("✅ 新闻分析师模块加载成功")
         

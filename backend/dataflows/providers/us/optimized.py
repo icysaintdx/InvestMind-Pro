@@ -31,7 +31,7 @@ except ImportError:
 
 from tradingagents.config.runtime_settings import get_float, get_timezone_name
 # 导入日志模块
-from tradingagents.utils.logging_manager import get_logger
+from backend.utils.logging_manager import get_logger
 logger = get_logger('agents')
 
 
@@ -46,7 +46,7 @@ class OptimizedUSDataProvider:
 
         # 🔥 初始化数据源管理器（从数据库读取配置）
         try:
-            from tradingagents.dataflows.data_source_manager import USDataSourceManager
+            from backend.dataflows.data_source_manager import USDataSourceManager
             self.us_manager = USDataSourceManager()
             logger.info(f"✅ 美股数据源管理器初始化成功")
         except Exception as e:
@@ -137,7 +137,7 @@ class OptimizedUSDataProvider:
         # 如果没有配置优先级，使用默认顺序
         if not source_priority:
             # 默认顺序：yfinance > alpha_vantage > finnhub
-            from tradingagents.dataflows.data_source_manager import USDataSource
+            from backend.dataflows.data_source_manager import USDataSource
             source_priority = [USDataSource.YFINANCE, USDataSource.ALPHA_VANTAGE, USDataSource.FINNHUB]
             logger.info(f"📊 [美股数据源优先级] 使用默认顺序: {[s.value for s in source_priority]}")
 
@@ -176,14 +176,14 @@ class OptimizedUSDataProvider:
         if not formatted_data:
             try:
                 # 检测股票类型
-                from tradingagents.utils.stock_utils import StockUtils
+                from backend.utils.stock_utils import StockUtils
                 market_info = StockUtils.get_market_info(symbol)
 
                 if market_info['is_hk']:
                     # 港股优先使用AKShare数据源
                     logger.info(f"🇭🇰 [数据来源: API调用-AKShare] 尝试使用AKShare获取港股数据: {symbol}")
                     try:
-                        from tradingagents.dataflows.interface import get_hk_stock_data_unified
+                        from backend.dataflows.interface import get_hk_stock_data_unified
                         hk_data_text = get_hk_stock_data_unified(symbol, start_date, end_date)
 
                         if hk_data_text and "❌" not in hk_data_text:
@@ -270,7 +270,7 @@ class OptimizedUSDataProvider:
 
         # 🔥 使用统一的技术指标计算函数
         # 注意：美股数据列名是大写的 Close, High, Low
-        from tradingagents.tools.analysis.indicators import add_all_indicators
+        from backend.dataflows.analysis.indicators import add_all_indicators
         data = add_all_indicators(data, close_col='Close', high_col='High', low_col='Low')
 
         # 获取最新技术指标
@@ -425,7 +425,7 @@ class OptimizedUSDataProvider:
     def _get_data_from_alpha_vantage(self, symbol: str, start_date: str, end_date: str) -> str:
         """从 Alpha Vantage API 获取股票数据"""
         try:
-            from tradingagents.dataflows.providers.us.alpha_vantage_common import get_api_key
+            from backend.dataflows.providers.us.alpha_vantage_common import get_api_key
             import requests
             from datetime import datetime
 
@@ -534,7 +534,7 @@ def get_us_stock_data_cached(symbol: str, start_date: str, end_date: str,
         格式化的股票数据字符串
     """
     # 🔧 智能日期范围处理：自动扩展到配置的回溯天数，处理周末/节假日
-    from tradingagents.utils.dataflow_utils import get_trading_date_range
+    from backend.utils.dataflow_utils import get_trading_date_range
     from app.core.config import get_settings
     from datetime import datetime
 

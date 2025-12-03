@@ -102,7 +102,7 @@ class UnifiedNewsAnalyzer:
             str: 格式化的新闻内容，如果没有新闻则返回空字符串
         """
         try:
-            from tradingagents.dataflows.cache.app_adapter import get_mongodb_client
+            from backend.dataflows.cache.app_adapter import get_mongodb_client
             from datetime import timedelta
 
             # 🔧 确保 max_news 是整数（防止传入浮点数）
@@ -218,7 +218,7 @@ class UnifiedNewsAnalyzer:
                     async def get_news_task():
                         try:
                             # 动态导入 AKShare provider（正确的导入路径）
-                            from tradingagents.dataflows.providers.china.akshare import AKShareProvider
+                            from backend.dataflows.providers.china.akshare import AKShareProvider
 
                             # 创建 provider 实例
                             provider = AKShareProvider()

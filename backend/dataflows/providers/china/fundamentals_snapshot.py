@@ -4,7 +4,7 @@ from typing import Dict, Optional
 
 import pandas as pd
 
-from tradingagents.utils.logging_manager import get_logger
+from backend.utils.logging_manager import get_logger
 
 logger = get_logger('agents')
 

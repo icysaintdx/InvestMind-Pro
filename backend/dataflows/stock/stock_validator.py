@@ -9,7 +9,7 @@ from typing import Dict, Tuple, Optional
 from datetime import datetime, timedelta
 
 # 导入日志模块
-from tradingagents.utils.logging_manager import get_logger
+from backend.utils.logging_manager import get_logger
 logger = get_logger('stock_validator')
 
 
@@ -308,7 +308,7 @@ class StockDataPreparer:
         try:
             # 1. 获取基本信息
             logger.debug(f"📊 [A股数据] 获取{stock_code}基本信息...")
-            from tradingagents.dataflows.interface import get_china_stock_info_unified
+            from backend.dataflows.interface import get_china_stock_info_unified
 
             stock_info = get_china_stock_info_unified(stock_code)
 
@@ -347,7 +347,7 @@ class StockDataPreparer:
 
             # 2. 获取历史数据
             logger.debug(f"📊 [A股数据] 获取{stock_code}历史数据 ({start_date_str} 到 {end_date_str})...")
-            from tradingagents.dataflows.interface import get_china_stock_data_unified
+            from backend.dataflows.interface import get_china_stock_data_unified
 
             historical_data = get_china_stock_data_unified(stock_code, start_date_str, end_date_str)
 
@@ -443,7 +443,7 @@ class StockDataPreparer:
         try:
             # 1. 获取基本信息
             logger.debug(f"📊 [港股数据] 获取{formatted_code}基本信息...")
-            from tradingagents.dataflows.interface import get_hk_stock_info_unified
+            from backend.dataflows.interface import get_hk_stock_info_unified
 
             stock_info = get_hk_stock_info_unified(formatted_code)
 
@@ -495,7 +495,7 @@ class StockDataPreparer:
 
             # 2. 获取历史数据
             logger.debug(f"📊 [港股数据] 获取{formatted_code}历史数据 ({start_date_str} 到 {end_date_str})...")
-            from tradingagents.dataflows.interface import get_hk_stock_data_unified
+            from backend.dataflows.interface import get_hk_stock_data_unified
 
             historical_data = get_hk_stock_data_unified(formatted_code, start_date_str, end_date_str)
 
@@ -608,7 +608,7 @@ class StockDataPreparer:
         try:
             # 1. 获取历史数据（美股通常直接通过历史数据验证股票是否存在）
             logger.debug(f"📊 [美股数据] 获取{formatted_code}历史数据 ({start_date_str} 到 {end_date_str})...")
-            from tradingagents.dataflows.optimized_us_data import get_us_stock_data_cached
+            from backend.dataflows.optimized_us_data import get_us_stock_data_cached
 
             historical_data = get_us_stock_data_cached(
                 formatted_code,

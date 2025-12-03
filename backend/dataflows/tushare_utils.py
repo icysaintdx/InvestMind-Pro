@@ -13,12 +13,12 @@ import warnings
 import time
 
 # 导入日志模块
-from tradingagents.utils.logging_manager import get_logger
+from backend.utils.logging_manager import get_logger
 logger = get_logger('agents')
 warnings.filterwarnings('ignore')
 
 # 导入统一日志系统
-from tradingagents.utils.logging_init import get_logger
+from backend.utils.logging_init import get_logger
 
 # 导入缓存管理器
 try:

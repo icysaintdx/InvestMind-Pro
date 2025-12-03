@@ -11,7 +11,7 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 
 # 导入日志模块
-from tradingagents.utils.logging_manager import get_logger
+from backend.utils.logging_manager import get_logger
 logger = get_logger('agents')
 
 # 添加dataflows目录到路径
@@ -20,7 +20,7 @@ if dataflows_path not in sys.path:
     sys.path.append(dataflows_path)
 
 # 导入统一日志系统
-from tradingagents.utils.logging_init import get_logger
+from backend.utils.logging_init import get_logger
 
 try:
     from stock_data_service import get_stock_data_service

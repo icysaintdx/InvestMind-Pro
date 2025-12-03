@@ -10,16 +10,16 @@ import pandas as pd
 import os
 from dateutil.relativedelta import relativedelta
 from langchain_openai import ChatOpenAI
-import tradingagents.dataflows.interface as interface
+import backend.dataflows.interface as interface
 from tradingagents.default_config import DEFAULT_CONFIG
 from langchain_core.messages import HumanMessage
 
 # 导入统一日志系统和工具日志装饰器
-from tradingagents.utils.logging_init import get_logger
-from tradingagents.utils.tool_logging import log_tool_call, log_analysis_step
+from backend.utils.logging_init import get_logger
+from backend.utils.tool_logging import log_tool_call, log_analysis_step
 
 # 导入日志模块
-from tradingagents.utils.logging_manager import get_logger
+from backend.utils.logging_manager import get_logger
 logger = get_logger('agents')
 
 
@@ -171,7 +171,7 @@ class Toolkit:
             logger.debug(f"📊 [DEBUG] ===== agent_utils.get_china_stock_data 开始调用 =====")
             logger.debug(f"📊 [DEBUG] 参数: stock_code={stock_code}, start_date={start_date}, end_date={end_date}")
 
-            from tradingagents.dataflows.interface import get_china_stock_data_unified
+            from backend.dataflows.interface import get_china_stock_data_unified
             logger.debug(f"📊 [DEBUG] 成功导入统一数据源接口")
 
             logger.debug(f"📊 [DEBUG] 正在调用统一数据源接口...")
@@ -210,7 +210,7 @@ class Toolkit:
         """
         try:
             # 使用Tushare获取主要指数数据
-            from tradingagents.dataflows.providers.china.tushare import get_tushare_adapter
+            from backend.dataflows.providers.china.tushare import get_tushare_adapter
 
             adapter = get_tushare_adapter()
 
@@ -496,7 +496,7 @@ class Toolkit:
         Returns:
             str: 包含实时新闻分析、紧急程度评估、时效性说明的格式化报告
         """
-        from tradingagents.dataflows.realtime_news_utils import get_realtime_stock_news
+        from backend.dataflows.realtime_news_utils import get_realtime_stock_news
         return get_realtime_stock_news(ticker, curr_date, hours_back=6)
 
     @staticmethod
@@ -557,7 +557,7 @@ class Toolkit:
             logger.debug(f"📊 [DEBUG] 检测到中国A股代码: {ticker}")
             # 使用统一接口获取中国股票名称
             try:
-                from tradingagents.dataflows.interface import get_china_stock_info_unified
+                from backend.dataflows.interface import get_china_stock_info_unified
                 stock_info = get_china_stock_info_unified(ticker)
 
                 # 解析股票名称
@@ -611,7 +611,7 @@ class Toolkit:
 
         try:
             # 使用统一数据源接口获取股票数据（默认Tushare，支持备用数据源）
-            from tradingagents.dataflows.interface import get_china_stock_data_unified
+            from backend.dataflows.interface import get_china_stock_data_unified
             logger.debug(f"📊 [DEBUG] 正在获取 {ticker} 的股票数据...")
 
             # 获取最近30天的数据用于基本面分析
@@ -631,7 +631,7 @@ class Toolkit:
                 return f"无法获取股票 {ticker} 的基本面数据：{stock_data}"
 
             # 调用真正的基本面分析
-            from tradingagents.dataflows.optimized_china_data import OptimizedChinaDataProvider
+            from backend.dataflows.optimized_china_data import OptimizedChinaDataProvider
 
             # 创建分析器实例
             analyzer = OptimizedChinaDataProvider()
@@ -673,7 +673,7 @@ class Toolkit:
         logger.debug(f"🇭🇰 [DEBUG] get_hk_stock_data_unified 被调用: symbol={symbol}, start_date={start_date}, end_date={end_date}")
 
         try:
-            from tradingagents.dataflows.interface import get_hk_stock_data_unified
+            from backend.dataflows.interface import get_hk_stock_data_unified
 
             result = get_hk_stock_data_unified(symbol, start_date, end_date)
 
@@ -794,7 +794,7 @@ class Toolkit:
         original_ticker = ticker
 
         try:
-            from tradingagents.utils.stock_utils import StockUtils
+            from backend.utils.stock_utils import StockUtils
             from datetime import datetime, timedelta
 
             # 自动识别股票类型
@@ -864,7 +864,7 @@ class Toolkit:
                     recent_end_date = curr_date
                     recent_start_date = (datetime.strptime(curr_date, '%Y-%m-%d') - timedelta(days=2)).strftime('%Y-%m-%d')
 
-                    from tradingagents.dataflows.interface import get_china_stock_data_unified
+                    from backend.dataflows.interface import get_china_stock_data_unified
                     logger.info(f"🔍 [股票代码追踪] 调用 get_china_stock_data_unified（仅获取最新价格），传入参数: ticker='{ticker}', start_date='{recent_start_date}', end_date='{recent_end_date}'")
                     current_price_data = get_china_stock_data_unified(ticker, recent_start_date, recent_end_date)
 
@@ -880,7 +880,7 @@ class Toolkit:
 
                 try:
                     # 获取基本面财务数据（这是基本面分析的核心）
-                    from tradingagents.dataflows.optimized_china_data import OptimizedChinaDataProvider
+                    from backend.dataflows.optimized_china_data import OptimizedChinaDataProvider
                     analyzer = OptimizedChinaDataProvider()
                     logger.info(f"🔍 [股票代码追踪] 调用 OptimizedChinaDataProvider._generate_fundamentals_report，传入参数: ticker='{ticker}', analysis_modules='{analysis_modules}'")
 
@@ -908,7 +908,7 @@ class Toolkit:
 
                 # 主要数据源：AKShare
                 try:
-                    from tradingagents.dataflows.interface import get_hk_stock_data_unified
+                    from backend.dataflows.interface import get_hk_stock_data_unified
                     hk_data = get_hk_stock_data_unified(ticker, start_date, end_date)
 
                     # 🔍 调试：打印返回数据的前500字符
@@ -929,7 +929,7 @@ class Toolkit:
                 # 备用方案：基础港股信息
                 if not hk_data_success:
                     try:
-                        from tradingagents.dataflows.interface import get_hk_stock_info_unified
+                        from backend.dataflows.interface import get_hk_stock_info_unified
                         hk_info = get_hk_stock_info_unified(ticker)
 
                         basic_info = f"""## 港股基础信息
@@ -978,7 +978,7 @@ class Toolkit:
                 logger.info(f"🔍 [美股基本面] 统一策略：获取完整数据（忽略 data_depth 参数）")
 
                 try:
-                    from tradingagents.dataflows.interface import get_fundamentals_openai
+                    from backend.dataflows.interface import get_fundamentals_openai
                     us_data = get_fundamentals_openai(ticker, curr_date)
                     result_data.append(f"## 美股基本面数据\n{us_data}")
                     logger.info(f"✅ [统一基本面工具] 美股数据获取成功")
@@ -1071,7 +1071,7 @@ class Toolkit:
         logger.info(f"📈 [统一市场工具] 分析股票: {ticker}")
 
         try:
-            from tradingagents.utils.stock_utils import StockUtils
+            from backend.utils.stock_utils import StockUtils
 
             # 自动识别股票类型
             market_info = StockUtils.get_market_info(ticker)
@@ -1089,7 +1089,7 @@ class Toolkit:
                 logger.info(f"🇨🇳 [统一市场工具] 处理A股市场数据...")
 
                 try:
-                    from tradingagents.dataflows.interface import get_china_stock_data_unified
+                    from backend.dataflows.interface import get_china_stock_data_unified
                     stock_data = get_china_stock_data_unified(ticker, start_date, end_date)
 
                     # 🔍 调试：打印返回数据的前500字符
@@ -1106,7 +1106,7 @@ class Toolkit:
                 logger.info(f"🇭🇰 [统一市场工具] 处理港股市场数据...")
 
                 try:
-                    from tradingagents.dataflows.interface import get_hk_stock_data_unified
+                    from backend.dataflows.interface import get_hk_stock_data_unified
                     hk_data = get_hk_stock_data_unified(ticker, start_date, end_date)
 
                     # 🔍 调试：打印返回数据的前500字符
@@ -1123,7 +1123,7 @@ class Toolkit:
                 logger.info(f"🇺🇸 [统一市场工具] 处理美股市场数据...")
 
                 try:
-                    from tradingagents.dataflows.providers.us.optimized import get_us_stock_data_cached
+                    from backend.dataflows.providers.us.optimized import get_us_stock_data_cached
                     us_data = get_us_stock_data_cached(ticker, start_date, end_date)
                     result_data.append(f"## 美股市场数据\n{us_data}")
                 except Exception as e:
@@ -1171,7 +1171,7 @@ class Toolkit:
         logger.info(f"📰 [统一新闻工具] 分析股票: {ticker}")
 
         try:
-            from tradingagents.utils.stock_utils import StockUtils
+            from backend.utils.stock_utils import StockUtils
             from datetime import datetime, timedelta
 
             # 自动识别股票类型
@@ -1202,7 +1202,7 @@ class Toolkit:
                     logger.info(f"🇨🇳🇭🇰 [统一新闻工具] 尝试获取东方财富新闻: {clean_ticker}")
 
                     # 通过 AKShare Provider 获取新闻
-                    from tradingagents.dataflows.providers.china.akshare import AKShareProvider
+                    from backend.dataflows.providers.china.akshare import AKShareProvider
 
                     provider = AKShareProvider()
 
@@ -1244,7 +1244,7 @@ class Toolkit:
                         search_query = f"{ticker} 港股"
                         logger.info(f"🇭🇰 [统一新闻工具] 港股Google新闻搜索关键词: {search_query}")
 
-                    from tradingagents.dataflows.interface import get_google_news
+                    from backend.dataflows.interface import get_google_news
                     news_data = get_google_news(search_query, curr_date)
                     result_data.append(f"## Google新闻\n{news_data}")
                     logger.info(f"🇨🇳🇭🇰 [统一新闻工具] 成功获取Google新闻")
@@ -1257,7 +1257,7 @@ class Toolkit:
                 logger.info(f"🇺🇸 [统一新闻工具] 处理美股新闻...")
 
                 try:
-                    from tradingagents.dataflows.interface import get_finnhub_news
+                    from backend.dataflows.interface import get_finnhub_news
                     news_data = get_finnhub_news(ticker, start_date_str, curr_date)
                     result_data.append(f"## 美股新闻\n{news_data}")
                 except Exception as e:
@@ -1305,7 +1305,7 @@ class Toolkit:
         logger.info(f"😊 [统一情绪工具] 分析股票: {ticker}")
 
         try:
-            from tradingagents.utils.stock_utils import StockUtils
+            from backend.utils.stock_utils import StockUtils
 
             # 自动识别股票类型
             market_info = StockUtils.get_market_info(ticker)
@@ -1351,7 +1351,7 @@ class Toolkit:
                 logger.info(f"🇺🇸 [统一情绪工具] 处理美股情绪...")
 
                 try:
-                    from tradingagents.dataflows.interface import get_reddit_sentiment
+                    from backend.dataflows.interface import get_reddit_sentiment
 
                     sentiment_data = get_reddit_sentiment(ticker, curr_date)
                     result_data.append(f"## 美股Reddit情绪\n{sentiment_data}")

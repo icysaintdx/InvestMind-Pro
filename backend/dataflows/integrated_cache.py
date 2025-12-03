@@ -12,7 +12,7 @@ from typing import Any, Dict, Optional, Union
 import pandas as pd
 
 # 导入统一日志系统
-from tradingagents.utils.logging_init import setup_dataflow_logging
+from backend.utils.logging_init import setup_dataflow_logging
 
 # 导入原有缓存系统
 from .cache_manager import StockDataCache

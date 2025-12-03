@@ -12,12 +12,12 @@ import warnings
 import pandas as pd
 
 # 导入日志模块
-from tradingagents.utils.logging_manager import get_logger
+from backend.utils.logging_manager import get_logger
 logger = get_logger('agents')
 warnings.filterwarnings('ignore')
 
 # 导入统一日志系统
-from tradingagents.utils.logging_init import setup_dataflow_logging
+from backend.utils.logging_init import setup_dataflow_logging
 logger = setup_dataflow_logging()
 
 
@@ -806,7 +806,7 @@ def get_china_stock_data_unified(symbol: str, start_date: str, end_date: str) ->
     Returns:
         str: 格式化的股票数据
     """
-    from tradingagents.utils.logging_init import get_logger
+    from backend.utils.logging_init import get_logger
 
 
     # 添加详细的股票代码追踪日志

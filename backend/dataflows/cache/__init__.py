@@ -7,7 +7,7 @@
 - 自适应缓存（推荐）- 自动选择最佳后端
 
 使用方法：
-    from tradingagents.dataflows.cache import get_cache
+    from backend.dataflows.cache import get_cache
     cache = get_cache()  # 自动选择最佳缓存策略
 
 配置缓存策略：
@@ -19,7 +19,7 @@ import os
 from typing import Union
 
 # 导入日志模块
-from tradingagents.utils.logging_manager import get_logger
+from backend.utils.logging_manager import get_logger
 logger = get_logger('agents')
 
 # 导入文件缓存

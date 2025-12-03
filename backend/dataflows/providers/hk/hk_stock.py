@@ -16,7 +16,7 @@ import os
 
 from tradingagents.config.runtime_settings import get_float, get_int
 # 导入日志模块
-from tradingagents.utils.logging_manager import get_logger
+from backend.utils.logging_manager import get_logger
 logger = get_logger('agents')
 
 

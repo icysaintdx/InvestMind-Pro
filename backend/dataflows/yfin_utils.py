@@ -9,7 +9,7 @@ from functools import wraps
 from .utils import save_output, SavePathType, decorate_all_methods
 
 # 导入日志模块
-from tradingagents.utils.logging_manager import get_logger
+from backend.utils.logging_manager import get_logger
 logger = get_logger('agents')
 
 # 导入缓存管理器

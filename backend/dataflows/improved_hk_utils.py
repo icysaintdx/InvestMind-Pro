@@ -11,7 +11,7 @@ from typing import Dict, Any, Optional
 from datetime import datetime, timedelta
 
 # 导入统一日志系统
-from tradingagents.utils.logging_init import get_logger
+from backend.utils.logging_init import get_logger
 logger = get_logger("default")
 
 
@@ -180,7 +180,7 @@ class ImprovedHKStockProvider:
 
                 # 优先尝试AKShare获取
                 try:
-                    from tradingagents.dataflows.akshare_utils import get_hk_stock_info_akshare
+                    from backend.dataflows.akshare_utils import get_hk_stock_info_akshare
                     logger.debug(f"📊 [港股API] 优先使用AKShare获取: {symbol}")
 
                     akshare_info = get_hk_stock_info_akshare(symbol)
@@ -201,7 +201,7 @@ class ImprovedHKStockProvider:
                     logger.debug(f"📊 [港股AKShare] AKShare获取失败: {e}")
 
                 # 备用：尝试从统一接口获取（包含Yahoo Finance）
-                from tradingagents.dataflows.interface import get_hk_stock_info_unified
+                from backend.dataflows.interface import get_hk_stock_info_unified
                 hk_info = get_hk_stock_info_unified(symbol)
 
                 if hk_info and isinstance(hk_info, dict) and 'name' in hk_info:

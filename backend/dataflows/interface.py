@@ -7,10 +7,10 @@ from .googlenews_utils import *
 from .finnhub_utils import get_data_in_range
 
 # 导入统一日志系统
-from tradingagents.utils.logging_init import setup_dataflow_logging
+from backend.utils.logging_init import setup_dataflow_logging
 
 # 导入日志模块
-from tradingagents.utils.logging_manager import get_logger
+from backend.utils.logging_manager import get_logger
 logger = get_logger('agents')
 logger = setup_dataflow_logging()
 
@@ -349,7 +349,7 @@ def get_google_news(
     
     # 尝试使用StockUtils判断
     try:
-        from tradingagents.utils.stock_utils import StockUtils
+        from backend.utils.stock_utils import StockUtils
         market_info = StockUtils.get_market_info(query.split()[0])
         if market_info['is_china']:
             is_china_stock = True

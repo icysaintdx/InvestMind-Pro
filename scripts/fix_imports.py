@@ -21,8 +21,9 @@ def fix_import_in_file(file_path):
     
     # 定义替换规则
     replacements = [
-        # agents相关导入
-        (r'from tradingagents\.agents\.', 'from agents.'),
+        # 基本模块导入 - agents现在在backend下
+        (r'from tradingagents\.agents\.', 'from backend.agents.'),
+        (r'from agents\.', 'from backend.agents.'),  # 更新旧的agents引用
         (r'from tradingagents\.tools\.', 'from backend.dataflows.'),
         (r'from tradingagents\.dataflows\.', 'from backend.dataflows.'),
         (r'from tradingagents\.utils\.', 'from backend.utils.'),
@@ -41,12 +42,12 @@ def fix_import_in_file(file_path):
         (r'import dataflows\.', 'import backend.dataflows.'),
         
         # 修复agents内部导入
-        (r'from agents\.utils\.', 'from agents.utils.'),
-        (r'from agents\.analysts\.', 'from agents.analysts.'),
-        (r'from agents\.researchers\.', 'from agents.researchers.'),
-        (r'from agents\.managers\.', 'from agents.managers.'),
-        (r'from agents\.trader\.', 'from agents.trader.'),
-        (r'from agents\.risk_mgmt\.', 'from agents.risk_mgmt.'),
+        (r'from agents\.utils\.', 'from backend.agents.utils.'),
+        (r'from agents\.analysts\.', 'from backend.agents.analysts.'),
+        (r'from agents\.researchers\.', 'from backend.agents.researchers.'),
+        (r'from agents\.managers\.', 'from backend.agents.managers.'),
+        (r'from agents\.trader\.', 'from backend.agents.trader.'),
+        (r'from agents\.risk_mgmt\.', 'from backend.agents.risk_mgmt.'),
     ]
     
     # 应用替换规则
@@ -108,18 +109,18 @@ def main():
     # 获取项目根目录
     project_root = Path(__file__).parent.parent
     
-    # 需要修复的目录
-    directories_to_fix = [
-        project_root / 'agents',
-        project_root / 'backend' / 'dataflows',
-        project_root / 'backend' / 'api',
+    # 需要处理的目录
+    directories = [
+        project_root / "backend" / "agents",
+        project_root / "backend" / "dataflows",
+        project_root / "backend" / "api",
     ]
     
     total_fixed = []
     total_skipped = []
     total_errors = []
     
-    for directory in directories_to_fix:
+    for directory in directories:
         if directory.exists():
             print(f"\n处理目录: {directory}")
             fixed, skipped, errors = fix_imports_in_directory(directory)

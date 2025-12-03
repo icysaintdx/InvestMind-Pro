@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 
 from tradingagents.config.runtime_settings import get_int
 # 导入统一日志系统
-from tradingagents.utils.logging_init import get_logger
+from backend.utils.logging_init import get_logger
 logger = get_logger("default")
 
 # 新增：使用统一的数据目录配置
@@ -250,7 +250,7 @@ class ImprovedHKStockProvider:
                     logger.debug(f"📊 [港股AKShare] AKShare获取失败: {e}")
 
                 # 备用：尝试从统一接口获取（包含Yahoo Finance）
-                from tradingagents.dataflows.interface import get_hk_stock_info_unified
+                from backend.dataflows.interface import get_hk_stock_info_unified
                 hk_info = get_hk_stock_info_unified(symbol)
 
                 if hk_info and isinstance(hk_info, dict) and 'name' in hk_info:
@@ -538,7 +538,7 @@ def get_hk_stock_data_akshare(symbol: str, start_date: str = None, end_date: str
         df['pct_change'] = (df['change'] / df['pre_close'] * 100).round(2)
 
         # 🔥 使用统一的技术指标计算函数
-        from tradingagents.tools.analysis.indicators import add_all_indicators
+        from backend.dataflows.analysis.indicators import add_all_indicators
         df = add_all_indicators(df, close_col='close', high_col='high', low_col='low')
 
         # 🔥 获取财务指标并计算 PE、PB

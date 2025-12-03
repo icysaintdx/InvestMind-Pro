@@ -4,12 +4,12 @@
 
 使用方法：
     # 旧代码仍然可以这样导入
-    from tradingagents.dataflows.googlenews_utils import getNewsData
-    from tradingagents.dataflows.cache_manager import StockDataCache
+    from backend.dataflows.googlenews_utils import getNewsData
+    from backend.dataflows.cache_manager import StockDataCache
     
     # 新代码推荐使用新路径
-    from tradingagents.dataflows.news import getNewsData
-    from tradingagents.dataflows.cache import StockDataCache
+    from backend.dataflows.news import getNewsData
+    from backend.dataflows.cache import StockDataCache
 """
 
 # 这个文件本身不导出任何内容

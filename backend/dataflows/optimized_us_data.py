@@ -15,7 +15,7 @@ from .cache_manager import get_cache
 from .config import get_config
 
 # 导入日志模块
-from tradingagents.utils.logging_manager import get_logger
+from backend.utils.logging_manager import get_logger
 logger = get_logger('agents')
 
 
@@ -108,14 +108,14 @@ class OptimizedUSDataProvider:
         if not formatted_data:
             try:
                 # 检测股票类型
-                from tradingagents.utils.stock_utils import StockUtils
+                from backend.utils.stock_utils import StockUtils
                 market_info = StockUtils.get_market_info(symbol)
 
                 if market_info['is_hk']:
                     # 港股优先使用AKShare数据源
                     logger.info(f"🇭🇰 尝试使用AKShare获取港股数据: {symbol}")
                     try:
-                        from tradingagents.dataflows.interface import get_hk_stock_data_unified
+                        from backend.dataflows.interface import get_hk_stock_data_unified
                         hk_data_text = get_hk_stock_data_unified(symbol, start_date, end_date)
 
                         if hk_data_text and "❌" not in hk_data_text:

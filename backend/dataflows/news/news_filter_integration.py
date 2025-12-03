@@ -59,7 +59,7 @@ def integrate_news_filtering(original_get_stock_news_em):
             
             try:
                 # 导入过滤器
-                from tradingagents.utils.enhanced_news_filter import create_enhanced_news_filter
+                from backend.utils.enhanced_news_filter import create_enhanced_news_filter
                 
                 # 创建过滤器
                 news_filter = create_enhanced_news_filter(
@@ -151,7 +151,7 @@ def create_filtered_realtime_news_function():
         
         try:
             # 导入原始函数
-            from tradingagents.dataflows.realtime_news_utils import get_realtime_stock_news
+            from backend.dataflows.realtime_news_utils import get_realtime_stock_news
             
             # 调用原始函数获取新闻
             original_report = get_realtime_stock_news(ticker, curr_date, hours_back)
@@ -167,7 +167,7 @@ def create_filtered_realtime_news_function():
                 logger.info(f"[增强实时新闻] 检测到A股代码，尝试使用过滤版东方财富新闻")
                 
                 try:
-                    from tradingagents.dataflows.akshare_utils import get_stock_news_em
+                    from backend.dataflows.akshare_utils import get_stock_news_em
                     
                     # 清理股票代码
                     clean_ticker = ticker.replace('.SH', '').replace('.SZ', '').replace('.SS', '')\
@@ -178,7 +178,7 @@ def create_filtered_realtime_news_function():
                      
                     if enable_filter and not original_news_df.empty:
                          # 应用新闻过滤
-                         from tradingagents.utils.news_filter import create_news_filter
+                         from backend.utils.news_filter import create_news_filter
                          news_filter = create_news_filter(clean_ticker)
                          filtered_news_df = news_filter.filter_news(original_news_df, min_score=min_score)
                          

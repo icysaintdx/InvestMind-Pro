@@ -14,7 +14,7 @@ from typing import Optional, Dict, Any, Union, List
 import hashlib
 
 # 导入日志模块
-from tradingagents.utils.logging_manager import get_logger
+from backend.utils.logging_manager import get_logger
 logger = get_logger('agents')
 
 

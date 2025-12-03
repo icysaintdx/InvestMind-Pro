@@ -4,7 +4,7 @@ from .googlenews_utils import getNewsData
 from .reddit_utils import fetch_top_from_category
 
 # 导入日志模块
-from tradingagents.utils.logging_manager import get_logger
+from backend.utils.logging_manager import get_logger
 logger = get_logger('agents')
 
 # 尝试导入yfinance相关模块，如果失败则跳过

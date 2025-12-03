@@ -9,7 +9,7 @@ from typing import Optional, Dict, Any, List, Union
 from datetime import datetime, timedelta, timezone
 
 # 导入日志模块
-from tradingagents.utils.logging_manager import get_logger
+from backend.utils.logging_manager import get_logger
 logger = get_logger('agents')
 
 # 导入配置
@@ -90,7 +90,7 @@ class MongoDBCacheAdapter:
         """
         try:
             # 1. 识别市场分类
-            from tradingagents.utils.stock_utils import StockUtils, StockMarket
+            from backend.utils.stock_utils import StockUtils, StockMarket
             market = StockUtils.identify_stock_market(symbol)
 
             market_mapping = {

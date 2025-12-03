@@ -13,7 +13,7 @@ import os
 from dataclasses import dataclass
 
 # 导入日志模块
-from tradingagents.utils.logging_manager import get_logger
+from backend.utils.logging_manager import get_logger
 logger = get_logger('agents')
 
 
@@ -709,7 +709,7 @@ def get_realtime_stock_news(ticker: str, curr_date: str, hours_back: int = 6) ->
         logger.info(f"[新闻分析] ticker不包含点号，尝试使用StockUtils判断")
         # 尝试使用StockUtils判断股票类型
         try:
-            from tradingagents.utils.stock_utils import StockUtils
+            from backend.utils.stock_utils import StockUtils
             logger.info(f"[新闻分析] 成功导入StockUtils，开始判断股票类型")
             market_info = StockUtils.get_market_info(ticker)
             logger.info(f"[新闻分析] StockUtils返回市场信息: {market_info}")
@@ -893,7 +893,7 @@ def get_realtime_stock_news(ticker: str, curr_date: str, hours_back: int = 6) ->
     
     # 备用方案2: 尝试使用Google新闻
     try:
-        from tradingagents.dataflows.interface import get_google_news
+        from backend.dataflows.interface import get_google_news
         
         # 根据股票类型构建搜索查询
         if stock_type == "A股":

@@ -9,7 +9,7 @@ from typing import Dict, List, Optional, Any
 from .stock_data_service import get_stock_data_service
 
 # 导入日志模块
-from tradingagents.utils.logging_manager import get_logger
+from backend.utils.logging_manager import get_logger
 logger = get_logger('agents')
 
 def get_stock_info(stock_code: str) -> Optional[Dict[str, Any]]:

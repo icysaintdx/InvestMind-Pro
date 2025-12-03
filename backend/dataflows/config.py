@@ -1,4 +1,4 @@
-import tradingagents.default_config as default_config
+import default_config as default_config
 from typing import Dict, Optional
 from tradingagents.config.config_manager import config_manager
 

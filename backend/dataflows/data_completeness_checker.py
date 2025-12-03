@@ -191,7 +191,7 @@ class DataCompletenessChecker:
         try:
             if market == "CN":
                 # A股：使用 Tushare 查找最新交易日
-                from tradingagents.dataflows.providers.china.tushare import TushareProvider
+                from backend.dataflows.providers.china.tushare import TushareProvider
                 import asyncio
                 
                 provider = TushareProvider()

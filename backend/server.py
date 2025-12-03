@@ -28,6 +28,12 @@ else:
     load_dotenv()  # 尝试默认加载
     print("⚠️ 使用默认环境变量加载")
 
+# 导入API路由
+from backend.api.news_api import router as news_router
+from backend.api.debate_api import router as debate_router
+from backend.api.trading_api import router as trading_router
+from backend.api.verification_api import router as verification_router
+
 # ==================== 配置 ====================
 
 # API Keys 从环境变量读取
@@ -141,6 +147,12 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+# 注册API路由
+app.include_router(news_router)
+app.include_router(debate_router)
+app.include_router(trading_router)
+app.include_router(verification_router)
 
 # 配置 CORS
 app.add_middleware(
