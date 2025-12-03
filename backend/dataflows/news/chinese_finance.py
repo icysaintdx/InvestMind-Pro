@@ -329,3 +329,6 @@ def get_chinese_social_sentiment(ticker: str, curr_date: str) -> str:
 
 注: 中国社交媒体数据获取存在技术限制，建议以基本面分析为主。
 """
+
+# 创建别名以保持向后兼容性
+get_chinese_finance_news = get_chinese_social_sentiment

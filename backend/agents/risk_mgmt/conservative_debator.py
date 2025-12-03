@@ -1,9 +1,9 @@
-from langchain_core.messages import AIMessage
+from backend.agents.utils.langchain_compat import AIMessage
 import time
 import json
 
 # 导入统一日志系统
-from backend.utils.logging_init import get_logger
+from backend.utils.logging_config import get_logger
 logger = get_logger("default")
 
 

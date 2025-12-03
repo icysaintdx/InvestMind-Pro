@@ -16,7 +16,7 @@ from datetime import datetime
 from .alpha_vantage_common import _make_api_request, format_response_as_string
 
 # 导入日志模块
-from backend.utils.logging_manager import get_logger
+from backend.utils.logging_config import get_logger
 logger = get_logger('agents')
 
 

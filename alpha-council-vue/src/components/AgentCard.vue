@@ -6,6 +6,12 @@
         <div class="flex items-center gap-1">
           <div class="text-xl">{{ agent.icon }}</div>
           <div class="font-semibold text-white text-xs">{{ agent.title }}</div>
+          <div class="info-icon-wrapper group ml-1">
+            <span 
+              class="info-icon cursor-help text-slate-400 hover:text-blue-400 transition-colors text-sm"
+              :title="descriptions[agent.id] || descriptions[agent.role] || '专业投资分析智能体'"
+            >ℹ️</span>
+          </div>
         </div>
         <span v-if="status === 'loading'" class="status-badge loading">
           分析中...
@@ -30,6 +36,7 @@
 
     <!-- 配置区（配置模式下显示） -->
     <div v-if="showConfig" class="agent-config">
+      <!-- Config content... -->
       <div class="config-item">
         <label class="config-label">模型 (Model)</label>
         <select 
@@ -63,6 +70,32 @@
             step="0.1"
           >
           <span class="temp-label">发散</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 思维链展示区 (新增) -->
+    <div v-if="thoughts && thoughts.length > 0" class="thoughts-container">
+      <div class="thoughts-header">
+        <span class="text-xs font-semibold text-blue-400">🧠 思考过程</span>
+      </div>
+      <div class="thoughts-list">
+        <div v-for="(thought, index) in thoughts" :key="index" class="thought-item">
+          <span class="thought-icon">{{ thought.icon || '💭' }}</span>
+          <span class="thought-text">{{ thought.message }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 数据源展示区 (新增) -->
+    <div v-if="dataSources && dataSources.length > 0" class="sources-container">
+      <div class="sources-header">
+        <span class="text-xs font-semibold text-emerald-400">📊 参考数据</span>
+        <span class="text-xs text-slate-500">{{ dataSources.length }}个来源</span>
+      </div>
+      <div class="sources-list">
+        <div v-for="(source, index) in dataSources" :key="index" class="source-tag" :title="source.title">
+          {{ source.source }}: {{ source.title.substring(0, 10) }}...
         </div>
       </div>
     </div>
@@ -127,6 +160,14 @@ export default {
       type: Number,
       default: 0
     },
+    thoughts: {
+      type: Array,
+      default: () => []
+    },
+    dataSources: {
+      type: Array,
+      default: () => []
+    },
     showConfig: {
       type: Boolean,
       default: false
@@ -153,16 +194,27 @@ export default {
       temperature: this.agent.temperature || 0.3,
       modelOptions: [], // 将从后端加载
       descriptions: {
-        'macro': '分析GDP、CPI、货币政策及系统性风险，判断宏观水位',
-        'industry': '跟踪行业指数、景气度及轮动规律，把握产业机会',
-        'technical': '精通趋势分析、支撑阻力位及量价关系，识别买卖信号',
-        'funds': '监控主力资金、北向资金及融资融券，洞察资金意图',
-        'fundamental': '深度解析财报、估值模型及业绩预期，发现价值洼地',
-        'manager_fundamental': '整合基本面分析，给出长期价值判断',
-        'manager_momentum': '综合短期动能，捕捉交易机会',
-        'risk_system': '评估市场系统性风险，监控黑天鹅事件',
-        'risk_portfolio': '管理组合集中度、回撤及止损策略，控制风险暴露',
-        'gm': '拥有最终决策权，综合收益与风险，做唯一指令'
+        'news_analyst': '基于NLP技术实时监控全网24小时内的财经新闻与公告，提取关键事件对股价的潜在影响。',
+        'social_analyst': '利用情感分析模型扫描雪球、股吧等社区讨论，量化散户恐慌与贪婪指数，捕捉市场情绪拐点。',
+        'china_market': '专注分析中国A股市场特有的政策导向、流动性环境及监管动态，评估系统性环境。',
+        'macro': '分析GDP、CPI、货币政策及系统性风险，判断宏观经济周期与大类资产配置方向。',
+        'industry': '跟踪行业指数、景气度及产业链上下游关系，结合竞争格局判断行业生命周期。',
+        'technical': '运用量化技术指标（MA/MACD/布林带）对K线形态进行模式识别，寻找关键支撑位与阻力位。',
+        'funds': '监控主力资金流向、北向资金动态及龙虎榜数据，洞察机构席位与游资的真实意图。',
+        'fundamental': '深度解析财报数据、估值模型（DCF/PE/PB）及业绩预期，寻找具备安全边际的价值洼地。',
+        'bull_researcher': '作为永远的乐观派，专注于挖掘公司的增长潜力、护城河优势及潜在的股价催化剂。',
+        'bear_researcher': '作为冷静的怀疑论者，专注于寻找财报瑕疵、估值泡沫及可能导致下跌的风险因素。',
+        'manager_fundamental': '基于深度基本面研究，忽略短期波动，从企业长期价值创造角度给出投资建议。',
+        'manager_momentum': '基于动量因子与市场情绪，捕捉短期价格趋势，寻找高盈亏比的交易机会。',
+        'research_manager': '统筹各领域分析师的观点，解决逻辑冲突，确保研究结论的一致性与准确性。',
+        'risk_aggressive': '追求高赔率，愿意承担适度回撤以换取超额收益，关注上涨空间大于下跌风险的机会。',
+        'risk_conservative': '厌恶亏损，首要目标是本金安全，强调严格的仓位控制与止损策略。',
+        'risk_neutral': '平衡收益与风险，寻求夏普比率最大化，不偏激也不保守。',
+        'risk_system': '专注评估市场崩盘、流动性枯竭等极端系统性风险，监控黑天鹅事件。',
+        'risk_portfolio': '管理组合的行业集中度、相关性及最大回撤，防止单一资产风险暴露过大。',
+        'risk_manager': '拥有风控一票否决权，确保所有投资决策均在既定的风险容忍度框架内。',
+        'gm': '投资决策委员会主席，综合基本面、技术面、资金面及风控意见，下达最终买卖指令。',
+        'trader': '执行层智能体，根据指令优化具体的交易算法（VWAP/TWAP），以最小滑点完成建仓。'
       }
     }
   },
@@ -466,6 +518,73 @@ export default {
   gap: 0.75rem;
 }
 
+/* 思维链样式 */
+.thoughts-container {
+  padding: 0.5rem 0.75rem;
+  background: rgba(30, 41, 59, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  margin-top: 0.5rem;
+}
+
+.thoughts-header {
+  margin-bottom: 0.25rem;
+}
+
+.thoughts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.thought-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* 数据源样式 */
+.sources-container {
+  padding: 0.5rem 0.75rem;
+  background: rgba(15, 23, 42, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sources-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.sources-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.source-tag {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+  font-size: 0.65rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.source-tag:hover {
+  background: rgba(16, 185, 129, 0.2);
+}
+
 .config-item {
   display: flex;
   flex-direction: column;
@@ -631,5 +750,39 @@ export default {
 
 .card-content::-webkit-scrollbar-thumb:hover {
   background: rgba(71, 85, 105, 0.7);
+}
+
+/* Tooltip 气泡样式 */
+.info-icon-wrapper {
+  display: inline-flex;
+  align-items: center;
+}
+
+.tooltip-bubble {
+  animation: tooltipFadeIn 0.2s ease-out;
+  pointer-events: none;
+}
+
+.tooltip-arrow {
+  position: absolute;
+  top: -6px;
+  left: 12px;
+  width: 12px;
+  height: 12px;
+  background: #0f172a;
+  border-left: 1px solid rgba(59, 130, 246, 0.3);
+  border-top: 1px solid rgba(59, 130, 246, 0.3);
+  transform: rotate(45deg);
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

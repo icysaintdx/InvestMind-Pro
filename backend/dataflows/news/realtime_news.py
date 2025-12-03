@@ -15,9 +15,9 @@ import os
 from dataclasses import dataclass
 
 # 导入日志模块
-from tradingagents.config.runtime_settings import get_timezone_name
+# from tradingagents.config.runtime_settings import get_int, get_float  # 已移除
 
-from backend.utils.logging_manager import get_logger
+from backend.utils.logging_config import get_logger
 logger = get_logger('agents')
 
 
@@ -974,3 +974,7 @@ def get_realtime_stock_news(ticker: str, curr_date: str, hours_back: int = 6) ->
 
 注: 实时新闻获取依赖外部API服务的可用性。
 """
+
+
+# 创建别名以保持向后兼容性
+get_realtime_news = get_realtime_stock_news

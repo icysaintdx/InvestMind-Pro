@@ -12,19 +12,21 @@ import warnings
 import pandas as pd
 
 # 导入日志模块
-from backend.utils.logging_manager import get_logger
+from backend.utils.logging_config import get_logger
 logger = get_logger('agents')
 warnings.filterwarnings('ignore')
 
 # 导入统一日志系统
-from backend.utils.logging_init import setup_dataflow_logging
-logger = setup_dataflow_logging()
+from backend.utils.logging_config import get_logger
+logger = get_logger("dataflow")
 
 
 class ChinaDataSource(Enum):
     """中国股票数据源枚举"""
-    TUSHARE = "tushare"
     AKSHARE = "akshare"
+    JUHE = "juhe"
+    SINA = "sina"
+    TUSHARE = "tushare"
     BAOSTOCK = "baostock"
 
 
@@ -51,8 +53,10 @@ class DataSourceManager:
 
         # 映射到枚举
         source_mapping = {
-            'tushare': ChinaDataSource.TUSHARE,
             'akshare': ChinaDataSource.AKSHARE,
+            'juhe': ChinaDataSource.JUHE,
+            'sina': ChinaDataSource.SINA,
+            'tushare': ChinaDataSource.TUSHARE,
             'baostock': ChinaDataSource.BAOSTOCK
         }
 
@@ -210,6 +214,22 @@ class DataSourceManager:
         except ImportError:
             logger.warning("⚠️ AKShare数据源不可用: 库未安装")
         
+        # 检查聚合数据
+        juhe_key = os.getenv('JUHE_API_KEY', '')
+        if juhe_key:
+            available.append(ChinaDataSource.JUHE)
+            logger.info("✅ 聚合数据源可用（免费版每天50次）")
+        else:
+            logger.warning("⚠️ 聚合数据源不可用: 未设置JUHE_API_KEY")
+        
+        # 检查新浪财经
+        try:
+            # 新浪财经不需要 API Key，直接可用
+            available.append(ChinaDataSource.SINA)
+            logger.info("✅ 新浪财经数据源可用（免费、无限制）")
+        except Exception as e:
+            logger.warning(f"⚠️ 新浪财经数据源不可用: {e}")
+        
         # 检查BaoStock
         try:
             import baostock as bs
@@ -304,11 +324,15 @@ class DataSourceManager:
 
         try:
             # 根据数据源调用相应的获取方法
-            if self.current_source == ChinaDataSource.TUSHARE:
+            if self.current_source == ChinaDataSource.AKSHARE:
+                result = self._get_akshare_data(symbol, start_date, end_date)
+            elif self.current_source == ChinaDataSource.JUHE:
+                result = self._get_juhe_data(symbol, start_date, end_date)
+            elif self.current_source == ChinaDataSource.SINA:
+                result = self._get_sina_data(symbol, start_date, end_date)
+            elif self.current_source == ChinaDataSource.TUSHARE:
                 logger.info(f"🔍 [股票代码追踪] 调用 Tushare 数据源，传入参数: symbol='{symbol}'")
                 result = self._get_tushare_data(symbol, start_date, end_date)
-            elif self.current_source == ChinaDataSource.AKSHARE:
-                result = self._get_akshare_data(symbol, start_date, end_date)
             elif self.current_source == ChinaDataSource.BAOSTOCK:
                 result = self._get_baostock_data(symbol, start_date, end_date)
             else:
@@ -496,6 +520,160 @@ class DataSourceManager:
             logger.error(f"❌ [AKShare] 调用失败: {e}, 耗时={duration:.2f}s", exc_info=True)
             return f"❌ AKShare获取{symbol}数据失败: {e}"
     
+    def _get_juhe_data(self, symbol: str, start_date: str = None, end_date: str = None) -> str:
+        """使用聚合数据获取股票实时行情（免费版每天50次）"""
+        logger.debug(f"📊 [聚合数据] 调用参数: symbol={symbol}")
+        
+        start_time = time.time()
+        try:
+            import httpx
+            
+            # 获取 API Key
+            api_key = os.getenv('JUHE_API_KEY', '')
+            if not api_key:
+                return "❌ 聚合数据 API Key 未配置"
+            
+            # 格式化股票代码（添加 sh/sz 前缀）
+            formatted_symbol = symbol.lower()
+            if not formatted_symbol.startswith(("sh", "sz")):
+                first_digit = formatted_symbol[0]
+                if first_digit in ['6', '9']:
+                    formatted_symbol = 'sh' + formatted_symbol
+                elif first_digit in ['0', '2', '3']:
+                    formatted_symbol = 'sz' + formatted_symbol
+            
+            # 调用聚合数据 API
+            url = "http://web.juhe.cn/finance/stock/hs"
+            params = {
+                "gid": formatted_symbol,
+                "key": api_key
+            }
+            
+            with httpx.Client(timeout=10.0) as client:
+                response = client.get(url, params=params)
+                
+            if response.status_code != 200:
+                return f"❌ 聚合数据 API 请求失败: HTTP {response.status_code}"
+            
+            data = response.json()
+            
+            # 检查错误
+            if data.get("error_code") and data["error_code"] != 0:
+                error_msg = data.get("reason", "未知错误")
+                logger.warning(f"⚠️ [聚合数据] API返回错误: {error_msg}")
+                return f"❌ 聚合数据错误: {error_msg}"
+            
+            # 提取数据
+            if data.get("result") and len(data["result"]) > 0:
+                stock_data = data["result"][0]
+                
+                # 格式化输出
+                result = f"📊 {stock_data.get('name', symbol)}({symbol}) - 聚合数据\n"
+                result += f"实时行情数据\n\n"
+                
+                result += f"💰 最新价格: ¥{stock_data.get('nowPri', 'N/A')}\n"
+                result += f"📈 涨跌幅: {stock_data.get('increase', 'N/A')}%\n"
+                result += f"📉 涨跌额: {stock_data.get('increPer', 'N/A')}\n"
+                result += f"🔺 今开: ¥{stock_data.get('todayStartPri', 'N/A')}\n"
+                result += f"🔺 昨收: ¥{stock_data.get('yestodEndPri', 'N/A')}\n"
+                result += f"🔼 最高: ¥{stock_data.get('todayMax', 'N/A')}\n"
+                result += f"🔽 最低: ¥{stock_data.get('todayMin', 'N/A')}\n"
+                result += f"📊 成交量: {stock_data.get('traAmount', 'N/A')}\n"
+                result += f"💵 成交额: {stock_data.get('traNumber', 'N/A')}\n"
+                
+                duration = time.time() - start_time
+                logger.info(f"✅ [聚合数据] 获取成功: 耗时={duration:.2f}s")
+                return result
+            else:
+                return f"❌ 未找到{symbol}的股票数据"
+        
+        except Exception as e:
+            duration = time.time() - start_time
+            logger.error(f"❌ [聚合数据] 调用失败: {e}, 耗时={duration:.2f}s", exc_info=True)
+            return f"❌ 聚合数据获取{symbol}数据失败: {e}"
+    
+    def _get_sina_data(self, symbol: str, start_date: str = None, end_date: str = None) -> str:
+        """使用新浪财经获取股票实时行情（免费、无限制）"""
+        logger.debug(f"📊 [新浪财经] 调用参数: symbol={symbol}")
+        
+        start_time = time.time()
+        try:
+            import httpx
+            import re
+            
+            # 格式化股票代码（新浪财经格式: sh600519 或 sz000001）
+            formatted_symbol = symbol.lower()
+            if not formatted_symbol.startswith(("sh", "sz")):
+                first_digit = formatted_symbol[0]
+                if first_digit in ['6', '9']:
+                    formatted_symbol = 'sh' + formatted_symbol
+                elif first_digit in ['0', '2', '3']:
+                    formatted_symbol = 'sz' + formatted_symbol
+            
+            # 新浪财经实时行情 API
+            url = f"http://hq.sinajs.cn/list={formatted_symbol}"
+            
+            with httpx.Client(timeout=10.0) as client:
+                response = client.get(url)
+            
+            if response.status_code != 200:
+                return f"❌ 新浪财经 API 请求失败: HTTP {response.status_code}"
+            
+            # 解析数据
+            content = response.text
+            if not content or '=""' in content:
+                return f"❌ 未找到{symbol}的股票数据"
+            
+            # 提取数据（格式: var hq_str_sh600519="..."）
+            match = re.search(r'"(.+?)"', content)
+            if not match:
+                return f"❌ 新浪财经数据格式错误"
+            
+            data_str = match.group(1)
+            data_parts = data_str.split(',')
+            
+            if len(data_parts) < 32:
+                return f"❌ 新浪财经数据不完整"
+            
+            # 解析字段
+            stock_name = data_parts[0]
+            open_price = float(data_parts[1]) if data_parts[1] else 0
+            yesterday_close = float(data_parts[2]) if data_parts[2] else 0
+            current_price = float(data_parts[3]) if data_parts[3] else 0
+            high_price = float(data_parts[4]) if data_parts[4] else 0
+            low_price = float(data_parts[5]) if data_parts[5] else 0
+            volume = float(data_parts[8]) if data_parts[8] else 0  # 成交量（股）
+            amount = float(data_parts[9]) if data_parts[9] else 0  # 成交额（元）
+            date = data_parts[30]
+            time = data_parts[31]
+            
+            # 计算涨跌
+            change = current_price - yesterday_close
+            change_pct = (change / yesterday_close * 100) if yesterday_close != 0 else 0
+            
+            # 格式化输出
+            result = f"📊 {stock_name}({symbol}) - 新浪财经\n"
+            result += f"实时行情数据 ({date} {time})\n\n"
+            
+            result += f"💰 最新价格: ¥{current_price:.2f}\n"
+            result += f"📈 涨跌幅: {change_pct:+.2f}%\n"
+            result += f"📉 涨跌额: ¥{change:+.2f}\n"
+            result += f"🔺 今开: ¥{open_price:.2f}\n"
+            result += f"🔺 昨收: ¥{yesterday_close:.2f}\n"
+            result += f"🔼 最高: ¥{high_price:.2f}\n"
+            result += f"🔽 最低: ¥{low_price:.2f}\n"
+            result += f"📊 成交量: {volume/100:.2f}万手\n"
+            result += f"💵 成交额: {amount/100000000:.2f}亿元\n"
+            
+            duration = time.time() - start_time
+            logger.info(f"✅ [新浪财经] 获取成功: 耗时={duration:.2f}s")
+            return result
+        
+        except Exception as e:
+            duration = time.time() - start_time
+            logger.error(f"❌ [新浪财经] 调用失败: {e}, 耗时={duration:.2f}s", exc_info=True)
+            return f"❌ 新浪财经获取{symbol}数据失败: {e}"
+    
     def _get_baostock_data(self, symbol: str, start_date: str, end_date: str) -> str:
         """使用BaoStock获取数据"""
         # 这里需要实现BaoStock的统一接口
@@ -545,9 +723,11 @@ class DataSourceManager:
         """尝试备用数据源 - 避免递归调用"""
         logger.error(f"🔄 {self.current_source.value}失败，尝试备用数据源...")
 
-        # 备用数据源优先级: AKShare > Tushare > BaoStock
+        # 备用数据源优先级: AKShare > 聚合数据 > 新浪财经 > Tushare > BaoStock
         fallback_order = [
             ChinaDataSource.AKSHARE,
+            ChinaDataSource.JUHE,
+            ChinaDataSource.SINA,
             ChinaDataSource.TUSHARE,
             ChinaDataSource.BAOSTOCK
         ]
@@ -558,10 +738,14 @@ class DataSourceManager:
                     logger.info(f"🔄 尝试备用数据源: {source.value}")
 
                     # 直接调用具体的数据源方法，避免递归
-                    if source == ChinaDataSource.TUSHARE:
-                        result = self._get_tushare_data(symbol, start_date, end_date)
-                    elif source == ChinaDataSource.AKSHARE:
+                    if source == ChinaDataSource.AKSHARE:
                         result = self._get_akshare_data(symbol, start_date, end_date)
+                    elif source == ChinaDataSource.JUHE:
+                        result = self._get_juhe_data(symbol, start_date, end_date)
+                    elif source == ChinaDataSource.SINA:
+                        result = self._get_sina_data(symbol, start_date, end_date)
+                    elif source == ChinaDataSource.TUSHARE:
+                        result = self._get_tushare_data(symbol, start_date, end_date)
                     elif source == ChinaDataSource.BAOSTOCK:
                         result = self._get_baostock_data(symbol, start_date, end_date)
                     else:
@@ -806,7 +990,7 @@ def get_china_stock_data_unified(symbol: str, start_date: str, end_date: str) ->
     Returns:
         str: 格式化的股票数据
     """
-    from backend.utils.logging_init import get_logger
+    from backend.utils.logging_config import get_logger
 
 
     # 添加详细的股票代码追踪日志

@@ -10,13 +10,13 @@ import pickle
 import hashlib
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
-from tradingagents.config.runtime_settings import get_timezone_name
+# from tradingagents.config.runtime_settings import get_int, get_float  # 已移除
 
 from typing import Optional, Dict, Any, List, Union
 import pandas as pd
 
 # 导入日志模块
-from backend.utils.logging_manager import get_logger
+from backend.utils.logging_config import get_logger
 logger = get_logger('agents')
 
 # MongoDB

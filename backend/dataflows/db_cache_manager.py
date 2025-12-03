@@ -13,7 +13,7 @@ from typing import Optional, Dict, Any, List, Union
 import pandas as pd
 
 # 导入日志模块
-from backend.utils.logging_manager import get_logger
+from backend.utils.logging_config import get_logger
 logger = get_logger('agents')
 
 # MongoDB

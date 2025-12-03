@@ -1,9 +1,20 @@
 import pandas as pd
-import yfinance as yf
-from stockstats import wrap
 from typing import Annotated
 import os
 from .config import get_config
+
+# 可选导入
+try:
+    import yfinance as yf
+    YFINANCE_AVAILABLE = True
+except ImportError:
+    YFINANCE_AVAILABLE = False
+
+try:
+    from stockstats import wrap
+    STOCKSTATS_AVAILABLE = True
+except ImportError:
+    STOCKSTATS_AVAILABLE = False
 
 
 class StockstatsUtils:

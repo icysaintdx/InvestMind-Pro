@@ -7,12 +7,12 @@ from .googlenews_utils import *
 from .finnhub_utils import get_data_in_range
 
 # 导入统一日志系统
-from backend.utils.logging_init import setup_dataflow_logging
+from backend.utils.logging_config import get_logger
 
 # 导入日志模块
-from backend.utils.logging_manager import get_logger
+from backend.utils.logging_config import get_logger
 logger = get_logger('agents')
-logger = setup_dataflow_logging()
+logger = get_logger("dataflow")
 
 # 导入港股工具
 try:

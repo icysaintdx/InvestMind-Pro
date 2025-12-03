@@ -1,5 +1,5 @@
 <template>
-  <div v-if="visible" class="modal-overlay" @click.self="close">
+  <div v-if="visible" class="modal-overlay" @click.self="close" @wheel.prevent>
     <div class="modal-container">
       <!-- 头部 -->
       <div class="modal-header">
@@ -7,23 +7,24 @@
         <button @click="close" class="close-btn">×</button>
       </div>
       
-      <!-- 内容 -->
-      <div class="modal-body">
-        <!-- 状态指示器 -->
-        <div class="status-section">
-          <h3 class="section-title">连接状态</h3>
-          <div class="status-grid">
-            <div v-for="(status, key) in apiStatus" :key="key" class="status-item">
-              <span class="status-dot" :class="getStatusClass(status)"></span>
-              <span class="provider-name">{{ getProviderLabel(key) }}</span>
-              <span class="status-text">{{ getStatusText(status) }}</span>
-            </div>
+      <!-- 状态指示器（固定不滚动） -->
+      <div class="status-section-fixed">
+        <h3 class="section-title">连接状态</h3>
+        <div class="status-grid">
+          <div v-for="(status, key) in apiStatus" :key="key" class="status-item">
+            <span class="status-dot" :class="getStatusClass(status)"></span>
+            <span class="provider-name">{{ getProviderLabel(key) }}</span>
+            <span class="status-text">{{ getStatusText(status) }}</span>
           </div>
         </div>
+      </div>
+      
+      <!-- 可滚动内容 -->
+      <div class="modal-body">
 
-        <!-- API密钥输入 -->
+        <!-- AI 模型 API配置 -->
         <div class="keys-section">
-          <h3 class="section-title">API密钥配置</h3>
+          <h3 class="section-title">AI 模型 API配置</h3>
           <div class="keys-grid">
             <div class="key-item">
               <label class="key-label">
@@ -80,7 +81,16 @@
               >
               <button @click="testApi('siliconflow')" class="test-btn">测试</button>
             </div>
+          </div>
+        </div>
 
+        <!-- 数据渠道配置 -->
+        <div class="keys-section">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="section-title mb-0">数据渠道配置</h3>
+            <span class="text-xs text-slate-500">ℹ️ 用于获取实时行情、新闻、财报等数据</span>
+          </div>
+          <div class="keys-grid">
             <div class="key-item">
               <label class="key-label">
                 <span class="provider-icon">📊</span>
@@ -89,23 +99,68 @@
               <input 
                 type="password" 
                 v-model="localKeys.juhe" 
-                placeholder="获取实时行情"
+                placeholder="A股实时行情数据"
                 class="key-input"
               >
               <button @click="testApi('juhe')" class="test-btn">测试</button>
             </div>
+
+            <div class="key-item">
+              <label class="key-label">
+                <span class="provider-icon">🌎</span>
+                FinnHub API Key
+                <span class="config-badge">已配置</span>
+              </label>
+              <input 
+                type="password" 
+                v-model="localKeys.finnhub" 
+                placeholder="国际金融数据（免费版每月60次请求）"
+                class="key-input"
+              >
+              <button @click="testApi('finnhub')" class="test-btn">测试</button>
+            </div>
+
+            <div class="key-item">
+              <label class="key-label">
+                <span class="provider-icon">📊</span>
+                Tushare Token
+                <span class="config-badge">已配置</span>
+              </label>
+              <input 
+                type="password" 
+                v-model="localKeys.tushare" 
+                placeholder="A股专业数据（需注册积分解锁）"
+                class="key-input"
+              >
+              <button @click="testApi('tushare')" class="test-btn">测试</button>
+            </div>
+
+            <div class="key-item">
+              <label class="key-label">
+                <span class="provider-icon">💹</span>
+                AKShare
+                <span class="config-badge success">免费</span>
+              </label>
+              <input 
+                type="text" 
+                value="开源金融数据库（无需配置，直接可用）"
+                class="key-input"
+                disabled
+              >
+              <button @click="testApi('akshare')" class="test-btn">测试</button>
+            </div>
           </div>
         </div>
-
-        <!-- 底部按钮 -->
-        <div class="modal-footer">
-          <button @click="saveConfig" class="save-btn primary">
-            💾 保存配置
-          </button>
-          <button @click="loadFromEnv" class="save-btn secondary">
-            📥 从环境变量加载
-          </button>
-        </div>
+      </div>
+      
+      <!-- 底部按钮（固定不滚动） -->
+      <div class="modal-footer">
+        <button @click="saveConfig" class="save-btn primary">
+          💾 保存配置
+        </button>
+        <button @click="loadFromEnv" class="save-btn secondary">
+          📥 从环境变量加载
+        </button>
       </div>
     </div>
   </div>
@@ -134,10 +189,22 @@ export default {
   setup(props, { emit }) {
     const localKeys = ref({ ...props.apiKeys })
     
-    // 监听props变化
+    // 监听prop变化
     watch(() => props.apiKeys, (newVal) => {
       localKeys.value = { ...newVal }
     }, { deep: true })
+
+    // 监听 visible 变化，当模态框打开时自动加载配置
+    watch(() => props.visible, (newVal) => {
+      if (newVal) {
+        loadFromEnv()
+        // 禁用主页面滚动
+        document.body.style.overflow = 'hidden'
+      } else {
+        // 恢复主页面滚动
+        document.body.style.overflow = ''
+      }
+    })
 
     const getProviderLabel = (key) => {
       const labels = {
@@ -145,7 +212,10 @@ export default {
         deepseek: 'DeepSeek',
         qwen: '通义千问',
         siliconflow: '硅基流动',
-        juhe: '聚合数据'
+        juhe: '聚合数据',
+        finnhub: 'FinnHub',
+        tushare: 'Tushare',
+        akshare: 'AKShare'
       }
       return labels[key] || key
     }
@@ -169,19 +239,44 @@ export default {
     }
 
     const testApi = async (provider) => {
+      // AKShare 不需要 API Key
+      if (provider !== 'akshare' && !localKeys.value[provider]) {
+        alert(`请先输入 ${getProviderLabel(provider)} 的 API Key`)
+        return
+      }
+
       emit('updateStatus', provider, 'testing')
       
       try {
-        // 模拟API测试
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        // 调用后端测试接口
+        const response = await fetch(`http://localhost:8000/api/test/${provider}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ api_key: localKeys.value[provider] })
+        })
         
-        if (localKeys.value[provider]) {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        }
+        
+        const result = await response.json()
+        
+        if (result.success) {
           emit('updateStatus', provider, 'configured')
+          // 显示详细的测试结果
+          let message = `✅ ${result.message}\n`
+          if (result.test_response) {
+            message += `\n响应示例:\n${result.test_response}`
+          }
+          alert(message)
         } else {
-          emit('updateStatus', provider, 'unconfigured')
+          emit('updateStatus', provider, 'error')
+          alert(`❌ ${getProviderLabel(provider)} 测试失败\n\n错误信息: ${result.error || '未知错误'}`)
         }
       } catch (error) {
         emit('updateStatus', provider, 'error')
+        console.error(`Test ${provider} error:`, error)
+        alert(`❌ ${getProviderLabel(provider)} 测试失败\n\n错误: ${error.message}\n\n请检查:\n1. 后端服务是否运行\n2. API Key 是否正确\n3. 网络连接是否正常`)
       }
     }
 
@@ -195,9 +290,25 @@ export default {
         const response = await fetch('http://localhost:8000/api/config')
         if (response.ok) {
           const data = await response.json()
+          console.log('ApiConfig 加载配置:', data)
+          
+          // 合并 api_keys
           if (data.api_keys) {
-            localKeys.value = { ...data.api_keys }
+            localKeys.value = { ...localKeys.value, ...data.api_keys }
           }
+          
+          // 检查环境变量格式的配置
+          if (data.FINNHUB_API_KEY) {
+            localKeys.value.finnhub = data.FINNHUB_API_KEY
+          }
+          if (data.TUSHARE_TOKEN) {
+            localKeys.value.tushare = data.TUSHARE_TOKEN
+          }
+          if (data.JUHE_API_KEY) {
+            localKeys.value.juhe = data.JUHE_API_KEY
+          }
+          
+          console.log('ApiConfig 加载后的 keys:', localKeys.value)
         }
       } catch (error) {
         console.error('加载配置失败:', error)
@@ -238,7 +349,6 @@ export default {
 .modal-container {
   background: #1e293b;
   border-radius: 1rem;
-  padding: 1.5rem;
   max-width: 56rem;
   width: 100%;
   max-height: 85vh;
@@ -253,8 +363,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
+  padding: 1.5rem 1.5rem 1rem;
   border-bottom: 1px solid #334155;
 }
 
@@ -283,6 +392,24 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 2rem;
+  padding: 0 1.5rem;
+}
+
+.modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 4px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
 }
 
 .section-title {
@@ -292,11 +419,13 @@ export default {
   margin-bottom: 1rem;
 }
 
-/* 状态部分 */
-.status-section {
+/* 固定状态区域 */
+.status-section-fixed {
   background: #0f172a;
   border-radius: 0.75rem;
   padding: 1.25rem;
+  margin: 0 1.5rem 1rem;
+  flex-shrink: 0;
 }
 
 .status-grid {
@@ -422,12 +551,30 @@ export default {
   background: #475569;
 }
 
+/* 配置徽章 */
+.config-badge {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  background: #334155;
+  color: #94a3b8;
+  font-size: 0.625rem;
+  border-radius: 0.25rem;
+  margin-left: 0.5rem;
+  font-weight: 500;
+}
+
+.config-badge.success {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
 /* 底部 */
 .modal-footer {
   display: flex;
   gap: 1rem;
-  padding-top: 1.5rem;
+  padding: 1.5rem;
   border-top: 1px solid #334155;
+  flex-shrink: 0;
 }
 
 .save-btn {

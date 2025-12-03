@@ -1,13 +1,13 @@
 from typing import Annotated, Sequence
 from datetime import date, timedelta, datetime
 from typing_extensions import TypedDict, Optional
-from langchain_openai import ChatOpenAI
+from backend.agents.utils.langchain_compat import ChatOpenAI
 from tradingagents.agents import *
-from langgraph.prebuilt import ToolNode
-from langgraph.graph import END, StateGraph, START, MessagesState
+from backend.agents.utils.langchain_compat import ToolNode
+from backend.agents.utils.langchain_compat import END, StateGraph, START, MessagesState
 
 # 导入统一日志系统
-from backend.utils.logging_init import get_logger
+from backend.utils.logging_config import get_logger
 logger = get_logger("default")
 
 

@@ -1,0 +1,26 @@
+Testing imports...
+
+ERROR: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.
+Traceback (most recent call last):
+  File "D:\AlphaCouncil\test_and_log.py", line 18, in <module>
+    from backend.api.news_api import router as news_router
+  File "D:\AlphaCouncil\backend\api\news_api.py", line 17, in <module>
+    from backend.agents.analysts.news_analyst import create_news_analyst
+  File "D:\AlphaCouncil\backend\agents\__init__.py", line 3, in <module>
+    from .utils.memory import FinancialSituationMemory
+  File "D:\AlphaCouncil\backend\agents\utils\memory.py", line 1, in <module>
+    import chromadb
+  File "F:\Python311\Lib\site-packages\chromadb\__init__.py", line 3, in <module>
+    from chromadb.api.client import Client as ClientCreator
+  File "F:\Python311\Lib\site-packages\chromadb\api\__init__.py", line 7, in <module>
+    from chromadb.api.models.Collection import Collection
+  File "F:\Python311\Lib\site-packages\chromadb\api\models\Collection.py", line 7, in <module>
+    import chromadb.utils.embedding_functions as ef
+  File "F:\Python311\Lib\site-packages\chromadb\utils\embedding_functions.py", line 7, in <module>
+    from chromadb.api.types import (
+  File "F:\Python311\Lib\site-packages\chromadb\api\types.py", line 102, in <module>
+    ImageDType = Union[np.uint, np.int_, np.float_]
+                                         ^^^^^^^^^
+  File "F:\Python311\Lib\site-packages\numpy\__init__.py", line 413, in __getattr__
+    raise AttributeError(
+AttributeError: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.

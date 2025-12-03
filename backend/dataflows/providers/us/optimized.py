@@ -29,9 +29,11 @@ except ImportError:
     def get_config():
         return {}
 
-from tradingagents.config.runtime_settings import get_float, get_timezone_name
+# 导入配置工具函数
+from backend.dataflows.config_utils import get_int, get_float
+
 # 导入日志模块
-from backend.utils.logging_manager import get_logger
+from backend.utils.logging_config import get_logger
 logger = get_logger('agents')
 
 

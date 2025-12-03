@@ -12,7 +12,7 @@ import os
 from backend.utils.dataflow_utils import save_output, SavePathType, decorate_all_methods
 
 # 导入日志模块
-from backend.utils.logging_manager import get_logger
+from backend.utils.logging_config import get_logger
 logger = get_logger('agents')
 
 # 导入缓存管理器（延迟导入，避免循环依赖）

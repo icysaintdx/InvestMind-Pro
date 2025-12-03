@@ -1,13 +1,25 @@
 import pandas as pd
-import yfinance as yf
-from stockstats import wrap
 from typing import Annotated
 import os
-from tradingagents.config.config_manager import config_manager
+
+# 可选导入
+try:
+    import yfinance as yf
+    YFINANCE_AVAILABLE = True
+except ImportError:
+    YFINANCE_AVAILABLE = False
+
+try:
+    from stockstats import wrap
+    STOCKSTATS_AVAILABLE = True
+except ImportError:
+    STOCKSTATS_AVAILABLE = False
+# from tradingagents.config.config_manager import config_manager  # 已移除
 
 def get_config():
     """兼容性包装函数"""
-    return config_manager.load_settings()
+    # 返回默认配置，避免依赖config_manager
+    return {"data_dir": os.path.join(os.path.dirname(__file__), "..", "data")}
 
 
 class StockstatsUtils:
@@ -29,6 +41,13 @@ class StockstatsUtils:
             "whether to use online tools to fetch data or offline tools. If True, will use online tools.",
         ] = False,
     ):
+        # 检查必要的库是否可用
+        if not STOCKSTATS_AVAILABLE:
+            raise ImportError("stockstats库未安装。请运行: pip install stockstats")
+        
+        if online and not YFINANCE_AVAILABLE:
+            raise ImportError("yfinance库未安装。请运行: pip install yfinance")
+            
         df = None
         data = None
 

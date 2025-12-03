@@ -9,11 +9,11 @@ from typing import Optional, Dict, Any, List, Union
 from datetime import datetime, timedelta, timezone
 
 # 导入日志模块
-from backend.utils.logging_manager import get_logger
+from backend.utils.logging_config import get_logger
 logger = get_logger('agents')
 
 # 导入配置
-from tradingagents.config.runtime_settings import use_app_cache_enabled
+# from tradingagents.config.runtime_settings import get_int, get_float  # 已移除
 
 class MongoDBCacheAdapter:
     """MongoDB 缓存适配器（从 app 的 MongoDB 读取同步数据）"""

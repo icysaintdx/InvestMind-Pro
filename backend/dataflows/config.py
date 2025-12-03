@@ -1,6 +1,23 @@
-import default_config as default_config
+"""
+数据流配置模块
+提供默认配置，不依赖外部模块
+"""
+
+import os
 from typing import Dict, Optional
-from tradingagents.config.config_manager import config_manager
+from pathlib import Path
+
+# 默认配置
+DEFAULT_CONFIG = {
+    "data_dir": os.path.join(os.path.dirname(__file__), "data"),
+    "cache_dir": os.path.join(os.path.dirname(__file__), "cache"),
+    "log_dir": os.path.join(os.path.dirname(__file__), "..", "..", "logs"),
+    "max_cache_days": 7,
+    "enable_cache": True,
+    "api_timeout": 30,
+    "retry_times": 3,
+    "retry_delay": 1,
+}
 
 # Use default config but allow it to be overridden
 _config: Optional[Dict] = None
@@ -11,32 +28,28 @@ def initialize_config():
     """Initialize the configuration with default values."""
     global _config, DATA_DIR
     if _config is None:
-        # 优先使用配置管理器的设置
-        settings = config_manager.load_settings()
-        _config = default_config.DEFAULT_CONFIG.copy()
-        
-        # 如果配置管理器中有数据目录设置，使用它
-        if settings.get("data_dir"):
-            _config["data_dir"] = settings["data_dir"]
-        
+        _config = DEFAULT_CONFIG.copy()
         DATA_DIR = _config["data_dir"]
         
         # 确保目录存在
-        config_manager.ensure_directories_exist()
+        for key in ["data_dir", "cache_dir", "log_dir"]:
+            dir_path = _config.get(key)
+            if dir_path:
+                Path(dir_path).mkdir(parents=True, exist_ok=True)
 
 
 def set_config(config: Dict):
     """Update the configuration with custom values."""
     global _config, DATA_DIR
     if _config is None:
-        _config = default_config.DEFAULT_CONFIG.copy()
+        _config = DEFAULT_CONFIG.copy()
     
     _config.update(config)
     DATA_DIR = _config["data_dir"]
     
-    # 如果设置了数据目录，同时更新配置管理器
+    # 确保新目录存在
     if "data_dir" in config:
-        config_manager.set_data_dir(config["data_dir"])
+        Path(config["data_dir"]).mkdir(parents=True, exist_ok=True)
 
 
 def get_config() -> Dict:
@@ -44,34 +57,19 @@ def get_config() -> Dict:
     if _config is None:
         initialize_config()
 
-    # 动态获取最新的数据目录配置
-    current_data_dir = config_manager.get_data_dir()
-    if _config["data_dir"] != current_data_dir:
-        _config["data_dir"] = current_data_dir
-        global DATA_DIR
-        DATA_DIR = current_data_dir
-
-    # 注意：数据库配置现在由 tradingagents.config.database_manager 管理
-    # 这里不再包含数据库配置，避免配置冲突
-    config_copy = _config.copy()
-
-    return config_copy
+    return _config.copy()
 
 
 def get_data_dir() -> str:
     """获取数据目录路径"""
-    return config_manager.get_data_dir()
+    if _config is None:
+        initialize_config()
+    return _config.get("data_dir", DEFAULT_CONFIG["data_dir"])
 
 
 def set_data_dir(data_dir: str):
     """设置数据目录路径"""
-    config_manager.set_data_dir(data_dir)
-    # 更新全局变量
-    global _config, DATA_DIR
-    if _config is None:
-        initialize_config()
-    _config["data_dir"] = data_dir
-    DATA_DIR = data_dir
+    set_config({"data_dir": data_dir})
 
 
 # Initialize with default config

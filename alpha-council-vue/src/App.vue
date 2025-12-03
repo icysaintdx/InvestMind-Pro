@@ -11,36 +11,57 @@
     
     <!-- 头部导航 -->
     <header class="navbar">
-      <div class="container mx-auto px-4 h-16 flex items-center justify-between">
-        <div class="flex items-center space-x-6">
+      <div class="container-full px-4 h-16 flex items-center justify-between">
+        <!-- 左侧：Logo -->
+        <div class="flex items-center">
           <h1 class="text-xl font-bold text-white">
             <span class="text-2xl mr-2">🏅</span>
             InvestMind Pro
           </h1>
+        </div>
+        
+        <!-- 中间：API状态指示器 -->
+        <div class="api-status-bar">
+          <!-- 后端连接状态 -->
+          <span 
+            :class="['backend-status', backendStatus]"
+            :title="backendStatusText"
+          >
+            <span class="status-icon">●</span>
+            <span class="status-text">{{ backendStatusText }}</span>
+          </span>
           
-          <!-- API状态指示器 -->
-          <div class="api-status-bar">
-            <span 
-              v-for="(status, key) in apiStatus" 
-              :key="key"
-              class="status-indicator"
-              :class="getStatusClass(status)"
-              :title="getProviderName(key)"
-            >
-              <span class="status-dot"></span>
-              <span class="status-name">{{ getProviderShort(key) }}</span>
-            </span>
-          </div>
-
-          <nav class="flex space-x-4">
-            <a href="#" class="text-white hover:text-gray-300">📊 分析中心</a>
-            <a href="#" class="text-white hover:text-gray-300">🤖 模型管理</a>
-            <a href="#" class="text-white hover:text-gray-300">⚙️ 设置</a>
-          </nav>
+          <span class="status-divider">|</span>
+          
+          <span class="status-label">API</span>
+          <span 
+            v-for="provider in ['gemini', 'deepseek', 'qwen', 'siliconflow']" 
+            :key="provider"
+            :class="['status-item', getStatusClass(apiStatus[provider])]"
+            :title="getProviderName(provider)"
+          >
+            <span class="status-dot"></span>
+            <span class="status-name">{{ getProviderShort(provider) }}</span>
+          </span>
+          <span class="status-divider">|</span>
+          <span class="status-label">数据</span>
+          <span 
+            v-for="channel in ['juhe', 'finnhub', 'tushare', 'akshare']" 
+            :key="channel"
+            :class="['status-item', getStatusClass(dataChannelStatus[channel])]"
+            :title="getDataChannelName(channel)"
+          >
+            <span class="status-dot"></span>
+            <span class="status-name">{{ getDataChannelShort(channel) }}</span>
+          </span>
         </div>
 
         <!-- 右侧控制按钮 -->
         <div class="nav-controls">
+          <button @click="showChangelog = true" class="nav-btn version-btn" :title="`版本 ${versionInfo.version} - ${versionInfo.codename}`">
+            <span class="btn-icon">📋</span>
+            <span class="btn-text">v{{ versionInfo.version }}</span>
+          </button>
           <button @click="toggleConfigMode" class="nav-btn" :class="{ active: configMode }">
             <span class="btn-icon">⚙️</span>
             <span class="btn-text">配置模式</span>
@@ -65,34 +86,94 @@
     <main class="pt-20 container mx-auto px-4 pb-8">
       <AnalysisView />
     </main>
+    
+    <!-- 更新日志模态框 -->
+    <div v-if="showChangelog" class="modal-overlay" @click.self="showChangelog = false">
+      <div class="changelog-modal">
+        <button @click="showChangelog = false" class="modal-close-btn">×</button>
+        <ChangelogView />
+      </div>
+    </div>
+
+    <!-- 数据透明化面板 -->
+    <StockDataPanel ref="stockDataPanel" :stockData="currentStockData" />
+    <NewsDataPanel ref="newsDataPanel" />
   </div>
 </template>
 
 <script>
-import { defineComponent, ref, provide, onMounted, onUnmounted } from 'vue'
+import { defineComponent, ref, computed, provide, onMounted, onUnmounted } from 'vue'
 import AnalysisView from './views/AnalysisView.vue'
+import ChangelogView from './views/ChangelogView.vue'
 import ParticleBackground from './components/ParticleBackground.vue'
+import StockDataPanel from './components/StockDataPanel.vue'
+import NewsDataPanel from './components/NewsDataPanel.vue'
 
 export default defineComponent({
   name: 'App',
   components: {
     AnalysisView,
-    ParticleBackground
+    ChangelogView,
+    ParticleBackground,
+    StockDataPanel,
+    NewsDataPanel
   },
   setup() {
     const configMode = ref(false)
     const showModelManager = ref(false)
     const showApiConfig = ref(false)
     const showStylePanel = ref(false)
+    const showChangelog = ref(false)
+    
+    const versionInfo = ref({
+      version: '1.2.0',
+      codename: '配置优化版',
+      releaseDate: '2025-12-04T00:10:00'
+    })
     
     const apiStatus = ref({
       gemini: 'unconfigured',
       deepseek: 'unconfigured',
       qwen: 'unconfigured',
-      siliconflow: 'unconfigured',
-      juhe: 'unconfigured'
+      siliconflow: 'unconfigured'
     })
 
+    const apiKeys = ref({
+      gemini: '',
+      deepseek: '',
+      qwen: '',
+      siliconflow: ''
+    })
+    
+    const dataChannelKeys = ref({
+      juhe: '',
+      finnhub: '',
+      tushare: ''
+    })
+
+    const dataChannelStatus = ref({
+      juhe: 'unconfigured',
+      finnhub: 'unconfigured',
+      tushare: 'unconfigured',
+      akshare: 'configured'
+    })
+
+    // 后端连接状态
+    const backendStatus = ref('checking') // checking, connected, disconnected, error
+    const backendStatusText = computed(() => {
+      switch (backendStatus.value) {
+        case 'connected': return '后端正常'
+        case 'disconnected': return '后端断开'
+        case 'error': return '后端错误'
+        default: return '检查中...'
+      }
+    })
+    
+    // 数据透明化
+    const currentStockData = ref(null)
+    const stockDataPanel = ref(null)
+    const newsDataPanel = ref(null)
+    
     // 粒子背景设置
     const particlesEnabled = ref(true)
     const particleCount = ref(80)
@@ -117,8 +198,7 @@ export default defineComponent({
         gemini: 'Gemini',
         deepseek: 'DeepSeek',
         qwen: '通义千问',
-        siliconflow: '硅基流动',
-        juhe: '聚合数据'
+        siliconflow: '硅基流动'
       }
       return names[key] || key
     }
@@ -128,12 +208,52 @@ export default defineComponent({
         gemini: 'GM',
         deepseek: 'DS',
         qwen: 'QW',
-        siliconflow: 'SF',
-        juhe: 'JH'
+        siliconflow: 'SF'
       }
       return shorts[key] || key.toUpperCase().slice(0, 2)
     }
 
+    const getDataChannelName = (key) => {
+      const names = {
+        juhe: '聚合数据',
+        finnhub: 'FinnHub',
+        tushare: 'Tushare',
+        akshare: 'AKShare'
+      }
+      return names[key] || key
+    }
+
+    const getDataChannelShort = (key) => {
+      const shorts = {
+        juhe: 'JH',
+        finnhub: 'FH',
+        tushare: 'TS',
+        akshare: 'AK'
+      }
+      return shorts[key] || key.toUpperCase().slice(0, 2)
+    }
+
+    // 后端健康检查
+    const checkBackendHealth = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/', { 
+          method: 'GET',
+          signal: AbortSignal.timeout(3000) // 3秒超时
+        })
+        if (response.ok) {
+          backendStatus.value = 'connected'
+          return true
+        } else {
+          backendStatus.value = 'error'
+          return false
+        }
+      } catch (error) {
+        console.error('后端健康检查失败:', error)
+        backendStatus.value = 'disconnected'
+        return false
+      }
+    }
+    
     // 加载后端配置
     const loadBackendConfig = async () => {
       try {
@@ -141,28 +261,65 @@ export default defineComponent({
         if (response.ok) {
           const data = await response.json()
           console.log('App加载后端配置:', data)
+          backendStatus.value = 'connected' // 更新后端状态
           
-          // 更新API状态 - 检查.env文件中的配置
-          const apiProviders = ['gemini', 'deepseek', 'qwen', 'siliconflow', 'juhe']
-          apiProviders.forEach(provider => {
-            // 检查环境变量配置
-            if (data[`${provider}_api_key`] || data.api_keys?.[provider]) {
-              apiStatus.value[provider] = 'configured'
-            }
-          })
+          // 更新 AI API Keys 和状态
+          if (data.api_keys) {
+            // 只更新 AI API
+            const aiProviders = ['gemini', 'deepseek', 'qwen', 'siliconflow']
+            aiProviders.forEach(provider => {
+              if (data.api_keys[provider]) {
+                apiKeys.value[provider] = data.api_keys[provider]
+                apiStatus.value[provider] = 'configured'
+              }
+            })
+            
+            // 更新数据渠道 Keys 和状态
+            const dataProviders = ['juhe', 'finnhub', 'tushare']
+            dataProviders.forEach(provider => {
+              if (data.api_keys[provider]) {
+                dataChannelKeys.value[provider] = data.api_keys[provider]
+                dataChannelStatus.value[provider] = 'configured'
+              }
+            })
+          }
           
-          // 检查其他可能的配置格式
-          if (data.GEMINI_API_KEY) apiStatus.value.gemini = 'configured'
-          if (data.DEEPSEEK_API_KEY) apiStatus.value.deepseek = 'configured'
-          if (data.DASHSCOPE_API_KEY) apiStatus.value.qwen = 'configured'
-          if (data.SILICONFLOW_API_KEY) apiStatus.value.siliconflow = 'configured'
-          if (data.JUHE_API_KEY) apiStatus.value.juhe = 'configured'
+          // 检查环境变量格式
+          if (data.GEMINI_API_KEY) {
+            apiKeys.value.gemini = data.GEMINI_API_KEY
+            apiStatus.value.gemini = 'configured'
+          }
+          if (data.DEEPSEEK_API_KEY) {
+            apiKeys.value.deepseek = data.DEEPSEEK_API_KEY
+            apiStatus.value.deepseek = 'configured'
+          }
+          if (data.DASHSCOPE_API_KEY) {
+            apiKeys.value.qwen = data.DASHSCOPE_API_KEY
+            apiStatus.value.qwen = 'configured'
+          }
+          if (data.SILICONFLOW_API_KEY) {
+            apiKeys.value.siliconflow = data.SILICONFLOW_API_KEY
+            apiStatus.value.siliconflow = 'configured'
+          }
+          if (data.JUHE_API_KEY) {
+            dataChannelKeys.value.juhe = data.JUHE_API_KEY
+            dataChannelStatus.value.juhe = 'configured'
+          }
+          if (data.FINNHUB_API_KEY) {
+            dataChannelKeys.value.finnhub = data.FINNHUB_API_KEY
+            dataChannelStatus.value.finnhub = 'configured'
+          }
+          if (data.TUSHARE_TOKEN) {
+            dataChannelKeys.value.tushare = data.TUSHARE_TOKEN
+            dataChannelStatus.value.tushare = 'configured'
+          }
         } else {
           console.error('后端响应错误:', response.status)
+          backendStatus.value = 'error'
         }
       } catch (error) {
         console.error('App加载配置失败:', error)
-        // 尝试测试连接
+        backendStatus.value = 'disconnected'
         testBackendConnection()
       }
     }
@@ -189,6 +346,14 @@ export default defineComponent({
     // 组件挂载时加载配置
     onMounted(() => {
       loadBackendConfig()
+      
+      // 定期检查后端健康状态（10秒一次）
+      const healthCheckInterval = setInterval(checkBackendHealth, 10000)
+      
+      // 组件卸载时清理定时器
+      onUnmounted(() => {
+        clearInterval(healthCheckInterval)
+      })
       
       // 从localStorage加载样式设置
       const savedStyles = localStorage.getItem('styleSettings')
@@ -217,19 +382,86 @@ export default defineComponent({
       window.removeEventListener('updateParticles', handleParticleUpdate)
     })
 
+    // 保存 API 配置
+    const saveApiConfig = async (keys) => {
+      try {
+        // 分离 AI API 和数据渠道
+        const aiKeys = {}
+        const dataKeys = {}
+        
+        Object.keys(keys).forEach(key => {
+          if (['gemini', 'deepseek', 'qwen', 'siliconflow'].includes(key)) {
+            aiKeys[key] = keys[key]
+          } else if (['juhe', 'finnhub', 'tushare'].includes(key)) {
+            dataKeys[key] = keys[key]
+          }
+        })
+        
+        // 更新本地状态
+        apiKeys.value = { ...apiKeys.value, ...aiKeys }
+        dataChannelKeys.value = { ...dataChannelKeys.value, ...dataKeys }
+        
+        // 保存到后端
+        const response = await fetch('http://localhost:8000/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ api_keys: keys })
+        })
+        
+        if (response.ok) {
+          console.log('API配置保存成功')
+          // 更新 AI API 状态
+          Object.keys(aiKeys).forEach(provider => {
+            apiStatus.value[provider] = aiKeys[provider] ? 'configured' : 'unconfigured'
+          })
+          // 更新数据渠道状态
+          Object.keys(dataKeys).forEach(provider => {
+            dataChannelStatus.value[provider] = dataKeys[provider] ? 'configured' : 'unconfigured'
+          })
+        } else {
+          console.error('保存配置失败:', response.status)
+        }
+      } catch (error) {
+        console.error('保存配置失败:', error)
+      }
+    }
+
+    // 更新 API 状态
+    const updateApiStatus = (provider, status) => {
+      apiStatus.value[provider] = status
+    }
+
     // 提供给子组件
     provide('configMode', configMode)
     provide('showModelManager', showModelManager)
     provide('showApiConfig', showApiConfig)
     provide('showStylePanel', showStylePanel)
     provide('apiStatus', apiStatus)
+    provide('apiKeys', apiKeys)
+    provide('dataChannelKeys', dataChannelKeys)
+    provide('dataChannelStatus', dataChannelStatus)
+    provide('saveApiConfig', saveApiConfig)
+    provide('updateApiStatus', updateApiStatus)
+    provide('currentStockData', currentStockData)
+    provide('stockDataPanel', stockDataPanel)
+    provide('newsDataPanel', newsDataPanel)
 
     return {
       configMode,
       showModelManager,
       showApiConfig,
       showStylePanel,
+      showChangelog,
+      versionInfo,
+      backendStatus,
+      backendStatusText,
       apiStatus,
+      apiKeys,
+      dataChannelKeys,
+      dataChannelStatus,
+      currentStockData,
+      stockDataPanel,
+      newsDataPanel,
       particlesEnabled,
       particleCount,
       particleSpeed,
@@ -238,7 +470,11 @@ export default defineComponent({
       toggleStylePanel,
       getStatusClass,
       getProviderName,
-      getProviderShort
+      getProviderShort,
+      getDataChannelName,
+      getDataChannelShort,
+      saveApiConfig,
+      updateApiStatus
     }
   }
 })
@@ -274,7 +510,16 @@ export default defineComponent({
 .bg-slate-900\/70 { background-color: rgba(15, 23, 42, 0.7); }
 .border-b { border-bottom-width: 1px; }
 .border-slate-700\/50 { border-color: rgba(51, 65, 85, 0.5); }
-.container { max-width: 1280px; margin: 0 auto; }
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.container-full {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+}
 .mx-auto { margin-left: auto; margin-right: auto; }
 .px-4 { padding-left: 1rem; padding-right: 1rem; }
 .flex { display: flex; }
@@ -315,14 +560,46 @@ export default defineComponent({
 /* API状态指示器 */
 .api-status-bar {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
   align-items: center;
-  padding: 0 1rem;
-  border-left: 1px solid #334155;
-  border-right: 1px solid #334155;
+  padding: 0.5rem 1rem;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid #334155;
+  border-radius: 0.5rem;
+}
+
+.status-group {
+  display: flex;
+  gap: 0.375rem;
+  align-items: center;
+}
+
+.group-label {
+  font-size: 0.625rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-right: 0.25rem;
+}
+
+.status-divider {
+  width: 1px;
+  height: 1.25rem;
+  background: #334155;
 }
 
 .status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+}
+
+.status-item {
   display: flex;
   align-items: center;
   gap: 0.25rem;
@@ -337,6 +614,7 @@ export default defineComponent({
   height: 0.5rem;
   border-radius: 50%;
   background: #64748b;
+  flex-shrink: 0;
 }
 
 .status-configured .status-dot {
@@ -352,6 +630,61 @@ export default defineComponent({
 .status-name {
   color: #94a3b8;
   font-weight: 500;
+}
+
+/* 后端连接状态 */
+.backend-status {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.backend-status .status-icon {
+  font-size: 0.625rem;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.backend-status.checking {
+  background: rgba(100, 116, 139, 0.2);
+  color: #94a3b8;
+}
+
+.backend-status.connected {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.backend-status.connected .status-icon {
+  animation: none;
+}
+
+.backend-status.disconnected {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.backend-status.disconnected .status-icon {
+  animation: blink 1s ease-in-out infinite;
+}
+
+.backend-status.error {
+  background: rgba(251, 146, 60, 0.15);
+  color: #fb923c;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes blink {
+  0%, 50%, 100% { opacity: 1; }
+  25%, 75% { opacity: 0.3; }
 }
 
 /* 导航栏控制按钮 */
@@ -385,6 +718,18 @@ export default defineComponent({
   background: rgba(59, 130, 246, 0.2);
   color: #60a5fa;
   border-color: #3b82f6;
+}
+
+.nav-btn.version-btn {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: #10b981;
+  color: #10b981;
+}
+
+.nav-btn.version-btn:hover {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: #10b981;
+  color: #10b981;
 }
 
 .btn-icon {
@@ -466,5 +811,53 @@ export default defineComponent({
 
 .text-transparent {
   color: transparent;
+}
+
+/* 更新日志模态框 */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.changelog-modal {
+  position: relative;
+  width: 100%;
+  max-width: 1400px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: transparent;
+}
+
+.modal-close-btn {
+  position: fixed;
+  top: 2rem;
+  right: 2rem;
+  width: 3rem;
+  height: 3rem;
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 101;
+  transition: all 0.2s;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.modal-close-btn:hover {
+  background: rgba(220, 38, 38, 1);
+  transform: scale(1.1);
 }
 </style>

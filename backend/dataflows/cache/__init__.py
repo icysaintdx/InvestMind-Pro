@@ -19,7 +19,7 @@ import os
 from typing import Union
 
 # 导入日志模块
-from backend.utils.logging_manager import get_logger
+from backend.utils.logging_config import get_logger
 logger = get_logger('agents')
 
 # 导入文件缓存

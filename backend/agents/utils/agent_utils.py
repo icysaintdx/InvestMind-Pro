@@ -1,26 +1,91 @@
-from langchain_core.messages import BaseMessage, HumanMessage, ToolMessage, AIMessage
-from typing import List
-from typing import Annotated
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.messages import RemoveMessage
-from langchain_core.tools import tool
+# 注释掉LangChain导入，使用简化版本
+# from backend.agents.utils.langchain_compat import BaseMessage, HumanMessage, ToolMessage, AIMessage
+# from backend.agents.utils.langchain_compat import ChatPromptTemplate, MessagesPlaceholder
+# from backend.agents.utils.langchain_compat import tool
+# from backend.agents.utils.langchain_compat import ChatOpenAI
+
+from typing import List, Dict, Any, Optional, Annotated
 from datetime import date, timedelta, datetime
 import functools
 import pandas as pd
 import os
 from dateutil.relativedelta import relativedelta
-from langchain_openai import ChatOpenAI
 import backend.dataflows.interface as interface
-from tradingagents.default_config import DEFAULT_CONFIG
-from langchain_core.messages import HumanMessage
 
 # 导入统一日志系统和工具日志装饰器
-from backend.utils.logging_init import get_logger
-from backend.utils.tool_logging import log_tool_call, log_analysis_step
+from backend.utils.logging_config import get_logger
+from backend.utils.tool_logging import log_tool_call
 
-# 导入日志模块
-from backend.utils.logging_manager import get_logger
+# 简化的消息类（替代LangChain的消息类）
+class BaseMessage:
+    """基础消息类"""
+    def __init__(self, content: str, **kwargs):
+        self.content = content
+        self.id = kwargs.get('id', None)
+        self.metadata = kwargs
+
+class HumanMessage(BaseMessage):
+    """用户消息"""
+    role = "user"
+    
+class AIMessage(BaseMessage):
+    """AI消息"""
+    role = "assistant"
+    
+class ToolMessage(BaseMessage):
+    """工具消息"""
+    role = "tool"
+
+class RemoveMessage:
+    """RemoveMessage的替代实现，用于兼容性"""
+    def __init__(self, id: str):
+        self.id = id
+
+# 创建默认配置（替代DEFAULT_CONFIG）
+DEFAULT_CONFIG = {
+    "model": "deepseek-chat",
+    "temperature": 0.3,
+    "max_tokens": 4000,
+    "api_key": os.getenv("DEEPSEEK_API_KEY", "")
+}
+
+# 获取logger实例
 logger = get_logger('agents')
+
+# 工具装饰器（简化版）
+def tool(func=None, *, name: Optional[str] = None, description: Optional[str] = None):
+    """工具装饰器，用于标记函数为工具"""
+    def decorator(f):
+        f.is_tool = True
+        f.tool_name = name or f.__name__
+        f.tool_description = description or f.__doc__
+        
+        @functools.wraps(f)
+        def wrapper(*args, **kwargs):
+            return f(*args, **kwargs)
+        
+        return wrapper
+    
+    if func is None:
+        return decorator
+    else:
+        return decorator(func)
+
+# 简化的Prompt模板
+class ChatPromptTemplate:
+    """聊天提示模板"""
+    def __init__(self, messages: List[Any]):
+        self.messages = messages
+    
+    @classmethod
+    def from_messages(cls, messages: List[Any]):
+        """从消息列表创建模板"""
+        return cls(messages)
+
+class MessagesPlaceholder:
+    """消息占位符"""
+    def __init__(self, variable_name: str):
+        self.variable_name = variable_name
 
 
 def create_msg_delete():
@@ -708,7 +773,7 @@ class Toolkit:
 
     @staticmethod
     @tool
-    @log_tool_call(tool_name="get_stock_fundamentals_unified", log_args=True)
+    @log_tool_call(tool_name="get_stock_fundamentals_unified")
     def get_stock_fundamentals_unified(
         ticker: Annotated[str, "股票代码（支持A股、港股、美股）"],
         start_date: Annotated[str, "开始日期，格式：YYYY-MM-DD"] = None,
@@ -894,7 +959,7 @@ class Toolkit:
 
     @staticmethod
     @tool
-    @log_tool_call(tool_name="get_stock_market_data_unified", log_args=True)
+    @log_tool_call(tool_name="get_stock_market_data_unified")
     def get_stock_market_data_unified(
         ticker: Annotated[str, "股票代码（支持A股、港股、美股）"],
         start_date: Annotated[str, "开始日期，格式：YYYY-MM-DD"],
@@ -984,7 +1049,7 @@ class Toolkit:
 
     @staticmethod
     @tool
-    @log_tool_call(tool_name="get_stock_news_unified", log_args=True)
+    @log_tool_call(tool_name="get_stock_news_unified")
     def get_stock_news_unified(
         ticker: Annotated[str, "股票代码（支持A股、港股、美股）"],
         curr_date: Annotated[str, "当前日期，格式：YYYY-MM-DD"]
@@ -1115,7 +1180,7 @@ class Toolkit:
 
     @staticmethod
     @tool
-    @log_tool_call(tool_name="get_stock_sentiment_unified", log_args=True)
+    @log_tool_call(tool_name="get_stock_sentiment_unified")
     def get_stock_sentiment_unified(
         ticker: Annotated[str, "股票代码（支持A股、港股、美股）"],
         curr_date: Annotated[str, "当前日期，格式：YYYY-MM-DD"]

@@ -1,6 +1,6 @@
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain.agents import create_react_agent, AgentExecutor
-from langchain import hub
+from backend.agents.utils.langchain_compat import ChatPromptTemplate, MessagesPlaceholder
+from backend.agents.utils.langchain_compat import create_react_agent, AgentExecutor
+from backend.agents.utils.langchain_compat import hub
 import time
 import json
 import traceback
@@ -9,7 +9,7 @@ import traceback
 from backend.utils.tool_logging import log_analyst_module
 
 # 导入统一日志系统
-from backend.utils.logging_init import get_logger
+from backend.utils.logging_config import get_logger
 logger = get_logger("default")
 
 # 导入Google工具调用处理器
@@ -105,7 +105,7 @@ def create_market_analyst_react(llm, toolkit):
                 logger.info(f"📈 [市场分析师] 使用ReAct Agent分析中国股票")
 
                 # 创建中国股票数据工具
-                from langchain_core.tools import BaseTool
+                from backend.agents.utils.langchain_compat import BaseTool
 
                 class ChinaStockDataTool(BaseTool):
                     name: str = "get_china_stock_data"
@@ -159,7 +159,7 @@ def create_market_analyst_react(llm, toolkit):
                 logger.info(f"📈 [市场分析师] 使用ReAct Agent分析美股/港股")
 
                 # 创建美股数据工具
-                from langchain_core.tools import BaseTool
+                from backend.agents.utils.langchain_compat import BaseTool
 
                 class USStockDataTool(BaseTool):
                     name: str = "get_us_stock_data"
@@ -423,7 +423,7 @@ def create_market_analyst(llm, toolkit):
 
                 try:
                     # 执行工具调用
-                    from langchain_core.messages import ToolMessage, HumanMessage
+                    from backend.agents.utils.langchain_compat import ToolMessage, HumanMessage
 
                     tool_messages = []
                     for tool_call in result.tool_calls:

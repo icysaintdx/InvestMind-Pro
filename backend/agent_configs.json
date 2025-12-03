@@ -59,6 +59,72 @@
       "modelName": "Qwen/Qwen3-8B",
       "modelProvider": "AUTO",
       "temperature": 0.3
+    },
+    {
+      "id": "news_analyst",
+      "modelName": "Qwen/Qwen3-8B",
+      "modelProvider": "AUTO",
+      "temperature": 0.3
+    },
+    {
+      "id": "social_analyst",
+      "modelName": "Qwen/Qwen3-8B",
+      "modelProvider": "AUTO",
+      "temperature": 0.3
+    },
+    {
+      "id": "china_market",
+      "modelName": "Qwen/Qwen3-8B",
+      "modelProvider": "AUTO",
+      "temperature": 0.3
+    },
+    {
+      "id": "bull_researcher",
+      "modelName": "Qwen/Qwen3-8B",
+      "modelProvider": "AUTO",
+      "temperature": 0.3
+    },
+    {
+      "id": "bear_researcher",
+      "modelName": "Qwen/Qwen3-8B",
+      "modelProvider": "AUTO",
+      "temperature": 0.3
+    },
+    {
+      "id": "research_manager",
+      "modelName": "Qwen/Qwen3-8B",
+      "modelProvider": "AUTO",
+      "temperature": 0.3
+    },
+    {
+      "id": "risk_aggressive",
+      "modelName": "Qwen/Qwen3-8B",
+      "modelProvider": "AUTO",
+      "temperature": 0.3
+    },
+    {
+      "id": "risk_conservative",
+      "modelName": "Qwen/Qwen3-8B",
+      "modelProvider": "AUTO",
+      "temperature": 0.3
+    },
+    {
+      "id": "risk_neutral",
+      "modelName": "Qwen/Qwen3-8B",
+      "modelProvider": "AUTO",
+      "temperature": 0.3
+    },
+    {
+      "id": "risk_manager",
+      "modelName": "Qwen/Qwen3-8B",
+      "modelProvider": "AUTO",
+      "temperature": 0.3
+    },
+    {
+      "id": "trader",
+      "modelName": "Qwen/Qwen3-8B",
+      "modelProvider": "AUTO",
+      "temperature": 0.3
     }
   ],
   "selectedModels": [

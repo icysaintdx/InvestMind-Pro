@@ -15,11 +15,11 @@ from tradingagents.default_config import DEFAULT_CONFIG
 from langchain_core.messages import HumanMessage
 
 # 导入统一日志系统和工具日志装饰器
-from backend.utils.logging_init import get_logger
-from backend.utils.tool_logging import log_tool_call, log_analysis_step
+from backend.utils.logging_config import get_logger
+from backend.utils.tool_logging import log_tool_call
 
 # 导入日志模块
-from backend.utils.logging_manager import get_logger
+from backend.utils.logging_config import get_logger
 logger = get_logger('agents')
 
 
@@ -691,7 +691,7 @@ class Toolkit:
 
     @staticmethod
     @tool
-    @log_tool_call(tool_name="get_stock_fundamentals_unified", log_args=True)
+    @log_tool_call(tool_name="get_stock_fundamentals_unified")
     def get_stock_fundamentals_unified(
         ticker: Annotated[str, "股票代码（支持A股、港股、美股）"],
         start_date: Annotated[str, "开始日期，格式：YYYY-MM-DD"] = None,
@@ -1040,7 +1040,7 @@ class Toolkit:
 
     @staticmethod
     @tool
-    @log_tool_call(tool_name="get_stock_market_data_unified", log_args=True)
+    @log_tool_call(tool_name="get_stock_market_data_unified")
     def get_stock_market_data_unified(
         ticker: Annotated[str, "股票代码（支持A股、港股、美股）"],
         start_date: Annotated[str, "开始日期，格式：YYYY-MM-DD。注意：系统会自动扩展到配置的回溯天数（通常为365天），你只需要传递分析日期即可"],
@@ -1152,7 +1152,7 @@ class Toolkit:
 
     @staticmethod
     @tool
-    @log_tool_call(tool_name="get_stock_news_unified", log_args=True)
+    @log_tool_call(tool_name="get_stock_news_unified")
     def get_stock_news_unified(
         ticker: Annotated[str, "股票代码（支持A股、港股、美股）"],
         curr_date: Annotated[str, "当前日期，格式：YYYY-MM-DD"]
@@ -1286,7 +1286,7 @@ class Toolkit:
 
     @staticmethod
     @tool
-    @log_tool_call(tool_name="get_stock_sentiment_unified", log_args=True)
+    @log_tool_call(tool_name="get_stock_sentiment_unified")
     def get_stock_sentiment_unified(
         ticker: Annotated[str, "股票代码（支持A股、港股、美股）"],
         curr_date: Annotated[str, "当前日期，格式：YYYY-MM-DD"]

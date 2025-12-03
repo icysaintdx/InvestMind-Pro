@@ -1,4 +1,4 @@
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from backend.agents.utils.langchain_compat import ChatPromptTemplate, MessagesPlaceholder
 import time
 import json
 

@@ -12,7 +12,7 @@ from typing import Any, Dict, Optional, Union
 import pandas as pd
 
 # 导入统一日志系统
-from backend.utils.logging_init import setup_dataflow_logging
+from backend.utils.logging_config import get_logger
 
 # 导入原有缓存系统
 from .cache_manager import StockDataCache
@@ -29,7 +29,7 @@ class IntegratedCacheManager:
     """集成缓存管理器 - 智能选择缓存策略"""
     
     def __init__(self, cache_dir: str = None):
-        self.logger = setup_dataflow_logging()
+        self.logger = get_logger("dataflow")
         
         # 初始化原有缓存系统（作为备用）
         self.legacy_cache = StockDataCache(cache_dir)

@@ -6,6 +6,7 @@
 
 import time
 import functools
+import asyncio
 from datetime import datetime
 from typing import Any, Callable
 from backend.utils.logging_config import get_logger
@@ -364,3 +365,6 @@ if __name__ == "__main__":
     asyncio.run(run_api_test())
     
     print("测试完成！")
+
+# 创建别名以保持向后兼容性
+log_analysis_step = log_analyst_module

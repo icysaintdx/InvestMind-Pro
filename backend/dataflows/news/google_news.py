@@ -13,9 +13,11 @@ from tenacity import (
     retry_if_result,
 )
 
-from tradingagents.config.runtime_settings import get_float
+# 导入配置工具函数
+from backend.dataflows.config_utils import get_int, get_float
+
 # 导入日志模块
-from backend.utils.logging_manager import get_logger
+from backend.utils.logging_config import get_logger
 logger = get_logger('agents')
 
 SLEEP_MIN = get_float("TA_GOOGLE_NEWS_SLEEP_MIN_SECONDS", "ta_google_news_sleep_min_seconds", 2.0)

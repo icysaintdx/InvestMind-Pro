@@ -1,4 +1,4 @@
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from backend.agents.utils.langchain_compat import ChatPromptTemplate, MessagesPlaceholder
 import time
 import json
 from datetime import datetime
@@ -334,7 +334,7 @@ def create_news_analyst(llm, toolkit):
 
         # 🔧 修复死循环问题：返回清洁的AIMessage，不包含tool_calls
         # 这确保工作流图能正确判断分析已完成，避免重复调用
-        from langchain_core.messages import AIMessage
+        from backend.agents.utils.langchain_compat import AIMessage
         clean_message = AIMessage(content=report)
         
         logger.info(f"[新闻分析师] ✅ 返回清洁消息，报告长度: {len(report)} 字符")
