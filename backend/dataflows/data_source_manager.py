@@ -10,6 +10,18 @@ from typing import Dict, List, Optional, Any
 from enum import Enum
 import warnings
 import pandas as pd
+from pathlib import Path
+
+# 加载环境变量
+try:
+    from dotenv import load_dotenv
+    # 查找 .env 文件
+    env_path = Path(__file__).parent.parent.parent / '.env'
+    if env_path.exists():
+        load_dotenv(env_path)
+        print(f"[数据源管理器] 已加载环境变量: {env_path}")
+except ImportError:
+    print("[数据源管理器] 警告: python-dotenv 未安装，无法加载 .env 文件")
 
 # 导入日志模块
 from backend.utils.logging_config import get_logger
@@ -471,7 +483,7 @@ class DataSourceManager:
         start_time = time.time()
         try:
             # 这里需要实现AKShare的统一接口
-            from .akshare_utils import get_akshare_provider
+            from backend.dataflows.stock.akshare_utils import get_akshare_provider
             provider = get_akshare_provider()
             data = provider.get_stock_data(symbol, start_date, end_date)
 
@@ -565,26 +577,71 @@ class DataSourceManager:
             
             # 提取数据
             if data.get("result") and len(data["result"]) > 0:
-                stock_data = data["result"][0]
+                result_data = data["result"][0]
+                
+                # 根据文档，数据在 'data' 字段中
+                if 'data' in result_data:
+                    stock_data = result_data['data']
+                else:
+                    stock_data = result_data
+                
+                # 调试：输出股票数据字段
+                logger.info(f"[聚合数据] 股票数据字段: {list(stock_data.keys())}")
+                
+                # 根据文档的实际字段名
+                field_map = {
+                    'nowPri': ['nowPri'],  # 当前价格
+                    'increPer': ['increPer'],  # 涨跌百分比
+                    'increase': ['increase'],  # 涨跌额
+                    'todayStartPri': ['todayStartPri'],  # 今日开盘价
+                    'yestodEndPri': ['yestodEndPri'],  # 昨日收盘价
+                    'todayMax': ['todayMax'],  # 今日最高价
+                    'todayMin': ['todayMin'],  # 今日最低价
+                    'traNumber': ['traNumber'],  # 成交量
+                    'traAmount': ['traAmount']  # 成交金额
+                }
+                
+                def get_field_value(data, field_names):
+                    """尝试多个字段名获取值"""
+                    for name in field_names:
+                        if name in data and data[name] not in [None, '', 'N/A']:
+                            return data[name]
+                    return 'N/A'
+                
+                # 获取各个字段
+                name = stock_data.get('name', symbol)
+                now_pri = get_field_value(stock_data, field_map['nowPri'])
+                incre_per = get_field_value(stock_data, field_map['increPer'])  # 涨跌百分比
+                increase = get_field_value(stock_data, field_map['increase'])  # 涨跌额
+                today_start = get_field_value(stock_data, field_map['todayStartPri'])
+                yestod_end = get_field_value(stock_data, field_map['yestodEndPri'])
+                today_max = get_field_value(stock_data, field_map['todayMax'])
+                today_min = get_field_value(stock_data, field_map['todayMin'])
+                tra_number = get_field_value(stock_data, field_map['traNumber'])  # 成交量
+                tra_amount = get_field_value(stock_data, field_map['traAmount'])  # 成交金额
+                
+                # 调试输出
+                logger.info(f"[聚合数据] 解析结果: 现价={now_pri}, 涨跌幅={incre_per}%, 涨跌额={increase}")
                 
                 # 格式化输出
-                result = f"📊 {stock_data.get('name', symbol)}({symbol}) - 聚合数据\n"
+                result = f"📊 {name}({symbol}) - 聚合数据\n"
                 result += f"实时行情数据\n\n"
                 
-                result += f"💰 最新价格: ¥{stock_data.get('nowPri', 'N/A')}\n"
-                result += f"📈 涨跌幅: {stock_data.get('increase', 'N/A')}%\n"
-                result += f"📉 涨跌额: {stock_data.get('increPer', 'N/A')}\n"
-                result += f"🔺 今开: ¥{stock_data.get('todayStartPri', 'N/A')}\n"
-                result += f"🔺 昨收: ¥{stock_data.get('yestodEndPri', 'N/A')}\n"
-                result += f"🔼 最高: ¥{stock_data.get('todayMax', 'N/A')}\n"
-                result += f"🔽 最低: ¥{stock_data.get('todayMin', 'N/A')}\n"
-                result += f"📊 成交量: {stock_data.get('traAmount', 'N/A')}\n"
-                result += f"💵 成交额: {stock_data.get('traNumber', 'N/A')}\n"
+                result += f"💰 最新价格: ¥{now_pri}\n"
+                result += f"📈 涨跌幅: {incre_per}%\n"
+                result += f"📉 涨跌额: {increase}\n"
+                result += f"🔺 今开: ¥{today_start}\n"
+                result += f"🔺 昨收: ¥{yestod_end}\n"
+                result += f"🔼 最高: ¥{today_max}\n"
+                result += f"🔽 最低: ¥{today_min}\n"
+                result += f"📊 成交量: {tra_number}\n"
+                result += f"💵 成交额: {tra_amount}\n"
                 
                 duration = time.time() - start_time
                 logger.info(f"✅ [聚合数据] 获取成功: 耗时={duration:.2f}s")
                 return result
             else:
+                logger.warning(f"[聚合数据] API返回空结果: {data}")
                 return f"❌ 未找到{symbol}的股票数据"
         
         except Exception as e:
@@ -613,7 +670,17 @@ class DataSourceManager:
             # 新浪财经实时行情 API
             url = f"http://hq.sinajs.cn/list={formatted_symbol}"
             
-            with httpx.Client(timeout=10.0) as client:
+            # 添加更完整的请求头以避免403
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Referer': 'http://finance.sina.com.cn',
+                'Accept': '*/*',
+                'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+                'Accept-Encoding': 'gzip, deflate',
+                'Connection': 'keep-alive'
+            }
+            
+            with httpx.Client(timeout=10.0, headers=headers, follow_redirects=True) as client:
                 response = client.get(url)
             
             if response.status_code != 200:
@@ -645,7 +712,7 @@ class DataSourceManager:
             volume = float(data_parts[8]) if data_parts[8] else 0  # 成交量（股）
             amount = float(data_parts[9]) if data_parts[9] else 0  # 成交额（元）
             date = data_parts[30]
-            time = data_parts[31]
+            time_str = data_parts[31]  # 重命名以避免与time模块冲突
             
             # 计算涨跌
             change = current_price - yesterday_close
@@ -653,7 +720,7 @@ class DataSourceManager:
             
             # 格式化输出
             result = f"📊 {stock_name}({symbol}) - 新浪财经\n"
-            result += f"实时行情数据 ({date} {time})\n\n"
+            result += f"实时行情数据 ({date} {time_str})\n\n"
             
             result += f"💰 最新价格: ¥{current_price:.2f}\n"
             result += f"📈 涨跌幅: {change_pct:+.2f}%\n"

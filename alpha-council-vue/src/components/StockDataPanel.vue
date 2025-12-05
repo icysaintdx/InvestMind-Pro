@@ -81,7 +81,7 @@
             <div class="data-row">
               <span class="data-label">涨跌幅:</span>
               <span :class="['data-value', getChangeClass(currentData.change)]">
-                {{ currentData.change }}
+                {{ formatChange(currentData.change) }}
               </span>
             </div>
             <div class="data-row">
@@ -172,8 +172,20 @@ export default {
     }
 
     const getChangeClass = (change) => {
-      if (!change) return ''
-      return change.startsWith('+') ? 'positive' : 'negative'
+      if (!change && change !== 0) return ''
+      // 确保change是字符串类型
+      const changeStr = String(change)
+      // 判断是正数还是负数
+      const changeNum = parseFloat(changeStr)
+      return changeNum >= 0 ? 'positive' : 'negative'
+    }
+
+    const formatChange = (change) => {
+      if (!change && change !== 0) return '0.00%'
+      // 确保是数字
+      const changeNum = parseFloat(change)
+      // 格式化为带符号的百分比
+      return (changeNum >= 0 ? '+' : '') + changeNum.toFixed(2) + '%'
     }
 
     // 监听股票数据变化
@@ -197,7 +209,8 @@ export default {
       clearLogs,
       getStatusText,
       getLogIcon,
-      getChangeClass
+      getChangeClass,
+      formatChange
     }
   }
 }

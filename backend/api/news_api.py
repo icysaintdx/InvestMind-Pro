@@ -327,3 +327,90 @@ async def test_news_api():
         "message": "News API is working",
         "timestamp": datetime.now().isoformat()
     }
+
+
+# 实时新闻API端点
+class RealtimeNewsRequest(BaseModel):
+    """实时新闻请求模型"""
+    ticker: str = Field(..., description="股票代码")
+    curr_date: Optional[str] = Field(None, description="当前日期 (YYYY-MM-DD)")
+    hours_back: int = Field(6, description="回溯小时数", ge=1, le=24)
+
+
+class RealtimeNewsResponse(BaseModel):
+    """实时新闻响应模型"""
+    success: bool
+    ticker: str
+    date: str
+    report: str = Field(..., description="格式化的新闻报告")
+    source: str = Field(..., description="数据源")
+    news_count: int = Field(0, description="新闻数量")
+    fetch_time: float = Field(0.0, description="获取耗时(秒)")
+
+
+@router.post("/realtime", response_model=RealtimeNewsResponse)
+@log_api_call(api_name="get_realtime_news")
+async def get_realtime_news_api(request: RealtimeNewsRequest):
+    """
+    获取实时新闻数据
+    
+    这个接口调用后端的实时新闻获取功能，
+    优先使用东方财富（AKShare）数据源。
+    
+    Args:
+        request: 实时新闻请求参数
+        
+    Returns:
+        实时新闻响应，包含格式化的 Markdown 报告
+    """
+    import time
+    start_time = time.time()
+    
+    try:
+        # 设置默认日期
+        curr_date = request.curr_date or datetime.now().strftime('%Y-%m-%d')
+        
+        logger.info(f"开始获取 {request.ticker} 的实时新闻，日期: {curr_date}")
+        
+        # 调用后端实时新闻获取功能
+        from backend.dataflows.realtime_news_utils import get_realtime_stock_news
+        
+        news_report = get_realtime_stock_news(
+            ticker=request.ticker,
+            curr_date=curr_date,
+            hours_back=request.hours_back
+        )
+        
+        # 计算耗时
+        fetch_time = time.time() - start_time
+        
+        # 统计新闻数量（简单统计，通过标题数量）
+        news_count = news_report.count('###') if news_report else 0
+        
+        logger.info(f"✅ 成功获取 {request.ticker} 的新闻，耗时: {fetch_time:.2f}秒")
+        
+        return RealtimeNewsResponse(
+            success=True,
+            ticker=request.ticker,
+            date=curr_date,
+            report=news_report,
+            source="东方财富 (AKShare)",
+            news_count=news_count,
+            fetch_time=round(fetch_time, 2)
+        )
+        
+    except Exception as e:
+        logger.error(f"❌ 获取实时新闻失败: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        # 返回错误响应
+        return RealtimeNewsResponse(
+            success=False,
+            ticker=request.ticker,
+            date=request.curr_date or datetime.now().strftime('%Y-%m-%d'),
+            report=f"新闻获取失败: {str(e)}",
+            source="错误",
+            news_count=0,
+            fetch_time=0.0
+        )

@@ -108,6 +108,7 @@ import ChangelogView from './views/ChangelogView.vue'
 import ParticleBackground from './components/ParticleBackground.vue'
 import StockDataPanel from './components/StockDataPanel.vue'
 import NewsDataPanel from './components/NewsDataPanel.vue'
+import { getVersionInfo } from './data/changelog.js'
 
 export default defineComponent({
   name: 'App',
@@ -125,11 +126,7 @@ export default defineComponent({
     const showStylePanel = ref(false)
     const showChangelog = ref(false)
     
-    const versionInfo = ref({
-      version: '1.2.0',
-      codename: '配置优化版',
-      releaseDate: '2025-12-04T00:10:00'
-    })
+    const versionInfo = ref(getVersionInfo())
     
     const apiStatus = ref({
       gemini: 'unconfigured',
@@ -238,7 +235,7 @@ export default defineComponent({
       try {
         const response = await fetch('http://localhost:8000/', { 
           method: 'GET',
-          signal: AbortSignal.timeout(3000) // 3秒超时
+          signal: AbortSignal.timeout(10000) // 10秒超时，给AI请求留出时间
         })
         if (response.ok) {
           backendStatus.value = 'connected'
@@ -248,8 +245,10 @@ export default defineComponent({
           return false
         }
       } catch (error) {
-        console.error('后端健康检查失败:', error)
-        backendStatus.value = 'disconnected'
+        // 不要因为单次超时就认为后端断开
+        // 只有连续多次失败才认为断开
+        console.warn('后端健康检查超时，可能是正在处理AI请求')
+        // 不修改状态，保持当前状态
         return false
       }
     }
@@ -269,8 +268,13 @@ export default defineComponent({
             const aiProviders = ['gemini', 'deepseek', 'qwen', 'siliconflow']
             aiProviders.forEach(provider => {
               if (data.api_keys[provider]) {
-                apiKeys.value[provider] = data.api_keys[provider]
+                // 只显示部分API Key用于安全
+                apiKeys.value[provider] = data.api_keys[provider].substring(0, 20) + '...'
                 apiStatus.value[provider] = 'configured'
+                console.log(`[App] ✅ ${provider} API已配置`)
+              } else {
+                apiStatus.value[provider] = 'not_configured'
+                console.log(`[App] ⚠️ ${provider} API未配置`)
               }
             })
             
@@ -278,8 +282,12 @@ export default defineComponent({
             const dataProviders = ['juhe', 'finnhub', 'tushare']
             dataProviders.forEach(provider => {
               if (data.api_keys[provider]) {
-                dataChannelKeys.value[provider] = data.api_keys[provider]
+                dataChannelKeys.value[provider] = data.api_keys[provider].substring(0, 20) + '...'
                 dataChannelStatus.value[provider] = 'configured'
+                console.log(`[App] ✅ ${provider} 数据源已配置`)
+              } else {
+                dataChannelStatus.value[provider] = 'not_configured'
+                console.log(`[App] ⚠️ ${provider} 数据源未配置`)
               }
             })
           }
@@ -556,6 +564,18 @@ export default defineComponent({
 .whitespace-nowrap { white-space: nowrap; }
 .font-mono { font-family: 'Consolas', monospace; }
 .leading-relaxed { line-height: 1.625; }
+
+/* 导航栏固定 */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+}
 
 /* API状态指示器 */
 .api-status-bar {

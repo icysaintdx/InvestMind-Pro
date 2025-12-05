@@ -91,11 +91,21 @@
     <div v-if="dataSources && dataSources.length > 0" class="sources-container">
       <div class="sources-header">
         <span class="text-xs font-semibold text-emerald-400">📊 参考数据</span>
-        <span class="text-xs text-slate-500">{{ dataSources.length }}个来源</span>
+        <span class="text-xs text-slate-500">
+          {{ dataSources.length }}个来源 | 
+          <span v-if="totalDataCount" class="text-emerald-400 font-semibold">{{ totalDataCount }}条数据</span>
+        </span>
+        <!-- 折叠按钮 -->
+        <button v-if="dataSources.length > 4" @click="toggleSourcesExpand" class="expand-btn">
+          <span v-if="sourcesExpanded">▲</span>
+          <span v-else>▼</span>
+        </button>
       </div>
       <div class="sources-list">
-        <div v-for="(source, index) in dataSources" :key="index" class="source-tag" :title="source.title">
-          {{ source.source }}: {{ source.title.substring(0, 10) }}...
+        <div v-for="(source, index) in displayedSources" :key="index" class="source-tag" :title="getSourceTooltip(source)">
+          <span class="source-name">{{ source.source }}</span>
+          <span v-if="source.description" class="source-desc">({{ source.description }})</span>
+          <span v-else-if="source.count" class="source-count">({{ source.count }}条数据)</span>
         </div>
       </div>
     </div>
@@ -193,6 +203,7 @@ export default {
       selectedModel: this.agent.modelName || 'deepseek-chat',
       temperature: this.agent.temperature || 0.3,
       modelOptions: [], // 将从后端加载
+      sourcesExpanded: false, // 数据源是否展开
       descriptions: {
         'news_analyst': '基于NLP技术实时监控全网24小时内的财经新闻与公告，提取关键事件对股价的潜在影响。',
         'social_analyst': '利用情感分析模型扫描雪球、股吧等社区讨论，量化散户恐慌与贪婪指数，捕捉市场情绪拐点。',
@@ -218,7 +229,36 @@ export default {
       }
     }
   },
+  computed: {
+    totalDataCount() {
+      // 计算总数据数量
+      if (!this.dataSources || this.dataSources.length === 0) return 0
+      return this.dataSources.reduce((total, source) => {
+        return total + (source.count || 0)
+      }, 0)
+    },
+    displayedSources() {
+      // 显示的数据源（折叠/展开）
+      if (!this.dataSources || this.dataSources.length === 0) return []
+      if (this.dataSources.length <= 4) return this.dataSources
+      return this.sourcesExpanded ? this.dataSources : this.dataSources.slice(0, 4)
+    }
+  },
   methods: {
+    getSourceTooltip(source) {
+      // 生成数据源的完整提示信息
+      if (source.count) {
+        return `${source.source}: ${source.count}条数据`
+      }
+      if (source.title) {
+        return `${source.source}: ${source.title}`
+      }
+      return source.source
+    },
+    toggleSourcesExpand() {
+      // 切换数据源展开/折叠
+      this.sourcesExpanded = !this.sourcesExpanded
+    },
     async loadSelectedModels() {
       try {
         // 从后端加载配置（包含selectedModels和agent配置）
@@ -562,6 +602,23 @@ export default {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.25rem;
+  gap: 0.5rem;
+}
+
+.expand-btn {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10b981;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  transition: all 0.2s;
+}
+
+.expand-btn:hover {
+  background: rgba(16, 185, 129, 0.2);
+  transform: scale(1.1);
 }
 
 .sources-list {
@@ -583,6 +640,23 @@ export default {
 
 .source-tag:hover {
   background: rgba(16, 185, 129, 0.2);
+}
+
+.source-name {
+  font-weight: 600;
+  color: #10b981;
+}
+
+.source-desc {
+  color: #94a3b8;
+  font-size: 0.6rem;
+  margin-left: 0.25rem;
+}
+
+.source-count {
+  color: #6ee7b7;
+  font-size: 0.6rem;
+  margin-left: 0.25rem;
 }
 
 .config-item {

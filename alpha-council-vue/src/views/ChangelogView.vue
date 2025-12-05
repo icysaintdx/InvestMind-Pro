@@ -3,7 +3,7 @@
     <div class="page-header">
       <div class="header-content">
         <h1 class="page-title">
-          <span class="title-icon">📋</span>
+          <span class="title-icon">🚀</span>
           更新日志
         </h1>
         <div class="version-badge">
@@ -12,11 +12,10 @@
           <span class="badge-codename">{{ codename }}</span>
         </div>
       </div>
-      <p class="page-subtitle">记录 InvestMind Pro 的每一次进化</p>
+      <p class="page-subtitle">追踪 InvestMind Pro 的每一步进化</p>
     </div>
-
+    
     <div class="changelog-container">
-      <!-- 版本列表 -->
       <div v-for="version in versions" :key="version.version" class="version-block">
         <div class="version-header">
           <div class="version-info">
@@ -25,7 +24,7 @@
             <span class="version-date">{{ formatDate(version.date) }}</span>
           </div>
           <div v-if="version.version === currentVersion" class="current-badge">
-            <span>当前版本</span>
+            当前版本
           </div>
         </div>
 
@@ -53,18 +52,20 @@
         </div>
 
         <!-- Bug 修复 -->
-        <div v-if="version.bugfixes && version.bugfixes.length" class="section">
+        <div v-if="version.bugs && version.bugs.length" class="section">
           <h3 class="section-title">
             <span class="section-icon">🐛</span>
-            Bug 修复
+            问题修复
           </h3>
-          <div v-for="(bug, idx) in version.bugfixes" :key="idx" class="item">
+          <div v-for="(bug, idx) in version.bugs" :key="idx" class="item">
             <div class="item-header">
-              <span class="item-icon">{{ bug.icon }}</span>
+              <span class="item-icon">{{ bug.icon || '🔧' }}</span>
               <h4 class="item-title">{{ bug.title }}</h4>
             </div>
-            <p class="item-description"><strong>问题:</strong> {{ bug.problem }}</p>
-            <p class="item-description"><strong>修复:</strong> {{ bug.fix }}</p>
+            <p v-if="bug.description" class="item-description">{{ bug.description }}</p>
+            <ul v-if="bug.details" class="item-details">
+              <li v-for="(detail, dIdx) in bug.details" :key="dIdx">{{ detail }}</li>
+            </ul>
             <div v-if="bug.files" class="item-files">
               <span class="files-label">相关文件:</span>
               <code v-for="(file, fIdx) in bug.files" :key="fIdx" class="file-tag">{{ file }}</code>
@@ -80,8 +81,8 @@
           </h3>
           <ul class="docs-list">
             <li v-for="(doc, idx) in version.docs" :key="idx">
-              <a :href="doc.link" target="_blank" class="doc-link">
-                {{ doc.name }}
+              <a :href="doc.link" class="doc-link">
+                {{ doc.name || doc.title }}
                 <span v-if="doc.star" class="star-badge">⭐</span>
               </a>
             </li>
@@ -93,129 +94,16 @@
 </template>
 
 <script>
+// 导入统一的更新日志数据
+import { CURRENT_VERSION, CURRENT_CODENAME, getAllVersions } from '../data/changelog.js'
+
 export default {
   name: 'ChangelogView',
   data() {
     return {
-      currentVersion: '1.2.0',
-      codename: '配置优化版',
-      versions: [
-        {
-          version: '1.2.0',
-          codename: '配置优化版',
-          date: '2025-12-04T00:10:00',
-          features: [
-            {
-              icon: '🔑',
-              title: 'API 配置系统全面优化',
-              star: true,
-              description: '重构 API 配置模态框，支持自动加载、真实测试和数据渠道管理。',
-              details: [
-                '自动加载: 打开模态框自动从后端加载配置，无需手动点击',
-                '真实测试: 测试按钮调用真实 API，返回详细响应示例',
-                '滚动优化: 状态栏和按钮固定，配置项可滚动，主页面滚动禁用',
-                '数据渠道: 支持聚合数据、FinnHub、Tushare、AKShare 等数据源配置'
-              ],
-              files: ['ApiConfig.vue', 'App.vue', 'server.py']
-            },
-            {
-              icon: '📊',
-              title: '顶部状态栏扩展',
-              star: true,
-              description: '扩展顶部状态栏，分组显示 AI API 和数据渠道状态。',
-              details: [
-                '分组显示: API 和数据分组，使用分隔符区分',
-                '实时状态: 显示各个服务的连接状态（已配置/未配置/错误）',
-                '悬停提示: 鼠标悬停显示完整名称'
-              ],
-              files: ['App.vue']
-            },
-            {
-              icon: 'ℹ️',
-              title: 'Agent 说明优化',
-              description: 'Agent 卡片的信息图标使用原生浏览器 tooltip。',
-              details: [
-                '简单可靠: 使用 HTML title 属性，无需复杂实现',
-                '悬停显示: 鼠标悬停即显示，移开自动消失',
-                '详细说明: 包含每个 Agent 的工作原理和专业范畴'
-              ],
-              files: ['AgentCard.vue']
-            }
-          ],
-          bugfixes: [
-            {
-              icon: '🔧',
-              title: 'API 配置加载修复',
-              problem: '打开配置模态框时不显示已保存的配置',
-              fix: '后端返回实际的 API Keys，前端正确加载和显示',
-              files: ['server.py', 'ApiConfig.vue']
-            },
-            {
-              icon: '📜',
-              title: '模态框滚动体验修复',
-              problem: '滚动配置项时，底部按钮也会滚动消失；主页面也会滚动',
-              fix: '状态栏和按钮固定，打开模态框时禁用主页面滚动',
-              files: ['ApiConfig.vue']
-            },
-            {
-              icon: '🔑',
-              title: '数据渠道配置支持',
-              problem: 'FinnHub 和 Tushare 配置不显示，测试按钮无效',
-              fix: '添加 finnhub 和 tushare 到 API_KEYS，支持环境变量读取',
-              files: ['server.py']
-            }
-          ],
-          docs: [
-            { name: 'API配置与状态栏优化完成报告.md', link: '#', star: true },
-            { name: 'UI优化完成报告.md', link: '#', star: true },
-            { name: 'UI问题修复报告.md', link: '#', star: true }
-          ]
-        },
-        {
-          version: '1.1.0',
-          codename: '智能拟真版',
-          date: '2025-12-03T23:00:00',
-          features: [
-            {
-              icon: '🤖',
-              title: '全流程拟真分析系统',
-              star: true,
-              description: '重构了投资分析的全流程，引入了21个专业分工的智能体。',
-              details: [
-                '流水线协同: 实现 Step 1.1 (情报) -> Step 1.2 (中观) -> Step 1.3 (深度) 的层级依赖执行',
-                '动态指令: 后端支持接收前端注入的 custom_instruction',
-                '智能回退: 当后端数据源不可用时，自动切换至高保真模拟数据',
-                '去模板化: 强制智能体不复述基础行情，直接输出专业结论'
-              ],
-              files: ['AnalysisView.vue', 'server.py']
-            },
-            {
-              icon: '🧠',
-              title: '可视化思维链 (CoT)',
-              star: true,
-              description: '为不同角色的智能体定制了专属的思考步骤展示。',
-              details: [
-                '新闻分析师显示"爬取公告"',
-                '技术分析师显示"计算MACD"',
-                '增强专业感'
-              ],
-              files: ['AgentCard.vue']
-            }
-          ],
-          bugfixes: [
-            {
-              icon: '🔌',
-              title: '数据源连接修复',
-              problem: '后端 API 连接不稳定导致分析中断',
-              fix: '增加了数据验证层和模拟数据兜底机制',
-              files: ['server.py']
-            }
-          ],
-          docs: [
-            { name: '前端重构完成报告.md', link: '#', star: true }
-          ]
-        }
-      ]
+      currentVersion: CURRENT_VERSION,
+      codename: CURRENT_CODENAME,
+      versions: getAllVersions()
     }
   },
   methods: {
@@ -432,27 +320,27 @@ export default {
   content: '▸';
   position: absolute;
   left: 0;
-  color: #3b82f6;
+  color: #60a5fa;
 }
 
 .item-files {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
-  margin-top: 0.75rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
 }
 
 .files-label {
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   color: #64748b;
   font-weight: 500;
 }
 
 .file-tag {
   padding: 0.25rem 0.5rem;
-  background: rgba(100, 116, 139, 0.2);
-  color: #94a3b8;
+  background: rgba(59, 130, 246, 0.1);
+  color: #60a5fa;
   border-radius: 0.25rem;
   font-size: 0.75rem;
   font-family: 'Consolas', monospace;
@@ -474,11 +362,11 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  transition: color 0.2s;
+  transition: all 0.2s;
 }
 
 .doc-link:hover {
   color: #93c5fd;
-  text-decoration: underline;
+  transform: translateX(4px);
 }
 </style>

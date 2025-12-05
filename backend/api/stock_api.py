@@ -23,8 +23,7 @@ if dataflows_path not in sys.path:
 from backend.utils.logging_config import get_logger
 
 try:
-    from stock_data_service import get_stock_data_service
-
+    from backend.dataflows.stock_data_adapter import StockDataAdapter
     SERVICE_AVAILABLE = True
 except ImportError as e:
     logger.warning(f"⚠️ 股票数据服务不可用: {e}")

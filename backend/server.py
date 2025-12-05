@@ -13,11 +13,12 @@ import json
 import asyncio
 from typing import Optional, Dict, Any, List
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
+from datetime import datetime, date
 import httpx
 from dotenv import load_dotenv
 import uvicorn
@@ -38,6 +39,7 @@ from backend.api.debate_api import router as debate_router
 from backend.api.trading_api import router as trading_router
 from backend.api.verification_api import router as verification_router
 from backend.api.agents_api import router as agents_router
+from backend.api.unified_news_api_endpoint import router as unified_news_router
 
 # ==================== 配置 ====================
 
@@ -161,6 +163,7 @@ app.include_router(debate_router)
 app.include_router(trading_router)
 app.include_router(verification_router)
 app.include_router(agents_router)
+app.include_router(unified_news_router)  # 统一新闻API
 
 # 配置 CORS
 app.add_middleware(
@@ -427,7 +430,7 @@ async def siliconflow_api(request: SiliconFlowRequest):
                     API_ENDPOINTS["siliconflow"],
                     headers=headers,
                     json=data,
-                    timeout=httpx.Timeout(180.0, connect=60.0)  # 3分钟超时，60秒连接超时
+                    timeout=httpx.Timeout(300.0, connect=60.0)  # 5分钟超时，60秒连接超时
                 )
                 break  # 成功则跳出循环
             except httpx.ReadTimeout:
@@ -793,37 +796,29 @@ def get_agent_role(agent_id):
 # ==================== 股票数据 API ====================
 
 @app.post("/api/stock/{symbol}")
-async def stock_data(symbol: str, request: StockRequest):
-    """股票数据 API - 使用数据源管理器的自动降级功能"""
+@app.get("/api/stock/{symbol}")
+async def stock_data(symbol: str, request: Optional[StockRequest] = None):
+    """股票数据API - 优化版AKShare优先"""
     try:
-        from backend.dataflows.data_source_manager import DataSourceManager
-        from backend.dataflows.stock_data_adapter import StockDataAdapter
+        # 使用优化后的适配器
+        from backend.dataflows.stock_data_adapter_optimized import StockDataAdapter
         
-        # 使用数据源管理器获取数据
-        manager = DataSourceManager()
+        print(f"[Stock API] 开始获取{symbol}的数据...")
+        print(f"[Stock API] 使用优化的AKShare接口")
         
-        # 获取实时行情数据（不需要历史数据）
-        result_text = manager.get_stock_data(symbol)
+        # 使用适配器获取数据
+        adapter = StockDataAdapter()
+        # 调用异步方法
+        result = await adapter.get_stock_data_async(symbol)
         
-        # 检查是否成功
-        if "❌" in result_text or "错误" in result_text:
-            print(f"[Stock] 数据获取失败: {result_text[:200]}")
-            return {"success": False, "error": result_text}
+        print(f"[Stock API] 成功使用数据源: {result.get('data_source')}")
+        print(f"[Stock API] 结果: {result.get('name')} 价格=¥{result.get('price')} 涨跌幅={result.get('change')}%")
         
-        # 使用适配器解析数据（统一格式）
-        stock_info = StockDataAdapter.parse_text_data(result_text, symbol)
-        
-        # 验证数据有效性
-        if not StockDataAdapter.validate_data(stock_info):
-            print(f"[Stock] 数据验证失败: {stock_info}")
-            return {"success": False, "error": "数据格式错误或缺少关键信息"}
-        
-        print(f"[Stock] 成功获取{symbol}数据: {stock_info['name']} {stock_info['price']} {stock_info['change']} (数据源: {stock_info['data_source']})")
-        return stock_info
+        return result
     
     except Exception as e:
         import traceback
-        print(f"[Stock] 错误: {str(e)}")
+        print(f"[Stock API] ❌ 错误: {str(e)}")
         print(traceback.format_exc())
         return {"success": False, "error": str(e)}
 

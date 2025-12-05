@@ -21,6 +21,16 @@ from backend.utils.logging_config import get_logger
 logger = get_logger('agents')
 
 
+def get_timezone_name() -> str:
+    """
+    获取当前时区名称
+    默认返回 UTC，可以根据需要修改为其他时区
+    """
+    # 中国大陆使用 Asia/Shanghai
+    # 美国使用 America/New_York 或 America/Los_Angeles
+    # UTC 使用 'UTC'
+    return 'Asia/Shanghai'  # 默认使用中国时区
+
 
 @dataclass
 class NewsItem:
@@ -582,9 +592,10 @@ class RealtimeNewsAggregator:
             # 简单的标题去重
             title_key = item.title.lower().strip()
 
-            # 检查标题长度
-            if len(title_key) <= 10:
-                logger.debug(f"[新闻去重] 跳过标题过短的新闻: '{item.title}'，来源: {item.source}")
+            # 检查标题长度（临时禁用，确保新闻能通过）
+            # 如果标题完全为空才跳过
+            if not title_key or len(title_key) == 0:
+                logger.debug(f"[新闻去重] 跳过空标题新闻，来源: {item.source}")
                 short_title_count += 1
                 continue
 
