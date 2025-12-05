@@ -283,6 +283,19 @@ class UnifiedNewsAPI:
                 sentiment = self.sentiment_analyzer.analyze_news_sentiment(all_news)
                 result['summary']['sentiment'] = sentiment
                 logger.info(f"✅ 情绪分析完成: {sentiment.get('sentiment_label')}")
+                
+                # 智能过滤：优先显示非中性新闻，但不少于30篇
+                filtered_news = self._filter_news_by_sentiment(all_news)
+                result['summary']['filtered_news'] = filtered_news
+                result['summary']['filter_info'] = {
+                    'total_count': len(all_news),
+                    'filtered_count': len(filtered_news['news']),
+                    'positive_count': filtered_news['positive_count'],
+                    'negative_count': filtered_news['negative_count'],
+                    'neutral_count': filtered_news['neutral_count'],
+                    'filter_strategy': filtered_news['strategy']
+                }
+                logger.info(f"✅ 新闻过滤完成: {len(all_news)}条 -> {len(filtered_news['news'])}条 ({filtered_news['strategy']})")
             else:
                 result['summary']['sentiment'] = {
                     'sentiment_score': 0.0,
@@ -310,6 +323,81 @@ class UnifiedNewsAPI:
         logger.info(f"✅ 综合新闻数据获取完成: {success_count}/{total_count} 个数据源成功")
         
         return result
+    
+    def _filter_news_by_sentiment(self, news_list: List[Dict]) -> Dict:
+        """
+        智能过滤新闻：优先显示非中性新闻，但不少于30篇
+        
+        规则：
+        1. 如果非中性新闻 >= 30篇，只显示非中性
+        2. 如果非中性新闻 < 30篇，显示所有非中性 + 部分中性，总数达到30篇
+        3. 如果总数 < 30篇，显示全部
+        
+        Args:
+            news_list: 新闻列表
+            
+        Returns:
+            过滤后的新闻和统计信息
+        """
+        if not news_list:
+            return {
+                'news': [],
+                'positive_count': 0,
+                'negative_count': 0,
+                'neutral_count': 0,
+                'strategy': '无数据'
+            }
+        
+        # 分类新闻
+        positive_news = []
+        negative_news = []
+        neutral_news = []
+        
+        for news in news_list:
+            title = news.get('title', '')
+            content = news.get('content', '')
+            text = f"{title} {content}"
+            
+            # 分析情绪
+            score = self.sentiment_analyzer.analyze_text_sentiment(text)
+            news['sentiment_score'] = score
+            
+            if score > 0.2:
+                positive_news.append(news)
+            elif score < -0.2:
+                negative_news.append(news)
+            else:
+                neutral_news.append(news)
+        
+        non_neutral_count = len(positive_news) + len(negative_news)
+        total_count = len(news_list)
+        min_count = 30
+        
+        # 决策逻辑
+        if non_neutral_count >= min_count:
+            # 情况1：非中性新闻足够，只显示非中性
+            filtered = positive_news + negative_news
+            strategy = f'只显示非中性新闻 ({non_neutral_count}篇)'
+        elif total_count <= min_count:
+            # 情况2：总数不足，显示全部
+            filtered = news_list
+            strategy = f'总数不足，显示全部 ({total_count}篇)'
+        else:
+            # 情况3：非中性不足，补充中性新闻
+            need_neutral = min_count - non_neutral_count
+            filtered = positive_news + negative_news + neutral_news[:need_neutral]
+            strategy = f'非中性{non_neutral_count}篇 + 中性{need_neutral}篇 = {len(filtered)}篇'
+        
+        # 按时间排序（最新的在前）
+        filtered.sort(key=lambda x: x.get('publish_time', ''), reverse=True)
+        
+        return {
+            'news': filtered,
+            'positive_count': len(positive_news),
+            'negative_count': len(negative_news),
+            'neutral_count': len(neutral_news),
+            'strategy': strategy
+        }
     
     def get_market_news(self) -> Dict[str, Any]:
         """

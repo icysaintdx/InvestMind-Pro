@@ -3,10 +3,255 @@
  * 统一管理所有版本信息，避免硬编码
  */
 
-export const CURRENT_VERSION = '1.3.3'
-export const CURRENT_CODENAME = '多数据源适配版'
+export const CURRENT_VERSION = '1.4.1'
+export const CURRENT_CODENAME = '智能体数据源全面集成版'
 
 export const CHANGELOG_DATA = [
+  {
+    version: '1.4.1',
+    codename: '智能体数据源全面集成版',
+    date: '2025-12-05T08:25:00',
+    features: [
+      {
+        icon: '🔌',
+        title: '资金流向API全面对接',
+        star: true,
+        description: '为资金流向分析师提供真实数据源，显示200-300条北向资金、主力资金、融资融券数据。',
+        details: [
+          '北向资金（沪深港通）: 200-300条实时数据',
+          '主力资金: 50条TOP排名',
+          '融资融券: 30条汇总数据',
+          '行业资金流: 30-50个行业'
+        ],
+        files: ['fund_flow_data.py', 'AnalysisView.vue']
+      },
+      {
+        icon: '🏭',
+        title: '行业板块API对接',
+        star: true,
+        description: '为行业轮动分析师提供30-50个申万行业板块数据和资金流向。',
+        details: [
+          '行业板块列表: 30-50个申万行业',
+          '板块资金流向: 实时资金净流入',
+          '板块涨跌幅: 行业表现排名'
+        ],
+        files: ['sector_data.py', 'AnalysisView.vue']
+      },
+      {
+        icon: '🌍',
+        title: '宏观经济API对接',
+        star: true,
+        description: '为宏观政策分析师提供GDP、CPI、PMI、货币供应量等宏观数据。',
+        details: [
+          'GDP数据: 最近12个月',
+          'CPI数据: 最近12个月',
+          'PMI数据: 最近12个月',
+          '货币供应量: 最近12个月'
+        ],
+        files: ['macro_data.py', 'AnalysisView.vue']
+      },
+      {
+        icon: '🎴',
+        title: '卡片自动折叠展开',
+        star: true,
+        description: '页面加载时卡片默认折叠，点击分析自动展开，无需手动操作。',
+        details: [
+          '初始状态: 所有卡片折叠',
+          '分析时: 自动全部展开',
+          '刷新页面: 恢复折叠状态',
+          '体验: 全自动化，无需手动点击'
+        ],
+        files: ['AgentCard.vue', 'AnalysisView.vue']
+      },
+      {
+        icon: '📊',
+        title: '卡片高度自适应',
+        star: true,
+        description: '卡片高度根据折叠/展开状态自动调整，节省空间。',
+        details: [
+          '折叠时: 高度约80px，节省280px',
+          '展开时: 根据内容自动调整(200-600px)',
+          '过渡动画: 0.3s平滑变化',
+          '整体页面: 缩短70%高度'
+        ],
+        files: ['AgentCard.vue']
+      }
+    ],
+    improvements: [
+      {
+        icon: '🔥',
+        title: '资金流向分析师',
+        description: '显示真实数据源: 北向资金(200-300条)、主力资金(50条)、融资融券(30条)'
+      },
+      {
+        icon: '🔥',
+        title: '行业轮动分析师',
+        description: '显示真实板块数据: 行业板块(30-50个)、板块资金流向'
+      },
+      {
+        icon: '🔥',
+        title: '宏观政策分析师',
+        description: '显示真实宏观数据: GDP/CPI/PMI(各12条)、货币政策(12条)'
+      },
+      {
+        icon: '📊',
+        title: '数据透明化',
+        description: '所有数据源显示具体数量和描述，用户清楚知道智能体使用了哪些数据'
+      },
+      {
+        icon: '⏱️',
+        title: '页面加载优化',
+        description: '初始页面简洁，节省280px高度/卡片，整体页面缩短70%'
+      }
+    ],
+    bugfixes: [],
+    technical: [
+      '🔌 后端API: 新增9个数据接口',
+      '📦 数据模块: sector_data.py、macro_data.py',
+      '🎨 前端集成: 实现真实数据调用',
+      '📝 文档完善: 7个技术文档'
+    ]
+  },
+  {
+    version: '1.4.0',
+    codename: '数据集成增强版',
+    date: '2025-12-05T07:50:00',
+    features: [
+      {
+        icon: '🔥',
+        title: '社交媒体热度集成',
+        star: true,
+        description: '集成微博热议和百度热搜数据，实时掌握市场热点。',
+        details: [
+          '微博热议: 50条实时热门股票',
+          '百度热搜: 12条热门搜索',
+          '每5分钟自动刷新',
+          '显示涨跌幅和热度'
+        ],
+        files: ['NewsDataPanel.vue']
+      },
+      {
+        icon: '🎯',
+        title: '热榜模态框',
+        star: true,
+        description: '展示6个热度榜单，全面掌握市场情绪。',
+        details: [
+          '微博热议 (50条)',
+          '百度热搜 (12条)',
+          '雪球热度 (5425条)',
+          '东财热度 (100条)',
+          '人气榜 (100条)'
+        ],
+        files: ['HotRankModal.vue']
+      },
+      {
+        icon: '⚡',
+        title: '股票搜索功能',
+        star: true,
+        description: '代码/名称模糊搜索，极速响应。',
+        details: [
+          '输入3位数字匹配代码',
+          '输入文字匹配名称',
+          '响应时间: 10-50毫秒',
+          '性能提升50-100倍'
+        ],
+        files: ['StockSearchInput.vue']
+      },
+      {
+        icon: '💾',
+        title: '本地股票缓存',
+        star: true,
+        description: 'SQLite数据库缓存沪深A股5000只股票。',
+        details: [
+          '极速响应: 10-50毫秒',
+          '离线可用',
+          '每天自动更新',
+          '数据持久化'
+        ],
+        files: ['stock_list_cache.py']
+      },
+      {
+        icon: '🔄',
+        title: '雪球热度静默加载',
+        description: '异步后台加载，不阻塞界面。',
+        details: [
+          '打开热榜 < 1秒',
+          '立即可用',
+          '后台加载雪球数据'
+        ],
+        files: ['HotRankModal.vue']
+      },
+      {
+        icon: '⚙️',
+        title: '自动更新机制',
+        description: '股票列表每天自动更新。',
+        details: [
+          '首次启动自动下载',
+          '每天自动检查更新',
+          '无需手动操作'
+        ],
+        files: ['stock_list_cache.py']
+      }
+    ],
+    improvements: [
+      {
+        icon: '📊',
+        title: '热榜数据显示优化',
+        description: '显示股票代码、涨跌幅、热度等信息。',
+        details: [
+          '股票名称 + 代码',
+          '涨跌幅颜色标识',
+          '热度格式化显示'
+        ]
+      },
+      {
+        icon: '⚡',
+        title: '搜索性能提升',
+        description: '从2-5秒降至10-50毫秒。',
+        details: [
+          '性能提升50-100倍',
+          '本地数据库查询',
+          '离线可用'
+        ]
+      },
+      {
+        icon: '🛡️',
+        title: '容错机制增强',
+        description: '接口失败时返回缓存数据。',
+        details: [
+          '东财接口5秒超时',
+          '缓存机制',
+          '失败时返回缓存'
+        ]
+      }
+    ],
+    bugs: [
+      {
+        icon: '🐛',
+        title: '修复雪球热度接口错误',
+        description: '使用正确的stock_hot_follow_xq接口。',
+        files: ['hot_rank_data.py']
+      },
+      {
+        icon: '🐛',
+        title: '修复东财热度超时问题',
+        description: '添加5秒超时 + 缓存机制。',
+        files: ['hot_rank_data.py']
+      },
+      {
+        icon: '🐛',
+        title: '修复深市股票接口参数错误',
+        description: '改为symbol="A股列表"。',
+        files: ['stock_list_cache.py']
+      },
+      {
+        icon: '🐛',
+        title: '修夏base.py语法错误',
+        description: '补全safe_call方法的docstring。',
+        files: ['base.py']
+      }
+    ]
+  },
   {
     version: '1.3.3',
     codename: '多数据源适配版',

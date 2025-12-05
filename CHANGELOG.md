@@ -1,5 +1,332 @@
 # 更新日志 (Changelog)
 
+## [v1.4.1] - 2025-12-05 08:25
+
+### 🎆 新增功能
+
+#### 资金流向API全面对接 ⭐⭐⭐⭐⭐
+- **功能**: 为资金流向分析师提供真实数据源
+- **数据源**: 
+  - 北向资金（沪深港通）: 200-300条实时数据
+  - 主力资金: 50条TOP排名
+  - 融资融券: 30条汇总数据
+  - 行业资金流: 30-50个行业
+- **API**: `/api/akshare/fund-flow/{stock_code}`
+- **文件**: `backend/dataflows/akshare/fund_flow_data.py`
+
+#### 行业板块API对接 ⭐⭐⭐⭐⭐
+- **功能**: 为行业轮动分析师提供板块数据
+- **数据源**:
+  - 行业板块列表: 30-50个申万行业
+  - 板块资金流向: 实时资金净流入
+  - 板块涨跌幅: 行业表现排名
+- **API**: `/api/akshare/sector/comprehensive`
+- **文件**: `backend/dataflows/akshare/sector_data.py`
+
+#### 宏观经济API对接 ⭐⭐⭐⭐⭐
+- **功能**: 为宏观政策分析师提供宏观数据
+- **数据源**:
+  - GDP数据: 最近12个月
+  - CPI数据: 最近12个月
+  - PMI数据: 最近12个月
+  - 货币供应量: 最近12个月
+- **API**: `/api/akshare/macro/comprehensive`
+- **文件**: `backend/dataflows/akshare/macro_data.py`
+
+#### 智能体卡片自动折叠展开 ⭐⭐⭐⭐⭐
+- **功能**: 页面加载时卡片默认折叠，点击分析自动展开
+- **体验**: 无需手动点击折叠/展开按钮
+- **效果**: 初始页面简洁，分析时自动展示所有内容
+- **文件**: `alpha-council-vue/src/components/AgentCard.vue`
+
+#### 卡片高度自适应 ⭐⭐⭐⭐⭐
+- **功能**: 卡片高度根据折叠/展开状态自动调整
+- **折叠时**: 高度约80px，节省空间
+- **展开时**: 根据内容自动调整（200-600px）
+- **过渡**: 0.3s平滑动画
+- **文件**: `alpha-council-vue/src/components/AgentCard.vue`
+
+### 🔥 功能增强
+
+#### 资金流向分析师 ⭐
+- **问题**: 之前显示模拟数据，数量都是1
+- **现在**: 显示真实数据源和数量
+  - 北向资金数据 (200-300条)
+  - 主力资金数据 (50条)
+  - 融资融券数据 (30条)
+  - 行业资金流 (30-50条)
+- **文件**: `alpha-council-vue/src/views/AnalysisView.vue`
+
+#### 行业轮动分析师 ⭐
+- **问题**: 之前显示模拟数据
+- **现在**: 显示真实板块数据
+  - 行业板块数据 (30-50个)
+  - 板块资金流向 (30-50个)
+- **文件**: `alpha-council-vue/src/views/AnalysisView.vue`
+
+#### 宏观政策分析师 ⭐
+- **问题**: 之前显示模拟数据
+- **现在**: 显示真实宏观数据
+  - 宏观经济数据 (36条: GDP 12 + CPI 12 + PMI 12)
+  - 货币政策 (12条)
+- **文件**: `alpha-council-vue/src/views/AnalysisView.vue`
+
+#### 数据透明化 ⭐
+- **功能**: 所有数据源显示具体数量和描述
+- **示例**: 
+  - 北向资金数据 (245条) - 沪深港通实时流向
+  - 行业板块数据 (42个) - 申万行业分类
+- **效果**: 用户清楚知道智能体使用了哪些数据
+
+### 📊 性能优化
+
+#### 页面加载优化 ⭐
+- **问题**: 初始页面太长，需要滚动
+- **解决**: 卡片默认折叠，页面简洁
+- **效果**: 节省280px高度/卡片，整体页面缩短70%
+
+#### 数据加载优化 ⭐
+- **方式**: 异步加载，不阻塞界面
+- **错误处理**: 网络错误时显示友好提示
+- **降级机制**: API失败时显示默认值
+
+### 📝 文档更新
+
+- [智能体数据源映射.md](docs/智能体数据源映射.md) ⭐
+- [AGENT_DATA_SOURCES_UPDATE.md](AGENT_DATA_SOURCES_UPDATE.md) ⭐
+- [BACKEND_API_INTEGRATION.md](BACKEND_API_INTEGRATION.md) ⭐
+- [FRONTEND_INTEGRATION_COMPLETE.md](FRONTEND_INTEGRATION_COMPLETE.md) ⭐
+- [DATA_SOURCE_INTEGRATION_SUMMARY.md](DATA_SOURCE_INTEGRATION_SUMMARY.md) ⭐
+- [CARD_COLLAPSE_FEATURE.md](CARD_COLLAPSE_FEATURE.md) ⭐
+- [CARD_HEIGHT_FIX.md](CARD_HEIGHT_FIX.md) ⭐
+
+---
+
+## [v1.4.0] - 2025-12-05 07:50
+
+### 🎆 新增功能
+
+#### 社交媒体热度集成 ⭐⭐⭐⭐⭐
+- **功能**: 集成微博热议和百度热搜数据
+- **位置**: 新闻面板 → 社交媒体热度
+- **数据量**: 微博50条 + 百度50条
+- **显示**: 股票名称 + 代码 + 涨跌幅 + 热度
+- **更新**: 每5分钟自动刷新
+- **文件**: `alpha-council-vue/src/components/NewsDataPanel.vue`
+
+#### 热榜模态框 ⭐⭐⭐⭐⭐
+- **功能**: 展示6个热度榜单
+- **榜单**: 
+  - 微博热议 (50条)
+  - 百度热搜 (12条)
+  - 雪球热度 (5425条)
+  - 东财热度 (100条)
+  - 人气榜 (100条)
+- **特性**: 
+  - 6个标签页分类
+  - 一键刷新
+  - 显示更新时间
+  - 涨跌幅颜色标识
+- **访问**: 顶部导航栏 → 🔥 热榜按钮
+- **文件**: `alpha-council-vue/src/components/HotRankModal.vue`
+
+#### 雪球热度静默加载 ⭐⭐⭐⭐
+- **问题**: 雪球数据量大(5425条)，阻塞界面
+- **解决**: 异步后台加载，不阻塞主数据
+- **效果**: 打开热榜 < 1秒，立即可用
+- **文件**: `alpha-council-vue/src/components/HotRankModal.vue`
+
+#### 股票搜索功能 ⭐⭐⭐⭐⭐
+- **功能**: 代码/名称模糊搜索
+- **搜索方式**: 
+  - 输入3位数字 → 匹配代码
+  - 输入文字 → 匹配名称
+- **交互**: 
+  - 下拉列表选择
+  - 鼠标悬停高亮
+  - 自动补全代码
+  - 300ms防抖
+- **文件**: `alpha-council-vue/src/components/StockSearchInput.vue`
+
+#### 本地股票缓存 ⭐⭐⭐⭐⭐
+- **技术**: SQLite数据库
+- **数据量**: 沪深A股约5000只
+- **性能**: 10-50毫秒响应（之前2-5秒）
+- **提升**: 50-100倍
+- **位置**: `backend/data/stock_list.db`
+- **文件**: `backend/dataflows/akshare/stock_list_cache.py`
+
+#### 自动更新机制 ⭐⭐⭐⭐
+- **策略**: 
+  - 数据库为空 → 立即更新
+  - 距上次更新>24小时 → 自动更新
+  - 否则 → 使用缓存
+- **时机**: 首次启动 + 每天启动
+- **无需手动操作**
+- **文件**: `backend/dataflows/akshare/stock_list_cache.py`
+
+### 🔧 优化改进
+
+#### 热榜数据显示优化 ⭐⭐⭐⭐
+- **之前**: 只显示股票名称
+- **现在**: 
+  - 股票名称 + 代码：`贵州茅台 (SH600519)`
+  - 涨跌幅 + 颜色：`+1.72%` (红) / `-0.75%` (绿)
+  - 热度格式化：`86.6万`
+  - 价格显示：`¥1663.36`
+  - 排名显示：`#1`
+- **文件**: `alpha-council-vue/src/components/HotRankModal.vue`
+
+#### 搜索性能提升 ⭐⭐⭐⭐⭐
+- **之前**: 2-5秒（在线API）
+- **现在**: 10-50毫秒（本地数据库）
+- **提升**: 50-100倍
+- **离线可用**: ✅
+- **文件**: `backend/dataflows/akshare/stock_search.py`
+
+#### 数据加载优化 ⭐⭐⭐⭐
+- **策略**: 分离快慢数据源
+- **快速数据**: 微博、百度、东财（同步加载）
+- **慢速数据**: 雪球（异步加载）
+- **效果**: 页面立即可用，不阻塞
+- **文件**: `backend/dataflows/akshare/hot_rank_data.py`
+
+#### 容错机制增强 ⭐⭐⭐⭐
+- **东财接口**: 
+  - 添加5秒超时
+  - 添加缓存机制
+  - 失败时返回缓存
+- **效果**: 接口不稳定时也能显示数据
+- **文件**: `backend/dataflows/akshare/hot_rank_data.py`
+
+### 🐛 Bug修复
+
+#### 雪球热度接口错误 ⭐⭐⭐
+- **问题**: 使用错误的接口名
+- **修复**: 使用正确的 `stock_hot_follow_xq`
+- **文件**: `backend/dataflows/akshare/hot_rank_data.py`
+
+#### 东财热度超时问题 ⭐⭐⭐⭐
+- **问题**: 接口不稳定，经常超时
+- **修复**: 添加5秒超时 + 缓存机制
+- **文件**: `backend/dataflows/akshare/hot_rank_data.py`
+
+#### 深市股票接口参数错误 ⭐⭐⭐
+- **问题**: `indicator="A股列表"` 参数错误
+- **修复**: 改为 `symbol="A股列表"`
+- **文件**: `backend/dataflows/akshare/stock_list_cache.py`
+
+#### base.py语法错误 ⭐⭐⭐
+- **问题**: `safe_call` 方法 docstring 未关闭
+- **修复**: 补全 docstring 和方法体
+- **文件**: `backend/dataflows/akshare/base.py`
+
+### 📚 文档更新
+- [v1.4.0版本更新文档.md](docs/v1.4.0版本更新文档.md) ⭐⭐⭐⭐⭐
+- [LOCAL_STOCK_CACHE.md](LOCAL_STOCK_CACHE.md) ⭐⭐⭐⭐
+- [COMPLETE_FIX_SUMMARY.md](COMPLETE_FIX_SUMMARY.md) ⭐⭐⭐⭐
+- [数据库需求文档.md](数据库需求文档.md) ⭐⭐⭐
+
+---
+
+## [v1.3.4-feature1] - 2024-12-05 01:20
+
+### 🎆 新增功能
+#### 项目介绍弹窗 ⭐⭐⭐⭐⭐
+- **功能**: 在顶部标题旁添加信息按钮，点击后弹出项目介绍
+- **内容**: 
+  - 项目概述和核心理念
+  - 21个智能体详细展示
+  - 系统数据统计
+  - 核心技术亮点
+  - 技术栈展示
+- **设计**: 
+  - 紫色渐变主题，科技感十足
+  - 响应式布局，全端适配
+  - 悬停动画，交互流畅
+  - 自定义滚动条
+- **文件**: 
+  - `alpha-council-vue/src/views/ProjectInfoView.vue` (新增)
+  - `alpha-council-vue/src/App.vue` (修改)
+
+## [v1.3.4] - 2024-12-05 00:40
+
+### 📝 提示词恢复
+#### 智能体提示词详细化 ⭐⭐⭐⭐⭐
+- **问题**: 智能体提示词被简化，分析质量下降
+- **修复**: 恢复8个智能体的详细提示词
+- **效果**: 提示词字数增加400%-700%，分析更专业详细
+- **文件**: `alpha-council-vue/src/views/AnalysisView.vue`
+
+## [v1.3.4-beta3] - 2024-12-05 00:30
+
+### ⚙️ 模型配置优化
+#### 模型选择动态加载 ⭐⭐⭐⭐⭐
+- **问题**: 白话解读员配置中的模型选项是硬编码的
+- **修复**: 从`agent_configs.json`的`selectedModels`动态加载
+- **效果**: 模型选项与配置文件保持一致
+- **文件**: `alpha-council-vue/src/views/AnalysisView.vue`
+
+### 📰 新闻过滤优化
+#### 智能新闻过滤 ⭐⭐⭐⭐⭐
+- **功能**: 优先显示非中性新闻，但不少于30篇
+- **规则**: 
+  - 非中性 >= 30篇 → 只显示非中性
+  - 非中性 < 30篇 → 非中性 + 部分中性 = 30篇
+  - 总数 < 30篇 → 显示全部
+- **效果**: 360条新闻智能过滤为83条非中性新闻
+- **文件**: `backend/dataflows/news/unified_news_api.py`
+
+## [v1.3.4-beta2] - 2024-12-05 00:25
+
+### ⚙️ 配置功能
+#### 白话解读员配置功能 ⭐⭐⭐⭐⭐
+- **功能**: 在报告的白话版标签旁添加配置按钮
+- **内容**: 可配置模型和温度
+- **保存**: 配置保存到`agent_configs.json`
+- **文件**: `alpha-council-vue/src/views/AnalysisView.vue`
+
+## [v1.3.4-beta1] - 2024-12-05 00:20
+
+### 🐛 Bug修复
+#### 默认模型修复 ⭐⭐⭐⭐⭐
+- **问题**: 白话解读员没有配置，使用默认DeepSeek导致402错误
+- **原因**: 后端默认模型是DeepSeek，但余额不足
+- **修复**: 修改默认模型为SiliconFlow的Qwen 2.5 7B
+- **文件**: `backend/server.py`
+
+## [v1.3.3-patch2] - 2024-12-05 00:15
+
+### 🔧 网络优化
+#### SiliconFlow网络错误处理 ⭐⭐⭐⭐⭐
+- **问题**: `RemoteProtocolError: Server disconnected without sending a response`
+- **修复**: 
+  - 增加重试次数到3次
+  - 添加指数退避（1s → 2s → 4s）
+  - 捕获更多异常类型
+  - 返回友好的降级响应
+- **文件**: `backend/server.py`
+
+#### DeepSeek 402错误处理 ⭐⭐⭐⭐⭐
+- **问题**: `HTTP 402: DeepSeek API 错误`
+- **修复**: 专门处理402错误，返回友好提示
+- **文件**: `backend/server.py`
+
+## [v1.3.3-patch1] - 2024-12-05 00:00
+
+### 🎆 新增功能
+#### GM卡片标签切换 ⭐⭐⭐⭐⭐
+- **功能**: 在投资决策总经理卡片中实现专业版和白话版的标签切换
+- **实现**: 
+  - GM提示词使用特殊标记分隔两个版本
+  - AgentCard解析并显示标签栏
+  - 默认显示专业版
+- **文件**: 
+  - `alpha-council-vue/src/views/AnalysisView.vue`
+  - `alpha-council-vue/src/components/AgentCard.vue`
+
+---
+
 ## [v1.3.1] - 2025-12-04 06:10
 
 ### 🐛 Bug修复

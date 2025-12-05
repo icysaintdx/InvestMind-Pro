@@ -6,6 +6,7 @@
       <span class="timer-label">分析耗时:</span>
       <span class="timer-value">{{ formatTime(analysisElapsedTime) }}</span>
     </div>
+    
     <!-- 股票输入区 -->
     <div class="input-section">
       <div class="input-card">
@@ -13,11 +14,10 @@
         
         <div class="input-group">
           <label class="input-label">股票代码</label>
-          <input 
+          <StockSearchInput 
             v-model="stockCode"
-            type="text" 
-            placeholder="请输入6位股票代码"
-            maxlength="6"
+            placeholder="输入股票代码或名称搜索"
+            @select="handleStockSelect"
             class="stock-input"
             @keyup.enter="startAnalysis"
           />
@@ -62,6 +62,7 @@
             :tokens="agentTokens[agent.id]"
             :show-config="configMode"
             :model-update-trigger="modelUpdateTrigger"
+            :is-expanded="cardsExpanded"
             @show-detail="showDetail"
           />
         </div>
@@ -100,6 +101,7 @@
             :tokens="agentTokens[agent.id]"
             :show-config="configMode"
             :model-update-trigger="modelUpdateTrigger"
+            :is-expanded="cardsExpanded"
             @show-detail="showDetail"
           />
         </div>
@@ -138,6 +140,7 @@
             :tokens="agentTokens[agent.id]"
             :show-config="configMode"
             :model-update-trigger="modelUpdateTrigger"
+            :is-expanded="cardsExpanded"
             @show-detail="showDetail"
           />
         </div>
@@ -150,11 +153,13 @@
             <span class="text-3xl">👑</span>
             <span>第四阶段 - 投资决策执行</span>
           </h3>
-          <span class="stage-desc">下达最终交易指令，执行量化交易</span>
+          <span class="stage-desc">下达最终交易指令，执行量化交易，生成白话解读</span>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- 决策层面板 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <AgentCard 
-            v-for="agent in stage4Agents" 
+            v-for="agent in stage4AgentsFiltered" 
             :key="agent.id"
             :agent="agent"
             :status="agentStatus[agent.id]"
@@ -164,9 +169,11 @@
             :tokens="agentTokens[agent.id]"
             :show-config="configMode"
             :model-update-trigger="modelUpdateTrigger"
+            :is-expanded="cardsExpanded"
             @show-detail="showDetail"
           />
         </div>
+        
       </div>
 
       <!-- 综合分析报告 -->
@@ -184,8 +191,53 @@
               :agentOutputs="agentOutputs"
             />
           </div>
-          <div class="report-content bg-slate-900/50 rounded-xl p-6 max-h-[800px] overflow-y-auto border border-slate-800">
-            <div class="prose prose-invert max-w-none" v-html="finalReportHtml"></div>
+          
+          <!-- 报告版本切换标签 -->
+          <div class="report-tabs">
+            <div class="tab-header">
+              <button 
+                @click="reportView = 'professional'" 
+                :class="{active: reportView === 'professional'}"
+                class="tab-btn"
+              >
+                <span class="tab-icon">📊</span>
+                <span>专业版报告</span>
+                <span class="tab-badge">金融机构级</span>
+              </button>
+              <button 
+                @click="reportView = 'simple'" 
+                :class="{active: reportView === 'simple'}"
+                class="tab-btn"
+              >
+                <span class="tab-icon">📢</span>
+                <span>白话解读版</span>
+                <span class="tab-badge">通俗易懂</span>
+              </button>
+              <!-- 白话解读员配置按钮 -->
+              <button 
+                v-if="reportView === 'simple'"
+                @click="showInterpreterConfig = true; loadAvailableModels()"
+                class="config-btn"
+                title="配置白话解读员模型"
+              >
+                ⚙️
+              </button>
+            </div>
+            
+            <!-- 专业版报告 -->
+            <div v-show="reportView === 'professional'" class="report-content bg-slate-900/50 rounded-xl p-6 max-h-[800px] overflow-y-auto border border-slate-800">
+              <div class="prose prose-invert max-w-none" v-html="finalReportHtml"></div>
+            </div>
+            
+            <!-- 白话解读版 -->
+            <div v-show="reportView === 'simple'" class="report-content">
+              <div v-if="agentOutputs['interpreter']" class="interpretation-panel-report">
+                <div class="markdown-content" v-html="interpretationHtml"></div>
+              </div>
+              <div v-else class="empty-interpretation">
+                <p>⚠️ 白话解读员还未完成分析，请稍候...</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -206,7 +258,53 @@
 
     <ModelManager :visible="showModelManager" @close="showModelManager = false" @save="handleModelSave" />
     <ApiConfig :visible="showApiConfig" :apiKeys="apiKeys" :apiStatus="apiStatus" @close="showApiConfig = false" @save="handleApiSave" @updateStatus="updateApiStatus" />
-    <StyleConfig :visible="showStyleConfig" :styles="styleSettings" @close="showStyleConfig = false" @save="handleStyleSave" />
+    <StyleConfig 
+      :visible="showStyleConfig" 
+      :styles="styleSettings" 
+      @close="showStyleConfig = false" 
+      @save="handleStyleSave"
+    />
+    
+    <!-- 白话解读员配置弹窗 -->
+    <div v-if="showInterpreterConfig" class="modal-overlay" @click="showInterpreterConfig = false">
+      <div class="interpreter-config-modal" @click.stop>
+        <div class="modal-header">
+          <h3 class="text-xl font-bold">📢 白话解读员配置</h3>
+          <button @click="showInterpreterConfig = false" class="close-btn">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="config-item">
+            <label class="config-label">选择模型</label>
+            <select v-model="interpreterModel" class="model-select">
+              <option v-for="model in availableModels" :key="model" :value="model">
+                {{ model }}
+              </option>
+            </select>
+          </div>
+          <div class="config-item">
+            <label class="config-label">温度 (Temperature)</label>
+            <input 
+              type="range" 
+              v-model.number="interpreterTemperature" 
+              min="0" 
+              max="1" 
+              step="0.1"
+              class="temperature-slider"
+            >
+            <span class="temperature-value">{{ interpreterTemperature }}</span>
+          </div>
+          <div class="config-note">
+            <p>💡 提示：白话解读员的任务是把专业分析翻译成通俗易懂的语言。</p>
+            <p>• 推荐使用 Qwen 2.5 7B，速度快且效果好</p>
+            <p>• 温度设置 0.7 可以让语言更生动</p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button @click="showInterpreterConfig = false" class="cancel-btn">取消</button>
+          <button @click="saveInterpreterConfig" class="save-btn">保存配置</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -218,6 +316,7 @@ import ModelManager from '@/components/ModelManager.vue'
 import ApiConfig from '@/components/ApiConfig.vue'
 import StyleConfig from '@/components/StyleConfig.vue'
 import ReportExporter from '@/components/ReportExporter.vue'
+import StockSearchInput from '@/components/StockSearchInput.vue'
 import { marked } from 'marked' // 假设已安装，如未安装需降级处理
 
 // 21个智能体完整定义
@@ -251,12 +350,13 @@ const AGENTS = [
 
   // Stage 4 - 最终决策
   { id: 'gm', role: 'GM', title: '投资决策总经理', icon: '👑', color: 'fuchsia', stage: 4 },
-  { id: 'trader', role: 'TRADER', title: '量化交易员', icon: '🤖', color: 'cyan', stage: 4 }
+  { id: 'trader', role: 'TRADER', title: '量化交易员', icon: '🤖', color: 'cyan', stage: 4 },
+  { id: 'interpreter', role: 'INTERPRETER', title: '白话解读员', icon: '📢', color: 'green', stage: 4 }
 ]
 
 export default {
   name: 'AnalysisView',
-  components: { AgentCard, DebatePanel, ModelManager, ApiConfig, StyleConfig, ReportExporter },
+  components: { AgentCard, DebatePanel, ModelManager, ApiConfig, StyleConfig, ReportExporter, StockSearchInput },
   setup() {
     // 注入数据透明化面板
     const currentStockData = inject('currentStockData')
@@ -288,6 +388,7 @@ export default {
     const agentThoughts = ref({}) // Stores array of thought steps
     const agentDataSources = ref({}) // Stores array of sources
     const modelUpdateTrigger = ref(0)
+    const cardsExpanded = ref(false) // 卡片是否展开，默认折叠
 
     // Debate states
     const showBullBearDebate = ref(false)
@@ -301,6 +402,12 @@ export default {
     const riskDebateConclusion = ref(null)
 
     const showReport = ref(false)
+    const reportView = ref('professional') // 默认显示专业版
+    const enableSimpleSummary = ref(true) // 白话总结开关，默认开启
+    const showInterpreterConfig = ref(false) // 白话解读员配置弹窗
+    const interpreterModel = ref('Qwen/Qwen2.5-7B-Instruct') // 白话解读员模型
+    const interpreterTemperature = ref(0.7) // 白话解读员温度
+    const availableModels = ref([]) // 可用模型列表，从后端加载
 
     // Initialize
     const initAgents = () => {
@@ -319,17 +426,36 @@ export default {
     const stage2Agents = computed(() => AGENTS.filter(a => a.stage === 2))
     const stage3Agents = computed(() => AGENTS.filter(a => a.stage === 3))
     const stage4Agents = computed(() => AGENTS.filter(a => a.stage === 4))
+    const stage4AgentsFiltered = computed(() => AGENTS.filter(a => a.stage === 4 && a.id !== 'interpreter'))
     const isValidCode = computed(() => /^\d{6}$/.test(stockCode.value))
     
     const finalReportHtml = computed(() => {
         if (!agentOutputs.value['gm']) return ''
         return marked.parse(generateReport())
     })
+    
+    const interpretationHtml = computed(() => {
+        if (!agentOutputs.value['interpreter']) return ''
+        try {
+            return marked.parse(agentOutputs.value['interpreter'])
+        } catch (e) {
+            // 如果marked解析失败，直接返回原文本
+            return `<pre>${agentOutputs.value['interpreter']}</pre>`
+        }
+    })
+    
+    // 处理股票选择
+    const handleStockSelect = (stock) => {
+      console.log('选择股票:', stock)
+      // 移除SH/SZ前缀
+      stockCode.value = stock.code.replace('SH', '').replace('SZ', '')
+    }
 
     // Analysis Logic
     const startAnalysis = async () => {
       if (!isValidCode.value || isAnalyzing.value) return
       isAnalyzing.value = true
+      cardsExpanded.value = true // 开始分析时自动展开所有卡片
       agentDataSources.value = {}
       agentStatus.value = {}
       agentOutputs.value = {}
@@ -374,15 +500,23 @@ export default {
         await runBullBearDebate()
 
         // 3. 执行第二阶段：策略整合 (并发执行)
+        console.log('[startAnalysis] 开始第二阶段...')
         const stage2Ids = AGENTS.filter(a => a.stage === 2).map(a => a.id)
+        console.log('[startAnalysis] 第二阶段智能体:', stage2Ids)
         await runAgentsParallel(stage2Ids, fetchedStockData)
+        console.log('[startAnalysis] 第二阶段完成')
 
         // 4. 触发风控辩论
+        console.log('[startAnalysis] 开始风控辩论...')
         await runRiskDebate()
+        console.log('[startAnalysis] 风控辩论完成')
 
         // 5. 执行第三阶段：风控终审
+        console.log('[startAnalysis] 开始第三阶段...')
         const stage3Ids = AGENTS.filter(a => a.stage === 3).map(a => a.id)
+        console.log('[startAnalysis] 第三阶段智能体:', stage3Ids)
         await runAgentsParallel(stage3Ids, fetchedStockData)
+        console.log('[startAnalysis] 第三阶段完成')
 
         // 6. 执行第四阶段：最终决策
         const stage4Ids = AGENTS.filter(a => a.stage === 4).map(a => a.id)
@@ -410,33 +544,162 @@ export default {
     }
 
     const getInstruction = (agent, data) => {
-        const base = `当前分析对象: ${data.name} (${data.symbol})。`
+        const base = `分析${data.name || '该股票'}(${stockCode.value})的投资价值。当前价格：${data.price || 'N/A'}元，涨跌幅：${data.change_percent || 'N/A'}%。\n\n`
+        
         const map = {
+            // 第一阶段
             news_analyst: `你是一位专业的新闻舆情分析师。请完成以下任务：
 1. 主动搜索并分析该股票最近24-48小时的所有相关新闻、公告、研报
 2. 识别可能影响股价的关键事件（业绩、政策、行业动态、重大合同等）
-3. 评估新闻的情绪倾向（利好/利空/中性），并给出情绪评分（-10到+10）
+3. 评估新闻的情绪倾向（利好/利空/中性），并给出情绪评分（-10到10）
 4. 分析新闻的可信度和影响力（权威媒体vs自媒体）
 5. 总结核心观点：当前舆情是偏多还是偏空？
 
 注意：
-- 必须给出具体的新闻内容和分析，不要说"暂无重大事件"
+- 必须给出具体的新闻内容和分析，不要说“暂无重大事件”
 - 即使没有重大新闻，也要分析常规新闻和市场讨论
 - 明确区分利好、利空和中性新闻
 - 给出整体情绪评分和建议`,
-            social_analyst: `请分析散户和机构在社交平台（如雪球、股吧）的情绪倾向。关键词：恐慌、贪婪、追涨、杀跌。`,
-            china_market: `请简述当前的中国宏观市场环境（A股大盘趋势、流动性）。`,
-            industry: `基于前序【新闻】和【社交】的分析，判断该股票所属行业当前处于什么周期（复苏/过热/滞胀/衰退）？竞争格局有何变化？`,
-            macro: `结合【中国市场专家】的结论，分析宏观政策（利率、财政）对该行业的具体影响。`,
-            technical: `忽略基本面，仅从技术图形（K线、均线、成交量）分析当前的趋势和关键点位。给出明确的支撑位和压力位。`,
-            funds: `分析主力资金流向。是否存在机构持续买入或出逃的迹象？与散户行为有何背离？`,
-            fundamental: `基于【行业】和【宏观】分析，评估该公司的核心财务指标（PE/PB/ROE）是否具备安全边际。`,
+            social_analyst: `你是社交媒体情绪分析专家。请完成以下任务：
+1. 分析雪球、股吧等平台上散户和机构的讨论热度
+2. 识别关键情绪词：恐慌、贪婪、追涨、杀跌、FOMO
+3. 判断当前是散户主导还是机构主导
+4. 评估社交情绪对短期股价的影响
+5. 给出情绪指数（极度恐慌到极度贪婪）`,
+            china_market: `你是中国市场专家。请分析：
+1. A股大盘当前趋势（牛市/熊市/震荡）
+2. 市场流动性状况（宽松/紧缩）
+3. 政策导向（支持/中性/压制）
+4. 外资流向（北向资金动态）
+5. 对该股票所在板块的影响`,
+            industry: `你是行业研究专家。基于前序【新闻】和【社交】的分析，请：
+1. 判断行业周期（复苏/繁荣/衰退/萧条）
+2. 分析竞争格局变化（龙头集中度、新进入者）
+3. 评估产业链上下游关系
+4. 识别行业风口和催化剂
+5. 给出行业评级和投资逻辑`,
+            macro: `你是宏观经济学家。结合【中国市场】的结论，请：
+1. 分析货币政策对该行业的影响
+2. 评估财政政策的支持力度
+3. 判断经济周期所处阶段
+4. 分析国际宏观环境影响
+5. 给出宏观面的投资建议`,
+            technical: `你是技术分析师。忽略基本面，仅从技术角度分析：
+1. K线形态和趋势（上升/下降/震荡）
+2. 关键支撑位和压力位（给出具体价格）
+3. 均线系统（MA5/MA10/MA20/MA60）
+4. 成交量变化（量价关系）
+5. MACD、KDJ等指标信号
+6. 给出明确的买入点、止损点、目标位`,
+            funds: `你是资金流向分析师。请分析：
+1. 主力资金净流入/流出情况
+2. 机构持仓变化（增持/减持）
+3. 北向资金动态
+4. 龙虎榜数据（游资/机构）
+5. 散户与主力的行为背离
+6. 给出资金面的结论和预警`,
+            fundamental: `你是基本面分析师。基于【行业】和【宏观】分析，请：
+1. 评估核心财务指标（PE/PB/ROE/毛利率）
+2. 分析盈利能力和增长性
+3. 评估财务健康度（负债率、现金流）
+4. 对比同行业竞争对手
+5. 计算内在价值和安全边际
+6. 给出估值结论（高估/合理/低估）`,
+            
+            // 第二阶段
             bull_researcher: `基于以上所有信息，挖掘该股票最大的上涨逻辑和潜在催化剂。`,
             bear_researcher: `基于以上所有信息，无情地指出该股票最大的下跌风险和逻辑漏洞。`,
+            manager_fundamental: `从基本面角度，评估该股票的内在价值和长期投资潜力。`,
+            manager_momentum: `从市场动能和情绪角度，判断该股票的短期走势。`,
+            research_manager: `综合各方意见，给出研究部的整体评级和建议。`,
+            
+            // 第三阶段
             risk_aggressive: `假设我们必须买入，如何设置止损以最大化赔率？`,
             risk_conservative: `指出当前最危险的风险点，并给出最保守的仓位建议。`,
-            gm: `综合所有分析师、多空辩论和风控意见，给出最终的投资决策（买入/卖出/观望）及目标价位。`
+            risk_neutral: `从中立角度评估风险收益比，给出合理的风险管理建议。`,
+            risk_system: `评估系统性风险对该股票的潜在影响。`,
+            risk_portfolio: `从组合管理角度，给出该股票的配置建议。`,
+            risk_manager: `综合所有风险评估，给出最终的风控意见。`,
+            
+            // 第四阶段
+            gm: `作为投资决策总经理，综合所有分析师、多空辩论和风控意见，给出最终的投资决策。
+
+请按以下格式输出，用特殊标记分隔两个版本：
+
+===PROFESSIONAL_START===
+## 专业投资决策
+
+### 1. 投资建议
+- 决策结论：（买入/卖出/观望）
+- 目标价位：
+- 仓位建议：
+- 投资周期：
+
+### 2. 决策依据
+（基于所有分析师的专业意见，给出严谨的投资逻辑）
+
+### 3. 风险评估
+（综合风控团队的评估，给出专业的风险分析）
+===PROFESSIONAL_END===
+
+===SIMPLE_START===
+## 白话投资建议
+
+### 📊 【能买不？】
+（明确回答：强烈推荐买入/可以适当买入/观望等待/不建议买入）
+
+### 💰 【价格指引】
+- **什么价格买合适？** （具体价格，如：1400-1420元）
+- **什么价格可以卖？** （具体价格，如：1500元以上）
+- **买了能放多久？** （如：3-6个月/1年以上）
+
+### ⚠️ 【风险提醒】
+（用3句大白话说清楚最需要担心的风险）
+1. 
+2. 
+3. 
+
+### 📝 【操作步骤】
+（分步骤给出具体操作建议）
+第1步：
+第2步：
+第3步：
+===SIMPLE_END===
+
+注意：
+- 专业版保持金融机构级别的专业性
+- 白话版用通俗易懂的语言，数字要具体
+- 必须同时输出两个版本`,
+            trader: `基于所有分析师的综合意见，请给出具体的交易策略和执行计划。包括：入场点位、止损位、目标位、仓位管理等。`,
+            interpreter: `你是一位亲民的投资解读员，专门把复杂的投资分析翻译成老百姓能懂的话。
+
+基于前面所有智能体的分析结果，请用最简单直白的语言回答：
+
+📊 【买卖建议】
+1. 能不能买？（明确回答：强烈推荐买入/可以适当买入/观望等待/不建议买入）
+2. 已经有的要不要卖？（明确回答：坚决持有/可以卖出/建议减仓）
+
+💰 【价格指引】
+3. 什么价格买合适？（给出具体价格，如：1400-1420元之间）
+4. 什么价格可以卖？（给出具体价格，如：1500元以上）
+5. 买了能放多久？（如：建议持有3-6个月/1年以上/短线几天）
+
+💡 【原因解释】
+用3句大白话说清楚为什么给出这样的建议。
+
+⚠️ 【风险提醒】（用大白话说3个最需要注意的风险）
+- 风险1：
+- 风险2：
+- 风险3：
+
+📝 【操作步骤】（具体怎么做）
+第1步：
+第2步：
+第3步：
+
+记住：不用专业术语，像朋友聊天，数字要具体。`
         }
+        
         return base + (map[agent.id] || map[agent.role] || "请基于你的专业领域进行分析。")
     }
 
@@ -599,6 +862,113 @@ export default {
               { source: '证券时报', count: 1 }
             ]
           }
+        } else if (agent.id === 'funds') {
+          // 资金流向分析师 - 获取真实数据
+          try {
+            const response = await fetch(`http://localhost:8000/api/akshare/fund-flow/${data.symbol}`)
+            const result = await response.json()
+            
+            if (result.success && result.sources) {
+              agentDataSources.value[agent.id] = [
+                { source: '北向资金数据', count: result.sources.north_bound || 0, description: '沪深港通实时流向' },
+                { source: '主力资金数据', count: result.sources.individual_flow || 0, description: '大单成交监测' },
+                { source: '融资融券数据', count: result.sources.margin_summary || 0, description: '两融余额变化' },
+                { source: '行业资金流', count: result.sources.industry_flow || 0, description: '行业资金流向' }
+              ]
+              console.log(`[funds] 设置真实数据源:`, agentDataSources.value[agent.id])
+            } else {
+              // 失败时使用默认值
+              agentDataSources.value[agent.id] = [
+                { source: '北向资金数据', count: 0, description: '数据获取失败' },
+                { source: '主力资金数据', count: 0, description: '数据获取失败' },
+                { source: '融资融券数据', count: 0, description: '数据获取失败' }
+              ]
+            }
+          } catch (e) {
+            console.error('[funds] 获取资金流向数据失败:', e)
+            agentDataSources.value[agent.id] = [
+              { source: '北向资金数据', count: 0, description: '网络错误' },
+              { source: '主力资金数据', count: 0, description: '网络错误' },
+              { source: '融资融券数据', count: 0, description: '网络错误' }
+            ]
+          }
+        } else if (agent.id === 'industry') {
+          // 行业轮动分析师 - 获取真实数据
+          try {
+            const response = await fetch('http://localhost:8000/api/akshare/sector/comprehensive')
+            const result = await response.json()
+            
+            if (result.success && result.sources) {
+              agentDataSources.value[agent.id] = [
+                { source: '行业板块数据', count: result.sources.industry_list || 0, description: '申万行业分类' },
+                { source: '板块资金流向', count: result.sources.industry_flow || 0, description: '行业资金净流入' },
+                { source: 'AKShare', count: 2, description: '板块数据接口' }
+              ]
+              console.log(`[industry] 设置真实数据源:`, agentDataSources.value[agent.id])
+            } else {
+              agentDataSources.value[agent.id] = [
+                { source: '行业板块数据', count: 0, description: '数据获取失败' },
+                { source: '板块资金流向', count: 0, description: '数据获取失败' }
+              ]
+            }
+          } catch (e) {
+            console.error('[industry] 获取板块数据失败:', e)
+            agentDataSources.value[agent.id] = [
+              { source: '行业板块数据', count: 0, description: '网络错误' },
+              { source: '板块资金流向', count: 0, description: '网络错误' }
+            ]
+          }
+        } else if (agent.id === 'macro') {
+          // 宏观政策分析师 - 获取真实数据
+          try {
+            const response = await fetch('http://localhost:8000/api/akshare/macro/comprehensive')
+            const result = await response.json()
+            
+            if (result.success && result.sources) {
+              const totalMacro = (result.sources.gdp || 0) + (result.sources.cpi || 0) + (result.sources.pmi || 0)
+              agentDataSources.value[agent.id] = [
+                { source: '宏观经济数据', count: totalMacro, description: `GDP(${result.sources.gdp})、CPI(${result.sources.cpi})、PMI(${result.sources.pmi})` },
+                { source: '货币政策', count: result.sources.money_supply || 0, description: '货币供应量数据' },
+                { source: 'AKShare', count: 4, description: '宏观数据接口' }
+              ]
+              console.log(`[macro] 设置真实数据源:`, agentDataSources.value[agent.id])
+            } else {
+              agentDataSources.value[agent.id] = [
+                { source: '宏观经济数据', count: 0, description: '数据获取失败' },
+                { source: '货币政策', count: 0, description: '数据获取失败' }
+              ]
+            }
+          } catch (e) {
+            console.error('[macro] 获取宏观数据失败:', e)
+            agentDataSources.value[agent.id] = [
+              { source: '宏观经济数据', count: 0, description: '网络错误' },
+              { source: '货币政策', count: 0, description: '网络错误' }
+            ]
+          }
+        } else if (agent.id === 'technical') {
+          // 技术分析师 - 技术指标数据
+          agentDataSources.value[agent.id] = [
+            { source: '历史行情数据', count: 1, description: 'K线数据' },
+            { source: '技术指标', count: 1, description: 'MACD、KDJ、RSI等' },
+            { source: '成交量数据', count: 1, description: '量价关系' },
+            { source: 'AKShare', count: 3, description: '技术数据接口' }
+          ]
+        } else if (agent.id === 'options_risk') {
+          // 期权风险分析师 - 期权数据
+          agentDataSources.value[agent.id] = [
+            { source: '期权行情数据', count: 1, description: '期权价格、成交量' },
+            { source: 'PCR指标', count: 1, description: 'Put/Call Ratio' },
+            { source: '隐含波动率', count: 1, description: 'IV指标' },
+            { source: 'AKShare', count: 3, description: '期权数据接口' }
+          ]
+        } else if (agent.id === 'market_sentiment') {
+          // 市场情绪分析师 - 情绪指标
+          agentDataSources.value[agent.id] = [
+            { source: '市场情绪指标', count: 1, description: '恐慌指数VIX' },
+            { source: '涨跌家数比', count: 1, description: '个股表现分布' },
+            { source: '换手率数据', count: 1, description: '市场活跃度' },
+            { source: 'AKShare', count: 3, description: '情绪数据接口' }
+          ]
         } else if (agent.id === 'risk_system') {
           // 系统性风险评估 - 显示真实网站
           agentDataSources.value[agent.id] = [
@@ -636,43 +1006,71 @@ export default {
         // ✅ 关键：数据源设置完成后，再调用API进行分析
         agentStatus.value[agent.id] = 'analyzing'
         
-        // 添加超时控制（6分钟）
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 360000) // 6分钟
+        // 添加超时控制（10分钟）和重试机制
+        let retryCount = 0
+        const maxRetries = 1 // 最多重试1次
         
-        try {
-          const response = await fetch('http://localhost:8000/api/analyze', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              agent_id: agent.id,
-              stock_code: stockCode.value,
-              stock_data: data,
-              previous_outputs: agentOutputs.value,
-              custom_instruction: getInstruction(agent, data)
-            }),
-            signal: controller.signal
-          })
+        while (retryCount <= maxRetries) {
+          const controller = new AbortController()
+          const timeoutId = setTimeout(() => controller.abort(), 600000) // 10分钟
           
-          clearTimeout(timeoutId)
-        
-          if (!response.ok) throw new Error('API Error')
-          const result = await response.json()
+          try {
+            if (retryCount > 0) {
+              console.log(`[${agent.id}] 重试第 ${retryCount} 次...`)
+              agentStatus.value[agent.id] = 'analyzing'
+            }
+            
+            const response = await fetch('http://localhost:8000/api/analyze', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                agent_id: agent.id,
+                stock_code: stockCode.value,
+                stock_data: data,
+                previous_outputs: agentOutputs.value,
+                custom_instruction: getInstruction(agent, data)
+              }),
+              signal: controller.signal
+            })
+            
+            clearTimeout(timeoutId)
           
-          if (!result.success) {
-            throw new Error(result.error || '分析失败')
+            if (!response.ok) throw new Error('API Error')
+            const result = await response.json()
+            
+            if (!result.success) {
+              throw new Error(result.error || '分析失败')
+            }
+            
+            const analysisResult = result.result || '⚠️ 分析结果为空'
+            agentOutputs.value[agent.id] = analysisResult
+            agentTokens.value[agent.id] = Math.floor(analysisResult.length / 1.5)
+            agentStatus.value[agent.id] = 'success'
+            break // 成功后退出循环
+            
+          } catch (fetchError) {
+            clearTimeout(timeoutId)
+            
+            if (fetchError.name === 'AbortError') {
+              if (retryCount < maxRetries) {
+                console.log(`[${agent.id}] 超时，准备重试...`)
+                retryCount++
+                await new Promise(r => setTimeout(r, 2000)) // 等待2秒后重试
+                continue
+              } else {
+                throw new Error('请求超时（10分钟），已重试1次仍失败')
+              }
+            }
+            
+            if (retryCount < maxRetries) {
+              console.log(`[${agent.id}] 请求失败，准备重试...`)
+              retryCount++
+              await new Promise(r => setTimeout(r, 2000)) // 等待2秒后重试
+              continue
+            }
+            
+            throw fetchError
           }
-          
-          const analysisResult = result.result || '⚠️ 分析结果为空'
-          agentOutputs.value[agent.id] = analysisResult
-          agentTokens.value[agent.id] = Math.floor(analysisResult.length / 1.5)
-          agentStatus.value[agent.id] = 'success'
-        } catch (fetchError) {
-          clearTimeout(timeoutId)
-          if (fetchError.name === 'AbortError') {
-            throw new Error('请求超时（6分钟），请检查网络或切换模型')
-          }
-          throw fetchError
         }
       } catch (e) {
         console.error(`Agent ${agent.id} 分析失败:`, e)
@@ -1089,6 +1487,67 @@ export default {
         }).join('\n\n---\n\n')
     }
 
+    // 加载可用模型列表
+    const loadAvailableModels = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/api/config/agents')
+        const result = await response.json()
+        const config = result.success ? result.data : result
+        availableModels.value = config.selectedModels || []
+        console.log('加载可用模型:', availableModels.value)
+      } catch (error) {
+        console.error('加载模型列表失败:', error)
+        // 默认模型
+        availableModels.value = [
+          'Qwen/Qwen2.5-7B-Instruct',
+          'Qwen/Qwen3-8B',
+          'deepseek-chat'
+        ]
+      }
+    }
+    
+    // 保存白话解读员配置
+    const saveInterpreterConfig = async () => {
+      try {
+        // 读取现有配置
+        const response = await fetch('http://localhost:8000/api/config/agents')
+        const result = await response.json()
+        const config = result.success ? result.data : result
+        
+        // 更新interpreter的配置
+        const agents = config.agents || []
+        const interpreterIndex = agents.findIndex(a => a.id === 'interpreter')
+        
+        const interpreterConfig = {
+          id: 'interpreter',
+          modelName: interpreterModel.value,
+          modelProvider: interpreterModel.value.includes('/') ? 'SILICONFLOW' : 
+                        interpreterModel.value.startsWith('deepseek') ? 'DEEPSEEK' : 'SILICONFLOW',
+          temperature: interpreterTemperature.value
+        }
+        
+        if (interpreterIndex >= 0) {
+          agents[interpreterIndex] = interpreterConfig
+        } else {
+          agents.push(interpreterConfig)
+        }
+        
+        // 保存配置
+        await fetch('http://localhost:8000/api/config/agents', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...config, agents })
+        })
+        
+        console.log('白话解读员配置已保存:', interpreterConfig)
+        showInterpreterConfig.value = false
+        alert('配置已保存！')
+      } catch (error) {
+        console.error('保存配置失败:', error)
+        alert('保存失败，请重试')
+      }
+    }
+    
     // Empty handlers for config (kept from original)
     const handleModelSave = () => {}
     const handleApiSave = (keys) => {
@@ -1111,15 +1570,18 @@ export default {
         configMode, showModelManager, showApiConfig, showStyleConfig, apiStatus,
         agentStatus, agentOutputs, agentTokens, agentThoughts, agentDataSources,
         modelUpdateTrigger,
-        stage1Agents, stage2Agents, stage3Agents, stage4Agents,
+        cardsExpanded,
+        stage1Agents, stage2Agents, stage3Agents, stage4Agents, stage4AgentsFiltered,
         showBullBearDebate, bullBearDebateStatus, bullBearDebateMessages, bullBearDebateConclusion,
         showRiskDebate, riskDebateStatus, riskDebateMessages, riskDebateConclusion,
-        showReport, finalReportHtml,
+        showReport, reportView, finalReportHtml, interpretationHtml, enableSimpleSummary,
+        showInterpreterConfig, interpreterModel, interpreterTemperature, saveInterpreterConfig, availableModels, loadAvailableModels,
         selectedAgent, showDetail,
         handleModelSave, handleApiSave, updateApiStatus, handleStyleSave,
         apiKeys, styleSettings, exportReport: () => {},
         fetchNewsData,  // 新增: 新闻数据获取函数
-        analysisElapsedTime, formatTime  // 新增: 计时器
+        analysisElapsedTime, formatTime,  // 新增: 计时器
+        handleStockSelect  // 新增: 股票选择处理
     }
   }
 }
@@ -1326,4 +1788,322 @@ export default {
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* 白话解读面板样式 */
+.interpretation-panel {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-radius: 20px;
+  padding: 30px;
+  margin-top: 20px;
+  color: white;
+  box-shadow: 0 10px 40px rgba(16, 185, 129, 0.3);
+}
+
+.interpretation-panel .panel-header {
+  text-align: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.interpretation-panel .icon {
+  font-size: 48px;
+  display: block;
+  margin-bottom: 15px;
+}
+
+.interpretation-panel .panel-title {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.interpretation-panel .panel-subtitle {
+  font-size: 16px;
+  opacity: 0.9;
+}
+
+.interpretation-panel .analyzing-state {
+  text-align: center;
+  padding: 40px;
+}
+
+.interpretation-panel .loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+.interpretation-panel .interpretation-content {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 15px;
+  padding: 25px;
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+.interpretation-panel .markdown-content h1,
+.interpretation-panel .markdown-content h2,
+.interpretation-panel .markdown-content h3 {
+  margin-top: 20px;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.interpretation-panel .markdown-content p {
+  margin: 10px 0;
+}
+
+.interpretation-panel .markdown-content ul,
+.interpretation-panel .markdown-content ol {
+  margin: 10px 0;
+  padding-left: 25px;
+}
+
+.interpretation-panel .markdown-content li {
+  margin: 8px 0;
+  list-style: disc;
+}
+
+.interpretation-panel .markdown-content ol li {
+  list-style: decimal;
+}
+
+.interpretation-panel .markdown-content strong {
+  font-weight: bold;
+  color: #fde047;
+}
+
+.interpretation-panel .error-state {
+  text-align: center;
+  padding: 30px;
+  background: rgba(239, 68, 68, 0.2);
+  border-radius: 10px;
+}
+
+/* 报告标签页样式 */
+.report-tabs {
+  margin-top: 20px;
+}
+
+.tab-header {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid rgba(71, 85, 105, 0.3);
+  padding-bottom: 10px;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: rgba(51, 65, 85, 0.5);
+  border: 2px solid transparent;
+  border-radius: 10px 10px 0 0;
+  color: #94a3b8;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tab-btn:hover {
+  background: rgba(71, 85, 105, 0.5);
+  color: #e2e8f0;
+}
+
+.tab-btn.active {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: #3b82f6;
+  color: #60a5fa;
+}
+
+.tab-icon {
+  font-size: 20px;
+}
+
+.tab-badge {
+  font-size: 12px;
+  padding: 2px 8px;
+  background: rgba(59, 130, 246, 0.2);
+  border-radius: 12px;
+  color: #93c5fd;
+}
+
+.tab-btn.active .tab-badge {
+  background: rgba(59, 130, 246, 0.3);
+  color: #60a5fa;
+}
+
+.interpretation-panel-report {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-radius: 15px;
+  padding: 30px;
+  color: white;
+  box-shadow: 0 10px 40px rgba(16, 185, 129, 0.3);
+}
+
+.interpretation-panel-report .markdown-content {
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+.interpretation-panel-report .markdown-content h1,
+.interpretation-panel-report .markdown-content h2,
+.interpretation-panel-report .markdown-content h3 {
+  margin-top: 20px;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.interpretation-panel-report .markdown-content strong {
+  color: #fde047;
+}
+
+.empty-interpretation {
+  text-align: center;
+  padding: 60px 20px;
+  background: rgba(71, 85, 105, 0.2);
+  border-radius: 15px;
+  color: #94a3b8;
+  font-size: 16px;
+}
+
+/* 白话解读员配置按钮 */
+.config-btn {
+  padding: 8px 12px;
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 8px;
+  color: #60a5fa;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 18px;
+  margin-left: auto;
+}
+
+.config-btn:hover {
+  background: rgba(59, 130, 246, 0.3);
+  transform: scale(1.1);
+}
+
+/* 白话解读员配置弹窗 */
+.interpreter-config-modal {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border-radius: 20px;
+  padding: 0;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.interpreter-config-modal .modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(71, 85, 105, 0.3);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.interpreter-config-modal .modal-body {
+  padding: 24px;
+}
+
+.interpreter-config-modal .config-item {
+  margin-bottom: 20px;
+}
+
+.interpreter-config-modal .config-label {
+  display: block;
+  color: #e2e8f0;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.interpreter-config-modal .model-select {
+  width: 100%;
+  padding: 10px 12px;
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(71, 85, 105, 0.5);
+  border-radius: 8px;
+  color: #e2e8f0;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.interpreter-config-modal .model-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.interpreter-config-modal .temperature-slider {
+  width: calc(100% - 60px);
+  margin-right: 10px;
+}
+
+.interpreter-config-modal .temperature-value {
+  color: #60a5fa;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.interpreter-config-modal .config-note {
+  background: rgba(16, 185, 129, 0.1);
+  border-left: 3px solid #10b981;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+.interpreter-config-modal .config-note p {
+  color: #94a3b8;
+  font-size: 13px;
+  margin: 6px 0;
+}
+
+.interpreter-config-modal .modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid rgba(71, 85, 105, 0.3);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.interpreter-config-modal .cancel-btn {
+  padding: 8px 20px;
+  background: rgba(71, 85, 105, 0.3);
+  border: none;
+  border-radius: 8px;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.interpreter-config-modal .cancel-btn:hover {
+  background: rgba(71, 85, 105, 0.5);
+}
+
+.interpreter-config-modal .save-btn {
+  padding: 8px 20px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.interpreter-config-modal .save-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
 </style>

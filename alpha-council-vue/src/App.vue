@@ -18,6 +18,20 @@
             <span class="text-2xl mr-2">🏅</span>
             InvestMind Pro
           </h1>
+          <button 
+            @click="showProjectInfo = true" 
+            class="project-info-btn"
+            title="项目介绍"
+          >
+            <span class="info-icon">ℹ️</span>
+          </button>
+          <button 
+            @click="showDocuments = true" 
+            class="doc-btn"
+            title="文档中心"
+          >
+            <span class="doc-icon">📚</span>
+          </button>
         </div>
         
         <!-- 中间：API状态指示器 -->
@@ -58,6 +72,10 @@
 
         <!-- 右侧控制按钮 -->
         <div class="nav-controls">
+          <button @click="showHotRankModal = true" class="nav-btn hot-rank-btn" title="查看热榜">
+            <span class="btn-icon">🔥</span>
+            <span class="btn-text">热榜</span>
+          </button>
           <button @click="showChangelog = true" class="nav-btn version-btn" :title="`版本 ${versionInfo.version} - ${versionInfo.codename}`">
             <span class="btn-icon">📋</span>
             <span class="btn-text">v{{ versionInfo.version }}</span>
@@ -95,9 +113,28 @@
       </div>
     </div>
 
+    <!-- 项目介绍模态框 -->
+    <div v-if="showProjectInfo" class="modal-overlay" @click.self="showProjectInfo = false">
+      <div class="project-info-modal">
+        <button @click="showProjectInfo = false" class="modal-close-btn">×</button>
+        <ProjectInfoView />
+      </div>
+    </div>
+
+    <!-- 文档中心模态框 -->
+    <div v-if="showDocuments" class="modal-overlay" @click.self="showDocuments = false">
+      <div class="document-modal">
+        <button @click="showDocuments = false" class="modal-close-btn">×</button>
+        <DocumentView />
+      </div>
+    </div>
+
     <!-- 数据透明化面板 -->
     <StockDataPanel ref="stockDataPanel" :stockData="currentStockData" />
     <NewsDataPanel ref="newsDataPanel" />
+    
+    <!-- 热榜模态框 -->
+    <HotRankModal :isOpen="showHotRankModal" @close="showHotRankModal = false" />
   </div>
 </template>
 
@@ -105,9 +142,12 @@
 import { defineComponent, ref, computed, provide, onMounted, onUnmounted } from 'vue'
 import AnalysisView from './views/AnalysisView.vue'
 import ChangelogView from './views/ChangelogView.vue'
+import ProjectInfoView from './views/ProjectInfoView.vue'
+import DocumentView from './views/DocumentView.vue'
 import ParticleBackground from './components/ParticleBackground.vue'
 import StockDataPanel from './components/StockDataPanel.vue'
 import NewsDataPanel from './components/NewsDataPanel.vue'
+import HotRankModal from './components/HotRankModal.vue'
 import { getVersionInfo } from './data/changelog.js'
 
 export default defineComponent({
@@ -115,9 +155,12 @@ export default defineComponent({
   components: {
     AnalysisView,
     ChangelogView,
+    ProjectInfoView,
+    DocumentView,
     ParticleBackground,
     StockDataPanel,
-    NewsDataPanel
+    NewsDataPanel,
+    HotRankModal
   },
   setup() {
     const configMode = ref(false)
@@ -125,6 +168,9 @@ export default defineComponent({
     const showApiConfig = ref(false)
     const showStylePanel = ref(false)
     const showChangelog = ref(false)
+    const showProjectInfo = ref(false)
+    const showDocuments = ref(false)
+    const showHotRankModal = ref(false)
     
     const versionInfo = ref(getVersionInfo())
     
@@ -460,6 +506,9 @@ export default defineComponent({
       showApiConfig,
       showStylePanel,
       showChangelog,
+      showProjectInfo,
+      showDocuments,
+      showHotRankModal,
       versionInfo,
       backendStatus,
       backendStatusText,
@@ -740,6 +789,18 @@ export default defineComponent({
   border-color: #3b82f6;
 }
 
+.nav-btn.hot-rank-btn {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.nav-btn.hot-rank-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
 .nav-btn.version-btn {
   background: rgba(16, 185, 129, 0.1);
   border-color: #10b981;
@@ -844,7 +905,7 @@ export default defineComponent({
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .changelog-modal {
@@ -879,5 +940,118 @@ export default defineComponent({
 .modal-close-btn:hover {
   background: rgba(220, 38, 38, 1);
   transform: scale(1.1);
+}
+
+/* 项目介绍按钮 */
+.project-info-btn {
+  margin-left: 0.75rem;
+  width: 2rem;
+  height: 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.project-info-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+}
+
+.project-info-btn .info-icon {
+  font-size: 1.2rem;
+  filter: brightness(1.2);
+}
+
+/* 文档按钮 */
+.doc-btn {
+  margin-left: 0.5rem;
+  width: 2rem;
+  height: 2rem;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.doc-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.5);
+}
+
+.doc-btn .doc-icon {
+  font-size: 1.2rem;
+  filter: brightness(1.2);
+}
+
+/* 项目介绍模态框 */
+.project-info-modal {
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: rgba(15, 23, 42, 0.98);
+  border-radius: 20px;
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+/* 滚动条美化 */
+.project-info-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.project-info-modal::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 10px;
+}
+
+.project-info-modal::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+}
+
+.project-info-modal::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+/* 文档中心模态框 */
+.document-modal {
+  position: relative;
+  width: 95vw;
+  max-width: 1800px;
+  height: 90vh;
+  background: transparent;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.document-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.document-modal::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 10px;
+}
+
+.document-modal::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-radius: 10px;
+}
+
+.document-modal::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
 }
 </style>

@@ -440,7 +440,8 @@ async def test_agents_api():
             "Agent details",
             "Unified calling",
             "Workflow stages",
-            "Statistics"
+            "Statistics",
+            "Configuration"
         ],
         "total_agents": len(get_registry().get_all_agents())
     }

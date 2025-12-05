@@ -40,6 +40,8 @@ from backend.api.trading_api import router as trading_router
 from backend.api.verification_api import router as verification_router
 from backend.api.agents_api import router as agents_router
 from backend.api.unified_news_api_endpoint import router as unified_news_router
+from backend.api.documents_api import router as documents_router
+from backend.api.akshare_data_api import router as akshare_router
 
 # ==================== 配置 ====================
 
@@ -164,6 +166,8 @@ app.include_router(trading_router)
 app.include_router(verification_router)
 app.include_router(agents_router)
 app.include_router(unified_news_router)  # 统一新闻API
+app.include_router(documents_router)  # 文档API
+app.include_router(akshare_router)  # AKShare数据 API
 
 # 配置 CORS
 app.add_middleware(
@@ -308,7 +312,16 @@ async def deepseek_api(request: DeepSeekRequest):
                     print(f"[DeepSeek] 所有重试都失败")
                     raise
         
-        if response.status_code != 200:
+        if response.status_code == 402:
+            # 402是余额不足
+            print(f"[DeepSeek] 余额不足，返回降级响应")
+            return {
+                "success": True,
+                "text": f"⚠️ DeepSeek API 余额不足。建议：\n1. 检查 API 余额\n2. 切换到 SiliconFlow 或其他模型\n3. 充值后重试",
+                "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+                "quota_exceeded": True
+            }
+        elif response.status_code != 200:
             raise HTTPException(status_code=response.status_code, detail="DeepSeek API 错误")
         
         result = response.json()
@@ -423,7 +436,8 @@ async def siliconflow_api(request: SiliconFlowRequest):
         }
         
         # 增加超时时间并添加重试机制
-        max_retries = 2
+        max_retries = 3  # 增加到3次重试
+        response = None
         for attempt in range(max_retries):
             try:
                 response = await client.post(
@@ -433,19 +447,43 @@ async def siliconflow_api(request: SiliconFlowRequest):
                     timeout=httpx.Timeout(300.0, connect=60.0)  # 5分钟超时，60秒连接超时
                 )
                 break  # 成功则跳出循环
-            except httpx.ReadTimeout:
+            except (httpx.ReadTimeout, httpx.RemoteProtocolError, httpx.ConnectError, httpx.NetworkError) as e:
+                error_type = type(e).__name__
                 if attempt < max_retries - 1:
-                    print(f"[SiliconFlow] 超时，正在重试... (尝试 {attempt + 2}/{max_retries})")
-                    await asyncio.sleep(2)  # 等待2秒后重试
+                    wait_time = 2 ** attempt  # 指数退避: 1s, 2s, 4s
+                    print(f"[SiliconFlow] {error_type}，正在重试... (尝试 {attempt + 2}/{max_retries}，等待{wait_time}秒)")
+                    await asyncio.sleep(wait_time)
                 else:
-                    print(f"[SiliconFlow] 所有重试都失败，返回降级响应")
+                    print(f"[SiliconFlow] 所有重试都失败 ({error_type})，返回降级响应")
                     # 超时时返回友好的降级响应，而不是错误
                     return {
                         "success": True,
-                        "text": f"⚠️ 由于网络超时，本次分析未能完成。建议：\n1. 检查网络连接\n2. 尝试使用其他 AI 模型\n3. 稍后重试",
+                        "text": f"⚠️ 由于网络问题，本次分析未能完成。建议：\n1. 检查网络连接\n2. 尝试使用其他 AI 模型\n3. 稍后重试",
                         "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
                         "timeout": True
                     }
+            except Exception as e:
+                print(f"[SiliconFlow] 未知错误: {type(e).__name__}: {str(e)}")
+                if attempt < max_retries - 1:
+                    print(f"[SiliconFlow] 正在重试... (尝试 {attempt + 2}/{max_retries})")
+                    await asyncio.sleep(2)
+                else:
+                    print(f"[SiliconFlow] 所有重试都失败，返回降级响应")
+                    return {
+                        "success": True,
+                        "text": f"⚠️ 分析过程中出现错误，请稍后重试。",
+                        "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+                        "timeout": True
+                    }
+        
+        # 如果所有重试都失败，返回降级响应
+        if response is None:
+            return {
+                "success": True,
+                "text": f"⚠️ 网络连接失败，请检查网络后重试。",
+                "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+                "timeout": True
+            }
         
         if response.status_code != 200:
             raise HTTPException(status_code=response.status_code, detail="SiliconFlow API 错误")
@@ -669,11 +707,11 @@ async def analyze_stock(request: AnalyzeRequest):
         # 从缓存获取配置
         agent_config = get_agent_config(agent_id)
         
-        # 如果没有找到配置，使用默认值
+        # 如果没有找到配置，使用默认值（使用SiliconFlow避免余额问题）
         if not agent_config:
             agent_config = {
-                "modelName": "deepseek-chat",
-                "modelProvider": "DEEPSEEK",
+                "modelName": "Qwen/Qwen2.5-7B-Instruct",  # 默认使用SiliconFlow的通义千问
+                "modelProvider": "SILICONFLOW",
                 "temperature": 0.3
             }
         

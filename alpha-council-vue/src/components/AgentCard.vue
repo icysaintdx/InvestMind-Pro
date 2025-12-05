@@ -110,17 +110,56 @@
       </div>
     </div>
 
+    <!-- GM专用标签栏 -->
+    <div v-if="agent.id === 'gm' && parsedGMContent.hasSimple && output" class="gm-tab-bar">
+      <button 
+        @click="currentView = 'professional'" 
+        :class="{active: currentView === 'professional'}"
+        class="gm-tab-btn"
+      >
+        📊 专业版
+      </button>
+      <button 
+        @click="currentView = 'simple'" 
+        :class="{active: currentView === 'simple'}"
+        class="gm-tab-btn"
+      >
+        📢 白话版
+      </button>
+    </div>
+
     <!-- 内容区 -->
-    <div class="card-content" :class="{ 'with-config': showConfig }">
-      <!-- 加载骨架屏 -->
-      <div v-if="status === 'loading'" class="skeleton-loader">
+    <div v-show="isExpanded" class="card-content" :class="{ 'with-config': showConfig, 'with-tabs': agent.id === 'gm' && parsedGMContent.hasSimple }">
+      <!-- 加载骨架屏 (analyzing状态显示) -->
+      <div v-if="status === 'analyzing'" class="skeleton-loader">
         <div class="skeleton-line"></div>
         <div class="skeleton-line" style="width: 85%"></div>
         <div class="skeleton-line" style="width: 75%"></div>
         <div class="skeleton-line" style="width: 90%"></div>
+        <div class="skeleton-line" style="width: 80%"></div>
       </div>
 
-      <!-- 分析结果 -->
+      <!-- GM的双版本内容 -->
+      <div v-else-if="agent.id === 'gm' && parsedGMContent.hasSimple && output" class="gm-content">
+        <!-- 专业版 -->
+        <div v-show="currentView === 'professional'" class="professional-content">
+          <TypeWriter 
+            :text="parsedGMContent.professional" 
+            :speed="20"
+            @complete="handleTypeComplete"
+          />
+        </div>
+        <!-- 白话版 -->
+        <div v-show="currentView === 'simple'" class="simple-content">
+          <TypeWriter 
+            :text="parsedGMContent.simple" 
+            :speed="20"
+            @complete="handleTypeComplete"
+          />
+        </div>
+      </div>
+
+      <!-- 其他智能体的正常内容 -->
       <div v-else-if="output" class="analysis-output">
         <TypeWriter 
           :text="output" 
@@ -131,7 +170,9 @@
 
       <!-- 空状态 -->
       <div v-else class="empty-state">
-        <span class="text-slate-500">等待分析...</span>
+        <div class="waiting-icon">⏳</div>
+        <span class="waiting-title">等待分析...</span>
+        <p class="waiting-desc">{{ getWaitingDescription() }}</p>
       </div>
     </div>
 
@@ -185,6 +226,10 @@ export default {
     modelUpdateTrigger: {
       type: Number,
       default: 0
+    },
+    isExpanded: {
+      type: Boolean,
+      default: false
     }
   },
   async created() {
@@ -200,6 +245,7 @@ export default {
   },
   data() {
     return {
+      currentView: 'professional', // GM卡片的标签切换：'professional' 或 'simple'
       selectedModel: this.agent.modelName || 'deepseek-chat',
       temperature: this.agent.temperature || 0.3,
       modelOptions: [], // 将从后端加载
@@ -242,6 +288,21 @@ export default {
       if (!this.dataSources || this.dataSources.length === 0) return []
       if (this.dataSources.length <= 4) return this.dataSources
       return this.sourcesExpanded ? this.dataSources : this.dataSources.slice(0, 4)
+    },
+    parsedGMContent() {
+      // 解析GM的双版本输出
+      if (this.agent.id !== 'gm' || !this.output) {
+        return { professional: this.output, simple: '', hasSimple: false }
+      }
+      
+      const professionalMatch = this.output.match(/===PROFESSIONAL_START===([\s\S]*?)===PROFESSIONAL_END===/)
+      const simpleMatch = this.output.match(/===SIMPLE_START===([\s\S]*?)===SIMPLE_END===/)
+      
+      return {
+        professional: professionalMatch ? professionalMatch[1].trim() : this.output,
+        simple: simpleMatch ? simpleMatch[1].trim() : '',
+        hasSimple: !!simpleMatch
+      }
     }
   },
   methods: {
@@ -374,6 +435,34 @@ export default {
       } catch (error) {
         console.error('保存配置失败:', error)
       }
+    },
+    getWaitingDescription() {
+      // 根据智能体ID返回等待时的描述
+      const waitingDescriptions = {
+        'news_analyst': '准备分析财经新闻对股价的影响...',
+        'social_analyst': '准备扫描社交媒体情绪...',
+        'china_market': '准备评估中国市场环境...',
+        'industry': '准备分析行业周期与竞争格局...',
+        'macro': '准备分析宏观经济影响...',
+        'technical': '准备进行技术图形分析...',
+        'funds': '准备追踪主力资金流向...',
+        'fundamental': '准备进行基本面估值...',
+        'bull_researcher': '准备挖掘上涨逻辑...',
+        'bear_researcher': '准备寻找下跌风险...',
+        'manager_fundamental': '准备进行价值评估...',
+        'manager_momentum': '准备分析市场动能...',
+        'research_manager': '准备综合各方意见...',
+        'risk_aggressive': '准备制定激进策略...',
+        'risk_conservative': '准备评估保守策略...',
+        'risk_neutral': '准备进行中性评估...',
+        'risk_system': '准备分析系统性风险...',
+        'risk_portfolio': '准备优化组合配置...',
+        'risk_manager': '准备进行风险把控...',
+        'gm': '准备做出最终决策...',
+        'trader': '准备制定交易策略...',
+        'interpreter': '准备翻译成大白话...'
+      }
+      return waitingDescriptions[this.agent.id] || '准备开始分析...'
     }
   },
   setup(props) {
@@ -417,7 +506,7 @@ export default {
   transition: all 0.3s;
   display: flex;
   flex-direction: column;
-  min-height: 360px;
+  /* min-height: 360px; */  /* 移除固定高度，让高度自适应 */
   width: 100%;
   backdrop-filter: blur(10px);
 }
@@ -788,8 +877,104 @@ export default {
 }
 
 .empty-state {
+  padding: 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.waiting-icon {
+  font-size: 32px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.waiting-title {
   color: #64748b;
   font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.waiting-desc {
+  color: #94a3b8;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  margin: 0;
+  padding: 0 10px;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.1); }
+}
+
+/* GM标签栏样式 */
+.gm-tab-bar {
+  display: flex;
+  gap: 8px;
+  padding: 10px 15px;
+  border-bottom: 1px solid rgba(71, 85, 105, 0.3);
+  background: rgba(30, 41, 59, 0.3);
+}
+
+.gm-tab-btn {
+  flex: 1;
+  padding: 8px 16px;
+  background: rgba(51, 65, 85, 0.5);
+  border: none;
+  border-radius: 8px;
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.gm-tab-btn:hover {
+  background: rgba(71, 85, 105, 0.5);
+  color: #e2e8f0;
+  transform: translateY(-1px);
+}
+
+.gm-tab-btn.active {
+  background: rgba(59, 130, 246, 0.3);
+  color: #60a5fa;
+  font-weight: 600;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+}
+
+/* GM内容区域 */
+.gm-content {
+  min-height: 200px;
+}
+
+.professional-content {
+  color: #e2e8f0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.simple-content {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);
+  padding: 15px;
+  border-radius: 10px;
+  color: #e2e8f0;
+  font-size: 0.875rem;
+  line-height: 1.8;
+}
+
+.simple-content strong {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.card-content.with-tabs {
+  padding-top: 0;
 }
 
 .card-footer {

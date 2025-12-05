@@ -274,7 +274,7 @@ export default {
     </div>
     
     <div class="report-footer">
-      <p>本报告由 AlphaCouncil 智能投研系统自动生成</p>
+      <p>本报告由 InvestMind Pro 智能投研系统自动生成</p>
       <p>仅供参考，不构成投资建议</p>
     </div>
   </div>
@@ -316,7 +316,7 @@ export default {
       }
       
       markdown += `\n\n---\n\n`
-      markdown += `*本报告由 AlphaCouncil 智能投研系统自动生成*\n\n`
+      markdown += `*本报告由 InvestMind Pro 智能投研系统自动生成*\n\n`
       markdown += `*仅供参考，不构成投资建议*\n`
       
       return markdown

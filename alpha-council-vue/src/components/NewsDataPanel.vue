@@ -85,22 +85,56 @@
           </div>
         </div>
 
-        <!-- 关键词云 -->
+        <!-- 社交媒体热度 -->
         <div class="data-section">
           <div class="section-title">
-            <span class="section-icon">🔥</span>
-            热门关键词
+            <span class="section-icon">📱</span>
+            社交媒体热度
           </div>
-          <div class="keywords-cloud">
-            <span 
-              v-for="keyword in keywords" 
-              :key="keyword.text"
-              :class="['keyword-tag', `size-${keyword.size}`]"
-            >
-              {{ keyword.text }}
-            </span>
-            <div v-if="keywords.length === 0" class="keywords-empty">
-              暂无关键词
+          <div class="social-media-content">
+            <div v-if="socialMediaLoading" class="loading-state">
+              <span class="spinner-small"></span> 加载中...
+            </div>
+            <div v-else-if="socialMediaError" class="error-state">
+              ❌ {{ socialMediaError }}
+            </div>
+            <div v-else>
+              <!-- 微博股票热议 Top 5 -->
+              <div class="social-section">
+                <div class="social-subtitle">🔥 微博热议</div>
+                <div class="social-list">
+                  <div 
+                    v-for="(item, index) in weiboStockHot.slice(0, 5)" 
+                    :key="index"
+                    class="social-item"
+                    :class="getRateClass(item.rate)"
+                  >
+                    <span class="rank">{{ index + 1 }}</span>
+                    <span class="name">
+                      {{ item.name }}
+                      <span class="code" v-if="item.code">({{ item.code }})</span>
+                    </span>
+                    <span class="rate">{{ formatRate(item.rate) }}</span>
+                  </div>
+                </div>
+              </div>
+              <!-- 百度热搜 Top 5 -->
+              <div class="social-section">
+                <div class="social-subtitle">🔍 百度热搜</div>
+                <div class="social-list">
+                  <div 
+                    v-for="(item, index) in baiduHotSearch.slice(0, 5)" 
+                    :key="index"
+                    class="social-item"
+                  >
+                    <span class="rank">{{ index + 1 }}</span>
+                    <span class="name">
+                      {{ item['名称/代码'] || item.name }}
+                      <span class="code" v-if="item['代码'] || item.code">({{ item['代码'] || item.code }})</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -110,7 +144,8 @@
 </template>
 
 <script>
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import axios from 'axios'
 
 export default {
   name: 'NewsDataPanel',
@@ -127,6 +162,13 @@ export default {
     })
 
     const keywords = ref([])
+    
+    // 社交媒体数据
+    const socialMediaLoading = ref(false)
+    const socialMediaError = ref(null)
+    const weiboStockHot = ref([])
+    const baiduHotSearch = ref([])
+    let autoRefreshInterval = null
 
     const togglePanel = () => {
       isOpen.value = !isOpen.value
@@ -201,6 +243,54 @@ export default {
         score: (Math.random() * 2 - 1).toFixed(2)
       })
     }
+    
+    // 加载社交媒体数据
+    const loadSocialMediaData = async () => {
+      socialMediaLoading.value = true
+      socialMediaError.value = null
+      
+      try {
+        const response = await axios.get('http://localhost:8000/api/akshare/social-media/all')
+        const data = response.data.data
+        
+        weiboStockHot.value = data.weibo_stock_hot || []
+        baiduHotSearch.value = data.baidu_hot_search || []
+      } catch (err) {
+        socialMediaError.value = '加载失败'
+        console.error('加载社交媒体数据失败:', err)
+      } finally {
+        socialMediaLoading.value = false
+      }
+    }
+    
+    const formatRate = (rate) => {
+      if (rate === null || rate === undefined) return '-'
+      const num = parseFloat(rate)
+      return num > 0 ? `+${num.toFixed(2)}%` : `${num.toFixed(2)}%`
+    }
+    
+    const getRateClass = (rate) => {
+      if (rate === null || rate === undefined) return ''
+      const num = parseFloat(rate)
+      if (num > 0) return 'positive'
+      if (num < 0) return 'negative'
+      return 'neutral'
+    }
+    
+    // 生命周期
+    onMounted(() => {
+      loadSocialMediaData()
+      // 每5分钟自动刷新
+      autoRefreshInterval = setInterval(() => {
+        loadSocialMediaData()
+      }, 5 * 60 * 1000)
+    })
+    
+    onBeforeUnmount(() => {
+      if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval)
+      }
+    })
 
     return {
       isOpen,
@@ -213,7 +303,13 @@ export default {
       clearNews,
       getSentimentIcon,
       getSentimentText,
-      simulateNews
+      simulateNews,
+      socialMediaLoading,
+      socialMediaError,
+      weiboStockHot,
+      baiduHotSearch,
+      formatRate,
+      getRateClass
     }
   }
 }
@@ -591,5 +687,115 @@ export default {
   color: #64748b;
   padding: 1rem;
   font-size: 0.875rem;
+}
+
+/* 社交媒体样式 */
+.social-media-content {
+  font-size: 0.875rem;
+}
+
+.loading-state, .error-state {
+  text-align: center;
+  padding: 1rem;
+  color: #94a3b8;
+  font-size: 0.875rem;
+}
+
+.spinner-small {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(59, 130, 246, 0.1);
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.social-section {
+  margin-bottom: 1rem;
+}
+
+.social-section:last-child {
+  margin-bottom: 0;
+}
+
+.social-subtitle {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.social-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.social-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 0.375rem;
+  transition: all 0.2s;
+}
+
+.social-item:hover {
+  background: rgba(30, 41, 59, 0.8);
+  transform: translateX(2px);
+}
+
+.social-item .rank {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(59, 130, 246, 0.2);
+  border-radius: 0.25rem;
+  color: #3b82f6;
+  font-weight: bold;
+  font-size: 0.7rem;
+  flex-shrink: 0;
+}
+
+.social-item .name {
+  flex: 1;
+  color: #e2e8f0;
+  font-size: 0.8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.social-item .name .code {
+  color: #94a3b8;
+  font-size: 0.7rem;
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+.social-item .rate {
+  font-weight: 600;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.social-item.positive .rate {
+  color: #10b981;
+}
+
+.social-item.negative .rate {
+  color: #ef4444;
+}
+
+.social-item.neutral .rate {
+  color: #94a3b8;
 }
 </style>

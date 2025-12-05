@@ -125,6 +125,12 @@
       "modelName": "Qwen/Qwen3-8B",
       "modelProvider": "AUTO",
       "temperature": 0.3
+    },
+    {
+      "id": "interpreter",
+      "modelName": "Qwen/Qwen3-8B",
+      "modelProvider": "SILICONFLOW",
+      "temperature": 0.7
     }
   ],
   "selectedModels": [
