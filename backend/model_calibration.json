@@ -1,0 +1,800 @@
+{
+  "status": "completed",
+  "lastRunAt": "2025-12-07T11:05:51.263240",
+  "error": null,
+  "results": {
+    "Pro/Qwen/Qwen2.5-Coder-7B-Instruct": {
+      "provider": "QWEN",
+      "channel": "硅基流动",
+      "tests": [
+        {
+          "modelName": "Pro/Qwen/Qwen2.5-Coder-7B-Instruct",
+          "provider": "QWEN",
+          "channel": "硅基流动",
+          "promptLength": 4000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.265268",
+          "finishedAt": "2025-12-07T11:05:59.041541",
+          "latencySeconds": 7.78,
+          "success": false,
+          "timeout": false,
+          "error": null,
+          "usage": {}
+        },
+        {
+          "modelName": "Pro/Qwen/Qwen2.5-Coder-7B-Instruct",
+          "provider": "QWEN",
+          "channel": "硅基流动",
+          "promptLength": 6000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:06:01.574758",
+          "latencySeconds": 10.31,
+          "success": false,
+          "timeout": false,
+          "error": null,
+          "usage": {}
+        },
+        {
+          "modelName": "Pro/Qwen/Qwen2.5-Coder-7B-Instruct",
+          "provider": "QWEN",
+          "channel": "硅基流动",
+          "promptLength": 8000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:06:01.574758",
+          "latencySeconds": 10.31,
+          "success": false,
+          "timeout": false,
+          "error": null,
+          "usage": {}
+        },
+        {
+          "modelName": "Pro/Qwen/Qwen2.5-Coder-7B-Instruct",
+          "provider": "QWEN",
+          "channel": "硅基流动",
+          "promptLength": 15000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:06:09.411853",
+          "latencySeconds": 18.14,
+          "success": false,
+          "timeout": false,
+          "error": null,
+          "usage": {}
+        },
+        {
+          "modelName": "Pro/Qwen/Qwen2.5-Coder-7B-Instruct",
+          "provider": "QWEN",
+          "channel": "硅基流动",
+          "promptLength": 20000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:06:06.869827",
+          "latencySeconds": 15.61,
+          "success": false,
+          "timeout": false,
+          "error": null,
+          "usage": {}
+        }
+      ]
+    },
+    "Pro/THUDM/glm-4-9b-chat": {
+      "provider": "GLM",
+      "channel": "硅基流动",
+      "tests": [
+        {
+          "modelName": "Pro/THUDM/glm-4-9b-chat",
+          "provider": "GLM",
+          "channel": "硅基流动",
+          "promptLength": 4000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:06:09.411853",
+          "latencySeconds": 18.14,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 2638,
+            "completion_tokens": 14,
+            "total_tokens": 2652
+          }
+        },
+        {
+          "modelName": "Pro/THUDM/glm-4-9b-chat",
+          "provider": "GLM",
+          "channel": "硅基流动",
+          "promptLength": 6000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:06:17.951884",
+          "latencySeconds": 26.69,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 3942,
+            "completion_tokens": 7,
+            "total_tokens": 3949
+          }
+        },
+        {
+          "modelName": "Pro/THUDM/glm-4-9b-chat",
+          "provider": "GLM",
+          "channel": "硅基流动",
+          "promptLength": 8000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:06:15.457230",
+          "latencySeconds": 24.19,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 5247,
+            "completion_tokens": 14,
+            "total_tokens": 5261
+          }
+        },
+        {
+          "modelName": "Pro/THUDM/glm-4-9b-chat",
+          "provider": "GLM",
+          "channel": "硅基流动",
+          "promptLength": 15000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:06:17.951884",
+          "latencySeconds": 26.69,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 9811,
+            "completion_tokens": 14,
+            "total_tokens": 9825
+          }
+        },
+        {
+          "modelName": "Pro/THUDM/glm-4-9b-chat",
+          "provider": "GLM",
+          "channel": "硅基流动",
+          "promptLength": 20000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:06:26.047902",
+          "latencySeconds": 34.78,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 13071,
+            "completion_tokens": 14,
+            "total_tokens": 13085
+          }
+        }
+      ]
+    },
+    "Qwen/Qwen2-7B-Instruct": {
+      "provider": "QWEN",
+      "channel": "硅基流动",
+      "tests": [
+        {
+          "modelName": "Qwen/Qwen2-7B-Instruct",
+          "provider": "QWEN",
+          "channel": "硅基流动",
+          "promptLength": 4000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:06:23.538040",
+          "latencySeconds": 32.27,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 2816,
+            "completion_tokens": 20,
+            "total_tokens": 2836
+          }
+        },
+        {
+          "modelName": "Qwen/Qwen2-7B-Instruct",
+          "provider": "QWEN",
+          "channel": "硅基流动",
+          "promptLength": 6000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:06:26.047902",
+          "latencySeconds": 34.78,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 4207,
+            "completion_tokens": 33,
+            "total_tokens": 4240
+          }
+        },
+        {
+          "modelName": "Qwen/Qwen2-7B-Instruct",
+          "provider": "QWEN",
+          "channel": "硅基流动",
+          "promptLength": 8000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:06:32.028256",
+          "latencySeconds": 40.77,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 5599,
+            "completion_tokens": 35,
+            "total_tokens": 5634
+          }
+        },
+        {
+          "modelName": "Qwen/Qwen2-7B-Instruct",
+          "provider": "QWEN",
+          "channel": "硅基流动",
+          "promptLength": 15000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:06:34.585115",
+          "latencySeconds": 43.31,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 10468,
+            "completion_tokens": 84,
+            "total_tokens": 10552
+          }
+        },
+        {
+          "modelName": "Qwen/Qwen2-7B-Instruct",
+          "provider": "QWEN",
+          "channel": "硅基流动",
+          "promptLength": 20000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:06:34.585115",
+          "latencySeconds": 43.31,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 13945,
+            "completion_tokens": 83,
+            "total_tokens": 14028
+          }
+        }
+      ]
+    },
+    "Qwen/Qwen2.5-7B-Instruct": {
+      "provider": "QWEN",
+      "channel": "硅基流动",
+      "tests": [
+        {
+          "modelName": "Qwen/Qwen2.5-7B-Instruct",
+          "provider": "QWEN",
+          "channel": "硅基流动",
+          "promptLength": 4000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:06:39.797848",
+          "latencySeconds": 48.53,
+          "success": false,
+          "timeout": false,
+          "error": null,
+          "usage": {}
+        },
+        {
+          "modelName": "Qwen/Qwen2.5-7B-Instruct",
+          "provider": "QWEN",
+          "channel": "硅基流动",
+          "promptLength": 6000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:06:42.298823",
+          "latencySeconds": 51.03,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 4207,
+            "completion_tokens": 46,
+            "total_tokens": 4253
+          }
+        },
+        {
+          "modelName": "Qwen/Qwen2.5-7B-Instruct",
+          "provider": "QWEN",
+          "channel": "硅基流动",
+          "promptLength": 8000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:06:42.298823",
+          "latencySeconds": 51.03,
+          "success": false,
+          "timeout": false,
+          "error": null,
+          "usage": {}
+        },
+        {
+          "modelName": "Qwen/Qwen2.5-7B-Instruct",
+          "provider": "QWEN",
+          "channel": "硅基流动",
+          "promptLength": 15000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:06:47.562172",
+          "latencySeconds": 56.3,
+          "success": false,
+          "timeout": false,
+          "error": null,
+          "usage": {}
+        },
+        {
+          "modelName": "Qwen/Qwen2.5-7B-Instruct",
+          "provider": "QWEN",
+          "channel": "硅基流动",
+          "promptLength": 20000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:06:50.051069",
+          "latencySeconds": 58.78,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 13945,
+            "completion_tokens": 50,
+            "total_tokens": 13995
+          }
+        }
+      ]
+    },
+    "Qwen/Qwen3-8B": {
+      "provider": "QWEN",
+      "channel": "硅基流动",
+      "tests": [
+        {
+          "modelName": "Qwen/Qwen3-8B",
+          "provider": "QWEN",
+          "channel": "硅基流动",
+          "promptLength": 4000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:06:52.558642",
+          "latencySeconds": 61.3,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 2820,
+            "completion_tokens": 43,
+            "total_tokens": 2863
+          }
+        },
+        {
+          "modelName": "Qwen/Qwen3-8B",
+          "provider": "QWEN",
+          "channel": "硅基流动",
+          "promptLength": 6000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:07:03.493936",
+          "latencySeconds": 72.22,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 4211,
+            "completion_tokens": 74,
+            "total_tokens": 4285
+          }
+        },
+        {
+          "modelName": "Qwen/Qwen3-8B",
+          "provider": "QWEN",
+          "channel": "硅基流动",
+          "promptLength": 8000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:07:00.970199",
+          "latencySeconds": 69.7,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 5603,
+            "completion_tokens": 66,
+            "total_tokens": 5669
+          }
+        },
+        {
+          "modelName": "Qwen/Qwen3-8B",
+          "provider": "QWEN",
+          "channel": "硅基流动",
+          "promptLength": 15000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:07:03.493936",
+          "latencySeconds": 72.22,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 10472,
+            "completion_tokens": 65,
+            "total_tokens": 10537
+          }
+        },
+        {
+          "modelName": "Qwen/Qwen3-8B",
+          "provider": "QWEN",
+          "channel": "硅基流动",
+          "promptLength": 20000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:07:14.117011",
+          "latencySeconds": 82.84,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 13949,
+            "completion_tokens": 68,
+            "total_tokens": 14017
+          }
+        }
+      ]
+    },
+    "THUDM/glm-4-9b-chat": {
+      "provider": "GLM",
+      "channel": "硅基流动",
+      "tests": [
+        {
+          "modelName": "THUDM/glm-4-9b-chat",
+          "provider": "GLM",
+          "channel": "硅基流动",
+          "promptLength": 4000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:07:11.616020",
+          "latencySeconds": 80.34,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 2638,
+            "completion_tokens": 14,
+            "total_tokens": 2652
+          }
+        },
+        {
+          "modelName": "THUDM/glm-4-9b-chat",
+          "provider": "GLM",
+          "channel": "硅基流动",
+          "promptLength": 6000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:07:09.118981",
+          "latencySeconds": 77.84,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 3942,
+            "completion_tokens": 14,
+            "total_tokens": 3956
+          }
+        },
+        {
+          "modelName": "THUDM/glm-4-9b-chat",
+          "provider": "GLM",
+          "channel": "硅基流动",
+          "promptLength": 8000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:07:17.487423",
+          "latencySeconds": 86.22,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 5247,
+            "completion_tokens": 4,
+            "total_tokens": 5251
+          }
+        },
+        {
+          "modelName": "THUDM/glm-4-9b-chat",
+          "provider": "GLM",
+          "channel": "硅基流动",
+          "promptLength": 15000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:07:20.019451",
+          "latencySeconds": 88.75,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 9811,
+            "completion_tokens": 14,
+            "total_tokens": 9825
+          }
+        },
+        {
+          "modelName": "THUDM/glm-4-9b-chat",
+          "provider": "GLM",
+          "channel": "硅基流动",
+          "promptLength": 20000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:07:20.019451",
+          "latencySeconds": 88.75,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 13071,
+            "completion_tokens": 4,
+            "total_tokens": 13075
+          }
+        }
+      ]
+    },
+    "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B": {
+      "provider": "QWEN",
+      "channel": "硅基流动",
+      "tests": [
+        {
+          "modelName": "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
+          "provider": "QWEN",
+          "channel": "硅基流动",
+          "promptLength": 4000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:07:39.868491",
+          "latencySeconds": 108.59,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 2806,
+            "completion_tokens": 341,
+            "total_tokens": 3147
+          }
+        },
+        {
+          "modelName": "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
+          "provider": "QWEN",
+          "channel": "硅基流动",
+          "promptLength": 6000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:07:32.509679",
+          "latencySeconds": 101.23,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 4197,
+            "completion_tokens": 207,
+            "total_tokens": 4404
+          }
+        },
+        {
+          "modelName": "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
+          "provider": "QWEN",
+          "channel": "硅基流动",
+          "promptLength": 8000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:07:42.379253",
+          "latencySeconds": 111.11,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 5589,
+            "completion_tokens": 349,
+            "total_tokens": 5938
+          }
+        },
+        {
+          "modelName": "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
+          "provider": "QWEN",
+          "channel": "硅基流动",
+          "promptLength": 15000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:07:42.379253",
+          "latencySeconds": 111.11,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 10458,
+            "completion_tokens": 103,
+            "total_tokens": 10561
+          }
+        },
+        {
+          "modelName": "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
+          "provider": "QWEN",
+          "channel": "硅基流动",
+          "promptLength": 20000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:08:08.687581",
+          "latencySeconds": 137.42,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 13935,
+            "completion_tokens": 580,
+            "total_tokens": 14515
+          }
+        }
+      ]
+    },
+    "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B": {
+      "provider": "QWEN",
+      "channel": "硅基流动",
+      "tests": [
+        {
+          "modelName": "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B",
+          "provider": "QWEN",
+          "channel": "硅基流动",
+          "promptLength": 4000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:07:55.258753",
+          "latencySeconds": 123.98,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 2808,
+            "completion_tokens": 512,
+            "total_tokens": 3320
+          }
+        },
+        {
+          "modelName": "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B",
+          "provider": "QWEN",
+          "channel": "硅基流动",
+          "promptLength": 6000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:07:51.648050",
+          "latencySeconds": 120.38,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 4199,
+            "completion_tokens": 246,
+            "total_tokens": 4445
+          }
+        },
+        {
+          "modelName": "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B",
+          "provider": "QWEN",
+          "channel": "硅基流动",
+          "promptLength": 8000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:08:00.565590",
+          "latencySeconds": 129.3,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 5591,
+            "completion_tokens": 387,
+            "total_tokens": 5978
+          }
+        },
+        {
+          "modelName": "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B",
+          "provider": "QWEN",
+          "channel": "硅基流动",
+          "promptLength": 15000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:08:05.558414",
+          "latencySeconds": 134.3,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 10460,
+            "completion_tokens": 512,
+            "total_tokens": 10972
+          }
+        },
+        {
+          "modelName": "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B",
+          "provider": "QWEN",
+          "channel": "硅基流动",
+          "promptLength": 20000,
+          "maxTokens": 512,
+          "enableThinking": false,
+          "startedAt": "2025-12-07T11:05:51.266781",
+          "finishedAt": "2025-12-07T11:08:11.175023",
+          "latencySeconds": 139.91,
+          "success": true,
+          "timeout": false,
+          "error": null,
+          "usage": {
+            "prompt_tokens": 13937,
+            "completion_tokens": 512,
+            "total_tokens": 14449
+          }
+        }
+      ]
+    }
+  },
+  "settings": {
+    "enabled": true,
+    "concurrency": [
+      3,
+      5
+    ],
+    "promptLengths": [
+      4000,
+      6000,
+      8000,
+      15000,
+      20000
+    ],
+    "maxTokens": 512,
+    "enableThinking": false,
+    "timeoutSeconds": 180
+  }
+}

@@ -16,28 +16,7 @@ router = APIRouter(prefix="/api/akshare", tags=["AKShare Data"])
 
 
 # ========== 资金流向API ==========
-
-@router.get("/fund-flow/{symbol}")
-async def get_fund_flow(symbol: str):
-    """
-    获取个股资金流向数据
-    
-    Args:
-        symbol: 股票代码（如：600519）
-    
-    Returns:
-        资金流向数据
-    """
-    try:
-        fund_flow = get_fund_flow_data()
-        data = fund_flow.get_comprehensive_fund_flow(symbol)
-        return {
-            "success": True,
-            "data": data
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
+# 注意：主要的 /fund-flow/{stock_code} 路由在文件末尾（第369行）
 
 @router.get("/fund-flow/industry/realtime")
 async def get_industry_fund_flow():

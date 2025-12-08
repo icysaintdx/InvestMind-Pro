@@ -11,8 +11,18 @@
 
     <!-- 可滚动内容区 -->
     <div class="doc-container">
+      <!-- 移动端侧边栏切换按钮 -->
+      <button 
+        class="mobile-sidebar-toggle"
+        @click="sidebarOpen = !sidebarOpen"
+        :class="{ 'sidebar-open': sidebarOpen }"
+      >
+        <span class="toggle-icon">{{ sidebarOpen ? '◀' : '▶' }}</span>
+        <span class="toggle-text">目录</span>
+      </button>
+      
       <!-- 左侧文档列表 -->
-      <div class="doc-sidebar">
+      <div class="doc-sidebar" :class="{ 'mobile-open': sidebarOpen }">
         <div class="sidebar-header">
           <span class="header-icon">📑</span>
           <span class="header-text">文档目录</span>
@@ -89,6 +99,7 @@ export default {
     const loadingContent = ref(false)
     const error = ref(null)
     const documentContent = ref('')
+    const sidebarOpen = ref(false)
 
     // 文档分类配置
     const categoryConfig = [
@@ -132,7 +143,7 @@ export default {
         error.value = null
         
         // 调用后端API获取docs目录的文件列表
-        const response = await axios.get('http://localhost:8000/api/documents/list')
+        const response = await axios.get('/api/documents/list')
         
         if (response.data && response.data.files) {
           const allFiles = response.data.files
@@ -195,8 +206,13 @@ export default {
         currentDoc.value = doc
         documentContent.value = ''
         
+        // 移动端自动关闭侧边栏
+        if (window.innerWidth <= 768) {
+          sidebarOpen.value = false
+        }
+        
         // 调用后端API读取文档内容
-        const response = await axios.get(`http://localhost:8000/api/documents/read/${doc.path}`)
+        const response = await axios.get(`/api/documents/read/${doc.path}`)
         
         if (response.data && response.data.content) {
           documentContent.value = response.data.content
@@ -232,7 +248,8 @@ export default {
       loadingContent,
       error,
       loadDocument,
-      renderedContent
+      renderedContent,
+      sidebarOpen
     }
   }
 }
@@ -569,5 +586,94 @@ export default {
   border: none;
   border-top: 1px solid rgba(51, 65, 85, 0.5);
   margin: 2rem 0;
+}
+
+/* 移动端侧边栏切换按钮 */
+.mobile-sidebar-toggle {
+  display: none;
+}
+
+/* 移动端响应式 */
+@media (max-width: 768px) {
+  .doc-header-fixed {
+    padding: 0.75rem 1rem;
+  }
+  
+  .doc-title {
+    font-size: 1.125rem;
+  }
+  
+  .doc-subtitle {
+    font-size: 0.75rem;
+  }
+  
+  .mobile-sidebar-toggle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    position: fixed;
+    top: 6rem;
+    left: 0.5rem;
+    padding: 0.5rem 0.375rem;
+    background: rgba(15, 23, 42, 0.98);
+    border: 1px solid rgba(59, 130, 246, 0.6);
+    border-radius: 0.375rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    z-index: 1100;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .mobile-sidebar-toggle:hover {
+    background: rgba(59, 130, 246, 0.3);
+    border-color: rgba(59, 130, 246, 0.8);
+  }
+  
+  .mobile-sidebar-toggle .toggle-icon {
+    font-size: 1rem;
+    color: #60a5fa;
+  }
+  
+  .mobile-sidebar-toggle .toggle-text {
+    font-size: 0.625rem;
+    color: #94a3b8;
+    writing-mode: vertical-rl;
+  }
+  
+  .mobile-sidebar-toggle.sidebar-open .toggle-icon {
+    color: #10b981;
+  }
+  
+  .doc-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 80vw;
+    max-width: 300px;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 1090;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
+  }
+  
+  .doc-sidebar.mobile-open {
+    transform: translateX(0);
+  }
+  
+  .doc-content {
+    width: 100%;
+    margin-left: 0;
+    padding: 0.5rem;
+  }
+  
+  .doc-viewer {
+    padding: 0;
+  }
+  
+  .viewer-body {
+    padding: 1rem 0.5rem;
+  }
 }
 </style>

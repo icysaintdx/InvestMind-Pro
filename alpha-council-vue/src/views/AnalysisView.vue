@@ -7,6 +7,12 @@
       <span class="timer-value">{{ formatTime(analysisElapsedTime) }}</span>
     </div>
     
+    <!-- 全局日志窗口 -->
+    <GlobalLogWindow 
+      ref="globalLogWindowRef"
+      v-model:visible="showGlobalLogWindow"
+    />
+    
     <!-- 股票输入区 -->
     <div class="input-section">
       <div class="input-card">
@@ -68,18 +74,6 @@
         </div>
       </div>
 
-      <!-- 辩论环节 1：多空博弈 -->
-      <div v-if="showBullBearDebate" class="debate-section">
-        <DebatePanel 
-          title="多空研判博弈" 
-          topic="基于当前市场信息，该标的是否具备投资价值？"
-          :status="bullBearDebateStatus"
-          :sides="[{name: '看涨研究员', icon: '🐂'}, {name: '看跌研究员', icon: '🐻'}]"
-          :messages="bullBearDebateMessages"
-          :conclusion="bullBearDebateConclusion"
-        />
-      </div>
-
       <!-- 第二阶段：策略整合 -->
       <div>
         <div class="stage-header">
@@ -107,15 +101,17 @@
         </div>
       </div>
 
-      <!-- 辩论环节 2：风控评估 -->
-      <div v-if="showRiskDebate" class="debate-section">
+      <!-- 辩论环节 1：多空博弈（放在第二阶段之后） -->
+      <div v-if="showBullBearDebate" class="debate-section">
         <DebatePanel 
-          title="三方风控评估" 
-          topic="当前策略的风险收益比如何？是否存在致命缺陷？"
-          :status="riskDebateStatus"
-          :sides="[{name: '激进风控', icon: '⚔️'}, {name: '保守风控', icon: '🛡️'}]"
-          :messages="riskDebateMessages"
-          :conclusion="riskDebateConclusion"
+          title="多空研判博弈" 
+          topic="基于当前市场信息，该标的是否具备投资价值？"
+          :status="bullBearDebateStatus"
+          :sides="[{name: '看涨研究员', icon: '🐂'}, {name: '看跌研究员', icon: '🐻'}]"
+          :messages="bullBearDebateMessages"
+          :conclusion="bullBearDebateConclusion"
+          :show-config="configMode"
+          :agent-ids="['bull_researcher', 'bear_researcher', 'research_manager']"
         />
       </div>
 
@@ -144,6 +140,20 @@
             @show-detail="showDetail"
           />
         </div>
+      </div>
+
+      <!-- 辩论环节 2：风控评估（放在第三阶段之后） -->
+      <div v-if="showRiskDebate" class="debate-section">
+        <DebatePanel 
+          title="三方风控评估" 
+          topic="当前策略的风险收益比如何？是否存在致命缺陷？"
+          :status="riskDebateStatus"
+          :sides="[{name: '激进风控', icon: '⚔️'}, {name: '保守风控', icon: '🛡️'}]"
+          :messages="riskDebateMessages"
+          :conclusion="riskDebateConclusion"
+          :show-config="configMode"
+          :agent-ids="['risk_aggressive', 'risk_conservative', 'risk_neutral', 'risk_manager']"
+        />
       </div>
 
       <!-- 第四阶段：最终决策 -->
@@ -309,7 +319,7 @@
 </template>
 
 <script>
-import { ref, computed, inject } from 'vue'
+import { ref, computed, inject, onBeforeUnmount, onMounted } from 'vue'
 import AgentCard from '@/components/AgentCard.vue'
 import DebatePanel from '@/components/DebatePanel.vue'
 import ModelManager from '@/components/ModelManager.vue'
@@ -317,7 +327,10 @@ import ApiConfig from '@/components/ApiConfig.vue'
 import StyleConfig from '@/components/StyleConfig.vue'
 import ReportExporter from '@/components/ReportExporter.vue'
 import StockSearchInput from '@/components/StockSearchInput.vue'
-import { marked } from 'marked' // 假设已安装，如未安装需降级处理
+import GlobalLogWindow from '@/components/GlobalLogWindow.vue'
+import { marked } from 'marked'
+import { saveAnalysisState, loadAnalysisState, clearAnalysisState } from '@/utils/analysisState'
+import { fetchWithSmartTimeout, ProgressMonitor } from '@/utils/smartTimeout'
 
 // 21个智能体完整定义
 const AGENTS = [
@@ -356,7 +369,7 @@ const AGENTS = [
 
 export default {
   name: 'AnalysisView',
-  components: { AgentCard, DebatePanel, ModelManager, ApiConfig, StyleConfig, ReportExporter, StockSearchInput },
+  components: { AgentCard, DebatePanel, ModelManager, ApiConfig, StyleConfig, ReportExporter, StockSearchInput, GlobalLogWindow },
   setup() {
     // 注入数据透明化面板
     const currentStockData = inject('currentStockData')
@@ -370,6 +383,7 @@ export default {
     const analysisStartTime = ref(null)
     const analysisElapsedTime = ref(0)
     const analysisTimer = ref(null)
+    const pollingInterval = ref(null)  // 轮询定时器
     
     // Injected states
     const configMode = inject('configMode')
@@ -408,6 +422,15 @@ export default {
     const interpreterModel = ref('Qwen/Qwen2.5-7B-Instruct') // 白话解读员模型
     const interpreterTemperature = ref(0.7) // 白话解读员温度
     const availableModels = ref([]) // 可用模型列表，从后端加载
+    
+    // 全局日志窗口（从 App.vue 注入）
+    const showGlobalLogWindow = inject('showLogWindow')
+    const globalLogWindowRef = ref(null)
+    
+    // 轮询状态
+    const lastPollingTime = ref(0)  // 上次轮询时间
+    const pollingEnabled = ref(false)  // 是否启用轮询
+    const currentSessionId = ref(null)  // 当前会话 ID
 
     // Initialize
     const initAgents = () => {
@@ -463,17 +486,24 @@ export default {
       agentThoughts.value = {}
       showReport.value = false
       
+      // 清空旧日志（如果窗口打开）
+      if (globalLogWindowRef.value && globalLogWindowRef.value.clearLogs) {
+        globalLogWindowRef.value.clearLogs()
+      }
+      
       // 启动计时器
       analysisStartTime.value = Date.now()
       analysisElapsedTime.value = 0
       analysisTimer.value = setInterval(() => {
         analysisElapsedTime.value = Math.floor((Date.now() - analysisStartTime.value) / 1000)
+        // 定期保存状态
+        saveCurrentState()
       }, 1000)
       bullBearDebateMessages.value = []
       riskDebateMessages.value = []
-
+      
       try {
-        // 0. 数据验证阶段
+        // 0. 数据验证阶段（先获取股票数据）
         const fetchedStockData = await fetchStockData(stockCode.value)
         
         // 简单验证数据有效性
@@ -482,8 +512,42 @@ export default {
         }
         
         stockData.value = fetchedStockData
+        
+        // 1. 创建后端会话（现在有股票名称了）
+        console.log('[会话] 创建分析会话...')
+        const sessionResponse = await fetch('/api/analysis/db/session/create', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            stock_code: stockCode.value,
+            stock_name: fetchedStockData.name || fetchedStockData.symbol
+          })
+        })
+        
+        if (!sessionResponse.ok) {
+          throw new Error('创建会话失败')
+        }
+        
+        const sessionData = await sessionResponse.json()
+        currentSessionId.value = sessionData.session_id
+        
+        // 保存到 localStorage
+        localStorage.setItem('current_session_id', currentSessionId.value)
+        console.log('[会话] 会话创建成功:', currentSessionId.value)
+        console.log('[会话] 股票名称:', fetchedStockData.name)
+        
+        // 开始分析
+        await fetch(`/api/analysis/db/session/${currentSessionId.value}/start`, {
+          method: 'POST'
+        })
+        
+        // 保存初始状态
+        saveCurrentState()
+        
+        // 启动轮询机制
+        startPolling()
 
-        // 1. 执行第一阶段：全维信息采集与分析（细分三步）
+        // 2. 执行第一阶段：全维信息采集与分析（细分三步）
         // Step 1.1: 数据采集层 (News, Social, China)
         const step1Agents = ['news_analyst', 'social_analyst', 'china_market']
         await runAgentsParallel(step1Agents, fetchedStockData)
@@ -496,9 +560,6 @@ export default {
         const step3Agents = ['technical', 'funds', 'fundamental']
         await runAgentsParallel(step3Agents, fetchedStockData)
 
-        // 2. 触发多空辩论 (模拟或真实API)
-        await runBullBearDebate()
-
         // 3. 执行第二阶段：策略整合 (并发执行)
         console.log('[startAnalysis] 开始第二阶段...')
         const stage2Ids = AGENTS.filter(a => a.stage === 2).map(a => a.id)
@@ -506,17 +567,20 @@ export default {
         await runAgentsParallel(stage2Ids, fetchedStockData)
         console.log('[startAnalysis] 第二阶段完成')
 
+        // 2. 触发多空辩论 (模拟或真实API)
+        await runBullBearDebate()
+
+        // 5. 执行第三阶段：风控终审（分批处理，避免并发过载）
+        console.log('[startAnalysis] 开始第三阶段...')
+        const stage3Ids = AGENTS.filter(a => a.stage === 3).map(a => a.id)
+        console.log('[startAnalysis] 第三阶段智能体:', stage3Ids)
+        await runAgentsInBatches(stage3Ids, fetchedStockData, 2) // 每批最多2个
+        console.log('[startAnalysis] 第三阶段完成')
+
         // 4. 触发风控辩论
         console.log('[startAnalysis] 开始风控辩论...')
         await runRiskDebate()
         console.log('[startAnalysis] 风控辩论完成')
-
-        // 5. 执行第三阶段：风控终审
-        console.log('[startAnalysis] 开始第三阶段...')
-        const stage3Ids = AGENTS.filter(a => a.stage === 3).map(a => a.id)
-        console.log('[startAnalysis] 第三阶段智能体:', stage3Ids)
-        await runAgentsParallel(stage3Ids, fetchedStockData)
-        console.log('[startAnalysis] 第三阶段完成')
 
         // 6. 执行第四阶段：最终决策
         const stage4Ids = AGENTS.filter(a => a.stage === 4).map(a => a.id)
@@ -524,10 +588,37 @@ export default {
 
         showReport.value = true
         scrollToBottom()
+        
+        // 标记分析完成
+        if (currentSessionId.value) {
+          try {
+            await fetch(`/api/analysis/db/session/${currentSessionId.value}/complete`, {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({ success: true })
+            })
+            console.log('[数据库] 分析完成已标记')
+          } catch (dbError) {
+            console.error('[数据库] 标记完成失败:', dbError)
+          }
+        }
 
       } catch (error) {
         console.error('分析流程异常:', error)
         alert(`分析中断: ${error.message}`)
+        
+        // 标记分析失败
+        if (currentSessionId.value) {
+          try {
+            await fetch(`/api/analysis/db/session/${currentSessionId.value}/complete`, {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({ success: false, error: error.message })
+            })
+          } catch (dbError) {
+            console.error('[数据库] 标记失败:', dbError)
+          }
+        }
       } finally {
         isAnalyzing.value = false
         // 停止计时器
@@ -535,12 +626,37 @@ export default {
           clearInterval(analysisTimer.value)
           analysisTimer.value = null
         }
+        // 停止轮询
+        stopPolling()
+        // 清除保存的状态（分析已完成）
+        clearAnalysisState()
+        console.log('[分析完成] 已清除保存的状态')
       }
     }
 
     const runAgentsParallel = async (agentIds, data) => {
       const targetAgents = AGENTS.filter(a => agentIds.includes(a.id))
       await Promise.all(targetAgents.map(agent => runAgentAnalysis(agent, data)))
+    }
+
+    // 分批运行智能体（解决并发过载问题）
+    const runAgentsInBatches = async (agentIds, data, batchSize = 2) => {
+      const agents = agentIds.map(id => AGENTS.find(a => a.id === id))
+      console.log(`[runAgentsInBatches] 开始处理 ${agents.length} 个智能体，批次大小: ${batchSize}`)
+      
+      for (let i = 0; i < agents.length; i += batchSize) {
+        const batch = agents.slice(i, i + batchSize)
+        const batchNum = Math.floor(i/batchSize) + 1
+        const totalBatches = Math.ceil(agents.length/batchSize)
+        
+        console.log(`[runAgentsInBatches] 🚀 批次 ${batchNum}/${totalBatches}:`, batch.map(a => a.id))
+        
+        await Promise.all(batch.map(agent => runAgentAnalysis(agent, data)))
+        
+        console.log(`[runAgentsInBatches] ✅ 批次 ${batchNum}/${totalBatches} 完成`)
+      }
+      
+      console.log(`[runAgentsInBatches] ✅ 所有批次完成`)
     }
 
     const getInstruction = (agent, data) => {
@@ -715,7 +831,12 @@ export default {
         if (agent.id === 'news_analyst') {
           // 新闻分析师 - 显示具体新闻标题
           try {
-            const newsResult = await fetchNewsData(data.symbol)
+            // 在获取数据之前连接日志流
+            if (globalLogWindowRef.value && globalLogWindowRef.value.connectAgentLog) {
+              globalLogWindowRef.value.connectAgentLog(agent.id)
+              await new Promise(resolve => setTimeout(resolve, 100))  // 等待连接建立
+            }
+            const newsResult = await fetchNewsData(data.symbol, agent.id)  // 传递 agent.id
             const sources = []
             
             // 先添加3条模拟的具体新闻（带描述）
@@ -776,7 +897,12 @@ export default {
         } else if (agent.id === 'social_analyst') {
           // 社交媒体分析师 - 显示具体社交媒体数据
           try {
-            const newsResult = await fetchNewsData(data.symbol)
+            // 在获取数据之前连接日志流
+            if (globalLogWindowRef.value && globalLogWindowRef.value.connectAgentLog) {
+              globalLogWindowRef.value.connectAgentLog(agent.id)
+              await new Promise(resolve => setTimeout(resolve, 100))
+            }
+            const newsResult = await fetchNewsData(data.symbol, agent.id)  // 传递 agent.id
             const sources = []
             
             // 先添加3条模拟的具体社交媒体数据（带描述）
@@ -816,7 +942,12 @@ export default {
         } else if (agent.id === 'china_market') {
           // 中国市场专家 - 显示具体市场数据
           try {
-            const newsResult = await fetchNewsData(data.symbol)
+            // 在获取数据之前连接日志流
+            if (globalLogWindowRef.value && globalLogWindowRef.value.connectAgentLog) {
+              globalLogWindowRef.value.connectAgentLog(agent.id)
+              await new Promise(resolve => setTimeout(resolve, 100))
+            }
+            const newsResult = await fetchNewsData(data.symbol, agent.id)  // 传递 agent.id
             const sources = []
             
             // 先添加3条模拟的具体市场数据（带描述）
@@ -865,37 +996,45 @@ export default {
         } else if (agent.id === 'funds') {
           // 资金流向分析师 - 获取真实数据
           try {
-            const response = await fetch(`http://localhost:8000/api/akshare/fund-flow/${data.symbol}`)
-            const result = await response.json()
+            const response = await fetch(`/api/akshare/fund-flow/${data.symbol}`)
             
-            if (result.success && result.sources) {
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}`)
+            }
+            
+            const result = await response.json()
+            console.log('[funds] ✅ API返回结果:', result)
+            
+            // 检查返回格式
+            if (result && result.success === true && result.sources) {
+              const sources = result.sources
               agentDataSources.value[agent.id] = [
-                { source: '北向资金数据', count: result.sources.north_bound || 0, description: '沪深港通实时流向' },
-                { source: '主力资金数据', count: result.sources.individual_flow || 0, description: '大单成交监测' },
-                { source: '融资融券数据', count: result.sources.margin_summary || 0, description: '两融余额变化' },
-                { source: '行业资金流', count: result.sources.industry_flow || 0, description: '行业资金流向' }
+                { source: '北向资金数据', count: sources.north_bound || 0, description: '沪深港通实时流向' },
+                { source: '主力资金数据', count: sources.individual_flow || 0, description: '大单成交监测' },
+                { source: '融资融券数据', count: sources.margin_summary || 0, description: '两融余额变化' },
+                { source: '行业资金流', count: sources.industry_flow || 0, description: '行业资金流向' }
               ]
-              console.log(`[funds] 设置真实数据源:`, agentDataSources.value[agent.id])
+              console.log(`[funds] ✅ 设置真实数据源:`, agentDataSources.value[agent.id])
             } else {
-              // 失败时使用默认值
+              console.error('[funds] ❌ API返回格式错误:', result)
               agentDataSources.value[agent.id] = [
-                { source: '北向资金数据', count: 0, description: '数据获取失败' },
-                { source: '主力资金数据', count: 0, description: '数据获取失败' },
-                { source: '融资融券数据', count: 0, description: '数据获取失败' }
+                { source: '北向资金数据', count: 0, description: 'API格式错误' },
+                { source: '主力资金数据', count: 0, description: 'API格式错误' },
+                { source: '融资融券数据', count: 0, description: 'API格式错误' }
               ]
             }
           } catch (e) {
-            console.error('[funds] 获取资金流向数据失败:', e)
+            console.error('[funds] ❌ 获取资金流向数据失败:', e)
             agentDataSources.value[agent.id] = [
-              { source: '北向资金数据', count: 0, description: '网络错误' },
-              { source: '主力资金数据', count: 0, description: '网络错误' },
-              { source: '融资融券数据', count: 0, description: '网络错误' }
+              { source: '北向资金数据', count: 0, description: `错误: ${e.message}` },
+              { source: '主力资金数据', count: 0, description: `错误: ${e.message}` },
+              { source: '融资融券数据', count: 0, description: `错误: ${e.message}` }
             ]
           }
         } else if (agent.id === 'industry') {
           // 行业轮动分析师 - 获取真实数据
           try {
-            const response = await fetch('http://localhost:8000/api/akshare/sector/comprehensive')
+            const response = await fetch('/api/akshare/sector/comprehensive')
             const result = await response.json()
             
             if (result.success && result.sources) {
@@ -921,7 +1060,7 @@ export default {
         } else if (agent.id === 'macro') {
           // 宏观政策分析师 - 获取真实数据
           try {
-            const response = await fetch('http://localhost:8000/api/akshare/macro/comprehensive')
+            const response = await fetch('/api/akshare/macro/comprehensive')
             const result = await response.json()
             
             if (result.success && result.sources) {
@@ -1006,21 +1145,14 @@ export default {
         // ✅ 关键：数据源设置完成后，再调用API进行分析
         agentStatus.value[agent.id] = 'analyzing'
         
-        // 添加超时控制（10分钟）和重试机制
-        let retryCount = 0
-        const maxRetries = 1 // 最多重试1次
+        // 使用智能超时机制
+        const progressMonitor = new ProgressMonitor(agent.id, 10000)
+        progressMonitor.start()
         
-        while (retryCount <= maxRetries) {
-          const controller = new AbortController()
-          const timeoutId = setTimeout(() => controller.abort(), 600000) // 10分钟
-          
-          try {
-            if (retryCount > 0) {
-              console.log(`[${agent.id}] 重试第 ${retryCount} 次...`)
-              agentStatus.value[agent.id] = 'analyzing'
-            }
-            
-            const response = await fetch('http://localhost:8000/api/analyze', {
+        try {
+          const response = await fetchWithSmartTimeout(
+            '/api/analyze',
+            {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -1029,48 +1161,58 @@ export default {
                 stock_data: data,
                 previous_outputs: agentOutputs.value,
                 custom_instruction: getInstruction(agent, data)
-              }),
-              signal: controller.signal
-            })
-            
-            clearTimeout(timeoutId)
+              })
+            },
+            {
+              segmentTimeout: 30000, // 30秒一段
+              maxSegments: 6, // 最多6段 = 3分钟
+              maxRetries: 2, // 最多重试2次
+              agentId: agent.id
+            }
+          )
           
-            if (!response.ok) throw new Error('API Error')
-            const result = await response.json()
-            
-            if (!result.success) {
-              throw new Error(result.error || '分析失败')
-            }
-            
-            const analysisResult = result.result || '⚠️ 分析结果为空'
-            agentOutputs.value[agent.id] = analysisResult
-            agentTokens.value[agent.id] = Math.floor(analysisResult.length / 1.5)
-            agentStatus.value[agent.id] = 'success'
-            break // 成功后退出循环
-            
-          } catch (fetchError) {
-            clearTimeout(timeoutId)
-            
-            if (fetchError.name === 'AbortError') {
-              if (retryCount < maxRetries) {
-                console.log(`[${agent.id}] 超时，准备重试...`)
-                retryCount++
-                await new Promise(r => setTimeout(r, 2000)) // 等待2秒后重试
-                continue
-              } else {
-                throw new Error('请求超时（10分钟），已重试1次仍失败')
-              }
-            }
-            
-            if (retryCount < maxRetries) {
-              console.log(`[${agent.id}] 请求失败，准备重试...`)
-              retryCount++
-              await new Promise(r => setTimeout(r, 2000)) // 等待2秒后重试
-              continue
-            }
-            
-            throw fetchError
+          progressMonitor.stop()
+          
+          if (!response.ok) {
+            throw new Error(`API Error: ${response.status}`)
           }
+          
+          const result = await response.json()
+          
+          if (!result.success) {
+            throw new Error(result.error || '分析失败')
+          }
+          
+          const analysisResult = result.result || '⚠️ 分析结果为空'
+          agentOutputs.value[agent.id] = analysisResult
+          agentTokens.value[agent.id] = Math.floor(analysisResult.length / 1.5)
+          agentStatus.value[agent.id] = 'success'
+          
+          // 保存到数据库
+          if (currentSessionId.value) {
+            try {
+              await fetch(`/api/analysis/db/session/${currentSessionId.value}/update`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                  agent_id: agent.id,
+                  agent_name: agent.title,
+                  status: 'completed',
+                  output: analysisResult,
+                  tokens: agentTokens.value[agent.id],
+                  thoughts: agentThoughts.value[agent.id],
+                  data_sources: agentDataSources.value[agent.id]
+                })
+              })
+              console.log(`[数据库] 已保存: ${agent.title}`)
+            } catch (dbError) {
+              console.error(`[数据库] 保存失败: ${agent.id}`, dbError)
+            }
+          }
+          
+        } catch (error) {
+          progressMonitor.stop()
+          throw error
         }
       } catch (e) {
         console.error(`Agent ${agent.id} 分析失败:`, e)
@@ -1147,48 +1289,486 @@ export default {
         }, 1000) // 稍微调慢一点，让用户看清
     }
 
+    const shortenText = (text, maxLen = 140) => {
+        if (!text) {
+            return '⚠️ 暂无有效观点，请检查模型配置或稍后重试。'
+        }
+        const clean = String(text).replace(/\s+/g, ' ').trim()
+        if (clean.length <= maxLen) {
+            return clean
+        }
+        return clean.slice(0, maxLen) + '...'
+    }
+
+    const localBullBearFallback = () => {
+        if (!stockData.value) {
+            return null
+        }
+        
+        const data = stockData.value
+        let bullScore = 50
+        let bearScore = 50
+        const reasons = []
+        
+        const changePercent = parseFloat(data.change_percent || data.change || 0)
+        const price = parseFloat(data.price || 0)
+        const pe = parseFloat(data.pe || 0)
+        const pb = parseFloat(data.pb || 0)
+        
+        if (changePercent > 5) {
+            bullScore += 15
+            reasons.push('短期涨幅较大，动能强劲')
+        } else if (changePercent > 2) {
+            bullScore += 8
+            reasons.push('短期上涨趋势')
+        } else if (changePercent < -5) {
+            bearScore += 15
+            reasons.push('短期跌幅较大，下行压力')
+        } else if (changePercent < -2) {
+            bearScore += 8
+            reasons.push('短期下跌趋势')
+        } else if (Math.abs(changePercent) < 0.5) {
+            reasons.push('价格波动较小，市场观望')
+        }
+        
+        if (pe > 0) {
+            if (pe < 15) {
+                bullScore += 10
+                reasons.push('PE估值偏低，具备安全边际')
+            } else if (pe > 50) {
+                bearScore += 10
+                reasons.push('PE估值偏高，存在泡沫风险')
+            } else if (pe >= 15 && pe <= 30) {
+                bullScore += 5
+                reasons.push('PE估值合理区间')
+            }
+        } else {
+            reasons.push('PE数据缺失，无法评估盈利能力')
+        }
+        
+        if (pb > 0) {
+            if (pb < 1.5) {
+                bullScore += 8
+                reasons.push('PB估值合理')
+            } else if (pb > 5) {
+                bearScore += 8
+                reasons.push('PB估值过高')
+            }
+        } else {
+            reasons.push('PB数据缺失，无法评估账面价值')
+        }
+        
+        let rec = 'HOLD'
+        let label = '分歧/观望'
+        let score = 50
+        
+        if (bullScore > bearScore + 10) {
+            rec = 'BUY'
+            label = '多头优势'
+            score = Math.min(85, 50 + (bullScore - bearScore))
+        } else if (bearScore > bullScore + 10) {
+            rec = 'SELL'
+            label = '空头优势'
+            score = Math.max(15, 50 - (bearScore - bullScore))
+        } else {
+            rec = 'HOLD'
+            label = '分歧/观望'
+            score = 50
+        }
+        
+        // 只在有数据时显示估值指标，避免显示N/A
+        const valuationParts = []
+        if (pe > 0) valuationParts.push(`PE=${pe.toFixed(2)}`)
+        if (pb > 0) valuationParts.push(`PB=${pb.toFixed(2)}`)
+        const valuationDisplay = valuationParts.length > 0 ? `，${valuationParts.join('，')}` : ''
+        const summary = `基于技术面和估值的本地规则判断（${rec}）：${reasons.slice(0, 3).join('；')}。当前价格${price}元，涨跌幅${changePercent.toFixed(2)}%${valuationDisplay}。`
+        
+        return { label, score, summary, rec }
+    }
+
+    const localRiskFallback = () => {
+        if (!stockData.value) {
+            return null
+        }
+        
+        const data = stockData.value
+        let riskScore = 0
+        const riskFactors = []
+        
+        const changePercent = Math.abs(parseFloat(data.change_percent || data.change || 0))
+        const pe = parseFloat(data.pe || 0)
+        const pb = parseFloat(data.pb || 0)
+        
+        if (changePercent > 9) {
+            riskScore += 30
+            riskFactors.push('单日波动超过9%，极高波动风险')
+        } else if (changePercent > 5) {
+            riskScore += 20
+            riskFactors.push('单日波动超过5%，高波动风险')
+        } else if (changePercent > 3) {
+            riskScore += 10
+            riskFactors.push('单日波动超过3%，中等波动')
+        }
+        
+        if (pe > 100 || pe < 0) {
+            riskScore += 25
+            riskFactors.push('PE估值异常，基本面风险')
+        } else if (pe > 50) {
+            riskScore += 15
+            riskFactors.push('PE估值偏高，估值风险')
+        }
+        
+        if (pb > 10) {
+            riskScore += 15
+            riskFactors.push('PB估值过高，泡沫风险')
+        } else if (pb < 0.8) {
+            riskScore += 10
+            riskFactors.push('PB破净，经营风险')
+        }
+        
+        let level = 'MEDIUM'
+        let label = '中等风险'
+        let score = 50
+        let positionAdvice = '建议仓位10-20%'
+        
+        if (riskScore >= 50) {
+            level = 'HIGH'
+            label = '高风险'
+            score = 25
+            positionAdvice = '建议仓位不超过5%或观望'
+        } else if (riskScore >= 25) {
+            level = 'MEDIUM'
+            label = '中等风险'
+            score = 50
+            positionAdvice = '建议仓位10-20%'
+        } else {
+            level = 'LOW'
+            label = '低风险'
+            score = 75
+            positionAdvice = '建议仓位可达20-30%'
+        }
+        
+        const summary = `基于波动率和估值的本地风险评估（${level}）：${riskFactors.slice(0, 3).join('；')}。${positionAdvice}。`
+        
+        return { level, label, score, summary }
+    }
+
     const runBullBearDebate = async () => {
         showBullBearDebate.value = true
         bullBearDebateStatus.value = 'debating'
-        
-        // 模拟辩论过程
-        const rounds = [
-            { agentName: '看涨研究员', agentIcon: '🐂', content: '基于技术面分析，该股呈现明显的底部反转信号，资金流入显著。', round: 1 },
-            { agentName: '看跌研究员', agentIcon: '🐻', content: '但我必须指出，宏观环境依然承压，且行业增速放缓，估值目前偏高。', round: 1 },
-            { agentName: '看涨研究员', agentIcon: '🐂', content: '新兴业务增长强劲，财报显示第二曲线已形成，未来可期。', round: 2 },
-            { agentName: '看跌研究员', agentIcon: '🐻', content: '短期炒作迹象明显，主力资金存在出逃风险，建议保持谨慎。', round: 2 }
-        ]
+        bullBearDebateMessages.value = []
+        bullBearDebateConclusion.value = null
 
-        for (const msg of rounds) {
-            await new Promise(r => setTimeout(r, 1500))
-            bullBearDebateMessages.value.push(msg)
-        }
+        try {
+            const response = await fetchWithSmartTimeout(
+                '/api/debate/research',
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        stock_code: stockCode.value,
+                        analysis_data: agentOutputs.value,
+                        debate_type: 'research',
+                        rounds: 1
+                    })
+                },
+                {
+                    segmentTimeout: 60000, // 单段60秒
+                    maxSegments: 3, // 最长3分钟
+                    maxRetries: 1,
+                    agentId: 'debate_research'
+                }
+            )
 
-        bullBearDebateConclusion.value = {
-            content: '综合多空双方观点，虽然短期存在技术性反弹机会，但长期基本面仍需观察。建议关注关键支撑位的有效性。',
-            score: 65
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`)
+            }
+
+            const result = await response.json()
+            console.log('[runBullBearDebate] 后端辩论结果:', result)
+
+            if (!result.success) {
+                throw new Error(result.detail || result.error || '多空辩论失败')
+            }
+
+            const bullContent = result.bull_view?.content || ''
+            const bearContent = result.bear_view?.content || ''
+
+            // 检测后端返回的是否是超时错误信息
+            const isTimeout = bullContent.includes('AI 响应超时') || bearContent.includes('AI 响应超时')
+            if (isTimeout) {
+                throw new Error('后端LLM超时，触发本地兜底')
+            }
+
+            // 提取核心观点（去除辩论过程，只保留最终结论）
+            const extractCoreView = (content) => {
+                // 如果包含多个角色的对话，只提取最后一段
+                const lines = content.split('\n').filter(l => l.trim())
+                // 找到最后一个有实质内容的段落（超过50字）
+                for (let i = lines.length - 1; i >= 0; i--) {
+                    const line = lines[i].trim()
+                    if (line.length > 50 && !line.includes('Bull Analyst:') && !line.includes('Bear Analyst:')) {
+                        return line
+                    }
+                }
+                // 如果没找到，返回前150字
+                return content.substring(0, 150) + '...'
+            }
+
+            if (bullContent) {
+                bullBearDebateMessages.value.push({
+                    agentName: '看涨研究员',
+                    agentIcon: '🐂',
+                    content: shortenText(extractCoreView(bullContent), 150),
+                    round: 1
+                })
+            }
+
+            if (bearContent) {
+                bullBearDebateMessages.value.push({
+                    agentName: '看跌研究员',
+                    agentIcon: '🐻',
+                    content: shortenText(extractCoreView(bearContent), 150),
+                    round: 1
+                })
+            }
+
+            // 使用后端 recommendation / confidence 映射到前端评分
+            const rec = (result.recommendation || '').toUpperCase()
+            let label = '信号不明确'
+            let score = 50
+            if (rec === 'BUY') {
+                label = '多头优势'
+                score = 80
+            } else if (rec === 'SELL') {
+                label = '空头优势'
+                score = 30
+            } else if (rec === 'HOLD') {
+                label = '分歧/观望'
+                score = 55
+            }
+
+            const summary = result.debate_summary || result.final_decision?.content || ''
+            // 限制结论长度，只显示核心信息
+            const shortSummary = summary.length > 150 ? summary.substring(0, 150) + '...' : summary
+            bullBearDebateConclusion.value = {
+                content: shortSummary ? `方向评估：${label}。${shortSummary}` : `方向评估：${label}。`,
+                score
+            }
+
+            bullBearDebateStatus.value = 'finished'
+        } catch (e) {
+            console.error('[runBullBearDebate] 多空辩论失败:', e)
+            const fallback = localBullBearFallback()
+            if (fallback) {
+                // 模拟多头观点
+                if (fallback.rec === 'BUY' || fallback.rec === 'HOLD') {
+                    bullBearDebateMessages.value.push({
+                        agentName: '看涨研究员',
+                        agentIcon: '🐂',
+                        content: `基于本地规则引擎分析：${fallback.summary.split('：')[1] || fallback.summary}。建议${fallback.rec === 'BUY' ? '买入' : '持有观望'}。`,
+                        round: 1
+                    })
+                }
+                
+                // 模拟空头观点
+                if (fallback.rec === 'SELL' || fallback.rec === 'HOLD') {
+                    bullBearDebateMessages.value.push({
+                        agentName: '看跌研究员',
+                        agentIcon: '�',
+                        content: `基于本地规则引擎分析：${fallback.summary.split('：')[1] || fallback.summary}。建议${fallback.rec === 'SELL' ? '卖出' : '谨慎观望'}。`,
+                        round: 1
+                    })
+                }
+                
+                bullBearDebateConclusion.value = {
+                    content: `方向评估：${fallback.label}。${fallback.summary}`,
+                    score: fallback.score
+                }
+                bullBearDebateStatus.value = 'finished'
+            } else {
+                bullBearDebateStatus.value = 'idle'
+                bullBearDebateMessages.value.push({
+                    agentName: '系统',
+                    agentIcon: '',
+                    content: `多空辩论调用失败：${e.message || e}`
+                })
+            }
         }
-        bullBearDebateStatus.value = 'finished'
     }
 
     const runRiskDebate = async () => {
         showRiskDebate.value = true
         riskDebateStatus.value = 'debating'
-        
-        const rounds = [
-            { agentName: '激进风控师', agentIcon: '⚔️', content: '建议设置较宽的止损位，博取潜在的高赔率收益。', round: 1 },
-            { agentName: '保守风控师', agentIcon: '🛡️', content: '绝对不行，当前波动率过高，必须严格控制仓位，建议不超过2成。', round: 1 },
-        ]
-         for (const msg of rounds) {
-            await new Promise(r => setTimeout(r, 1500))
-            riskDebateMessages.value.push(msg)
+        riskDebateMessages.value = []
+        riskDebateConclusion.value = null
+
+        try {
+            const response = await fetchWithSmartTimeout(
+                '/api/debate/risk',
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        stock_code: stockCode.value,
+                        analysis_data: agentOutputs.value,
+                        debate_type: 'risk',
+                        rounds: 1
+                    })
+                },
+                {
+                    segmentTimeout: 60000,
+                    maxSegments: 3,
+                    maxRetries: 1,
+                    agentId: 'debate_risk'
+                }
+            )
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`)
+            }
+
+            const result = await response.json()
+            console.log('[runRiskDebate] 风险辩论结果:', result)
+
+            if (!result.success) {
+                throw new Error(result.detail || result.error || '风险辩论失败')
+            }
+
+            const aggressiveContent = result.aggressive_view?.content || ''
+            const conservativeContent = result.conservative_view?.content || ''
+            const neutralContent = result.neutral_view?.content || ''
+
+            // 检测后端返回的是否是超时错误信息
+            const isTimeout = aggressiveContent.includes('AI 响应超时') || 
+                            conservativeContent.includes('AI 响应超时') || 
+                            neutralContent.includes('AI 响应超时')
+            if (isTimeout) {
+                throw new Error('后端LLM超时，触发本地兜底')
+            }
+
+            // 提取核心观点
+            const extractCoreView = (content) => {
+                const lines = content.split('\n').filter(l => l.trim())
+                for (let i = lines.length - 1; i >= 0; i--) {
+                    const line = lines[i].trim()
+                    if (line.length > 50 && !line.includes('Analyst:')) {
+                        return line
+                    }
+                }
+                return content.substring(0, 150) + '...'
+            }
+
+            if (aggressiveContent) {
+                riskDebateMessages.value.push({
+                    agentName: '激进风控',
+                    agentIcon: '⚔️',
+                    content: shortenText(extractCoreView(aggressiveContent), 150),
+                    round: 1
+                })
+            }
+
+            if (conservativeContent) {
+                riskDebateMessages.value.push({
+                    agentName: '保守风控',
+                    agentIcon: '🛡️',
+                    content: shortenText(extractCoreView(conservativeContent), 150),
+                    round: 1
+                })
+            }
+
+            // 确保三方观点都显示（即使内容为空也要有占位）
+            if (neutralContent) {
+                riskDebateMessages.value.push({
+                    agentName: '中立风控',
+                    agentIcon: '⚖️',
+                    content: shortenText(extractCoreView(neutralContent), 150),
+                    round: 1
+                })
+            }
+
+            const level = result.risk_level || 'UNKNOWN'
+            let label = '风险不明'
+            let score = 50
+            if (level === 'HIGH') {
+                label = '高风险'
+                score = 30
+            } else if (level === 'MEDIUM') {
+                label = '中等风险'
+                score = 50
+            } else if (level === 'LOW') {
+                label = '低风险'
+                score = 75
+            }
+
+            const adviceSummary = result.position_advice?.summary || ''
+            // 限制结论长度
+            const shortAdvice = adviceSummary.length > 150 ? adviceSummary.substring(0, 150) + '...' : adviceSummary
+            riskDebateConclusion.value = {
+                content: shortAdvice ? `风险评级：${label}。${shortAdvice}` : `风险评级：${label}。`,
+                score
+            }
+
+            riskDebateStatus.value = 'finished'
+        } catch (e) {
+            console.error('[runRiskDebate] 风险辩论失败:', e)
+            const fallback = localRiskFallback()
+            if (fallback) {
+                // ✅ 确保三方观点都显示
+                // 激进风控 - 强调机会
+                let aggressiveView = ''
+                if (fallback.level === 'LOW') {
+                    aggressiveView = `基于本地规则引擎分析：${fallback.summary.split('：')[1] || fallback.summary}。当前风险较低，可以积极布局。`
+                } else if (fallback.level === 'MEDIUM') {
+                    aggressiveView = `基于本地规则引擎分析：${fallback.summary.split('：')[1] || fallback.summary}。虽有风险但机会可观，建议适度参与。`
+                } else {
+                    aggressiveView = `基于本地规则引擎分析：${fallback.summary.split('：')[1] || fallback.summary}。高风险高收益，可小仓位博弈。`
+                }
+                riskDebateMessages.value.push({
+                    agentName: '激进风控',
+                    agentIcon: '⚔️',
+                    content: aggressiveView,
+                    round: 1
+                })
+                
+                // 保守风控 - 强调风险
+                let conservativeView = ''
+                if (fallback.level === 'HIGH') {
+                    conservativeView = `基于本地规则引擎分析：${fallback.summary.split('：')[1] || fallback.summary}。当前风险较高，建议谨慎观望。`
+                } else if (fallback.level === 'MEDIUM') {
+                    conservativeView = `基于本地规则引擎分析：${fallback.summary.split('：')[1] || fallback.summary}。风险中等，需要严格止损。`
+                } else {
+                    conservativeView = `基于本地规则引擎分析：${fallback.summary.split('：')[1] || fallback.summary}。虽然风险较低，但仍需谨慎控制仓位。`
+                }
+                riskDebateMessages.value.push({
+                    agentName: '保守风控',
+                    agentIcon: '🛡️',
+                    content: conservativeView,
+                    round: 1
+                })
+                
+                // 中立风控 - 客观评估
+                riskDebateMessages.value.push({
+                    agentName: '中立风控',
+                    agentIcon: '⚖️',
+                    content: `基于本地规则引擎分析：综合评估风险等级为${fallback.label}。${fallback.summary.includes('建议') ? fallback.summary.split('。').pop() : ''}。`,
+                    round: 1
+                })
+                
+                riskDebateConclusion.value = {
+                    content: `风险评级：${fallback.label}。${fallback.summary}`,
+                    score: fallback.score
+                }
+                riskDebateStatus.value = 'finished'
+            } else {
+                riskDebateStatus.value = 'idle'
+                riskDebateMessages.value.push({
+                    agentName: '系统',
+                    agentIcon: '',
+                    content: `风险辩论调用失败：${e.message || e}`
+                })
+            }
         }
-        
-        riskDebateConclusion.value = {
-            content: '风险评级：中高风险。建议轻仓参与，严格执行止损。',
-            score: 40
-        }
-        riskDebateStatus.value = 'finished'
     }
 
     // Utils
@@ -1206,7 +1786,7 @@ export default {
             console.warn('[fetchStockData] stockDataPanel 不可用')
           }
           
-          const response = await fetch(`http://localhost:8000/api/stock/${code}`, {
+          const response = await fetch(`/api/stock/${code}`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -1283,7 +1863,7 @@ export default {
     }
     
     // 获取新闻数据
-    const fetchNewsData = async (code) => {
+    const fetchNewsData = async (code, agentId = 'news_analyst') => {
         try {
           // 更新数据透明化面板 - 开始获取
           if (newsDataPanel.value && newsDataPanel.value.addLog) {
@@ -1291,13 +1871,14 @@ export default {
             newsDataPanel.value.addLog('数据源: 统一新闻API (7个数据源)', 'fetch')
           }
           
-          const response = await fetch('http://localhost:8000/api/unified-news/stock', {
+          const response = await fetch('/api/unified-news/stock', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              ticker: code
+              ticker: code,
+              agent_id: agentId  // 传递智能体ID，用于日志流
             })
           })
           
@@ -1481,16 +2062,65 @@ export default {
     }
 
     const generateReport = () => {
-        return Object.keys(agentOutputs.value).map(id => {
-            const a = AGENTS.find(x => x.id === id)
-            return `### ${a.icon} ${a.title}\n${agentOutputs.value[id]}`
-        }).join('\n\n---\n\n')
+        const sections = []
+        const stageTitles = {
+            1: '\u7b2c\u4e00\u9636\u6bb5\uff1a\u5168\u7ef4\u4fe1\u606f\u91c7\u96c6\u4e0e\u5206\u6790',
+            2: '\u7b2c\u4e8c\u9636\u6bb5\uff1a\u7b56\u7565\u6574\u5408\u4e0e\u65b9\u5411\u7814\u5224',
+            3: '\u7b2c\u4e09\u9636\u6bb5\uff1a\u98ce\u9669\u63a7\u5236\u7ec8\u5ba1',
+            4: '\u7b2c\u56db\u9636\u6bb5\uff1a\u6295\u8d44\u51b3\u7b56\u6267\u884c'
+        }
+
+        const getAgentsByStage = (stage) => {
+            return AGENTS.filter(a => a.stage === stage)
+        }
+
+        for (let stage = 1; stage <= 4; stage++) {
+            const stageAgents = getAgentsByStage(stage).filter(a => agentOutputs.value[a.id])
+            if (!stageAgents.length) {
+                continue
+            }
+            sections.push(`## ${stageTitles[stage]}`)
+            stageAgents.forEach(a => {
+                if (stage === 4 && a.id === 'interpreter') {
+                    return
+                }
+                const output = agentOutputs.value[a.id]
+                sections.push(`### ${a.icon} ${a.title}\n${output}`)
+            })
+        }
+
+        const bullConclusion = bullBearDebateConclusion.value
+        const riskConclusion = riskDebateConclusion.value
+
+        if (bullConclusion || riskConclusion) {
+            sections.push('## 讨论与决议')
+
+            if (bullConclusion) {
+                const bullScore = typeof bullConclusion.score === 'number' ? bullConclusion.score : 'N/A'
+                sections.push(
+                    '### \ud83d\udc02\ud83d\udc3b \u591a\u7a7a\u8fa9\u8bba\u6458\u8981' +
+                    `\n- \u65b9\u5411\u8bc4\u5206\uff1a**${bullScore} / 100**` +
+                    `\n- \u7efc\u5408\u7ed3\u8bba\uff1a${bullConclusion.content || ''}`
+                )
+            }
+
+            if (riskConclusion) {
+                const riskScore = typeof riskConclusion.score === 'number' ? riskConclusion.score : 'N/A'
+                sections.push(
+                    '### \u2696\ufe0f \u98ce\u63a7\u8fa9\u8bba\u4e0e\u4ed3\u4f4d\u5efa\u8bae' +
+                    `\n- \u98ce\u9669\u8bc4\u5206\uff1a**${riskScore} / 100**` +
+                    `\n- \u7efc\u5408\u7ed3\u8bba\uff1a${riskConclusion.content || ''}`
+                )
+            }
+        }
+
+        return sections.join('\n\n---\n\n')
     }
 
     // 加载可用模型列表
     const loadAvailableModels = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/config/agents')
+        const response = await fetch('/api/config/agents')
         const result = await response.json()
         const config = result.success ? result.data : result
         availableModels.value = config.selectedModels || []
@@ -1510,7 +2140,7 @@ export default {
     const saveInterpreterConfig = async () => {
       try {
         // 读取现有配置
-        const response = await fetch('http://localhost:8000/api/config/agents')
+        const response = await fetch('/api/config/agents')
         const result = await response.json()
         const config = result.success ? result.data : result
         
@@ -1533,7 +2163,7 @@ export default {
         }
         
         // 保存配置
-        await fetch('http://localhost:8000/api/config/agents', {
+        await fetch('/api/config/agents', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ...config, agents })
@@ -1564,6 +2194,338 @@ export default {
 
     const styleSettings = ref({})
 
+    // ==================== 轮询机制 ====================
+    
+    /**
+     * 启动轮询 - 定期检查后端状态
+     */
+    const startPolling = () => {
+      if (pollingInterval.value) {
+        console.log('[轮询] 已在运行，跳过')
+        return
+      }
+      
+      pollingEnabled.value = true
+      console.log('[轮询] 启动轮询机制，间隔 5 秒')
+      
+      pollingInterval.value = setInterval(async () => {
+        if (!isAnalyzing.value) {
+          console.log('[轮询] 分析已结束，停止轮询')
+          stopPolling()
+          return
+        }
+        
+        try {
+          await pollBackendStatus()
+        } catch (error) {
+          console.error('[轮询] 错误:', error)
+        }
+      }, 5000)  // 每 5 秒轮询一次
+    }
+    
+    /**
+     * 停止轮询
+     */
+    const stopPolling = () => {
+      if (pollingInterval.value) {
+        clearInterval(pollingInterval.value)
+        pollingInterval.value = null
+        pollingEnabled.value = false
+        console.log('[轮询] 已停止')
+      }
+    }
+    
+    /**
+     * 轮询后端状态
+     * 调用后端会话 API 获取最新进度
+     */
+    const pollBackendStatus = async () => {
+      if (!currentSessionId.value) {
+        console.log('[轮询] 无会话 ID，跳过')
+        return
+      }
+      
+      const now = Date.now()
+      lastPollingTime.value = now
+      
+      try {
+        console.log('[轮询] 检查后端状态...', currentSessionId.value)
+        
+        // 调用后端 API（数据库版本）
+        const response = await fetch(
+          `/api/analysis/db/session/${currentSessionId.value}/status`
+        )
+        
+        if (!response.ok) {
+          console.error('[轮询] API 调用失败:', response.status)
+          return
+        }
+        
+        const status = await response.json()
+        console.log(`[轮询] 进度: ${status.progress}%, 阶段: ${status.current_stage}, 完成: ${status.completed_agents.length}/${status.total_agents}`)
+        
+        // 更新进度
+        if (status.current_stage > 0) {
+          // 检查新完成的智能体
+          for (const agentId of status.completed_agents) {
+            if (!agentOutputs.value[agentId] || agentStatus.value[agentId] !== 'completed') {
+              // 获取智能体结果
+              await fetchAgentResult(agentId)
+            }
+          }
+        }
+        
+        // 检查是否完成
+        if (status.status === 'completed') {
+          console.log('[轮询] 分析已完成')
+          isAnalyzing.value = false
+          showReport.value = true
+          stopPolling()
+          clearAnalysisState()
+        } else if (status.status === 'error') {
+          console.error('[轮询] 分析失败:', status.error_message)
+          isAnalyzing.value = false
+          stopPolling()
+          alert(`分析失败: ${status.error_message}`)
+        }
+        
+      } catch (error) {
+        console.error('[轮询] 错误:', error)
+      }
+    }
+    
+    /**
+     * 获取智能体结果
+     */
+    const fetchAgentResult = async (agentId) => {
+      try {
+        const response = await fetch(
+          `/api/analysis/db/session/${currentSessionId.value}/agent/${agentId}`
+        )
+        
+        if (!response.ok) return
+        
+        const result = await response.json()
+        
+        if (result.status === 'completed') {
+          console.log(`[轮询] 获取智能体结果: ${agentId}`)
+          agentOutputs.value[agentId] = result.output || ''
+          agentStatus.value[agentId] = 'completed'
+          agentTokens.value[agentId] = result.tokens || 0
+          agentThoughts.value[agentId] = result.thoughts || []
+          agentDataSources.value[agentId] = result.data_sources || []
+        }
+      } catch (error) {
+        console.error(`[轮询] 获取智能体结果失败: ${agentId}`, error)
+      }
+    }
+    
+    /**
+     * 监听页面可见性变化
+     * 移动端后台/前台切换时触发
+     */
+    const setupVisibilityListener = () => {
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          console.log('[页面状态] 进入后台，继续轮询')
+          // 移动端后台时，轮询继续运行
+        } else {
+          console.log('[页面状态] 回到前台，检查状态')
+          // 回到前台时，立即检查一次
+          if (isAnalyzing.value) {
+            pollBackendStatus()
+          }
+        }
+      })
+    }
+
+    // ==================== 状态持久化管理 ====================
+    
+    /**
+     * 保存当前分析状态到 localStorage
+     */
+    const saveCurrentState = () => {
+      if (!isAnalyzing.value) return
+      
+      try {
+        const state = {
+          stockCode: stockCode.value,
+          stockData: stockData.value,
+          isAnalyzing: isAnalyzing.value,
+          agentStatus: agentStatus.value,
+          agentOutputs: agentOutputs.value,
+          agentTokens: agentTokens.value,
+          agentThoughts: agentThoughts.value,
+          agentDataSources: agentDataSources.value,
+          analysisStartTime: analysisStartTime.value,
+          analysisElapsedTime: analysisElapsedTime.value,
+          showReport: showReport.value,
+          showBullBearDebate: showBullBearDebate.value,
+          showRiskDebate: showRiskDebate.value,
+          bullBearDebateMessages: bullBearDebateMessages.value,
+          riskDebateMessages: riskDebateMessages.value,
+          bullBearDebateConclusion: bullBearDebateConclusion.value,
+          riskDebateConclusion: riskDebateConclusion.value
+        }
+        
+        saveAnalysisState(state)
+      } catch (error) {
+        console.error('[状态保存] 失败:', error)
+      }
+    }
+    
+    /**
+     * 从 localStorage 恢复分析状态
+     */
+    const restoreState = (savedState) => {
+      try {
+        console.log('[状态恢复] 开始恢复状态...')
+        
+        // 恢复基本信息
+        stockCode.value = savedState.stockCode || ''
+        stockData.value = savedState.stockData || null
+        isAnalyzing.value = savedState.isAnalyzing || false
+        
+        // 恢复智能体状态
+        agentStatus.value = savedState.agentStatus || {}
+        agentOutputs.value = savedState.agentOutputs || {}
+        agentTokens.value = savedState.agentTokens || {}
+        agentThoughts.value = savedState.agentThoughts || {}
+        agentDataSources.value = savedState.agentDataSources || {}
+        
+        // 恢复显示状态
+        showReport.value = savedState.showReport || false
+        showBullBearDebate.value = savedState.showBullBearDebate || false
+        showRiskDebate.value = savedState.showRiskDebate || false
+        
+        // 恢复辩论数据
+        bullBearDebateMessages.value = savedState.bullBearDebateMessages || []
+        riskDebateMessages.value = savedState.riskDebateMessages || []
+        bullBearDebateConclusion.value = savedState.bullBearDebateConclusion || null
+        riskDebateConclusion.value = savedState.riskDebateConclusion || null
+        
+        // 恢复计时器
+        if (isAnalyzing.value && savedState.analysisStartTime) {
+          analysisStartTime.value = savedState.analysisStartTime
+          const elapsed = Date.now() - savedState.analysisStartTime
+          analysisElapsedTime.value = Math.floor(elapsed / 1000)
+          
+          // 重启计时器
+          if (analysisTimer.value) {
+            clearInterval(analysisTimer.value)
+          }
+          
+          analysisTimer.value = setInterval(() => {
+            analysisElapsedTime.value = Math.floor((Date.now() - analysisStartTime.value) / 1000)
+            saveCurrentState()
+          }, 1000)
+          
+          console.log(`[状态恢复] 已运行 ${Math.floor(elapsed / 1000)} 秒`)
+        }
+        
+        // 展开卡片
+        cardsExpanded.value = true
+        
+        console.log('[状态恢复] 恢复完成')
+        console.log('[状态恢复] 智能体状态:', agentStatus.value)
+        
+        // 显示提示
+        alert('✅ 已恢复上次分析状态\n\n注意：如果后端分析已完成，请手动刷新页面查看最新结果。')
+        
+      } catch (error) {
+        console.error('[状态恢复] 失败:', error)
+        clearAnalysisState()
+      }
+    }
+    
+    /**
+     * 页面加载时检查并恢复状态
+     */
+    onMounted(async () => {
+      console.log('[页面加载] 检查保存的状态...')
+      
+      // 设置页面可见性监听器
+      setupVisibilityListener()
+      
+      // 优先检查后端会话
+      const sessionId = localStorage.getItem('current_session_id')
+      
+      if (sessionId) {
+        console.log('[页面加载] 发现会话 ID:', sessionId)
+        
+        try {
+          // 查询后端会话状态（数据库版本）
+          const response = await fetch(
+            `/api/analysis/db/session/${sessionId}/status`
+          )
+          
+          if (response.ok) {
+            const status = await response.json()
+            console.log('[页面加载] 后端会话状态:', status.status, `${status.progress}%`)
+            
+            if (status.status === 'running') {
+              // 恢复会话
+              currentSessionId.value = sessionId
+              stockCode.value = status.stock_code
+              isAnalyzing.value = true
+              cardsExpanded.value = true
+              
+              // 恢复已完成的智能体
+              for (const agentId of status.completed_agents) {
+                await fetchAgentResult(agentId)
+              }
+              
+              // 启动轮询
+              startPolling()
+              
+              // 重启计时器
+              analysisStartTime.value = status.start_time * 1000
+              analysisElapsedTime.value = Math.floor(status.elapsed_time)
+              analysisTimer.value = setInterval(() => {
+                analysisElapsedTime.value = Math.floor((Date.now() - analysisStartTime.value) / 1000)
+              }, 1000)
+              
+              console.log('[页面加载] 从后端恢复会话成功')
+              alert('✅ 已从后端恢复分析状态')
+              return
+            } else if (status.status === 'completed') {
+              console.log('[页面加载] 分析已完成，清除会话')
+              localStorage.removeItem('current_session_id')
+            }
+          }
+        } catch (error) {
+          console.error('[页面加载] 查询后端会话失败:', error)
+        }
+      }
+      
+      // 如果后端没有会话，尝试从 localStorage 恢复
+      const savedState = loadAnalysisState()
+      if (savedState && savedState.isAnalyzing) {
+        console.log('[页面加载] 从 localStorage 恢复状态')
+        restoreState(savedState)
+      } else {
+        console.log('[页面加载] 无保存的状态')
+      }
+    })
+    
+    /**
+     * 页面卸载时清理
+     */
+    onBeforeUnmount(() => {
+      if (analysisTimer.value) {
+        clearInterval(analysisTimer.value)
+      }
+      
+      // 停止轮询
+      stopPolling()
+      
+      // 如果分析已完成，清除保存的状态
+      if (!isAnalyzing.value && showReport.value) {
+        clearAnalysisState()
+        console.log('[页面卸载] 已清除完成的分析状态')
+      }
+    })
+
     return {
         stockCode, stockData, isAnalyzing, isValidCode, startAnalysis,
         AGENTS,
@@ -1581,7 +2543,8 @@ export default {
         apiKeys, styleSettings, exportReport: () => {},
         fetchNewsData,  // 新增: 新闻数据获取函数
         analysisElapsedTime, formatTime,  // 新增: 计时器
-        handleStockSelect  // 新增: 股票选择处理
+        handleStockSelect,  // 新增: 股票选择处理
+        showGlobalLogWindow, globalLogWindowRef  // 新增: 全局日志窗口
     }
   }
 }
@@ -2105,5 +3068,146 @@ export default {
 .interpreter-config-modal .save-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+/* ========================================
+   移动端响应式优化
+   ======================================== */
+@media (max-width: 768px) {
+  .analysis-container {
+    padding: 1rem 0.5rem;
+    padding-top: 7rem;
+  }
+  
+  /* 计时器优化 */
+  .floating-timer {
+    top: auto;
+    bottom: 1rem;
+    right: 0.5rem;
+    left: auto;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    z-index: 999;
+  }
+  
+  .timer-icon {
+    font-size: 1rem;
+  }
+  
+  .timer-label {
+    display: none;
+  }
+  
+  /* 搜索区域 */
+  .search-section {
+    padding: 1rem;
+  }
+  
+  .search-title {
+    font-size: 1.25rem;
+  }
+  
+  .search-subtitle {
+    font-size: 0.75rem;
+  }
+  
+  /* 股票数据面板 */
+  .stock-data-panel {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    top: 0 !important;
+    right: 0 !important;
+    border-radius: 0;
+  }
+  
+  .panel-close-btn {
+    top: 1rem;
+    right: 1rem;
+    width: 3rem;
+    height: 3rem;
+    font-size: 2rem;
+    z-index: 1001;
+  }
+  
+  /* 新闻面板 */
+  .news-panel {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    top: 0 !important;
+    right: 0 !important;
+    border-radius: 0;
+  }
+  
+  /* 阶段分组 */
+  .stage-group {
+    padding: 1rem;
+  }
+  
+  .stage-title {
+    font-size: 1.125rem;
+  }
+  
+  .stage-subtitle {
+    font-size: 0.75rem;
+  }
+  
+  /* 卡片网格 */
+  .agents-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  /* 辩论面板 */
+  .debate-section {
+    padding: 1rem;
+  }
+  
+  /* 报告区域 */
+  .report-section {
+    padding: 1rem;
+  }
+  
+  .report-title {
+    font-size: 1.25rem;
+  }
+  
+  /* 按钮组 */
+  .report-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .report-actions button {
+    width: 100%;
+  }
+  
+  /* 模态框 */
+  .modal-overlay {
+    padding: 0;
+  }
+  
+  .model-manager-modal,
+  .api-config-modal,
+  .style-config-modal,
+  .interpreter-config-modal {
+    width: 100vw;
+    height: 100vh;
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+    padding: 1rem;
+  }
+  
+  .modal-close {
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.5rem;
+  }
 }
 </style>

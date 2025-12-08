@@ -543,4 +543,83 @@ export default {
 .data-value.negative {
   color: #ef4444;
 }
+
+/* 移动端响应式 */
+@media (max-width: 768px) {
+  .data-panel {
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 100vw;
+    max-width: 100vw;
+    border-radius: 0;
+    z-index: 1040;
+  }
+  
+  .data-panel.panel-open {
+    z-index: 1060;
+  }
+  
+  .left-panel {
+    transform: translateX(-100%);
+  }
+  
+  .left-panel.panel-open {
+    transform: translateX(0);
+  }
+  
+  /* 切换按钮 - 移动端紧凑 */
+  .left-toggle {
+    top: 8rem;
+    right: -1.5rem;
+    padding: 0.375rem 0.25rem;
+    background: rgba(15, 23, 42, 0.98);
+    border: 1px solid rgba(59, 130, 246, 0.6);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+    transform: none;
+    position: absolute;
+  }
+  
+  /* 面板打开时，按钮移到内部 */
+  .left-panel.panel-open .left-toggle {
+    right: 0.5rem;
+    border-radius: 0.375rem;
+  }
+  
+  .panel-toggle:hover {
+    background: rgba(59, 130, 246, 0.3);
+    border-color: rgba(59, 130, 246, 0.8);
+  }
+  
+  .toggle-icon {
+    font-size: 0.875rem;
+  }
+  
+  .toggle-text {
+    font-size: 0.625rem;
+    font-weight: 500;
+  }
+  
+  .panel-header {
+    padding: 1rem;
+  }
+  
+  .panel-title {
+    font-size: 1rem;
+  }
+  
+  .panel-subtitle {
+    font-size: 0.75rem;
+  }
+  
+  .panel-body {
+    padding: 1rem;
+  }
+  
+  .panel-content {
+    position: relative;
+    z-index: 1;
+  }
+}
 </style>

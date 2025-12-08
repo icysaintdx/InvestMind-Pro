@@ -1,0 +1,54 @@
+{
+  "test_time": "2025-12-05T22:56:09.549039",
+  "test_type": "complex_risk_agents",
+  "results": [
+    {
+      "concurrent": 1,
+      "total_elapsed": 28.655061721801758,
+      "success_count": 1,
+      "success_rate": 100.0,
+      "avg_time": 28.65395498275757,
+      "throughput": 0.03489784840488288
+    },
+    {
+      "concurrent": 2,
+      "total_elapsed": 50.4821503162384,
+      "success_count": 2,
+      "success_rate": 100.0,
+      "avg_time": 25.240177750587463,
+      "throughput": 0.03961796372522324
+    },
+    {
+      "concurrent": 3,
+      "total_elapsed": 88.63782715797424,
+      "success_count": 3,
+      "success_rate": 100.0,
+      "avg_time": 29.544604063034058,
+      "throughput": 0.03384559500373659
+    },
+    {
+      "concurrent": 4,
+      "total_elapsed": 129.58394384384155,
+      "success_count": 4,
+      "success_rate": 100.0,
+      "avg_time": 32.39492827653885,
+      "throughput": 0.030868021772977542
+    },
+    {
+      "concurrent": 5,
+      "total_elapsed": 158.94527506828308,
+      "success_count": 5,
+      "success_rate": 100.0,
+      "avg_time": 31.788349008560182,
+      "throughput": 0.03145736793907208
+    },
+    {
+      "concurrent": 6,
+      "total_elapsed": 173.32778811454773,
+      "success_count": 6,
+      "success_rate": 100.0,
+      "avg_time": 28.88727657000224,
+      "throughput": 0.03461649205397325
+    }
+  ]
+}

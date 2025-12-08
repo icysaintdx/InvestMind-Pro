@@ -2,7 +2,6 @@ from typing import Annotated, Sequence
 from datetime import date, timedelta, datetime
 from typing_extensions import TypedDict, Optional
 from backend.agents.utils.langchain_compat import ChatOpenAI
-from tradingagents.agents import *
 from backend.agents.utils.langchain_compat import ToolNode
 from backend.agents.utils.langchain_compat import END, StateGraph, START, MessagesState
 

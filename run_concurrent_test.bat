@@ -1,0 +1,6 @@
+@echo off
+echo Testing SiliconFlow API Concurrent Requests...
+python test_concurrent_siliconflow.py
+echo.
+echo Test completed. Press any key to exit...
+pause > nul

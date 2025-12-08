@@ -16,12 +16,52 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime, date
 import httpx
 from dotenv import load_dotenv
 import uvicorn
+from asyncio import Semaphore
+
+# 全局并发控制器 - 限制同时发送到SiliconFlow的请求数
+siliconflow_semaphore = Semaphore(10)  # 最多10个并发请求
+
+# 模型能力画像与静默压测的全局状态与结果文件
+CALIBRATION_RESULTS_FILE = os.path.join(os.path.dirname(__file__), "model_calibration.json")
+calibration_state = {
+    "status": "idle",       # idle / running / completed / error
+    "lastRunAt": None,
+    "error": None,
+    "results": {},           # {model_name: {provider, channel, tests: [...]}}
+    "settings": None         # 最近一次压测使用的配置快照
+}
+
+
+def save_calibration_state():
+    """将当前压测状态保存到文件，方便前端或重启后查看"""
+    try:
+        with open(CALIBRATION_RESULTS_FILE, "w", encoding="utf-8") as f:
+            json.dump(calibration_state, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"[Calibration] 保存结果失败: {str(e)}")
+
+
+def load_calibration_state_from_file():
+    """从文件加载最近一次压测状态（如果存在）"""
+    global calibration_state
+    try:
+        if os.path.exists(CALIBRATION_RESULTS_FILE):
+            with open(CALIBRATION_RESULTS_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                calibration_state.update(data)
+    except Exception as e:
+        print(f"[Calibration] 加载结果失败: {str(e)}")
+
+
+# 模块加载时尝试恢复一次历史压测结果
+load_calibration_state_from_file()
 
 # 加载环境变量 - 明确指定.env文件路径
 from pathlib import Path
@@ -42,6 +82,9 @@ from backend.api.agents_api import router as agents_router
 from backend.api.unified_news_api_endpoint import router as unified_news_router
 from backend.api.documents_api import router as documents_router
 from backend.api.akshare_data_api import router as akshare_router
+from backend.api.agent_logs_api import router as agent_logs_router
+from backend.api.analysis_session_api import router as analysis_session_router  # 分析会话 API
+from backend.api.analysis_session_db_api import router as analysis_session_db_router  # 数据库版会话 API
 
 # ==================== 配置 ====================
 
@@ -168,6 +211,9 @@ app.include_router(agents_router)
 app.include_router(unified_news_router)  # 统一新闻API
 app.include_router(documents_router)  # 文档API
 app.include_router(akshare_router)  # AKShare数据 API
+app.include_router(agent_logs_router)  # 智能体日志流API
+app.include_router(analysis_session_router)  # 分析会话 API
+app.include_router(analysis_session_db_router)  # 数据库版会话 API
 
 # 配置 CORS
 app.add_middleware(
@@ -208,6 +254,9 @@ class SiliconFlowRequest(BaseModel):
     prompt: str
     temperature: float = 0.7
     apiKey: Optional[str] = None
+    # 仅用于能力画像/压测等高级用法：覆盖默认max_tokens与是否开启thinking能力
+    maxTokens: Optional[int] = None
+    enableThinking: Optional[bool] = None
 
 class StockRequest(BaseModel):
     symbol: str
@@ -219,6 +268,14 @@ class AnalyzeRequest(BaseModel):
     stock_data: Optional[Dict[str, Any]] = {}
     previous_outputs: Optional[Dict[str, Any]] = {}
     custom_instruction: Optional[str] = None
+
+
+class CalibrationRunRequest(BaseModel):
+    """触发模型能力画像与静默压测的请求体"""
+    # 如果不指定，则默认使用 agent_configs.json 中的 selectedModels + summarizerModel
+    models: Optional[List[str]] = None
+    # 可选覆盖配置；如果为空则使用 agent_configs.json 中的 calibrationSettings
+    calibrationSettings: Optional[Dict[str, Any]] = None
 
 # ==================== AI API 端点 ====================
 
@@ -412,116 +469,296 @@ async def qwen_api(request: QwenRequest):
 @app.post("/api/ai/siliconflow")
 async def siliconflow_api(request: SiliconFlowRequest):
     """硅基流动 API 代理"""
-    try:
-        api_key = request.apiKey or API_KEYS["siliconflow"]
-        if not api_key:
-            raise HTTPException(status_code=500, detail="未配置 SiliconFlow API Key")
+    # 使用全局并发控制器限制并发请求
+    import datetime
+    import time
+    req_time = datetime.datetime.now().strftime("%H:%M:%S")
+    request._start_time = time.time()  # 记录开始时间
+    
+    # 记录等待获取锁的时间
+    lock_wait_start = time.time()
+    async with siliconflow_semaphore:
+        lock_wait_time = time.time() - lock_wait_start
+        concurrent_count = 10 - siliconflow_semaphore._value
+        print(f"[SiliconFlow] [{req_time}] 获取并发锁")
+        print(f"  - 等待锁耗时: {lock_wait_time:.1f}秒")
+        print(f"  - 当前并发数: {concurrent_count}/10")
         
-        # 使用全局连接池客户端
-        client = http_clients.get('siliconflow', http_clients['default'])
-        
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}"
-        }
-        data = {
-            "model": request.model,
-            "messages": [
-                {"role": "system", "content": request.systemPrompt},
-                {"role": "user", "content": request.prompt}
-            ],
-            "temperature": request.temperature,
-            "max_tokens": 99999999,
-            "stream": False
-        }
-        
-        # 增加超时时间并添加重试机制
-        max_retries = 3  # 增加到3次重试
-        response = None
-        for attempt in range(max_retries):
-            try:
-                response = await client.post(
-                    API_ENDPOINTS["siliconflow"],
-                    headers=headers,
-                    json=data,
-                    timeout=httpx.Timeout(300.0, connect=60.0)  # 5分钟超时，60秒连接超时
+        client = None
+        try:
+            api_key = request.apiKey or API_KEYS["siliconflow"]
+            if not api_key:
+                raise HTTPException(status_code=500, detail="未配置 SiliconFlow API Key")
+            
+            # 为每个请求创建独立的客户端，避免连接池死锁
+            # 调整超时配置：更快降级，避免单次调用占满前端180秒总超时
+            client = httpx.AsyncClient(
+                timeout=httpx.Timeout(
+                    timeout=60.0,    # 总默认超时60秒
+                    connect=15.0,    # 连接超时15秒
+                    read=30.0,       # 读取超时30秒，快速降级
+                    write=15.0,      # 写入超时15秒
+                    pool=15.0        # 连接池获取超时15秒
+                ),
+                limits=httpx.Limits(
+                    max_connections=10,        # 保守设置，避免过多连接
+                    max_keepalive_connections=5  # 保守设置
                 )
-                break  # 成功则跳出循环
-            except (httpx.ReadTimeout, httpx.RemoteProtocolError, httpx.ConnectError, httpx.NetworkError) as e:
-                error_type = type(e).__name__
-                if attempt < max_retries - 1:
-                    wait_time = 2 ** attempt  # 指数退避: 1s, 2s, 4s
-                    print(f"[SiliconFlow] {error_type}，正在重试... (尝试 {attempt + 2}/{max_retries}，等待{wait_time}秒)")
-                    await asyncio.sleep(wait_time)
-                else:
-                    print(f"[SiliconFlow] 所有重试都失败 ({error_type})，返回降级响应")
-                    # 超时时返回友好的降级响应，而不是错误
-                    return {
-                        "success": True,
-                        "text": f"⚠️ 由于网络问题，本次分析未能完成。建议：\n1. 检查网络连接\n2. 尝试使用其他 AI 模型\n3. 稍后重试",
-                        "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
-                        "timeout": True
-                    }
-            except Exception as e:
-                print(f"[SiliconFlow] 未知错误: {type(e).__name__}: {str(e)}")
-                if attempt < max_retries - 1:
-                    print(f"[SiliconFlow] 正在重试... (尝试 {attempt + 2}/{max_retries})")
-                    await asyncio.sleep(2)
-                else:
-                    print(f"[SiliconFlow] 所有重试都失败，返回降级响应")
-                    return {
-                        "success": True,
-                        "text": f"⚠️ 分析过程中出现错误，请稍后重试。",
-                        "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
-                        "timeout": True
-                    }
+            )
+            
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {api_key}"
+            }
+            is_qwen3_model = isinstance(request.model, str) and "qwen3" in request.model.lower()
+            # 默认输出长度控制：支持通过请求覆盖
+            max_tokens = 1024
+            if request.maxTokens is not None:
+                try:
+                    max_tokens = int(request.maxTokens)
+                except Exception:
+                    max_tokens = 1024
+            elif is_qwen3_model:
+                # Qwen3 默认保守一些，避免长输出导致超时
+                max_tokens = 512
+            data = {
+                "model": request.model,
+                "messages": [
+                    {"role": "system", "content": request.systemPrompt},
+                    {"role": "user", "content": request.prompt}
+                ],
+                "temperature": request.temperature,
+                "max_tokens": max_tokens,
+                "stream": False
+            }
+            # enable_thinking 仅在请求显式指定或针对 Qwen3 时设置
+            enable_thinking = None
+            if request.enableThinking is not None:
+                enable_thinking = bool(request.enableThinking)
+            elif is_qwen3_model:
+                # 默认不开启 Qwen3 的 thinking，避免响应过慢
+                enable_thinking = False
+            if enable_thinking is not None:
+                data["enable_thinking"] = enable_thinking
+            
+            # 超时设置和重试机制
+            # 说明：
+            # - 对 ReadTimeout/TimeoutError 不再重试，直接快速降级
+            # - 仅对连接类错误（ConnectTimeout/ConnectError/NetworkError/RemoteProtocolError）保留一次重试
+            max_retries = 2
+            response = None
+            
+            for attempt in range(max_retries):
+                try:
+                    print(f"[SiliconFlow] {request.model} 尝试 {attempt+1}/{max_retries} [提示词长度: {len(request.prompt)}字符]")
+                    
+                    # 如果是重试，重新创建客户端
+                    if attempt > 0:
+                        if client:
+                            await client.aclose()
+                        print(f"[SiliconFlow] 重新建立连接...")
+                        client = httpx.AsyncClient(
+                            timeout=httpx.Timeout(
+                                timeout=60.0,   # 总默认超时60秒
+                                connect=15.0,   # 连接超时15秒  
+                                read=30.0,      # 读取超时30秒
+                                write=15.0,     # 写入超时15秒
+                                pool=15.0       # 连接池超时15秒
+                            ),
+                            limits=httpx.Limits(
+                                max_connections=10,
+                                max_keepalive_connections=5
+                            )
+                        )
+                    
+                    # 测试连接（小请求验证）
+                    if attempt > 0:
+                        print(f"[SiliconFlow] 测试连接...")
+                        try:
+                            test_response = await client.post(
+                                API_ENDPOINTS["siliconflow"],
+                                headers=headers,
+                                json={
+                                    "model": request.model,
+                                    "messages": [{"role": "user", "content": "test"}],
+                                    "max_tokens": 1,
+                                    "stream": False
+                                },
+                                timeout=5.0  # 5秒快速测试
+                            )
+                            if test_response.status_code == 200:
+                                print(f"[SiliconFlow] 连接测试成功")
+                            else:
+                                print(f"[SiliconFlow] 连接测试失败: HTTP {test_response.status_code}")
+                        except Exception as test_e:
+                            print(f"[SiliconFlow] 连接测试异常: {type(test_e).__name__}")
+                    
+                    # 发送实际请求
+                    import time
+                    start_time = time.time()
+                    request_size_kb = len(str(data)) / 1024
+                    prompt_tokens_est = len(request.prompt) / 2  # 粗略估算token数
+                    print(f"[SiliconFlow] [{time.strftime('%H:%M:%S')}] 发送请求")
+                    print(f"  - 提示词: {len(request.prompt)} 字符 (~{prompt_tokens_est:.0f} tokens)")
+                    print(f"  - 请求体: {request_size_kb:.1f} KB")
+                    print(f"  - 模型: {request.model}")
+                    
+                    response = await asyncio.wait_for(
+                        client.post(
+                            API_ENDPOINTS["siliconflow"],
+                            headers=headers,
+                            json=data
+                        ),
+                        timeout=45.0  # 单次调用整体超时45秒，快速降级
+                    )
+                    
+                    elapsed = time.time() - start_time
+                    print(f"[SiliconFlow] [{time.strftime('%H:%M:%S')}] ✅ 响应成功")
+                    print(f"  - API响应时间: {elapsed:.2f}秒")
+                    print(f"  - 速度: {len(request.prompt)/elapsed:.0f} 字符/秒")
+                    break  # 成功则跳出循环
+                except (asyncio.TimeoutError, httpx.ReadTimeout, httpx.RemoteProtocolError, httpx.ConnectError, httpx.NetworkError) as e:
+                    error_type = type(e).__name__
+                    elapsed = time.time() - start_time if 'start_time' in locals() else 0
+                    print(f"[SiliconFlow] [{time.strftime('%H:%M:%S')}] {error_type} 发生在 {elapsed:.1f}秒 错误: {str(e)[:200]}")
+
+                    # 对超时类错误不再重试，直接快速降级
+                    if error_type in ["ReadTimeout", "TimeoutError"]:
+                        print(f"[SiliconFlow] {error_type} 超时，不再重试，直接返回降级响应")
+                        return {
+                            "success": True,
+                            "text": f"⚠️ AI 响应超时（已等待约 {elapsed:.0f} 秒）。建议：\n1. 减少提示词长度\n2. 减少同时运行的智能体数量\n3. 稍后在网络更稳定时重试",
+                            "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+                            "timeout": True
+                        }
+
+                    # 仅对连接类错误保留一次重试
+                    if attempt < max_retries - 1:
+                        wait_time = 3 + (2 * attempt)  # 3s, 5s
+                        print(f"[SiliconFlow] {error_type}，等待{wait_time}秒后重试 (尝试 {attempt + 2}/{max_retries})")
+
+                        # 关闭旧连接
+                        if client:
+                            try:
+                                await client.aclose()
+                                print(f"[SiliconFlow] 已关闭旧连接")
+                            except:
+                                pass
+                            client = None
+
+                        await asyncio.sleep(wait_time)
+                    else:
+                        print(f"[SiliconFlow] 所有重试都失败 ({error_type})，返回降级响应")
+                        return {
+                            "success": True,
+                            "text": f"⚠️ 由于网络波动，本次分析未能完成。建议：\n1. 检查网络连接\n2. 尝试使用其他 AI 模型\n3. 稍后重试",
+                            "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+                            "timeout": True
+                        }
+                except Exception as e:
+                    print(f"[SiliconFlow] 未知错误: {type(e).__name__}: {str(e)}")
+                    if attempt < max_retries - 1:
+                        wait_time = 3
+                        print(f"[SiliconFlow] 等待{wait_time}秒后重试 (尝试 {attempt + 2}/{max_retries})")
+                        
+                        # 关闭旧连接
+                        if client:
+                            try:
+                                await client.aclose()
+                            except:
+                                pass
+                            client = None
+                        
+                        await asyncio.sleep(wait_time)
+                    else:
+                        print(f"[SiliconFlow] 所有重试都失败，返回降级响应")
+                        return {
+                            "success": True,
+                            "text": f"⚠️ 分析过程中出现错误，请稍后重试。",
+                            "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+                            "timeout": True
+                        }
+            
+            # 如果所有重试都失败，返回降级响应
+            if response is None:
+                retry_summary = f"尝试了{max_retries}次，均失败"
+                if hasattr(request, '_start_time'):
+                    total_elapsed = time.time() - request._start_time
+                    retry_summary += f"，总耗时{total_elapsed:.0f}秒"
+                    
+                print(f"[SiliconFlow] ❌ 所有重试失败: {retry_summary}")
+                return {
+                    "success": True,
+                    "text": f"⚠️ AI服务暂时响应缓慢（{retry_summary}）。建议：\n1. 减少提示词长度\n2. 避免同时分析多个智能体\n3. 稍后再试",
+                    "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+                    "timeout": True
+                }
+            
+            if response.status_code != 200:
+                error_text = response.text
+                print(f"[SiliconFlow] HTTP {response.status_code} 错误")
+                print(f"[SiliconFlow] 响应内容: {error_text[:500]}")
+                raise HTTPException(status_code=response.status_code, detail=f"SiliconFlow API 错误: {error_text[:200]}")
+            
+            result = response.json()
+            text = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+            
+            # 获取token使用信息
+            usage = result.get("usage", {})
+            prompt_tokens = usage.get("prompt_tokens", 0)
+            completion_tokens = usage.get("completion_tokens", 0)
+            total_tokens = usage.get("total_tokens", 0)
+            
+            # 计算总耗时
+            import time
+            if hasattr(request, '_start_time'):
+                total_elapsed = time.time() - request._start_time
+                print(f"[SiliconFlow] [{time.strftime('%H:%M:%S')}] 请求总耗时: {total_elapsed:.2f}秒")
+            
+            print(f"[SiliconFlow] Token使用: {total_tokens} (输入: {prompt_tokens}, 输出: {completion_tokens})")
+            
+            return {
+                "success": True, 
+                "text": text,
+                "usage": {
+                    "prompt_tokens": prompt_tokens,
+                    "completion_tokens": completion_tokens,
+                    "total_tokens": total_tokens
+                }
+            }
         
-        # 如果所有重试都失败，返回降级响应
-        if response is None:
+        except HTTPException as e:
+            import traceback
+            error_detail = f"HTTP {e.status_code}: {e.detail}"
+            print(f"[SiliconFlow] HTTP错误: {error_detail}")
+            print(traceback.format_exc())
+            return {"success": False, "error": error_detail}
+        except Exception as e:
+            import traceback
+            print(f"[SiliconFlow] ❌ 未知异常: {type(e).__name__}")
+            traceback.print_exc()
+            # 返回友好的降级响应而不是抛出异常
             return {
                 "success": True,
-                "text": f"⚠️ 网络连接失败，请检查网络后重试。",
+                "text": f"⚠️ 分析服务暂时不可用，请稍后重试。错误类型: {type(e).__name__}",
                 "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
                 "timeout": True
             }
-        
-        if response.status_code != 200:
-            raise HTTPException(status_code=response.status_code, detail="SiliconFlow API 错误")
-        
-        result = response.json()
-        text = result.get("choices", [{}])[0].get("message", {}).get("content", "")
-        
-        # 获取token使用信息
-        usage = result.get("usage", {})
-        prompt_tokens = usage.get("prompt_tokens", 0)
-        completion_tokens = usage.get("completion_tokens", 0)
-        total_tokens = usage.get("total_tokens", 0)
-        
-        print(f"[SiliconFlow] Token使用: {total_tokens} (输入: {prompt_tokens}, 输出: {completion_tokens})")
-        
-        return {
-            "success": True, 
-            "text": text,
-            "usage": {
-                "prompt_tokens": prompt_tokens,
-                "completion_tokens": completion_tokens,
-                "total_tokens": total_tokens
-            }
-        }
-    
-    except HTTPException as e:
-        import traceback
-        error_detail = f"HTTP {e.status_code}: {e.detail}"
-        print(f"[SiliconFlow] HTTP错误: {error_detail}")
-        print(traceback.format_exc())
-        return {"success": False, "error": error_detail}
-    except Exception as e:
-        import traceback
-        error_msg = f"{type(e).__name__}: {str(e)}"
-        print(f"[SiliconFlow] 错误: {error_msg}")
-        print(f"[SiliconFlow] 详细信息:")
-        print(traceback.format_exc())
-        return {"success": False, "error": error_msg}
+        finally:
+            # 关闭客户端
+            if client:
+                try:
+                    await client.aclose()
+                    print(f"[SiliconFlow] 已关闭HTTP客户端")
+                except:
+                    pass
+            
+            # 计算并输出总耗时
+            if hasattr(request, '_start_time'):
+                total_time = time.time() - request._start_time
+                print(f"[SiliconFlow] [{time.strftime('%H:%M:%S')}] 🏁 请求结束，总耗时: {total_time:.1f}秒")
+                if total_time > 30:
+                    print(f"  ⚠️ 耗时过长，建议检查网络或API状态")
 
 @app.get("/api/models")
 async def get_all_models():
@@ -668,6 +905,417 @@ async def siliconflow_models(apiKey: Optional[str] = None):
         print(f"[SiliconFlow Models] 错误: {str(e)}")
         return {"success": False, "error": str(e), "models": []}
 
+# ==================== 模型能力画像与静默压测 ====================
+
+def get_calibration_settings() -> Dict[str, Any]:
+    """从 agent_configs.json 读取模型能力画像与静默压测配置，并与默认值合并"""
+    default_settings = {
+        "enabled": False,
+        "concurrency": [3, 5],
+        "promptLengths": [4000, 6000, 8000],
+        "maxTokens": 512,
+        "enableThinking": False,
+        "timeoutSeconds": 180
+    }
+    config_file = os.path.join(os.path.dirname(__file__), "agent_configs.json")
+    if not os.path.exists(config_file):
+        return default_settings
+    try:
+        with open(config_file, "r", encoding="utf-8") as f:
+            config_data = json.load(f)
+        custom = config_data.get("calibrationSettings") or {}
+        if isinstance(custom, dict):
+            merged = default_settings.copy()
+            merged.update(custom)
+            return merged
+    except Exception as e:
+        print(f"[Calibration] 读取配置失败: {str(e)}")
+    return default_settings
+
+
+def build_calibration_models(override_models: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+    """根据 agent_configs.json 中的 selectedModels + summarizerModel 构建仅包含LLM的压测候选模型列表。
+
+    如果传入 override_models，则优先使用与 selectedModels 的交集；若交集为空，则使用 override_models 本身。
+    """
+    config_file = os.path.join(os.path.dirname(__file__), "agent_configs.json")
+    model_names: set[str] = set()
+    if os.path.exists(config_file):
+        try:
+            with open(config_file, "r", encoding="utf-8") as f:
+                config_data = json.load(f)
+            for name in config_data.get("selectedModels", []):
+                if isinstance(name, str) and name.strip():
+                    model_names.add(name.strip())
+            summarizer = config_data.get("summarizerModel")
+            if isinstance(summarizer, str) and summarizer.strip():
+                model_names.add(summarizer.strip())
+        except Exception as e:
+            print(f"[Calibration] 读取 agent_configs 失败: {str(e)}")
+
+    # 如果调用方传入 models，则与现有列表取交集；交集为空时退化为使用传入列表
+    if override_models:
+        override_set = {m.strip() for m in override_models if isinstance(m, str) and m.strip()}
+        if override_set:
+            intersection = model_names & override_set
+            model_names = intersection or override_set
+
+    if not model_names:
+        return []
+
+    vision_keywords = ["stable-diffusion", "sdxl", "flux", "playground", "dall-e", "midjourney"]
+    embed_keywords = ["embedding", "bge", "jina-embed", "text-embedding"]
+    audio_keywords = ["whisper", "speech", "audio", "voice", "bark"]
+
+    models: List[Dict[str, Any]] = []
+    for name in sorted(model_names):
+        if not isinstance(name, str) or not name.strip():
+            continue
+        lower = name.lower()
+
+        # 过滤掉非LLM模型
+        model_type = "llm"
+        if any(k in lower for k in vision_keywords):
+            model_type = "vision"
+        elif any(k in lower for k in embed_keywords):
+            model_type = "embedding"
+        elif any(k in lower for k in audio_keywords):
+            model_type = "audio"
+        if model_type != "llm":
+            continue
+
+        provider = "UNKNOWN"
+        channel = None
+        if "/" in name:
+            # 带斜杠的一律视为硅基流动托管模型
+            channel = "硅基流动"
+            if "qwen" in lower:
+                provider = "QWEN"
+            elif "llama" in lower:
+                provider = "LLAMA"
+            elif "deepseek" in lower:
+                provider = "DEEPSEEK"
+            elif "mistral" in lower:
+                provider = "MISTRAL"
+            elif "yi-" in lower or "/yi" in lower:
+                provider = "YI"
+            elif "glm" in lower or "chatglm" in lower:
+                provider = "GLM"
+            elif "gemma" in lower:
+                provider = "GEMMA"
+            elif "baichuan" in lower:
+                provider = "BAICHUAN"
+            elif "internlm" in lower:
+                provider = "INTERNLM"
+            elif "phi" in lower:
+                provider = "PHI"
+        else:
+            # 官方直连模型
+            if name.startswith("gemini"):
+                provider = "GEMINI"
+                channel = "Google"
+            elif name in ["deepseek-chat", "deepseek-coder", "deepseek-reasoner"]:
+                provider = "DEEPSEEK"
+                channel = "DeepSeek"
+            elif name in [
+                "qwen-max",
+                "qwen-max-longcontext",
+                "qwen-plus",
+                "qwen-turbo",
+                "qwen-turbo-latest",
+                "qwen2.5-72b-instruct",
+                "qwen2.5-32b-instruct",
+                "qwen2.5-14b-instruct",
+                "qwen2.5-7b-instruct",
+                "qwen2.5-3b-instruct",
+                "qwen2.5-coder-32b-instruct",
+                "qwen2.5-coder-7b-instruct",
+            ]:
+                provider = "QWEN"
+                channel = "阿里云"
+
+        models.append({
+            "name": name,
+            "provider": provider,
+            "channel": channel,
+            "type": "llm"
+        })
+
+    return models
+
+
+async def _run_single_calibration_test(model: Dict[str, Any], prompt_length: int, settings: Dict[str, Any], timeout_seconds: int, sem: asyncio.Semaphore, concurrency: int):
+    """对单个模型和单个prompt长度执行一次静默压测，返回测试结果记录。
+
+    Args:
+        model: 模型信息字典
+        prompt_length: 提示词长度（字符数）
+        settings: 压测配置（包含 maxTokens / enableThinking 等）
+        timeout_seconds: 单次调用超时时间
+        sem: 控制并发的信号量
+        concurrency: 本轮压测目标并发数，用于记录到结果中
+    """
+    name = model.get("name") or ""
+    provider = (model.get("provider") or "").upper() or "UNKNOWN"
+    channel = model.get("channel")
+
+    # 构造指定长度的测试提示词
+    base = "这是一段用于模型能力画像与静默压测的测试文本。"
+    repeat = max(1, int(prompt_length / max(len(base), 1)) + 1)
+    user_prompt = (base * repeat)[: max(10, prompt_length)]
+    system_prompt = "你是一个中文大语言模型性能测试助手，请针对用户输入给出简短、有意义的回答。"
+
+    max_tokens = int(settings.get("maxTokens", 512) or 512)
+    enable_thinking = bool(settings.get("enableThinking", False))
+
+    started_at = datetime.utcnow().isoformat()
+    start_time = asyncio.get_event_loop().time()
+    success = False
+    timeout_flag = False
+    error_msg = None
+    usage = {}
+    conc_value = concurrency if isinstance(concurrency, int) and concurrency > 0 else None
+
+    async with sem:
+        try:
+            # 根据名称/提供方推断实际调用的provider
+            effective_provider = "SILICONFLOW"
+            if "/" not in name:
+                if name.startswith("gemini"):
+                    effective_provider = "GEMINI"
+                elif name in ["deepseek-chat", "deepseek-coder", "deepseek-reasoner"]:
+                    effective_provider = "DEEPSEEK"
+                elif name in [
+                    "qwen-max",
+                    "qwen-max-longcontext",
+                    "qwen-plus",
+                    "qwen-turbo",
+                    "qwen-turbo-latest",
+                    "qwen2.5-72b-instruct",
+                    "qwen2.5-32b-instruct",
+                    "qwen2.5-14b-instruct",
+                    "qwen2.5-7b-instruct",
+                    "qwen2.5-3b-instruct",
+                    "qwen2.5-coder-32b-instruct",
+                    "qwen2.5-coder-7b-instruct",
+                ]:
+                    effective_provider = "QWEN"
+
+            result: Dict[str, Any] = {"success": False}
+
+            if effective_provider == "GEMINI":
+                req = GeminiRequest(
+                    model=name,
+                    prompt=user_prompt,
+                    temperature=0.5
+                )
+                result = await asyncio.wait_for(gemini_api(req), timeout=timeout_seconds)
+            elif effective_provider == "DEEPSEEK":
+                req = DeepSeekRequest(
+                    model=name,
+                    systemPrompt=system_prompt,
+                    prompt=user_prompt,
+                    temperature=0.5
+                )
+                result = await asyncio.wait_for(deepseek_api(req), timeout=timeout_seconds)
+            elif effective_provider == "QWEN":
+                req = QwenRequest(
+                    model=name,
+                    systemPrompt=system_prompt,
+                    prompt=user_prompt,
+                    temperature=0.5
+                )
+                result = await asyncio.wait_for(qwen_api(req), timeout=timeout_seconds)
+            else:
+                # 默认通过硅基流动调用
+                req = SiliconFlowRequest(
+                    model=name,
+                    systemPrompt=system_prompt,
+                    prompt=user_prompt,
+                    temperature=0.5,
+                    maxTokens=max_tokens,
+                    enableThinking=enable_thinking,
+                )
+                result = await asyncio.wait_for(siliconflow_api(req), timeout=timeout_seconds)
+
+            success = bool(result.get("success"))
+            usage = result.get("usage") or {}
+            timeout_flag = bool(result.get("timeout", False))
+        except asyncio.TimeoutError:
+            timeout_flag = True
+            error_msg = f"Timeout({timeout_seconds}s)"
+        except Exception as e:
+            error_msg = str(e)
+
+    finished_at = datetime.utcnow().isoformat()
+    latency = asyncio.get_event_loop().time() - start_time
+
+    return {
+        "modelName": name,
+        "provider": provider or "UNKNOWN",
+        "channel": channel,
+        "promptLength": int(prompt_length),
+        "maxTokens": max_tokens,
+        "enableThinking": enable_thinking,
+        "concurrency": conc_value,
+        "startedAt": started_at,
+        "finishedAt": finished_at,
+        "latencySeconds": round(latency, 2),
+        "success": success,
+        "timeout": timeout_flag,
+        "error": error_msg,
+        "usage": usage,
+    }
+
+
+async def run_calibration_once(settings: Dict[str, Any], models: List[Dict[str, Any]]):
+    """执行一次完整的模型能力画像与静默压测（仅针对LLM）。"""
+    global calibration_state
+
+    prompt_lengths = settings.get("promptLengths") or [4000, 6000, 8000]
+    try:
+        prompt_lengths = [int(x) for x in prompt_lengths if int(x) > 0]
+    except Exception:
+        prompt_lengths = [4000, 6000, 8000]
+
+    raw_concurrency = settings.get("concurrency")
+    concurrency_list: List[int] = []
+    if isinstance(raw_concurrency, list):
+        for v in raw_concurrency:
+            try:
+                iv = int(v)
+                if iv > 0:
+                    concurrency_list.append(iv)
+            except Exception:
+                continue
+    elif raw_concurrency is not None:
+        try:
+            iv = int(raw_concurrency)
+            if iv > 0:
+                concurrency_list.append(iv)
+        except Exception:
+            pass
+
+    if not concurrency_list:
+        concurrency_list = [3]
+
+    # 去重并限制在 1-5 之间
+    concurrency_list = sorted({max(1, min(int(v), 5)) for v in concurrency_list})
+
+    timeout_seconds = int(settings.get("timeoutSeconds", 180) or 180)
+    if timeout_seconds <= 0:
+        timeout_seconds = 180
+
+    print(f"[Calibration] 开始静默压测: 模型数={len(models)}, 并发列表={concurrency_list}, prompt长度={prompt_lengths}, timeout={timeout_seconds}s")
+
+    # 初始化结果结构
+    results: Dict[str, Any] = {}
+    for m in models:
+        name = m.get("name")
+        if not name:
+            continue
+        results[name] = {
+            "provider": (m.get("provider") or "UNKNOWN").upper(),
+            "channel": m.get("channel"),
+            "tests": []
+        }
+
+    try:
+        # 按不同并发值依次压测，将结果追加到同一 tests 列表中
+        for conc in concurrency_list:
+            sem = asyncio.Semaphore(conc)
+            tasks = []
+            for m in models:
+                name = m.get("name")
+                if not name:
+                    continue
+                for length in prompt_lengths:
+                    tasks.append(
+                        _run_single_calibration_test(
+                            m,
+                            length,
+                            settings,
+                            timeout_seconds,
+                            sem,
+                            conc,
+                        )
+                    )
+
+            test_records = await asyncio.gather(*tasks, return_exceptions=True)
+            for record in test_records:
+                if isinstance(record, Exception) or not isinstance(record, dict):
+                    continue
+                model_name = record.get("modelName")
+                if not model_name or model_name not in results:
+                    continue
+                results[model_name]["tests"].append(record)
+
+        calibration_state["status"] = "completed"
+        calibration_state["error"] = None
+        calibration_state["results"] = results
+        save_calibration_state()
+        print(f"[Calibration] 静默压测完成，共 {len(results)} 个模型")
+    except Exception as e:
+        calibration_state["status"] = "error"
+        calibration_state["error"] = str(e)
+        save_calibration_state()
+        print(f"[Calibration] 静默压测失败: {str(e)}")
+
+
+@app.post("/api/models/calibration/run")
+async def start_model_calibration(request: CalibrationRunRequest):
+    """触发一次模型能力画像与静默压测（仅针对LLM）。"""
+    global calibration_state
+
+    if calibration_state.get("status") == "running":
+        return {"success": False, "error": "已有压测任务在运行，请稍后再试"}
+
+    # 合并配置：以 agent_configs.json 为基础，request.calibrationSettings 为覆盖
+    base_settings = get_calibration_settings()
+    override = request.calibrationSettings or {}
+    if isinstance(override, dict):
+        base_settings.update(override)
+
+    models = build_calibration_models(request.models)
+    if not models:
+        calibration_state["status"] = "idle"
+        calibration_state["error"] = None
+        calibration_state["results"] = {}
+        save_calibration_state()
+        return {"success": False, "error": "没有可用于压测的模型，请先在模型管理中选择大语言模型"}
+
+    now_iso = datetime.utcnow().isoformat()
+    calibration_state["status"] = "running"
+    calibration_state["lastRunAt"] = now_iso
+    calibration_state["error"] = None
+    calibration_state["results"] = {}
+    calibration_state["settings"] = base_settings
+    save_calibration_state()
+
+    # 异步启动压测任务
+    asyncio.create_task(run_calibration_once(base_settings, models))
+
+    return {
+        "success": True,
+        "message": f"已启动模型能力画像与静默压测，共 {len(models)} 个模型",
+        "startedAt": now_iso
+    }
+
+
+@app.get("/api/models/calibration/status")
+async def get_model_calibration_status():
+    """查询当前模型能力画像与静默压测的状态和最近一次结果。"""
+    # 直接返回内存中的状态，前端可根据需要解析 results/tests
+    total_models = len(calibration_state.get("results") or {})
+    return {
+        "success": True,
+        "data": {
+            **calibration_state,
+            "totalModels": total_models
+        }
+    }
+
+
 # ==================== 分析 API ====================
 
 # 全局缓存配置
@@ -694,10 +1342,101 @@ def get_agent_config(agent_id: str):
                 return agent
     return None
 
+"""
+修复后的 analyze_stock 函数
+请复制此函数替换 server.py 中的 analyze_stock 函数（从第704行开始）
+"""
+
+def get_summarizer_settings():
+    config_file = os.path.join(os.path.dirname(__file__), "agent_configs.json")
+    default_settings = {
+        "modelName": "Qwen/Qwen2.5-7B-Instruct",
+        "temperature": 0.2
+    }
+    if not os.path.exists(config_file):
+        return default_settings
+    try:
+        with open(config_file, 'r', encoding='utf-8') as f:
+            config_data = json.load(f)
+        model_name = config_data.get("summarizerModel")
+        temperature = config_data.get("summarizerTemperature", 0.2)
+        if not model_name:
+            return default_settings
+        return {
+            "modelName": model_name,
+            "temperature": temperature
+        }
+    except Exception:
+        return default_settings
+
+async def summarize_previous_outputs(agent_id: str, previous_outputs: Optional[Dict[str, Any]], stock_code: str) -> str:
+    texts = []
+    if not previous_outputs:
+        return ""
+    for agent_name, output in previous_outputs.items():
+        if output:
+            role = get_agent_role(agent_name)
+            texts.append(f"{role}（{agent_name}）的结论:\n{output}")
+    if not texts:
+        return ""
+    combined_text = "\n\n".join(texts)
+    system_prompt = "你是一个专业的投研团队助理，擅长阅读多位分析师的观点并提炼要点。"
+    user_prompt = (
+        f"下面是关于股票 {stock_code} 的多位分析师完整分析，请在保留关键信息的前提下进行压缩整理：\n\n"
+        "1. 用分点方式归纳出全局核心结论（最多 6 点）。\n"
+        "2. 突出重大利好/利空、关键风险和不确定性。\n"
+        "3. 输出长度控制在 1200-1500 字以内。\n\n"
+        "【分析原文】\n" + combined_text
+    )
+    settings = get_summarizer_settings()
+    model_name = settings.get("modelName", "Qwen/Qwen2.5-7B-Instruct")
+    temperature = settings.get("temperature", 0.2)
+    provider = "SILICONFLOW"
+    # 仅当模型名不包含"/"且明显是官方 DeepSeek 直连型号时，才走 deepseek_api
+    # 否则（包括 SiliconFlow deepseek-* 模型）统一通过 SiliconFlow 渠道调用
+    if "/" not in model_name:
+        lower_name = model_name.lower()
+        if model_name.startswith("gemini"):
+            provider = "GEMINI"
+        elif lower_name.startswith("deepseek-") or lower_name in ["deepseek-chat", "deepseek-coder", "deepseek-reasoner"]:
+            provider = "DEEPSEEK"
+    try:
+        if provider == "GEMINI":
+            req = GeminiRequest(
+                model=model_name,
+                prompt=system_prompt + "\n\n" + user_prompt,
+                temperature=temperature
+            )
+            result = await gemini_api(req)
+        elif provider == "DEEPSEEK":
+            req = DeepSeekRequest(
+                model=model_name,
+                systemPrompt=system_prompt,
+                prompt=user_prompt,
+                temperature=temperature
+            )
+            result = await deepseek_api(req)
+        else:
+            req = SiliconFlowRequest(
+                model=model_name,
+                systemPrompt=system_prompt,
+                prompt=user_prompt,
+                temperature=temperature
+            )
+            result = await siliconflow_api(req)
+    except Exception:
+        result = {"success": False}
+    if result.get("success"):
+        text = result.get("text") or ""
+        if text:
+            return text
+    return combined_text[:2000]
+
 @app.post("/api/analyze")
 async def analyze_stock(request: AnalyzeRequest):
     """统一的智能体分析接口"""
     try:
+        print(f"[分析] {request.agent_id} 开始分析...")
         agent_id = request.agent_id
         stock_code = request.stock_code
         stock_data = request.stock_data
@@ -759,14 +1498,22 @@ async def analyze_stock(request: AnalyzeRequest):
         user_prompt += f"价格: {stock_data.get('nowPri', stock_data.get('price', 'N/A'))} | 涨跌: {stock_data.get('increase', stock_data.get('change', 'N/A'))}%\n"
         user_prompt += f"成交: {stock_data.get('traAmount', stock_data.get('volume', 'N/A'))}\n"
         
-        # 重点：前序分析结果
+        # 重点：前序分析结果（使用完整内容）
+        summary_text = None
         if previous_outputs and len(previous_outputs) > 0:
-            user_prompt += "\n【团队成员已完成的分析】(请基于此进行深化，不要重复)\n"
-            for agent_name, output in previous_outputs.items():
-                if output:
-                    # 截取前500字符摘要，避免Token溢出
-                    summary = output[:500] + "..." if len(output) > 500 else output
-                    user_prompt += f">>> {get_agent_role(agent_name)} 的结论:\n{summary}\n\n"
+            total_prev_len_for_summary = sum(len(str(output)) for output in previous_outputs.values() if output)
+            if total_prev_len_for_summary > 3000:
+                summary_text = await summarize_previous_outputs(agent_id, previous_outputs, stock_code)
+
+        if previous_outputs and len(previous_outputs) > 0:
+            if summary_text:
+                user_prompt += "\n【团队成员已完成的分析摘要】(请基于此进行深化，不要重复)\n"
+                user_prompt += summary_text + "\n\n"
+            else:
+                user_prompt += "\n【团队成员已完成的分析】(请基于此进行深化，不要重复)\n"
+                for agent_name, output in previous_outputs.items():
+                    if output:
+                        user_prompt += f">>> {get_agent_role(agent_name)} 的结论:\n{output}\n\n"
         else:
             user_prompt += "\n你是第一批进入分析的专家，请基于原始市场数据构建初始观点。\n"
 
@@ -802,18 +1549,39 @@ async def analyze_stock(request: AnalyzeRequest):
                 model=model_name,
                 temperature=temperature
             )
+            # 添加详细日志
+            prompt_len = len(system_prompt) + len(user_prompt)
+            print(f"[分析] {request.agent_id} 系统提示词: {len(system_prompt)} 字符")
+            print(f"[分析] {request.agent_id} 用户提示词: {len(user_prompt)} 字符")
+            print(f"[分析] {request.agent_id} 总长度: {prompt_len} 字符 (~{prompt_len//2} tokens)")
+            
+            # 打印前序输出长度
+            if previous_outputs:
+                print(f"[分析] {request.agent_id} 前序输出数量: {len(previous_outputs)}")
+                total_prev_len = sum(len(output) for output in previous_outputs.values() if output)
+                print(f"[分析] {request.agent_id} 前序输出总长度: {total_prev_len} 字符")
+                for agent_name, output in list(previous_outputs.items())[:3]:  # 只打印前3个
+                    if output:
+                        print(f"  - {agent_name}: {len(output)} 字符")
+                if len(previous_outputs) > 3:
+                    print(f"  ... 还有 {len(previous_outputs)-3} 个")
+            
+            print(f"[分析] {request.agent_id} 调用SiliconFlow API: {model_name}")
             result = await siliconflow_api(req)
         
         if result.get("success"):
+            print(f"[分析] {request.agent_id} 分析完成")
             return {"success": True, "result": result.get("text", "")}
         else:
+            print(f"[分析] {request.agent_id} 分析失败: {result.get('error')}")
             return {"success": False, "error": result.get("error", "分析失败")}
             
     except Exception as e:
         import traceback
-        print(f"[Analyze] 错误: {str(e)}")
+        print(f"[Analyze] {request.agent_id} 错误: {str(e)}")
         print(traceback.format_exc())
         return {"success": False, "error": str(e)}
+
 
 def get_agent_role(agent_id):
     """根据智能体ID获取角色描述"""

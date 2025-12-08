@@ -1,0 +1,112 @@
+{
+  "test_time": "2025-12-07T03:06:04.957196",
+  "base_url": "http://localhost:8000",
+  "stock_code": "600519",
+  "agent_id": "technical",
+  "results": [
+    {
+      "concurrent": 1,
+      "total_elapsed": 5.354151010513306,
+      "success_count": 1,
+      "failed_count": 0,
+      "timeout_count": 0,
+      "error_count": 0,
+      "avg_time": 5.354151010513306,
+      "max_time": 5.354151010513306,
+      "min_time": 5.354151010513306,
+      "throughput": 0.18677097415377708,
+      "success_rate": 100.0
+    },
+    {
+      "concurrent": 2,
+      "total_elapsed": 12.261738061904907,
+      "success_count": 2,
+      "failed_count": 0,
+      "timeout_count": 0,
+      "error_count": 0,
+      "avg_time": 11.176725625991821,
+      "max_time": 12.26086974143982,
+      "min_time": 10.092581510543823,
+      "throughput": 0.16310901357562457,
+      "success_rate": 100.0
+    },
+    {
+      "concurrent": 3,
+      "total_elapsed": 15.443686962127686,
+      "success_count": 3,
+      "failed_count": 0,
+      "timeout_count": 0,
+      "error_count": 0,
+      "avg_time": 13.300761699676514,
+      "max_time": 15.44167947769165,
+      "min_time": 10.295426607131958,
+      "throughput": 0.1942541316304101,
+      "success_rate": 100.0
+    },
+    {
+      "concurrent": 4,
+      "total_elapsed": 17.42459797859192,
+      "success_count": 4,
+      "failed_count": 0,
+      "timeout_count": 0,
+      "error_count": 0,
+      "avg_time": 14.381298840045929,
+      "max_time": 17.422582864761353,
+      "min_time": 11.917570352554321,
+      "throughput": 0.22956053304153418,
+      "success_rate": 100.0
+    },
+    {
+      "concurrent": 5,
+      "total_elapsed": 23.17058300971985,
+      "success_count": 5,
+      "failed_count": 0,
+      "timeout_count": 0,
+      "error_count": 0,
+      "avg_time": 19.520429706573488,
+      "max_time": 23.168033361434937,
+      "min_time": 17.245396375656128,
+      "throughput": 0.21579085851670393,
+      "success_rate": 100.0
+    },
+    {
+      "concurrent": 6,
+      "total_elapsed": 21.23251700401306,
+      "success_count": 6,
+      "failed_count": 0,
+      "timeout_count": 0,
+      "error_count": 0,
+      "avg_time": 19.57290005683899,
+      "max_time": 21.22948145866394,
+      "min_time": 17.58138632774353,
+      "throughput": 0.28258543246973344,
+      "success_rate": 100.0
+    },
+    {
+      "concurrent": 8,
+      "total_elapsed": 29.110095977783203,
+      "success_count": 8,
+      "failed_count": 0,
+      "timeout_count": 0,
+      "error_count": 0,
+      "avg_time": 25.982060134410858,
+      "max_time": 29.108452320098877,
+      "min_time": 23.839418172836304,
+      "throughput": 0.2748187435075993,
+      "success_rate": 100.0
+    },
+    {
+      "concurrent": 10,
+      "total_elapsed": 33.96360468864441,
+      "success_count": 10,
+      "failed_count": 0,
+      "timeout_count": 0,
+      "error_count": 0,
+      "avg_time": 30.91937415599823,
+      "max_time": 33.9625985622406,
+      "min_time": 27.917986631393433,
+      "throughput": 0.29443282277229715,
+      "success_rate": 100.0
+    }
+  ]
+}

@@ -105,47 +105,56 @@ def log_analyst_module(module_name: str):
         return wrapper
     return decorator
 
-def log_debate_round(debate_type: str):
+def log_debate_round(debate_type: str, round_num: int = None, content: str = None):
+    """辩论回合日志
+
+    支持两种用法：
+    1. 作为装饰器：@log_debate_round("research")
+    2. 直接调用记录单回合：log_debate_round("bull", 1, "本轮观点内容...")
     """
-    辩论回合日志装饰器
-    
-    Args:
-        debate_type: 辩论类型（"research" 或 "risk"）
-    """
-    def decorator(func: Callable) -> Callable:
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs) -> Any:
-            # 记录辩论开始
-            start_time = time.time()
-            logger.info(f"💬 [{debate_type.upper()}辩论] 开始新回合")
-            
-            try:
-                # 执行辩论
-                result = func(*args, **kwargs)
+
+    # 如果只传入 debate_type，则按旧逻辑返回装饰器，保持向后兼容
+    if round_num is None and content is None:
+        def decorator(func: Callable) -> Callable:
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs) -> Any:
+                # 记录辩论开始
+                start_time = time.time()
+                logger.info(f"💬 [{debate_type.upper()}辩论] 开始新回合")
                 
-                # 记录辩论结果
-                elapsed = time.time() - start_time
-                logger.success(f"[{debate_type.upper()}辩论] 回合结束 (耗时: {elapsed:.2f}秒)")
-                
-                # 记录辩论要点
-                if isinstance(result, dict):
-                    if "bull_view" in result and "bear_view" in result:
-                        logger.info(f"  看涨观点强度: {result.get('bull_strength', 'N/A')}")
-                        logger.info(f"  看跌观点强度: {result.get('bear_strength', 'N/A')}")
-                    if "risk_level" in result:
-                        logger.info(f"  风险等级: {result['risk_level']}")
-                
-                return result
-                
-            except Exception as e:
-                # 记录失败
-                elapsed = time.time() - start_time
-                logger.fail(f"[{debate_type.upper()}辩论] 回合失败 (耗时: {elapsed:.2f}秒)")
-                logger.error(f"错误详情: {str(e)}")
-                raise
-                
-        return wrapper
-    return decorator
+                try:
+                    # 执行辩论
+                    result = func(*args, **kwargs)
+                    
+                    # 记录辩论结果
+                    elapsed = time.time() - start_time
+                    logger.success(f"[{debate_type.upper()}辩论] 回合结束 (耗时: {elapsed:.2f}秒)")
+                    
+                    # 记录辩论要点
+                    if isinstance(result, dict):
+                        if "bull_view" in result and "bear_view" in result:
+                            logger.info(f"  看涨观点强度: {result.get('bull_strength', 'N/A')}")
+                            logger.info(f"  看跌观点强度: {result.get('bear_strength', 'N/A')}")
+                        if "risk_level" in result:
+                            logger.info(f"  风险等级: {result['risk_level']}")
+                    
+                    return result
+                    
+                except Exception as e:
+                    # 记录失败
+                    elapsed = time.time() - start_time
+                    logger.fail(f"[{debate_type.upper()}辩论] 回合失败 (耗时: {elapsed:.2f}秒)")
+                    logger.error(f"错误详情: {str(e)}")
+                    raise
+                    
+            return wrapper
+        return decorator
+
+    # 直接调用模式：简单记录一条辩论回合日志
+    snippet = (content or "").replace("\n", " ")
+    if len(snippet) > 120:
+        snippet = snippet[:117] + "..."
+    logger.info(f"💬 [{debate_type}] 第 {round_num} 轮发言摘要: {snippet}")
 
 def log_data_fetch(source_name: str):
     """

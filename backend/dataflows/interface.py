@@ -20,12 +20,13 @@ from .providers.us import get_data_in_range
 
 
 # 导入统一日志系统
-from tradingagents.utils.logging_init import setup_dataflow_logging
-
-# 导入日志模块
-from tradingagents.utils.logging_manager import get_logger
-logger = get_logger('agents')
-logger = setup_dataflow_logging()
+try:
+    from backend.utils.logging_config import get_logger
+    logger = get_logger('dataflow')
+except ImportError:
+    import logging
+    logger = logging.getLogger('dataflow')
+    logging.basicConfig(level=logging.INFO)
 
 # 导入港股工具
 try:
@@ -202,18 +203,19 @@ except ImportError as e:
     logger.warning(f"⚠️ yfinance库不可用: {e}")
     yf = None
     YF_AVAILABLE = False
-from tradingagents.config.config_manager import config_manager
+# 配置管理（本地实现）
+import os
 
 # 获取数据目录
-DATA_DIR = config_manager.get_data_dir()
+DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data')
 
 def get_config():
     """获取配置（兼容性包装）"""
-    return config_manager.load_settings()
+    return {}
 
 def set_config(config):
     """设置配置（兼容性包装）"""
-    config_manager.save_settings(config)
+    pass
 
 
 def get_finnhub_news(

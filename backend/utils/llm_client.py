@@ -204,15 +204,25 @@ class AgentLLM:
         
     async def ainvoke(self, messages: List[Dict[str, str]]) -> Any:
         """异步调用（兼容接口）"""
-        # 将消息列表转换为prompt
+        # 将输入转换为prompt，兼容字符串和消息列表两种形式
         system_prompt = ""
         user_prompt = ""
-        
-        for msg in messages:
-            if msg.get("role") == "system":
-                system_prompt = msg.get("content", "")
-            elif msg.get("role") == "user":
-                user_prompt = msg.get("content", "")
+
+        if isinstance(messages, str):
+            user_prompt = messages
+        else:
+            for msg in messages:
+                if isinstance(msg, dict):
+                    role = msg.get("role")
+                    content = msg.get("content", "")
+                else:
+                    role = getattr(msg, "role", "user")
+                    content = getattr(msg, "content", str(msg))
+
+                if role == "system":
+                    system_prompt = content
+                elif role == "user":
+                    user_prompt = content
                 
         response = await self.client.generate(user_prompt, system_prompt)
         

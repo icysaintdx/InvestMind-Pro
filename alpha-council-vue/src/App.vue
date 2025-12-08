@@ -32,6 +32,21 @@
           >
             <span class="doc-icon">📚</span>
           </button>
+          <button 
+            @click="toggleLogWindow" 
+            class="log-btn"
+            :class="{ 'active': showLogWindow }"
+            title="实时日志"
+          >
+            <span class="log-icon">📡</span>
+          </button>
+          <button 
+            @click="showHistory = true" 
+            class="history-btn"
+            title="分析历史"
+          >
+            <span class="history-icon">📊</span>
+          </button>
         </div>
         
         <!-- 中间：API状态指示器 -->
@@ -128,6 +143,14 @@
         <DocumentView />
       </div>
     </div>
+    
+    <!-- 历史记录模态框 -->
+    <div v-if="showHistory" class="modal-overlay" @click.self="showHistory = false">
+      <div class="history-modal">
+        <button @click="showHistory = false" class="modal-close-btn">×</button>
+        <HistoryView />
+      </div>
+    </div>
 
     <!-- 数据透明化面板 -->
     <StockDataPanel ref="stockDataPanel" :stockData="currentStockData" />
@@ -144,6 +167,7 @@ import AnalysisView from './views/AnalysisView.vue'
 import ChangelogView from './views/ChangelogView.vue'
 import ProjectInfoView from './views/ProjectInfoView.vue'
 import DocumentView from './views/DocumentView.vue'
+import HistoryView from './views/HistoryView.vue'
 import ParticleBackground from './components/ParticleBackground.vue'
 import StockDataPanel from './components/StockDataPanel.vue'
 import NewsDataPanel from './components/NewsDataPanel.vue'
@@ -157,6 +181,7 @@ export default defineComponent({
     ChangelogView,
     ProjectInfoView,
     DocumentView,
+    HistoryView,
     ParticleBackground,
     StockDataPanel,
     NewsDataPanel,
@@ -171,6 +196,8 @@ export default defineComponent({
     const showProjectInfo = ref(false)
     const showDocuments = ref(false)
     const showHotRankModal = ref(false)
+    const showLogWindow = ref(false)  // 全局日志窗口显示状态
+    const showHistory = ref(false)  // 历史记录显示状态
     
     const versionInfo = ref(getVersionInfo())
     
@@ -485,11 +512,17 @@ export default defineComponent({
       apiStatus.value[provider] = status
     }
 
+    // 切换日志窗口
+    const toggleLogWindow = () => {
+      showLogWindow.value = !showLogWindow.value
+    }
+    
     // 提供给子组件
     provide('configMode', configMode)
     provide('showModelManager', showModelManager)
     provide('showApiConfig', showApiConfig)
     provide('showStylePanel', showStylePanel)
+    provide('showLogWindow', showLogWindow)  // 提供日志窗口状态
     provide('apiStatus', apiStatus)
     provide('apiKeys', apiKeys)
     provide('dataChannelKeys', dataChannelKeys)
@@ -509,6 +542,8 @@ export default defineComponent({
       showProjectInfo,
       showDocuments,
       showHotRankModal,
+      showLogWindow,
+      showHistory,
       versionInfo,
       backendStatus,
       backendStatusText,
@@ -525,6 +560,7 @@ export default defineComponent({
       particleColor,
       toggleConfigMode,
       toggleStylePanel,
+      toggleLogWindow,
       getStatusClass,
       getProviderName,
       getProviderShort,
@@ -994,6 +1030,78 @@ export default defineComponent({
   filter: brightness(1.2);
 }
 
+/* 日志按钮 */
+.log-btn {
+  margin-left: 0.5rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  border: none;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(37, 99, 235, 0.2) 100%);
+  color: #60a5fa;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.log-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
+}
+
+.log-btn.active {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.4) 0%, rgba(37, 99, 235, 0.4) 100%);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.6);
+}
+
+.log-btn .log-icon {
+  font-size: 1.2rem;
+  filter: brightness(1.2);
+}
+
+/* 历史记录按钮 */
+.history-btn {
+  margin-left: 0.5rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(124, 58, 237, 0.2) 100%);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+.history-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.5);
+}
+
+.history-btn .history-icon {
+  font-size: 1.2rem;
+  filter: brightness(1.2);
+}
+
+/* 历史记录模态框 */
+.history-modal {
+  background: rgba(15, 23, 42, 0.98);
+  backdrop-filter: blur(20px);
+  border-radius: 1rem;
+  width: 95vw;
+  max-width: 1400px;
+  height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
 /* 项目介绍模态框 */
 .project-info-modal {
   position: relative;
@@ -1053,5 +1161,80 @@ export default defineComponent({
 
 .document-modal::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+}
+
+/* ========================================
+   移动端响应式优化
+   ======================================== */
+@media (max-width: 768px) {
+  /* 导航栏优化 */
+  .navbar {
+    height: auto;
+    min-height: 50px;
+  }
+  
+  .navbar .container {
+    flex-direction: row;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    justify-content: space-between;
+  }
+  
+  /* 隐藏标题 */
+  .navbar h1 {
+    display: none;
+  }
+  
+  /* 按钮组居中 */
+  .navbar .flex.items-center {
+    justify-content: center;
+  }
+  
+  /* 隐藏 API 状态栏在移动端 */
+  .api-status-bar {
+    display: none;
+  }
+  
+  /* 左侧按钮组 */
+  .nav-left {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  /* 右侧按钮组 */
+  .nav-controls {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+  
+  /* 按钮尺寸优化 */
+  .info-btn, .doc-btn, .log-btn {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+  
+  /* 模态框优化 */
+  .modal-overlay {
+    padding: 0;
+  }
+  
+  .project-info-modal,
+  .document-modal {
+    width: 100vw;
+    height: 100vh;
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+  
+  .modal-close-btn {
+    top: 1rem;
+    right: 1rem;
+    width: 3rem;
+    height: 3rem;
+    font-size: 2rem;
+    z-index: 1000;
+  }
 }
 </style>

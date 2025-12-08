@@ -1,0 +1,302 @@
+[
+  {
+    "concurrency": 2,
+    "prompt_size": 1000,
+    "total_requests": 2,
+    "success": 2,
+    "failed": 0,
+    "total_time": 7.806407690048218,
+    "avg_time": 7.673796772956848,
+    "success_rate": 100.0
+  },
+  {
+    "concurrency": 2,
+    "prompt_size": 2000,
+    "total_requests": 2,
+    "success": 2,
+    "failed": 0,
+    "total_time": 8.597714185714722,
+    "avg_time": 8.23420250415802,
+    "success_rate": 100.0
+  },
+  {
+    "concurrency": 2,
+    "prompt_size": 4000,
+    "total_requests": 2,
+    "success": 2,
+    "failed": 0,
+    "total_time": 8.40140175819397,
+    "avg_time": 8.386253595352173,
+    "success_rate": 100.0
+  },
+  {
+    "concurrency": 2,
+    "prompt_size": 6000,
+    "total_requests": 2,
+    "success": 2,
+    "failed": 0,
+    "total_time": 21.357468366622925,
+    "avg_time": 15.131993651390076,
+    "success_rate": 100.0
+  },
+  {
+    "concurrency": 2,
+    "prompt_size": 8000,
+    "total_requests": 2,
+    "success": 2,
+    "failed": 0,
+    "total_time": 8.38195276260376,
+    "avg_time": 8.160536050796509,
+    "success_rate": 100.0
+  },
+  {
+    "concurrency": 2,
+    "prompt_size": 10000,
+    "total_requests": 2,
+    "success": 2,
+    "failed": 0,
+    "total_time": 9.498587846755981,
+    "avg_time": 9.001512885093689,
+    "success_rate": 100.0
+  },
+  {
+    "concurrency": 4,
+    "prompt_size": 1000,
+    "total_requests": 4,
+    "success": 4,
+    "failed": 0,
+    "total_time": 14.196611404418945,
+    "avg_time": 13.449060678482056,
+    "success_rate": 100.0
+  },
+  {
+    "concurrency": 4,
+    "prompt_size": 2000,
+    "total_requests": 4,
+    "success": 4,
+    "failed": 0,
+    "total_time": 16.298483848571777,
+    "avg_time": 14.271073281764984,
+    "success_rate": 100.0
+  },
+  {
+    "concurrency": 4,
+    "prompt_size": 4000,
+    "total_requests": 4,
+    "success": 4,
+    "failed": 0,
+    "total_time": 15.665000915527344,
+    "avg_time": 14.201396405696869,
+    "success_rate": 100.0
+  },
+  {
+    "concurrency": 4,
+    "prompt_size": 6000,
+    "total_requests": 4,
+    "success": 4,
+    "failed": 0,
+    "total_time": 13.69602084159851,
+    "avg_time": 13.294747114181519,
+    "success_rate": 100.0
+  },
+  {
+    "concurrency": 4,
+    "prompt_size": 8000,
+    "total_requests": 4,
+    "success": 4,
+    "failed": 0,
+    "total_time": 14.63882565498352,
+    "avg_time": 13.80835473537445,
+    "success_rate": 100.0
+  },
+  {
+    "concurrency": 4,
+    "prompt_size": 10000,
+    "total_requests": 4,
+    "success": 4,
+    "failed": 0,
+    "total_time": 15.818492889404297,
+    "avg_time": 14.970776617527008,
+    "success_rate": 100.0
+  },
+  {
+    "concurrency": 6,
+    "prompt_size": 1000,
+    "total_requests": 6,
+    "success": 6,
+    "failed": 0,
+    "total_time": 20.36760711669922,
+    "avg_time": 19.396398504575092,
+    "success_rate": 100.0
+  },
+  {
+    "concurrency": 6,
+    "prompt_size": 2000,
+    "total_requests": 6,
+    "success": 6,
+    "failed": 0,
+    "total_time": 24.166622161865234,
+    "avg_time": 19.546401977539062,
+    "success_rate": 100.0
+  },
+  {
+    "concurrency": 6,
+    "prompt_size": 4000,
+    "total_requests": 6,
+    "success": 6,
+    "failed": 0,
+    "total_time": 20.235857248306274,
+    "avg_time": 19.42897931734721,
+    "success_rate": 100.0
+  },
+  {
+    "concurrency": 6,
+    "prompt_size": 6000,
+    "total_requests": 6,
+    "success": 6,
+    "failed": 0,
+    "total_time": 34.30419898033142,
+    "avg_time": 23.983444094657898,
+    "success_rate": 100.0
+  },
+  {
+    "concurrency": 6,
+    "prompt_size": 8000,
+    "total_requests": 6,
+    "success": 6,
+    "failed": 0,
+    "total_time": 23.122251749038696,
+    "avg_time": 22.433863600095112,
+    "success_rate": 100.0
+  },
+  {
+    "concurrency": 6,
+    "prompt_size": 10000,
+    "total_requests": 6,
+    "success": 6,
+    "failed": 0,
+    "total_time": 23.43023657798767,
+    "avg_time": 21.270917375882465,
+    "success_rate": 100.0
+  },
+  {
+    "concurrency": 8,
+    "prompt_size": 1000,
+    "total_requests": 8,
+    "success": 8,
+    "failed": 0,
+    "total_time": 25.532355308532715,
+    "avg_time": 24.338257491588593,
+    "success_rate": 100.0
+  },
+  {
+    "concurrency": 8,
+    "prompt_size": 2000,
+    "total_requests": 8,
+    "success": 8,
+    "failed": 0,
+    "total_time": 27.558891534805298,
+    "avg_time": 25.069635540246964,
+    "success_rate": 100.0
+  },
+  {
+    "concurrency": 8,
+    "prompt_size": 4000,
+    "total_requests": 8,
+    "success": 8,
+    "failed": 0,
+    "total_time": 46.537734031677246,
+    "avg_time": 33.30475941300392,
+    "success_rate": 100.0
+  },
+  {
+    "concurrency": 8,
+    "prompt_size": 6000,
+    "total_requests": 8,
+    "success": 8,
+    "failed": 0,
+    "total_time": 28.64681577682495,
+    "avg_time": 25.64893728494644,
+    "success_rate": 100.0
+  },
+  {
+    "concurrency": 8,
+    "prompt_size": 8000,
+    "total_requests": 8,
+    "success": 8,
+    "failed": 0,
+    "total_time": 29.668628931045532,
+    "avg_time": 27.1590459048748,
+    "success_rate": 100.0
+  },
+  {
+    "concurrency": 8,
+    "prompt_size": 10000,
+    "total_requests": 8,
+    "success": 8,
+    "failed": 0,
+    "total_time": 25.354971408843994,
+    "avg_time": 24.582489758729935,
+    "success_rate": 100.0
+  },
+  {
+    "concurrency": 10,
+    "prompt_size": 1000,
+    "total_requests": 10,
+    "success": 10,
+    "failed": 0,
+    "total_time": 36.9926962852478,
+    "avg_time": 31.270467233657836,
+    "success_rate": 100.0
+  },
+  {
+    "concurrency": 10,
+    "prompt_size": 2000,
+    "total_requests": 10,
+    "success": 10,
+    "failed": 0,
+    "total_time": 35.47663712501526,
+    "avg_time": 30.097884154319765,
+    "success_rate": 100.0
+  },
+  {
+    "concurrency": 10,
+    "prompt_size": 4000,
+    "total_requests": 10,
+    "success": 10,
+    "failed": 0,
+    "total_time": 31.166022777557373,
+    "avg_time": 30.026685667037963,
+    "success_rate": 100.0
+  },
+  {
+    "concurrency": 10,
+    "prompt_size": 6000,
+    "total_requests": 10,
+    "success": 10,
+    "failed": 0,
+    "total_time": 36.00208616256714,
+    "avg_time": 31.81725070476532,
+    "success_rate": 100.0
+  },
+  {
+    "concurrency": 10,
+    "prompt_size": 8000,
+    "total_requests": 10,
+    "success": 10,
+    "failed": 0,
+    "total_time": 35.161280393600464,
+    "avg_time": 31.745173263549805,
+    "success_rate": 100.0
+  },
+  {
+    "concurrency": 10,
+    "prompt_size": 10000,
+    "total_requests": 10,
+    "success": 10,
+    "failed": 0,
+    "total_time": 30.851962089538574,
+    "avg_time": 29.600076532363893,
+    "success_rate": 100.0
+  }
+]

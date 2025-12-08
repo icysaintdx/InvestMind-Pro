@@ -1,16 +1,63 @@
 <template>
-  <div class="debate-panel">
+  <div class="debate-panel" :class="statusClass">
     <div class="debate-header">
-      <div class="flex items-center justify-between mb-2">
-        <h3 class="text-lg font-bold text-white flex items-center gap-2">
-          <span class="text-2xl">⚖️</span>
-          {{ title }}
-        </h3>
-        <span class="status-badge" :class="status">
-          {{ statusText }}
-        </span>
+      <div class="debate-title">
+        <span class="debate-icon">🎯</span>
+        <h3>{{ title }}</h3>
       </div>
-      <div class="text-sm text-slate-400">{{ topic }}</div>
+      <div class="debate-status">
+        <span v-if="status === 'idle'" class="status-badge idle">待命</span>
+        <span v-else-if="status === 'debating'" class="status-badge debating">辩论中...</span>
+        <span v-else-if="status === 'finished'" class="status-badge finished">已完成</span>
+        <button v-if="showConfig" @click="toggleConfig" class="config-toggle-btn" :class="{active: configExpanded}">
+          ⚙️ {{ configExpanded ? '收起配置' : '配置模型' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- 配置区（配置模式下显示） -->
+    <div v-if="showConfig && configExpanded" class="debate-config">
+      <div class="config-header">
+        <span class="config-title">🤖 辩论智能体配置</span>
+        <span class="config-hint">一键配置所有参与辩论的智能体</span>
+      </div>
+      <div class="config-body">
+        <div class="config-item">
+          <label class="config-label">模型 (Model)</label>
+          <select v-model="selectedModel" @change="applyConfigToAll" class="model-select">
+            <option v-for="opt in modelOptions" :key="opt.name" :value="opt.name">
+              {{ opt.label }}
+            </option>
+          </select>
+        </div>
+        <div class="config-item">
+          <div class="temp-header">
+            <label class="config-label">随机性 (Temp)</label>
+            <span class="temp-value">{{ temperature }}</span>
+          </div>
+          <div class="temp-slider-container">
+            <span class="temp-label">严谨</span>
+            <input 
+              type="range" 
+              v-model.number="temperature"
+              @input="applyConfigToAll"
+              class="temp-slider"
+              min="0" 
+              max="1" 
+              step="0.1"
+            >
+            <span class="temp-label">发散</span>
+          </div>
+        </div>
+        <div class="config-agents-list">
+          <span class="agents-label">当前配置将应用于：</span>
+          <div class="agents-tags">
+            <span v-for="agentId in agentIds" :key="agentId" class="agent-tag">
+              {{ getAgentName(agentId) }}
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="debate-content">
@@ -77,11 +124,11 @@ export default {
   props: {
     title: {
       type: String,
-      default: '智能博弈'
+      required: true
     },
     topic: {
       type: String,
-      default: '等待辩论主题...'
+      required: true
     },
     status: {
       type: String,
@@ -98,25 +145,130 @@ export default {
     conclusion: {
       type: Object,
       default: null // { content: '...', score: 85 }
+    },
+    showConfig: {
+      type: Boolean,
+      default: false
+    },
+    agentIds: {
+      type: Array,
+      default: () => []
+    }
+  },
+  data() {
+    return {
+      configExpanded: false,
+      selectedModel: 'Qwen/Qwen3-8B',
+      temperature: 0.3,
+      modelOptions: [],
+      agentNameMap: {
+        'bull_researcher': '🐂 看涨研究员',
+        'bear_researcher': '🐻 看跌研究员',
+        'research_manager': '🎓 研究部经理',
+        'risk_aggressive': '⚔️ 激进风控师',
+        'risk_conservative': '🛡️ 保守风控师',
+        'risk_neutral': '⚖️ 中立风控师',
+        'risk_manager': '👮 风控部经理'
+      }
     }
   },
   computed: {
-    statusText() {
-      const map = {
-        'idle': '准备中',
-        'debating': '激烈辩论中',
-        'finished': '辩论结束'
-      }
-      return map[this.status] || this.status
+    statusClass() {
+      return `status-${this.status}`
     }
+  },
+  async mounted() {
+    await this.loadConfig()
   },
   updated() {
     this.scrollToBottom()
   },
   methods: {
+    toggleConfig() {
+      this.configExpanded = !this.configExpanded
+    },
+    getAgentName(agentId) {
+      return this.agentNameMap[agentId] || agentId
+    },
+    async loadConfig() {
+      try {
+        const response = await fetch('http://localhost:8000/api/config/agents')
+        if (response.ok) {
+          const data = await response.json()
+          if (data.data) {
+            if (data.data.selectedModels && data.data.selectedModels.length > 0) {
+              this.modelOptions = data.data.selectedModels.map(modelName => ({
+                name: modelName,
+                label: this.formatModelLabel(modelName)
+              }))
+            }
+            if (data.data.agents && this.agentIds.length > 0) {
+              const firstAgent = data.data.agents.find(a => a.id === this.agentIds[0])
+              if (firstAgent) {
+                this.selectedModel = firstAgent.modelName || 'Qwen/Qwen3-8B'
+                this.temperature = firstAgent.temperature || 0.3
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('加载配置失败:', error)
+      }
+    },
+    formatModelLabel(modelName) {
+      if (modelName.includes('/')) {
+        const parts = modelName.split('/')
+        return parts[parts.length - 1]
+      }
+      const labelMap = {
+        'gemini-2.0-flash-exp': 'Gemini 2.0 Flash',
+        'deepseek-chat': 'DeepSeek Chat',
+        'qwen-plus': '通义千问 Plus'
+      }
+      return labelMap[modelName] || modelName
+    },
+    async applyConfigToAll() {
+      try {
+        const loadResponse = await fetch('http://localhost:8000/api/config/agents')
+        let configData = { agents: [], selectedModels: [] }
+        
+        if (loadResponse.ok) {
+          const data = await loadResponse.json()
+          if (data.data) {
+            configData = data.data
+          }
+        }
+        
+        this.agentIds.forEach(agentId => {
+          const agentIndex = configData.agents.findIndex(a => a.id === agentId)
+          if (agentIndex >= 0) {
+            configData.agents[agentIndex].modelName = this.selectedModel
+            configData.agents[agentIndex].temperature = this.temperature
+          } else {
+            configData.agents.push({
+              id: agentId,
+              modelName: this.selectedModel,
+              modelProvider: 'AUTO',
+              temperature: this.temperature
+            })
+          }
+        })
+        
+        const saveResponse = await fetch('http://localhost:8000/api/config/agents', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(configData)
+        })
+        
+        if (saveResponse.ok) {
+          console.log(`[辩论面板] 已一键配置 ${this.agentIds.length} 个智能体`)
+        }
+      } catch (error) {
+        console.error('保存配置失败:', error)
+      }
+    },
     getMessageClass(msg) {
       if (this.sides.length < 2) return 'left'
-      // 假设 sides[0] 是左方，sides[1] 是右方
       if (msg.agentName === this.sides[0].name) return 'message-left'
       if (msg.agentName === this.sides[1].name) return 'message-right'
       return 'message-center'
@@ -346,5 +498,183 @@ export default {
 @keyframes bounce {
   0%, 80%, 100% { transform: scale(0); }
   40% { transform: scale(1); }
+}
+
+/* 配置区样式 */
+.debate-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.debate-title h3 {
+  font-size: 1.125rem;
+  font-weight: bold;
+  color: white;
+  margin: 0;
+}
+
+.debate-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.config-toggle-btn {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  background: rgba(99, 102, 241, 0.2);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  border-radius: 0.375rem;
+  color: #a5b4fc;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.config-toggle-btn:hover {
+  background: rgba(99, 102, 241, 0.3);
+  border-color: rgba(99, 102, 241, 0.6);
+}
+
+.config-toggle-btn.active {
+  background: rgba(99, 102, 241, 0.4);
+  color: #c7d2fe;
+}
+
+.debate-config {
+  padding: 1rem;
+  background: rgba(30, 41, 59, 0.5);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.config-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.config-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #a5b4fc;
+}
+
+.config-hint {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.config-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.config-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.config-label {
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.model-select {
+  width: 100%;
+  padding: 0.375rem 0.5rem;
+  background: #1e293b;
+  border: 1px solid #475569;
+  border-radius: 0.375rem;
+  color: white;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.model-select:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+.temp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.temp-value {
+  color: #60a5fa;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: monospace;
+}
+
+.temp-slider-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.temp-label {
+  color: #64748b;
+  font-size: 0.625rem;
+  white-space: nowrap;
+}
+
+.temp-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 6px;
+  background: #1e293b;
+  border-radius: 9999px;
+  outline: none;
+  border: 1px solid #334155;
+}
+
+.temp-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  border: 2px solid #0f172a;
+  cursor: pointer;
+}
+
+.temp-slider::-webkit-slider-thumb:hover {
+  background: #818cf8;
+  transform: scale(1.1);
+}
+
+.config-agents-list {
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.agents-label {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.agents-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.agent-tag {
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: #a5b4fc;
+  font-size: 0.7rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
 }
 </style>

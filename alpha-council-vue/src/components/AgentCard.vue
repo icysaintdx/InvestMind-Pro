@@ -130,8 +130,16 @@
 
     <!-- 内容区 -->
     <div v-show="isExpanded" class="card-content" :class="{ 'with-config': showConfig, 'with-tabs': agent.id === 'gm' && parsedGMContent.hasSimple }">
+      <!-- 数据获取中 (fetching状态显示) -->
+      <div v-if="status === 'fetching'" class="fetching-container">
+        <div class="fetching-message">
+          <span class="spinner"></span>
+          <span>{{ getWaitingDescription() }}</span>
+        </div>
+      </div>
+      
       <!-- 加载骨架屏 (analyzing状态显示) -->
-      <div v-if="status === 'analyzing'" class="skeleton-loader">
+      <div v-else-if="status === 'analyzing'" class="skeleton-loader">
         <div class="skeleton-line"></div>
         <div class="skeleton-line" style="width: 85%"></div>
         <div class="skeleton-line" style="width: 75%"></div>
@@ -241,7 +249,7 @@ export default {
     modelUpdateTrigger() {
       console.log(`[${this.agent.id}] 检测到模型更新，重新加载模型列表`)
       this.loadSelectedModels()
-    }
+    },
   },
   data() {
     return {
@@ -1032,6 +1040,35 @@ export default {
   border-left: 1px solid rgba(59, 130, 246, 0.3);
   border-top: 1px solid rgba(59, 130, 246, 0.3);
   transform: rotate(45deg);
+}
+
+/* 数据获取中 */
+.fetching-container {
+  padding: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fetching-message {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #94a3b8;
+  font-size: 0.875rem;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(59, 130, 246, 0.3);
+  border-top-color: #60a5fa;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 @keyframes tooltipFadeIn {

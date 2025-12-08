@@ -3,10 +3,166 @@
  * 统一管理所有版本信息，避免硬编码
  */
 
-export const CURRENT_VERSION = '1.4.1'
-export const CURRENT_CODENAME = '智能体数据源全面集成版'
+export const CURRENT_VERSION = '1.5.0'
+export const CURRENT_CODENAME = '辩论系统全面增强版'
 
 export const CHANGELOG_DATA = [
+  {
+    version: '1.5.0',
+    codename: '辩论系统全面增强版',
+    date: '2025-12-08T02:45:00',
+    features: [
+      {
+        icon: '🤼',
+        title: '多空研判博弈LLM接入',
+        star: true,
+        description: '看涨研究员 vs 看跌研究员智能辩论，最终给出多头/空头优势判断。',
+        details: [
+          '🐂 看涨研究员 - 寻找看涨理由，强调积极因素',
+          '🐻 看跌研究员 - 寻找看跌理由，强调风险因素',
+          '🎓 研究部经理 - 综合双方观点，做出最终决策',
+          '输出: BUY/SELL/HOLD + 置信度评分 0-100'
+        ],
+        files: ['debate_api.py', 'AnalysisView.vue', 'DebatePanel.vue']
+      },
+      {
+        icon: '⚖️',
+        title: '三方风控评估LLM接入',
+        star: true,
+        description: '激进/保守/中立三方风控师辩论，给出风险等级和仓位建议。',
+        details: [
+          '⚔️ 激进风控师 - 强调机会，认为风险可控',
+          '🛡️ 保守风控师 - 强调风险，建议谨慎',
+          '⚖️ 中立风控师 - 客观中立，平衡分析',
+          '👮 风控部经理 - 综合三方观点，做出风控决策',
+          '输出: HIGH/MEDIUM/LOW + 仓位建议'
+        ],
+        files: ['debate_api.py', 'AnalysisView.vue']
+      },
+      {
+        icon: '🔧',
+        title: '本地规则引擎兜底机制',
+        star: true,
+        description: '后端LLM超时时，自动触发本地规则判断，基于PE/PB/涨跌幅的智能评分系统。',
+        details: [
+          '多空判断: 涨跌幅/PE/PB多维度评分',
+          '风险评估: 波动率/估值异常检测',
+          '自动触发: 检测后端超时错误后自动启用',
+          '输出: BUY/SELL/HOLD + 详细说明'
+        ],
+        files: ['AnalysisView.vue (localBullBearFallback, localRiskFallback)']
+      },
+      {
+        icon: '⚙️',
+        title: '辩论面板配置模式',
+        star: true,
+        description: '在配置模式下，辩论面板支持一键配置所有参与辩论的智能体。',
+        details: [
+          '模型选择: 从 selectedModels 列表中选择',
+          '随机性调整: 0-1 滑条 (0=严谨，1=发散)',
+          '配置范围: 多空辩论3个 + 风控辩论4个智能体',
+          '保存位置: backend/agent_configs.json'
+        ],
+        files: ['DebatePanel.vue']
+      },
+      {
+        icon: '📰',
+        title: '新闻面板优先级优化',
+        star: false,
+        description: '优先显示所有非中性新闻，至少显示30条，不足用中性补齐。',
+        details: [
+          '非中性 ≥ 30条: 只显示非中性',
+          '非中性 < 30条: 用中性补齐到30条',
+          '例子: 19条非中性 + 11条中性 = 30条总计'
+        ],
+        files: ['NewsDataPanel.vue']
+      },
+      {
+        icon: '✂️',
+        title: '辩论内容提取优化',
+        star: false,
+        description: '从后端返回的完整辩论过程中，提取核心观点，限制显示长度150字。',
+        details: [
+          '去除角色标记 (Bull Analyst:, Bear Analyst:)',
+          '提取最后一段有实质内容的段落',
+          '限制显示长度150字，超出显示"..."'
+        ],
+        files: ['AnalysisView.vue (extractCoreView)']
+      },
+      {
+        icon: '📊',
+        title: '摘要器模型配置',
+        star: true,
+        description: '支持选择专门的摘要器模型，用于压缩前序分析结果，减少后续智能体的Prompt长度。',
+        details: [
+          '位置: 模型管理器顶部，仅显示大语言模型',
+          '推荐: Qwen/Qwen2.5-7B-Instruct 等中等规模模型',
+          '作用: 避免超时，提升分析速度'
+        ],
+        files: ['ModelManager.vue']
+      },
+      {
+        icon: '🛠️',
+        title: '模型能力画像 + 静默压测',
+        star: true,
+        description: '在后台对当前所选大语言模型进行压测，不影响正常分析流程。',
+        details: [
+          '配置项: 目标并发数、测试Prompt长度、max_tokens、temperature',
+          '作用: 评估模型在高并发、长文本场景下的表现',
+          '位置: 模型管理器展开区域'
+        ],
+        files: ['ModelManager.vue']
+      }
+    ],
+    bugs: [
+      {
+        icon: '🐛',
+        title: '修复辩论内容混乱',
+        description: '看涨研究员卡片显示“看跌观点”、“看涨反驳”等混乱内容。',
+        details: [
+          '原因: 后端返回的是完整辩论过程',
+          '修复: 提取核心观点，去除角色标记'
+        ],
+        files: ['AnalysisView.vue (1373-1385行)']
+      },
+      {
+        icon: '🐛',
+        title: '修复结论过长',
+        description: '风控辩论结论显示一大堆文字，占据大量空间。',
+        details: [
+          '修复: 限制结论长度为150字',
+          '超出部分显示"..."'
+        ],
+        files: ['AnalysisView.vue (1421-1422行, 1573-1574行)']
+      },
+      {
+        icon: '🐛',
+        title: '修复新闻优先级问题',
+        description: '新闻面板显示不到30条，且大部分是中性新闻。',
+        details: [
+          '原因: 只是简单限制数量到30条',
+          '修复: 优先显示所有非中性新闻'
+        ],
+        files: ['NewsDataPanel.vue (186-198行)']
+      },
+      {
+        icon: '🐛',
+        title: '修夏PE/PB为0显示问题',
+        description: '本地兜底显示"PE=0，PB=0"，误导用户。',
+        details: [
+          '修复: PE/PB为0时显示"PE=N/A"、"PB=N/A"'
+        ],
+        files: ['AnalysisView.vue (1248-1250行)']
+      }
+    ],
+    docs: [
+      '辩论系统实现文档.md',
+      '本地兜底机制说明.md',
+      '辩论面板配置模式.md',
+      '超时优化方案.md',
+      '新闻优先级优化.md'
+    ]
+  },
   {
     version: '1.4.1',
     codename: '智能体数据源全面集成版',

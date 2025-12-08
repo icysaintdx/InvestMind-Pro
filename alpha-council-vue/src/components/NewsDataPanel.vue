@@ -183,9 +183,18 @@ export default {
       else if (newsData.sentiment === 'neutral') stats.value.neutral++
       else if (newsData.sentiment === 'negative') stats.value.negative++
 
-      // 限制新闻数量
-      if (newsList.value.length > 30) {
-        newsList.value.pop()
+      // 优先显示非中性新闻，至少显示30条
+      const nonNeutralNews = newsList.value.filter(n => n.sentiment !== 'neutral')
+      const neutralNews = newsList.value.filter(n => n.sentiment === 'neutral')
+      
+      // 如果非中性新闻 >= 30条，只显示非中性
+      if (nonNeutralNews.length >= 30) {
+        newsList.value = nonNeutralNews
+      } 
+      // 如果非中性新闻 < 30条，用中性补齐到30条
+      else {
+        const needNeutral = 30 - nonNeutralNews.length
+        newsList.value = [...nonNeutralNews, ...neutralNews.slice(0, needNeutral)]
       }
 
       // 自动滚动到顶部
@@ -797,5 +806,84 @@ export default {
 
 .social-item.neutral .rate {
   color: #94a3b8;
+}
+
+/* 移动端响应式 */
+@media (max-width: 768px) {
+  .data-panel {
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 100vw;
+    max-width: 100vw;
+    border-radius: 0;
+    z-index: 1040;
+  }
+  
+  .data-panel.panel-open {
+    z-index: 1060;
+  }
+  
+  .right-panel {
+    transform: translateX(100%);
+  }
+  
+  .right-panel.panel-open {
+    transform: translateX(0);
+  }
+  
+  /* 切换按钮 - 移动端紧凑 */
+  .right-toggle {
+    top: 15rem;
+    left: -1.5rem;
+    padding: 0.375rem 0.25rem;
+    background: rgba(15, 23, 42, 0.98);
+    border: 1px solid rgba(16, 185, 129, 0.6);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+    transform: none;
+    position: absolute;
+  }
+  
+  /* 面板打开时，按钮移到内部 */
+  .right-panel.panel-open .right-toggle {
+    left: 0.5rem;
+    border-radius: 0.375rem;
+  }
+  
+  .panel-toggle:hover {
+    background: rgba(16, 185, 129, 0.3);
+    border-color: rgba(16, 185, 129, 0.8);
+  }
+  
+  .toggle-icon {
+    font-size: 0.875rem;
+  }
+  
+  .toggle-text {
+    font-size: 0.625rem;
+    font-weight: 500;
+  }
+  
+  .panel-header {
+    padding: 1rem;
+  }
+  
+  .panel-title {
+    font-size: 1rem;
+  }
+  
+  .panel-subtitle {
+    font-size: 0.75rem;
+  }
+  
+  .panel-body {
+    padding: 1rem;
+  }
+  
+  .panel-content {
+    position: relative;
+    z-index: 1;
+  }
 }
 </style>

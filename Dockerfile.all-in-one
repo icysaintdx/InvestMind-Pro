@@ -1,0 +1,135 @@
+# AlphaCouncil All-in-One Dockerfile
+# 前后端一体化部署
+
+FROM python:3.11-slim
+
+# 设置工作目录
+WORKDIR /app
+
+# 设置环境变量
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PYTHONPATH=/app
+
+# 安装系统依赖
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    curl \
+    nginx \
+    ca-certificates \
+    gnupg \
+    && rm -rf /var/lib/apt/lists/*
+
+# 安装 Node.js 18 (使用 NodeSource)
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# ==================== 后端部署 ====================
+# 复制后端依赖文件
+COPY backend/requirements.txt /app/backend/requirements.txt
+
+# 安装 Python 依赖
+RUN pip install --no-cache-dir -r /app/backend/requirements.txt
+
+# 复制后端代码
+COPY backend /app/backend
+
+# 创建 __init__.py
+RUN touch /app/__init__.py /app/backend/__init__.py
+
+# 创建数据目录
+RUN mkdir -p /app/data
+
+# ==================== 前端构建 ====================
+# 复制前端代码
+COPY alpha-council-vue /app/frontend
+
+# 安装前端依赖并构建
+WORKDIR /app/frontend
+
+# 设置生产环境变量
+ENV NODE_ENV=production
+
+RUN npm ci && npm run build
+
+# 配置 Nginx
+RUN rm -f /etc/nginx/sites-enabled/default && \
+    cat > /etc/nginx/sites-available/alphacouncil <<'NGINX_EOF'
+server {
+    listen 80;
+    server_name localhost;
+    
+    # 前端静态文件
+    root /app/frontend/dist;
+    index index.html;
+    
+    # Gzip 压缩
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml+rss application/json application/javascript;
+    
+    # 前端路由
+    location / {
+        try_files \$uri \$uri/ /index.html;
+    }
+    
+    # API 代理到本地后端
+    location /api/ {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_cache_bypass \$http_upgrade;
+        
+        proxy_connect_timeout 180s;
+        proxy_send_timeout 180s;
+        proxy_read_timeout 180s;
+    }
+    
+    # 静态资源缓存
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+}
+NGINX_EOF
+
+RUN ln -s /etc/nginx/sites-available/alphacouncil /etc/nginx/sites-enabled/alphacouncil
+
+# ==================== 启动脚本 ====================
+WORKDIR /app
+
+# 创建启动脚本
+RUN echo '#!/bin/bash' > /app/start.sh && \
+    echo 'set -e' >> /app/start.sh && \
+    echo '' >> /app/start.sh && \
+    echo 'echo "Starting AlphaCouncil..."' >> /app/start.sh && \
+    echo '' >> /app/start.sh && \
+    echo '# 启动 Nginx' >> /app/start.sh && \
+    echo 'echo "Starting Nginx..."' >> /app/start.sh && \
+    echo 'nginx' >> /app/start.sh && \
+    echo '' >> /app/start.sh && \
+    echo '# 启动后端' >> /app/start.sh && \
+    echo 'echo "Starting Backend..."' >> /app/start.sh && \
+    echo 'cd /app/backend' >> /app/start.sh && \
+    echo 'python server.py' >> /app/start.sh && \
+    chmod +x /app/start.sh
+
+# 暴露端口（只需要 80）
+EXPOSE 80
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost/ || exit 1
+
+# 启动
+CMD ["/app/start.sh"]
