@@ -924,13 +924,41 @@ export default {
           agents,
           selectedModels: Array.from(selectedModels.value),
           summarizerModel: summarizerModel.value || 'Qwen/Qwen2.5-7B-Instruct',
+          summarizerTemperature: config.summarizerTemperature || 0.2,
           calibrationSettings
         }
-        await fetch('http://localhost:8000/api/config/agents', {
+        
+        console.log('[ModelManager] 保存配置:', {
+          agents: updated.agents.length,
+          selectedModels: updated.selectedModels.length,
+          summarizerModel: updated.summarizerModel
+        })
+        
+        const saveResponse = await fetch('http://localhost:8000/api/config/agents', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(updated)
         })
+        
+        if (!saveResponse.ok) {
+          throw new Error(`HTTP ${saveResponse.status}`)
+        }
+        
+        // 验证保存结果
+        const verifyResponse = await fetch('http://localhost:8000/api/config/agents')
+        const verifyData = await verifyResponse.json()
+        
+        if (verifyData.success && verifyData.data) {
+          const savedSummarizer = verifyData.data.summarizerModel
+          if (savedSummarizer === updated.summarizerModel) {
+            console.log('✅ 摘要器模型保存成功:', savedSummarizer)
+          } else {
+            console.error('❌ 摘要器模型保存失败')
+            console.error('期望:', updated.summarizerModel)
+            console.error('实际:', savedSummarizer)
+          }
+        }
+        
         emit('save', {
           selectedModels: Array.from(selectedModels.value),
           summarizerModel: summarizerModel.value
@@ -1663,5 +1691,80 @@ export default {
 
 .model-list::-webkit-scrollbar-thumb:hover {
   background: #64748b;
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .modal-container {
+    width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    margin: 0;
+  }
+  
+  .modal-body {
+    max-height: calc(100vh - 60px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .model-list {
+    max-height: none;
+    min-height: 300px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .search-control-bar {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .control-buttons {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .brand-filters {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .brand-btn {
+    flex: 1 1 calc(25% - 0.5rem);
+    min-width: 60px;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.85rem;
+  }
+  
+  .model-card {
+    padding: 0.75rem;
+  }
+  
+  .model-name {
+    font-size: 0.9rem;
+  }
+  
+  .model-meta {
+    font-size: 0.75rem;
+  }
+  
+  .calibration-section {
+    margin-top: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .brand-btn {
+    flex: 1 1 calc(33.333% - 0.5rem);
+    font-size: 0.8rem;
+  }
+  
+  .control-btn,
+  .save-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+  }
 }
 </style>

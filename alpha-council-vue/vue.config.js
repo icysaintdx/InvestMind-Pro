@@ -8,5 +8,22 @@ module.exports = defineConfig({
         args[0].title = 'InvestMind Pro - 智投顾问团'
         return args
       })
+  },
+  devServer: {
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        ws: true,
+        secure: false,
+        logLevel: 'debug',
+        onError(err, req, res) {
+          console.error('Proxy error:', err);
+        },
+        onProxyReq(proxyReq, req, res) {
+          console.log('Proxying:', req.method, req.url);
+        }
+      }
+    }
   }
 })

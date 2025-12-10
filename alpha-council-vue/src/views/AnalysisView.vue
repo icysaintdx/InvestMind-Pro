@@ -1306,67 +1306,118 @@ export default {
         }
         
         const data = stockData.value
+        const agentData = agentOutputs.value || {}
+        
         let bullScore = 50
         let bearScore = 50
         const reasons = []
         
+        // ✅ 优先使用前序智能体的分析结果
+        const newsAnalysis = agentData.news_analyst || ''
+        const socialAnalysis = agentData.social_analyst || ''
+        const technicalAnalysis = agentData.technical || ''
+        const fundamentalAnalysis = agentData.fundamental || ''
+        
+        // 1. 从新闻分析中提取情绪
+        if (newsAnalysis) {
+            if (newsAnalysis.includes('利好') || newsAnalysis.includes('积极') || newsAnalysis.includes('看好') || newsAnalysis.includes('乐观')) {
+                bullScore += 10
+                reasons.push('新闻面偏向积极')
+            } else if (newsAnalysis.includes('利空') || newsAnalysis.includes('消极') || newsAnalysis.includes('看空') || newsAnalysis.includes('悲观')) {
+                bearScore += 10
+                reasons.push('新闻面偏向消极')
+            }
+        }
+        
+        // 2. 从社交媒体分析中提取情绪
+        if (socialAnalysis) {
+            if (socialAnalysis.includes('看多') || socialAnalysis.includes('乐观') || socialAnalysis.includes('积极')) {
+                bullScore += 8
+                reasons.push('社交媒体情绪乐观')
+            } else if (socialAnalysis.includes('看空') || socialAnalysis.includes('悲观') || socialAnalysis.includes('消极')) {
+                bearScore += 8
+                reasons.push('社交媒体情绪悲观')
+            }
+        }
+        
+        // 3. 从技术分析中提取趋势
+        if (technicalAnalysis) {
+            if (technicalAnalysis.includes('上涨') || technicalAnalysis.includes('突破') || technicalAnalysis.includes('强势') || technicalAnalysis.includes('多头')) {
+                bullScore += 12
+                reasons.push('技术面显示上涨趋势')
+            } else if (technicalAnalysis.includes('下跌') || technicalAnalysis.includes('破位') || technicalAnalysis.includes('弱势') || technicalAnalysis.includes('空头')) {
+                bearScore += 12
+                reasons.push('技术面显示下跌趋势')
+            }
+        }
+        
+        // 4. 从基本面分析中提取估值
+        if (fundamentalAnalysis) {
+            if (fundamentalAnalysis.includes('低估') || fundamentalAnalysis.includes('便宜') || fundamentalAnalysis.includes('价值') || fundamentalAnalysis.includes('安全边际')) {
+                bullScore += 10
+                reasons.push('基本面显示估值偏低')
+            } else if (fundamentalAnalysis.includes('高估') || fundamentalAnalysis.includes('泡沫') || fundamentalAnalysis.includes('昂贵')) {
+                bearScore += 10
+                reasons.push('基本面显示估值偏高')
+            }
+        }
+        
+        // 5. 价格动量（只在有明显趋势时添加）
         const changePercent = parseFloat(data.change_percent || data.change || 0)
         const price = parseFloat(data.price || 0)
+        
+        if (changePercent > 3) {
+            bullScore += 10
+            reasons.push(`短期上涨${changePercent.toFixed(1)}%，动能强劲`)
+        } else if (changePercent < -3) {
+            bearScore += 10
+            reasons.push(`短期下跌${Math.abs(changePercent).toFixed(1)}%，下行压力`)
+        }
+        
+        // 6. PE/PB估值（只在有数据且有意义时使用）
         const pe = parseFloat(data.pe || 0)
         const pb = parseFloat(data.pb || 0)
         
-        if (changePercent > 5) {
-            bullScore += 15
-            reasons.push('短期涨幅较大，动能强劲')
-        } else if (changePercent > 2) {
-            bullScore += 8
-            reasons.push('短期上涨趋势')
-        } else if (changePercent < -5) {
-            bearScore += 15
-            reasons.push('短期跌幅较大，下行压力')
-        } else if (changePercent < -2) {
-            bearScore += 8
-            reasons.push('短期下跌趋势')
-        } else if (Math.abs(changePercent) < 0.5) {
-            reasons.push('价格波动较小，市场观望')
-        }
-        
-        if (pe > 0) {
+        if (pe > 0 && pe < 100) {  // PE在合理范围内
             if (pe < 15) {
-                bullScore += 10
-                reasons.push('PE估值偏低，具备安全边际')
-            } else if (pe > 50) {
-                bearScore += 10
-                reasons.push('PE估值偏高，存在泡沫风险')
-            } else if (pe >= 15 && pe <= 30) {
-                bullScore += 5
-                reasons.push('PE估值合理区间')
-            }
-        } else {
-            reasons.push('PE数据缺失，无法评估盈利能力')
-        }
-        
-        if (pb > 0) {
-            if (pb < 1.5) {
                 bullScore += 8
-                reasons.push('PB估值合理')
-            } else if (pb > 5) {
+                reasons.push(`PE=${pe.toFixed(1)}，估值偏低`)
+            } else if (pe > 50) {
                 bearScore += 8
-                reasons.push('PB估值过高')
+                reasons.push(`PE=${pe.toFixed(1)}，估值偏高`)
             }
-        } else {
-            reasons.push('PB数据缺失，无法评估账面价值')
         }
         
+        if (pb > 0 && pb < 20) {  // PB在合理范围内
+            if (pb < 1.0) {
+                bullScore += 6
+                reasons.push(`PB=${pb.toFixed(2)}，破净有安全边际`)
+            } else if (pb > 5) {
+                bearScore += 6
+                reasons.push(`PB=${pb.toFixed(2)}，估值偏高`)
+            }
+        }
+        
+        // ✅ 如果没有任何有效分析，返回null而不是显示无意义信息
+        if (reasons.length === 0) {
+            return {
+                label: '数据不足',
+                score: 50,
+                summary: '当前可用数据不足以进行有效分析，建议等待更多信息或使用在线LLM模型进行深度分析。',
+                rec: 'HOLD'
+            }
+        }
+        
+        // 决策逻辑
         let rec = 'HOLD'
         let label = '分歧/观望'
         let score = 50
         
-        if (bullScore > bearScore + 10) {
+        if (bullScore > bearScore + 15) {
             rec = 'BUY'
             label = '多头优势'
             score = Math.min(85, 50 + (bullScore - bearScore))
-        } else if (bearScore > bullScore + 10) {
+        } else if (bearScore > bullScore + 15) {
             rec = 'SELL'
             label = '空头优势'
             score = Math.max(15, 50 - (bearScore - bullScore))
@@ -1376,12 +1427,8 @@ export default {
             score = 50
         }
         
-        // 只在有数据时显示估值指标，避免显示N/A
-        const valuationParts = []
-        if (pe > 0) valuationParts.push(`PE=${pe.toFixed(2)}`)
-        if (pb > 0) valuationParts.push(`PB=${pb.toFixed(2)}`)
-        const valuationDisplay = valuationParts.length > 0 ? `，${valuationParts.join('，')}` : ''
-        const summary = `基于技术面和估值的本地规则判断（${rec}）：${reasons.slice(0, 3).join('；')}。当前价格${price}元，涨跌幅${changePercent.toFixed(2)}%${valuationDisplay}。`
+        // 生成友好的摘要
+        const summary = `综合多维度分析（${rec}）：${reasons.slice(0, 4).join('；')}。当前价格${price}元。`
         
         return { label, score, summary, rec }
     }
@@ -1392,40 +1439,94 @@ export default {
         }
         
         const data = stockData.value
+        const agentData = agentOutputs.value || {}
+        
         let riskScore = 0
         const riskFactors = []
         
+        // ✅ 优先从前序分析中提取风险因素
+        const newsAnalysis = agentData.news_analyst || ''
+        const technicalAnalysis = agentData.technical || ''
+        const fundamentalAnalysis = agentData.fundamental || ''
+        const riskSystemAnalysis = agentData.risk_system || ''
+        
+        // 1. 从新闻分析中提取风险
+        if (newsAnalysis) {
+            if (newsAnalysis.includes('风险') || newsAnalysis.includes('警告') || newsAnalysis.includes('危机')) {
+                riskScore += 15
+                riskFactors.push('新闻面存在负面信息')
+            }
+        }
+        
+        // 2. 从技术分析中提取波动性
+        if (technicalAnalysis) {
+            if (technicalAnalysis.includes('高波动') || technicalAnalysis.includes('剧烈波动') || technicalAnalysis.includes('不稳定')) {
+                riskScore += 20
+                riskFactors.push('技术面显示高波动性')
+            }
+        }
+        
+        // 3. 从基本面分析中提取财务风险
+        if (fundamentalAnalysis) {
+            if (fundamentalAnalysis.includes('亏损') || fundamentalAnalysis.includes('负债') || fundamentalAnalysis.includes('资金链')) {
+                riskScore += 25
+                riskFactors.push('基本面存在财务风险')
+            }
+        }
+        
+        // 4. 从系统性风险分析中提取
+        if (riskSystemAnalysis) {
+            if (riskSystemAnalysis.includes('高风险') || riskSystemAnalysis.includes('系统性风险')) {
+                riskScore += 20
+                riskFactors.push('存在系统性风险')
+            }
+        }
+        
+        // 5. 价格波动性
         const changePercent = Math.abs(parseFloat(data.change_percent || data.change || 0))
-        const pe = parseFloat(data.pe || 0)
-        const pb = parseFloat(data.pb || 0)
         
         if (changePercent > 9) {
             riskScore += 30
-            riskFactors.push('单日波动超过9%，极高波动风险')
+            riskFactors.push(`单日波动${changePercent.toFixed(1)}%，极高波动风险`)
         } else if (changePercent > 5) {
             riskScore += 20
-            riskFactors.push('单日波动超过5%，高波动风险')
+            riskFactors.push(`单日波动${changePercent.toFixed(1)}%，高波动风险`)
         } else if (changePercent > 3) {
             riskScore += 10
-            riskFactors.push('单日波动超过3%，中等波动')
+            riskFactors.push(`单日波动${changePercent.toFixed(1)}%，中等波动`)
         }
         
-        if (pe > 100 || pe < 0) {
+        // 6. PE/PB估值风险（只在有数据且有意义时使用）
+        const pe = parseFloat(data.pe || 0)
+        const pb = parseFloat(data.pb || 0)
+        
+        if (pe > 100) {
             riskScore += 25
-            riskFactors.push('PE估值异常，基本面风险')
-        } else if (pe > 50) {
+            riskFactors.push(`PE=${pe.toFixed(1)}，估值异常高`)
+        } else if (pe > 50 && pe <= 100) {
             riskScore += 15
-            riskFactors.push('PE估值偏高，估值风险')
+            riskFactors.push(`PE=${pe.toFixed(1)}，估值偏高`)
         }
         
-        if (pb > 10) {
+        if (pb > 10 && pb < 50) {
             riskScore += 15
-            riskFactors.push('PB估值过高，泡沫风险')
-        } else if (pb < 0.8) {
+            riskFactors.push(`PB=${pb.toFixed(1)}，估值过高`)
+        } else if (pb > 0 && pb < 0.8) {
             riskScore += 10
-            riskFactors.push('PB破净，经营风险')
+            riskFactors.push(`PB=${pb.toFixed(2)}，破净可能存在经营风险`)
         }
         
+        // ✅ 如果没有任何风险因素，返回低风险而不是数据不足
+        if (riskFactors.length === 0) {
+            return {
+                level: 'LOW',
+                label: '低风险',
+                score: 75,
+                summary: '综合评估未发现明显风险因素，当前风险较低。建议仓位20-30%。'
+            }
+        }
+        
+        // 决策逻辑
         let level = 'MEDIUM'
         let label = '中等风险'
         let score = 50
@@ -1448,7 +1549,8 @@ export default {
             positionAdvice = '建议仓位可达20-30%'
         }
         
-        const summary = `基于波动率和估值的本地风险评估（${level}）：${riskFactors.slice(0, 3).join('；')}。${positionAdvice}。`
+        // 生成友好的摘要
+        const summary = `综合风险评估（${level}）：${riskFactors.slice(0, 4).join('；')}。${positionAdvice}。`
         
         return { level, label, score, summary }
     }
@@ -1473,9 +1575,9 @@ export default {
                     })
                 },
                 {
-                    segmentTimeout: 60000, // 单段60秒
-                    maxSegments: 3, // 最长3分钟
-                    maxRetries: 1,
+                    segmentTimeout: 90000,  // 单段90秒（原60秒）
+                    maxSegments: 3,         // 最长270秒
+                    maxRetries: 0,          // 不重试（原1次），避免浪费时间
                     agentId: 'debate_research'
                 }
             )
@@ -1617,9 +1719,9 @@ export default {
                     })
                 },
                 {
-                    segmentTimeout: 60000,
-                    maxSegments: 3,
-                    maxRetries: 1,
+                    segmentTimeout: 120000, // 单段120秒（原60秒）← 风险辩论需4个LLM
+                    maxSegments: 3,         // 最长360秒
+                    maxRetries: 0,          // 不重试，直接走兜底
                     agentId: 'debate_risk'
                 }
             )
@@ -1714,16 +1816,51 @@ export default {
             console.error('[runRiskDebate] 风险辩论失败:', e)
             const fallback = localRiskFallback()
             if (fallback) {
+                // ✅ 清理fallback.summary中的错误信息
+                const cleanSummary = (summary) => {
+                    if (!summary) return ''
+                    
+                    // 过滤掉超时错误信息
+                    if (summary.includes('AI 响应超时') || summary.includes('⚠️') || 
+                        summary.includes('建议：') || summary.includes('建议： 1.')) {
+                        // 如果整个摘要都是错误信息，返回空
+                        return ''
+                    }
+                    
+                    // 提取冒号后的内容（如果有）
+                    const parts = summary.split('：')
+                    if (parts.length > 1 && !parts[1].includes('AI 响应超时')) {
+                        return parts.slice(1).join('：').trim()
+                    }
+                    
+                    return summary
+                }
+                
+                const cleanedSummary = cleanSummary(fallback.summary)
+                
                 // ✅ 确保三方观点都显示
                 // 激进风控 - 强调机会
                 let aggressiveView = ''
-                if (fallback.level === 'LOW') {
-                    aggressiveView = `基于本地规则引擎分析：${fallback.summary.split('：')[1] || fallback.summary}。当前风险较低，可以积极布局。`
-                } else if (fallback.level === 'MEDIUM') {
-                    aggressiveView = `基于本地规则引擎分析：${fallback.summary.split('：')[1] || fallback.summary}。虽有风险但机会可观，建议适度参与。`
+                if (!cleanedSummary) {
+                    // 如果没有有效摘要，使用纯本地分析
+                    if (fallback.level === 'LOW') {
+                        aggressiveView = `基于多维度分析：当前风险较低，市场情绪稳定，可以积极布局。建议仓位20-30%。`
+                    } else if (fallback.level === 'MEDIUM') {
+                        aggressiveView = `基于多维度分析：存在一定风险但机会可观，建议适度参与。建议仓位10-20%。`
+                    } else {
+                        aggressiveView = `基于多维度分析：风险较高但可能存在超额收益，可小仓位博弈。建议仓位不超过5%。`
+                    }
                 } else {
-                    aggressiveView = `基于本地规则引擎分析：${fallback.summary.split('：')[1] || fallback.summary}。高风险高收益，可小仓位博弈。`
+                    // 使用清理后的摘要
+                    if (fallback.level === 'LOW') {
+                        aggressiveView = `基于本地规则引擎分析：${cleanedSummary}。当前风险较低，可以积极布局。`
+                    } else if (fallback.level === 'MEDIUM') {
+                        aggressiveView = `基于本地规则引擎分析：${cleanedSummary}。虽有风险但机会可观，建议适度参与。`
+                    } else {
+                        aggressiveView = `基于本地规则引擎分析：${cleanedSummary}。高风险高收益，可小仓位博弈。`
+                    }
                 }
+                
                 riskDebateMessages.value.push({
                     agentName: '激进风控',
                     agentIcon: '⚔️',
@@ -1733,12 +1870,24 @@ export default {
                 
                 // 保守风控 - 强调风险
                 let conservativeView = ''
-                if (fallback.level === 'HIGH') {
-                    conservativeView = `基于本地规则引擎分析：${fallback.summary.split('：')[1] || fallback.summary}。当前风险较高，建议谨慎观望。`
-                } else if (fallback.level === 'MEDIUM') {
-                    conservativeView = `基于本地规则引擎分析：${fallback.summary.split('：')[1] || fallback.summary}。风险中等，需要严格止损。`
+                if (!cleanedSummary) {
+                    // 如果没有有效摘要，使用纯本地分析
+                    if (fallback.level === 'HIGH') {
+                        conservativeView = `基于多维度分析：当前风险较高，市场不确定性大，建议谨慎观望或减仓避险。`
+                    } else if (fallback.level === 'MEDIUM') {
+                        conservativeView = `基于多维度分析：风险中等，存在一定不确定性，建议严格止损，控制仓位。`
+                    } else {
+                        conservativeView = `基于多维度分析：虽然风险较低，但仍需谨慎，建议分批建仓，控制节奏。`
+                    }
                 } else {
-                    conservativeView = `基于本地规则引擎分析：${fallback.summary.split('：')[1] || fallback.summary}。虽然风险较低，但仍需谨慎控制仓位。`
+                    // 使用清理后的摘要
+                    if (fallback.level === 'HIGH') {
+                        conservativeView = `基于本地规则引擎分析：${cleanedSummary}。当前风险较高，建议谨慎观望。`
+                    } else if (fallback.level === 'MEDIUM') {
+                        conservativeView = `基于本地规则引擎分析：${cleanedSummary}。风险中等，需要严格止损。`
+                    } else {
+                        conservativeView = `基于本地规则引擎分析：${cleanedSummary}。虽然风险较低，但仍需谨慎控制仓位。`
+                    }
                 }
                 riskDebateMessages.value.push({
                     agentName: '保守风控',
@@ -1748,15 +1897,40 @@ export default {
                 })
                 
                 // 中立风控 - 客观评估
+                let neutralView = ''
+                if (!cleanedSummary) {
+                    // 使用纯本地分析
+                    neutralView = `基于多维度分析：综合评估风险等级为${fallback.label}。建议根据个人风险偏好和资金状况理性决策。`
+                } else {
+                    // 使用清理后的摘要
+                    const positionAdvice = cleanedSummary.includes('建议') ? 
+                        cleanedSummary.split('。').find(s => s.includes('建议')) : ''
+                    neutralView = `基于本地规则引擎分析：综合评估风险等级为${fallback.label}。${positionAdvice || '建议根据风险等级调整仓位'}。`
+                }
                 riskDebateMessages.value.push({
                     agentName: '中立风控',
                     agentIcon: '⚖️',
-                    content: `基于本地规则引擎分析：综合评估风险等级为${fallback.label}。${fallback.summary.includes('建议') ? fallback.summary.split('。').pop() : ''}。`,
+                    content: neutralView,
                     round: 1
                 })
                 
+                // 生成清洁的结论
+                let conclusionContent = ''
+                if (!cleanedSummary) {
+                    // 根据风险等级生成结论
+                    if (fallback.level === 'HIGH') {
+                        conclusionContent = `风险评级：${fallback.label}。综合评估显示当前投资风险较高，建议谨慎操作，控制仓位不超过5%。`
+                    } else if (fallback.level === 'MEDIUM') {
+                        conclusionContent = `风险评级：${fallback.label}。综合评估显示存在一定风险，建议适度参与，仓位控制在10-20%。`
+                    } else {
+                        conclusionContent = `风险评级：${fallback.label}。综合评估显示风险可控，可根据策略配置20-30%仓位。`
+                    }
+                } else {
+                    conclusionContent = `风险评级：${fallback.label}。${cleanedSummary}`
+                }
+                
                 riskDebateConclusion.value = {
-                    content: `风险评级：${fallback.label}。${fallback.summary}`,
+                    content: conclusionContent,
                     score: fallback.score
                 }
                 riskDebateStatus.value = 'finished'

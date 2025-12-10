@@ -61,3 +61,6 @@ tmp/
 config/secrets.json
 *.key
 *.pem
+
+# 可选：忽略所有tar压缩包
+*.tar

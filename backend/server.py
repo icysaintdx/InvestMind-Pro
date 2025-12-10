@@ -494,11 +494,11 @@ async def siliconflow_api(request: SiliconFlowRequest):
             # 调整超时配置：更快降级，避免单次调用占满前端180秒总超时
             client = httpx.AsyncClient(
                 timeout=httpx.Timeout(
-                    timeout=60.0,    # 总默认超时60秒
-                    connect=15.0,    # 连接超时15秒
-                    read=30.0,       # 读取超时30秒，快速降级
-                    write=15.0,      # 写入超时15秒
-                    pool=15.0        # 连接池获取超时15秒
+                    timeout=150.0,   # 总默认超时150秒（原60秒）
+                    connect=20.0,    # 连接超时20秒（原15秒）
+                    read=90.0,       # 读取超时90秒（原30秒）← 关键改动
+                    write=20.0,      # 写入超时20秒（原15秒）
+                    pool=20.0        # 连接池获取超时20秒（原15秒）
                 ),
                 limits=httpx.Limits(
                     max_connections=10,        # 保守设置，避免过多连接
@@ -559,11 +559,11 @@ async def siliconflow_api(request: SiliconFlowRequest):
                         print(f"[SiliconFlow] 重新建立连接...")
                         client = httpx.AsyncClient(
                             timeout=httpx.Timeout(
-                                timeout=60.0,   # 总默认超时60秒
-                                connect=15.0,   # 连接超时15秒  
-                                read=30.0,      # 读取超时30秒
-                                write=15.0,     # 写入超时15秒
-                                pool=15.0       # 连接池超时15秒
+                                timeout=150.0,  # 总默认超时150秒（原60秒）
+                                connect=20.0,   # 连接超时20秒（原15秒）
+                                read=90.0,      # 读取超时90秒（原30秒）
+                                write=20.0,     # 写入超时20秒（原15秒）
+                                pool=20.0       # 连接池超时20秒（原15秒）
                             ),
                             limits=httpx.Limits(
                                 max_connections=10,
@@ -609,7 +609,7 @@ async def siliconflow_api(request: SiliconFlowRequest):
                             headers=headers,
                             json=data
                         ),
-                        timeout=45.0  # 单次调用整体超时45秒，快速降级
+                        timeout=120.0  # 单次调用整体超时120秒（原45秒），给足时间
                     )
                     
                     elapsed = time.time() - start_time
@@ -1729,7 +1729,9 @@ async def save_agent_configs(config_data: Dict[str, Any]):
         
         agent_count = len(config_data.get('agents', []))
         model_count = len(config_data.get('selectedModels', []))
+        summarizer = config_data.get('summarizerModel', 'N/A')
         print(f"[配置] 已保存 {agent_count} 个智能体配置和 {model_count} 个模型选择")
+        print(f"[配置] 摘要器模型: {summarizer}")
         return {"success": True, "message": "配置已保存"}
     except Exception as e:
         print(f"[配置] 保存失败: {str(e)}")

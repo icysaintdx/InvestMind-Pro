@@ -269,21 +269,30 @@ class StatisticsService:
             AnalysisSession.created_at >= cutoff_date
         ).group_by(AnalysisSession.status).all()
         
-        # 平均分析时长
-        avg_duration = db.query(
-            func.avg(
-                func.extract('epoch', AnalysisSession.end_time - AnalysisSession.start_time)
-            )
-        ).filter(
+        # 平均分析时长 - 使用Python计算而不SQL（SQLite不支持extract）
+        completed_sessions = db.query(AnalysisSession).filter(
             AnalysisSession.created_at >= cutoff_date,
             AnalysisSession.status == 'completed',
-            AnalysisSession.end_time.isnot(None)
-        ).scalar()
+            AnalysisSession.end_time.isnot(None),
+            AnalysisSession.start_time.isnot(None)
+        ).all()
+        
+        if completed_sessions:
+            durations = []
+            for session in completed_sessions:
+                duration = (session.end_time - session.start_time).total_seconds()
+                # 过滤异常值
+                if 0 <= duration <= 86400:  # 0到1天
+                    durations.append(duration)
+            
+            avg_duration = int(sum(durations) / len(durations)) if durations else 0
+        else:
+            avg_duration = 0
         
         return {
             'total_count': total_count or 0,
             'status_distribution': {status: count for status, count in status_stats},
-            'avg_duration_seconds': int(avg_duration) if avg_duration else 0,
+            'avg_duration_seconds': avg_duration,
             'period_days': days
         }
     

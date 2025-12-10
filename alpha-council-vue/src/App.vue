@@ -11,7 +11,7 @@
     
     <!-- 头部导航 -->
     <header class="navbar">
-      <div class="container-full px-4 h-16 flex items-center justify-between">
+      <div class="navbar-content">
         <!-- 左侧：Logo -->
         <div class="flex items-center">
           <h1 class="text-xl font-bold text-white">
@@ -603,9 +603,14 @@ export default defineComponent({
 .bg-slate-900\/70 { background-color: rgba(15, 23, 42, 0.7); }
 .border-b { border-bottom-width: 1px; }
 .border-slate-700\/50 { border-color: rgba(51, 65, 85, 0.5); }
-.container {
-  max-width: 1280px;
-  margin: 0 auto;
+.navbar-content {
+  width: 100%;
+  height: 4rem;
+  padding: 0 1rem;
+  display: grid;
+  grid-template-columns: minmax(auto, max-content) 1fr minmax(auto, max-content);  /* 防止左右两侧被压缩 */
+  gap: 1rem;
+  align-items: center;
 }
 
 .container-full {
@@ -660,6 +665,7 @@ export default defineComponent({
   background: rgba(15, 23, 42, 0.95);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+  height: 4rem;  /* 固定高度 */
 }
 
 /* API状态指示器 */
@@ -667,10 +673,35 @@ export default defineComponent({
   display: flex;
   gap: 0.75rem;
   align-items: center;
+  justify-content: center;  /* 居中显示 */
   padding: 0.5rem 1rem;
   background: rgba(15, 23, 42, 0.5);
   border: 1px solid #334155;
   border-radius: 0.5rem;
+  flex-wrap: nowrap;  /* 禁止换行 */
+  white-space: nowrap; /* 文字不换行 */
+  overflow-x: auto;    /* 在空间不足时显示滚动条 */
+  max-width: 100%;     /* 限制最大宽度 */
+}
+
+/* API状态栏滚动条美化 */
+.api-status-bar::-webkit-scrollbar {
+  height: 6px;  /* 水平滚动条使用height */
+}
+
+.api-status-bar::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 10px;
+}
+
+.api-status-bar::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+.api-status-bar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
 }
 
 .status-group {
@@ -796,6 +827,8 @@ export default defineComponent({
 .nav-controls {
   display: flex;
   gap: 0.5rem;
+  flex-shrink: 0;  /* 防止按钮组被压缩 */
+  justify-self: end;  /* 右对齐 */
 }
 
 .nav-btn {
@@ -953,6 +986,26 @@ export default defineComponent({
   background: transparent;
 }
 
+/* 更新日志模态框滚动条美化 */
+.changelog-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.changelog-modal::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 10px;
+}
+
+.changelog-modal::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+.changelog-modal::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
 .modal-close-btn {
   position: fixed;
   top: 2rem;
@@ -983,15 +1036,16 @@ export default defineComponent({
   margin-left: 0.75rem;
   width: 2rem;
   height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
   border-radius: 50%;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  flex-shrink: 0;
 }
 
 .project-info-btn:hover {
@@ -1005,19 +1059,21 @@ export default defineComponent({
 }
 
 /* 文档按钮 */
-.doc-btn {
-  margin-left: 0.5rem;
+.doc-btn,
+.log-btn,
+.history-btn {
   width: 2rem;
   height: 2rem;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(71, 85, 105, 0.5);
+  border-radius: 50%;
+  cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+  margin-left: 0.5rem;
+  flex-shrink: 0;
 }
 
 .doc-btn:hover {
@@ -1028,23 +1084,6 @@ export default defineComponent({
 .doc-btn .doc-icon {
   font-size: 1.2rem;
   filter: brightness(1.2);
-}
-
-/* 日志按钮 */
-.log-btn {
-  margin-left: 0.5rem;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 0.5rem;
-  border: none;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(37, 99, 235, 0.2) 100%);
-  color: #60a5fa;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
 
 .log-btn:hover {
@@ -1100,6 +1139,26 @@ export default defineComponent({
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.1);
   position: relative;
+}
+
+/* 历史记录模态框滚动条美化 */
+.history-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.history-modal::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 10px;
+}
+
+.history-modal::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+.history-modal::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
 }
 
 /* 项目介绍模态框 */
@@ -1166,18 +1225,47 @@ export default defineComponent({
 /* ========================================
    移动端响应式优化
    ======================================== */
+/* 中等屏幕优化 */
+@media (max-width: 1200px) {
+  .navbar-content {
+    grid-template-columns: auto 1fr auto;
+    gap: 0.5rem;
+  }
+  
+  .api-status-bar {
+    font-size: 0.7rem;
+    padding: 0.4rem 0.6rem;
+  }
+  
+  .status-item {
+    padding: 0.15rem 0.3rem;
+    font-size: 0.65rem;
+  }
+  
+  .status-name {
+    font-size: 0.65rem;
+  }
+  
+  .nav-btn {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+  }
+  
+  .btn-text {
+    display: inline !important;
+  }
+}
+
 @media (max-width: 768px) {
   /* 导航栏优化 */
   .navbar {
-    height: auto;
-    min-height: 50px;
+    height: 3.5rem;  /* 减少高度 */
   }
   
-  .navbar .container {
-    flex-direction: row;
-    gap: 0.5rem;
+  .navbar-content {
+    grid-template-columns: auto 1fr auto;  /* 恢复三列布局 */
     padding: 0.5rem;
-    justify-content: space-between;
+    gap: 0.25rem;  /* 减小间隔 */
   }
   
   /* 隐藏标题 */
@@ -1185,33 +1273,83 @@ export default defineComponent({
     display: none;
   }
   
-  /* 按钮组居中 */
+  /* 左侧按钮组 - 只显示图标 */
   .navbar .flex.items-center {
-    justify-content: center;
+    gap: 0.25rem;  /* 减小间隔 */
   }
   
-  /* 隐藏 API 状态栏在移动端 */
+  .project-info-btn,
+  .doc-btn,
+  .log-btn,
+  .history-btn {
+    width: 2rem;
+    height: 2rem;
+    margin-left: 0;
+    padding: 0;
+  }
+  
+  /* API 状态栏在移动端隐藏 */
   .api-status-bar {
     display: none;
   }
   
-  /* 左侧按钮组 */
-  .nav-left {
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-  
-  /* 右侧按钮组 */
+  /* 右侧按钮组 - 只显示图标 */
   .nav-controls {
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    justify-content: center;
+    gap: 0.25rem;  /* 减小间隔 */
+    flex-wrap: nowrap;
   }
   
-  /* 按钮尺寸优化 */
-  .info-btn, .doc-btn, .log-btn {
-    width: 2.5rem;
+  .nav-btn {
+    padding: 0.5rem;  /* 减小内边距 */
+    min-width: 2.5rem;
     height: 2.5rem;
+  }
+  
+  .btn-icon {
+    font-size: 1.2rem;  /* 放大图标 */
+  }
+  
+  /* 隐藏按钮文字 */
+  .btn-text {
+    display: none !important;
+  }
+}
+
+/* 更小屏幕优化 */
+@media (max-width: 480px) {
+  .navbar {
+    height: 3rem;
+  }
+  
+  .navbar-content {
+    padding: 0.25rem 0.5rem;
+    gap: 0.15rem;
+  }
+  
+  .navbar .flex.items-center {
+    gap: 0.15rem;
+  }
+  
+  .project-info-btn,
+  .doc-btn,
+  .log-btn,
+  .history-btn {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+  
+  .nav-btn {
+    padding: 0.4rem;
+    min-width: 2rem;
+    height: 2rem;
+  }
+  
+  .btn-icon {
+    font-size: 1rem;
+  }
+  
+  .nav-controls {
+    gap: 0.15rem;
   }
   
   /* 模态框优化 */

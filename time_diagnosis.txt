@@ -1,0 +1,49 @@
+Completed sessions: 5
+
+Session: test_session_1765147540 (600000)
+  start_time: 2025-12-07 22:45:40.787759 (type: <class 'datetime.datetime'>)
+  end_time: 2025-12-07 22:45:42.428615 (type: <class 'datetime.datetime'>)
+  Python duration: 1.640856 seconds
+  start timestamp: 1765118740.787759
+  end timestamp: 1765118742.428615
+  timestamp diff: 1.6408560276031494 seconds
+
+Session: test_session_1765147609 (600000)
+  start_time: 2025-12-07 22:46:49.400416 (type: <class 'datetime.datetime'>)
+  end_time: 2025-12-07 22:46:51.016050 (type: <class 'datetime.datetime'>)
+  Python duration: 1.615634 seconds
+  start timestamp: 1765118809.400416
+  end timestamp: 1765118811.01605
+  timestamp diff: 1.6156342029571533 seconds
+
+Session: session_1765148336_b4a77b89 (600020)
+  start_time: 2025-12-07 22:58:56.981773 (type: <class 'datetime.datetime'>)
+  end_time: 2025-12-07 23:08:29.462347 (type: <class 'datetime.datetime'>)
+  Python duration: 572.480574 seconds
+  start timestamp: 1765119536.981773
+  end timestamp: 1765120109.462347
+  timestamp diff: 572.480574131012 seconds
+
+Session: session_1765282474_37721bac (600420)
+  start_time: 2025-12-09 12:14:34.131238 (type: <class 'datetime.datetime'>)
+  end_time: 2025-12-09 12:27:30.362936 (type: <class 'datetime.datetime'>)
+  Python duration: 776.231698 seconds
+  start timestamp: 1765253674.131238
+  end timestamp: 1765254450.362936
+  timestamp diff: 776.2316980361938 seconds
+
+Session: session_1765295580_0bb7444b (600025)
+  start_time: 2025-12-09 15:53:00.947998 (type: <class 'datetime.datetime'>)
+  end_time: 2025-12-09 16:03:30.111632 (type: <class 'datetime.datetime'>)
+  Python duration: 629.163634 seconds
+  start timestamp: 1765266780.947998
+  end timestamp: 1765267410.111632
+  timestamp diff: 629.1636340618134 seconds
+
+
+SQL calculation:
+test_session_1765147540: -210866760000 seconds
+test_session_1765147609: -210866760000 seconds
+session_1765148336_b4a77b89: -210866760000 seconds
+session_1765282474_37721bac: -210866760000 seconds
+session_1765295580_0bb7444b: -210866760000 seconds

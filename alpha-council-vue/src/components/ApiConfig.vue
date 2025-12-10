@@ -603,4 +603,90 @@ export default {
 .save-btn.secondary:hover {
   background: #475569;
 }
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .modal-container {
+    width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    margin: 0;
+  }
+  
+  .modal-body {
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 1rem;
+  }
+  
+  .status-section-fixed {
+    padding: 1rem;
+  }
+  
+  .status-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .keys-grid {
+    gap: 1rem;
+  }
+  
+  .key-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  
+  .key-label {
+    font-size: 0.9rem;
+  }
+  
+  .key-input {
+    width: 100%;
+  }
+  
+  .test-btn {
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+  
+  .section-title {
+    font-size: 1rem;
+  }
+  
+  .modal-footer {
+    padding: 1rem;
+    gap: 0.5rem;
+  }
+  
+  .save-btn {
+    flex: 1;
+    padding: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-body {
+    padding: 0 0.75rem;
+  }
+  
+  .status-section-fixed {
+    padding: 0.75rem;
+  }
+  
+  .section-title {
+    font-size: 0.95rem;
+  }
+  
+  .provider-name {
+    font-size: 0.85rem;
+  }
+  
+  .status-text {
+    font-size: 0.75rem;
+  }
+}
 </style>

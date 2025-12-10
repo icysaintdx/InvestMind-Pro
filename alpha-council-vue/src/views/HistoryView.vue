@@ -25,7 +25,7 @@
       <div class="stat-card">
         <div class="stat-icon">📈</div>
         <div class="stat-content">
-          <div class="stat-value">{{ stats.total_count || 0 }}</div>
+          <div class="stat-value">{{ stats?.total_sessions || 0 }}</div>
           <div class="stat-label">总分析次数</div>
         </div>
       </div>
@@ -33,7 +33,7 @@
       <div class="stat-card">
         <div class="stat-icon">✅</div>
         <div class="stat-content">
-          <div class="stat-value">{{ stats.status_distribution?.completed || 0 }}</div>
+          <div class="stat-value">{{ stats?.completed_sessions || 0 }}</div>
           <div class="stat-label">成功完成</div>
         </div>
       </div>
@@ -41,7 +41,7 @@
       <div class="stat-card">
         <div class="stat-icon">⏱️</div>
         <div class="stat-content">
-          <div class="stat-value">{{ formatSeconds(stats.avg_duration_seconds) }}</div>
+          <div class="stat-value">{{ formatSeconds(stats?.avg_duration_seconds || 0) }}</div>
           <div class="stat-label">平均耗时</div>
         </div>
       </div>
@@ -49,7 +49,7 @@
       <div class="stat-card">
         <div class="stat-icon">❌</div>
         <div class="stat-content">
-          <div class="stat-value">{{ stats.status_distribution?.error || 0 }}</div>
+          <div class="stat-value">{{ stats?.failed_sessions || 0 }}</div>
           <div class="stat-label">失败次数</div>
         </div>
       </div>
@@ -149,7 +149,12 @@ export default {
   setup() {
     const loading = ref(false)
     const sessions = ref([])
-    const stats = ref(null)
+    const stats = ref({
+      total_sessions: 0,
+      completed_sessions: 0,
+      failed_sessions: 0,
+      avg_duration_seconds: 0
+    })
     const searchCode = ref('')
     const listTitle = ref('最近分析')
     
@@ -204,9 +209,47 @@ export default {
       try {
         const response = await fetch('/api/analysis/db/stats/overview?days=30')
         const data = await response.json()
-        stats.value = data.analysis
+        console.log('[统计数据] API返回:', data)
+        
+        // 后端返回的数据结构：{ analysis: { total_count, status_distribution, avg_duration_seconds } }
+        if (data.analysis) {
+          const analysis = data.analysis
+          const statusDist = analysis.status_distribution || {}
+          
+          console.log('[统计数据] analysis对象:', analysis)
+          console.log('[统计数据] avg_duration_seconds原始值:', analysis.avg_duration_seconds, '类型:', typeof analysis.avg_duration_seconds)
+          
+          const avgDuration = parseFloat(analysis.avg_duration_seconds)
+          console.log('[统计数据] parseFloat后:', avgDuration, 'isNaN:', isNaN(avgDuration))
+          
+          stats.value = {
+            total_sessions: parseInt(analysis.total_count) || 0,
+            completed_sessions: parseInt(statusDist.completed) || 0,
+            failed_sessions: parseInt(statusDist.error || statusDist.failed) || 0,
+            avg_duration_seconds: avgDuration || 0
+          }
+          
+          console.log('[统计数据] 解析成功:', stats.value)
+          console.log('[统计数据] avg_duration_seconds最终值:', stats.value.avg_duration_seconds)
+        } else {
+          // 其他可能的数据结构
+          console.warn('[统计数据] 未知的数据结构:', data)
+          stats.value = {
+            total_sessions: 0,
+            completed_sessions: 0,
+            failed_sessions: 0,
+            avg_duration_seconds: 0
+          }
+        }
       } catch (error) {
         console.error('加载统计失败:', error)
+        // 设置默认值
+        stats.value = {
+          total_sessions: 0,
+          completed_sessions: 0,
+          failed_sessions: 0,
+          avg_duration_seconds: 0
+        }
       }
     }
     
@@ -243,9 +286,47 @@ export default {
     
     // 格式化秒数
     const formatSeconds = (seconds) => {
-      if (!seconds) return '-'
-      if (seconds < 60) return `${seconds}秒`
-      return `${Math.floor(seconds / 60)}分钟`
+      console.log('[格式化耗时] 输入值:', seconds, '类型:', typeof seconds)
+      
+      // 处理无效值
+      if (seconds === null || seconds === undefined) {
+        console.log('[格式化耗时] 值为null或undefined')
+        return '-'
+      }
+      
+      // 转换为数字
+      const num = Number(seconds)
+      if (isNaN(num)) {
+        console.log('[格式化耗时] 无法转换为数字')
+        return '-'
+      }
+      
+      // 处理负数或异常大的值
+      if (num < 0 || num > 86400 * 365) {
+        console.log('[格式化耗时] 数值异常:', num)
+        return '-'
+      }
+      
+      // 处理0
+      if (num === 0) {
+        console.log('[格式化耗时] 值为0')
+        return '0秒'
+      }
+      
+      // 正常格式化
+      let result
+      if (num < 60) {
+        result = `${Math.round(num)}秒`
+      } else if (num < 3600) {
+        result = `${Math.floor(num / 60)}分钟`
+      } else {
+        const hours = Math.floor(num / 3600)
+        const minutes = Math.floor((num % 3600) / 60)
+        result = minutes > 0 ? `${hours}小时${minutes}分钟` : `${hours}小时`
+      }
+      
+      console.log('[格式化耗时] 结果:', result)
+      return result
     }
     
     // 获取状态文本
