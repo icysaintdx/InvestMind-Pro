@@ -12,7 +12,7 @@ import pandas as pd
 import numpy as np
 
 from backend.utils.logging_config import get_logger
-from .base import BaseStrategy, StrategySignal, SignalType, StrategyPerformance
+from .base import BaseStrategy, StrategySignal, SignalType, StrategyPerformance, StrategyConfig, get_strategy_registry
 
 logger = get_logger("strategies.manager")
 
@@ -38,12 +38,34 @@ class StrategyManager:
                 self.active_strategies = set(config.get("active", []))
                 self.strategy_weights = config.get("weights", {})
         else:
-            # 默认配置
-            self.active_strategies = {"buffett_value", "turtle_trading", "ma_cross"}
+            # 默认配置 - 激活所有16个策略
+            self.active_strategies = {
+                "vegas_adx", "ema_breakout", "martingale_refined", "dragon_leader", "scalping_blade",
+                "buffett_value", "lynch_growth", "graham_margin",
+                "trident", "bollinger_breakout", "macd_crossover", "turtle_trading",
+                "limit_up_trading", "volume_price_surge", "sentiment_resonance", "debate_weighted"
+            }
             self.strategy_weights = {
-                "buffett_value": 0.4,
-                "turtle_trading": 0.3,
-                "ma_cross": 0.3
+                # 技术分析策略
+                "vegas_adx": 0.8,
+                "ema_breakout": 0.7,
+                "macd_crossover": 0.7,
+                "bollinger_breakout": 0.7,
+                "turtle_trading": 0.8,
+                "trident": 0.6,
+                # 价值投资策略
+                "buffett_value": 0.9,
+                "lynch_growth": 0.85,
+                "graham_margin": 0.85,
+                # 民间策略
+                "martingale_refined": 0.5,
+                "dragon_leader": 0.6,
+                "scalping_blade": 0.5,
+                "limit_up_trading": 0.6,
+                "volume_price_surge": 0.6,
+                # AI合成策略
+                "sentiment_resonance": 0.75,
+                "debate_weighted": 0.8
             }
             self._save_config()
             
@@ -60,18 +82,39 @@ class StrategyManager:
             
     def _register_all_strategies(self):
         """注册所有策略"""
-        # 延迟导入避免循环引用
+        # 导入所有策略模块以触发装饰器注册
         try:
-            # 价值投资策略
-            from .value_investing.buffett import BuffettValueStrategy
-            self.register_strategy("buffett_value", BuffettValueStrategy())
+            from . import (
+                vegas_adx,
+                ema_breakout,
+                martingale_refined,
+                dragon_leader,
+                scalping_blade,
+                buffett_value,
+                lynch_growth,
+                graham_margin,
+                trident,
+                bollinger_breakout,
+                macd_crossover,
+                turtle_trading,
+                limit_up_trading,
+                volume_price_surge,
+                sentiment_resonance,
+                debate_weighted
+            )
             
-            # 技术分析策略
-            # from .technical.turtle import TurtleTradingStrategy
-            # self.register_strategy("turtle_trading", TurtleTradingStrategy())
-            
-            # from .technical.ma_cross import MACrossStrategy
-            # self.register_strategy("ma_cross", MACrossStrategy())
+            # 从注册表中获取所有策略
+            registry = get_strategy_registry()
+            for strategy_id in registry.list_strategies():
+                strategy_class = registry.get_strategy_class(strategy_id)
+                if strategy_class:
+                    try:
+                        # 创建策略实例
+                        config = StrategyConfig(name=strategy_class.__name__)
+                        strategy_instance = strategy_class(config)
+                        self.register_strategy(strategy_id, strategy_instance)
+                    except Exception as e:
+                        logger.warning(f"策略 {strategy_id} 实例化失败: {e}")
             
             logger.info(f"成功注册 {len(self.strategies)} 个策略")
             
@@ -412,8 +455,8 @@ class StrategyManager:
             "strategies": {
                 sid: {
                     "name": s.name,
-                    "category": s.category.value,
-                    "description": s.description,
+                    "category": s.category.value if hasattr(s.category, 'value') else str(s.category),
+                    "description": s.description if hasattr(s, 'description') else "未提供描述",
                     "is_active": sid in self.active_strategies,
                     "weight": self.strategy_weights.get(sid, 0)
                 }

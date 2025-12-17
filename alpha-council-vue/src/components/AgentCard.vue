@@ -13,23 +13,44 @@
             >ℹ️</span>
           </div>
         </div>
-        <span v-if="status === 'loading'" class="status-badge loading">
-          分析中...
-        </span>
-        <span v-else-if="status === 'success'" class="status-badge success">
-          完成
-        </span>
-        <span v-else-if="status === 'error'" class="status-badge error">
-          错误
-        </span>
-        <span v-else class="status-badge idle">
-          待命
-        </span>
+        <div class="flex items-center gap-2">
+          <!-- GM评分显示（在状态左侧） -->
+          <span
+            v-if="agent.id === 'gm' && gmScore !== null"
+            class="gm-score"
+            :class="gmScoreClass"
+            :title="gmScoreTooltip"
+          >
+            {{ gmScore }}分
+          </span>
+          <span v-if="status === 'loading'" class="status-badge loading">
+            分析中...
+          </span>
+          <span v-else-if="status === 'success'" class="status-badge success">
+            完成
+          </span>
+          <span v-else-if="status === 'error'" class="status-badge error">
+            错误
+          </span>
+          <span v-else class="status-badge idle">
+            待命
+          </span>
+          <!-- 请求模式指示器（始终显示） -->
+          <FallbackIndicator
+            :fallback-level="fallbackLevel"
+            :show-always="true"
+            v-if="status === 'success'"
+          />
+        </div>
       </div>
       <div class="flex items-center justify-between pl-8 mt-1">
         <div class="text-xs text-slate-400 uppercase tracking-wide">{{ agent.role }}</div>
-        <div v-if="tokens > 0" class="text-xs text-slate-500 font-mono">
-          {{ tokens.toLocaleString() }} tokens
+        <div v-if="tokens > 0 || durationSeconds" class="text-xs text-slate-500 font-mono flex items-center gap-1">
+          <span v-if="durationSeconds">{{ formatDuration(durationSeconds) }}</span>
+          <span v-if="tokens > 0">
+            <span v-if="durationSeconds">· </span>
+            {{ tokens.toLocaleString() }} tokens
+          </span>
         </div>
       </div>
     </div>
@@ -197,10 +218,13 @@
 import { computed } from 'vue'
 import TypeWriter from './TypeWriter.vue'
 
+import FallbackIndicator from './FallbackIndicator.vue'
+
 export default {
   name: 'AgentCard',
   components: {
-    TypeWriter
+    TypeWriter,
+    FallbackIndicator
   },
   props: {
     agent: {
@@ -238,6 +262,14 @@ export default {
     isExpanded: {
       type: Boolean,
       default: false
+    },
+    fallbackLevel: {
+      type: Number,
+      default: 0
+    },
+    durationSeconds: {
+      type: Number,
+      default: 0
     }
   },
   async created() {
@@ -302,15 +334,111 @@ export default {
       if (this.agent.id !== 'gm' || !this.output) {
         return { professional: this.output, simple: '', hasSimple: false }
       }
-      
+
       const professionalMatch = this.output.match(/===PROFESSIONAL_START===([\s\S]*?)===PROFESSIONAL_END===/)
       const simpleMatch = this.output.match(/===SIMPLE_START===([\s\S]*?)===SIMPLE_END===/)
-      
+
       return {
         professional: professionalMatch ? professionalMatch[1].trim() : this.output,
         simple: simpleMatch ? simpleMatch[1].trim() : '',
         hasSimple: !!simpleMatch
       }
+    },
+    // GM评分计算
+    gmScore() {
+      if (this.agent.id !== 'gm' || !this.output || this.status !== 'success') {
+        return null
+      }
+
+      // 从输出中提取多维度评分
+      const scores = {
+        recommendation: 0,  // 推荐强度
+        confidence: 0,      // 置信度
+        risk: 0,            // 风险评估（反向）
+        timing: 0           // 时机评估
+      }
+
+      const text = this.output.toLowerCase()
+
+      // 1. 推荐强度评分 (0-30分)
+      if (text.includes('强烈推荐') || text.includes('强烈买入') || text.includes('大力买入')) {
+        scores.recommendation = 30
+      } else if (text.includes('推荐买入') || text.includes('建议买入') || text.includes('适合买入')) {
+        scores.recommendation = 25
+      } else if (text.includes('可以考虑') || text.includes('谨慎买入') || text.includes('小仓位')) {
+        scores.recommendation = 18
+      } else if (text.includes('观望') || text.includes('持有') || text.includes('等待')) {
+        scores.recommendation = 12
+      } else if (text.includes('减仓') || text.includes('卖出') || text.includes('回避')) {
+        scores.recommendation = 5
+      } else {
+        scores.recommendation = 15 // 默认中性
+      }
+
+      // 2. 置信度评分 (0-25分)
+      const confidenceMatch = this.output.match(/置信度[：:]\s*(\d+)/i) ||
+                              this.output.match(/信心[：:]\s*(\d+)/i) ||
+                              this.output.match(/(\d+)%\s*置信/i)
+      if (confidenceMatch) {
+        const conf = parseInt(confidenceMatch[1])
+        scores.confidence = Math.min(25, Math.round(conf * 0.25))
+      } else if (text.includes('高度确信') || text.includes('非常确定')) {
+        scores.confidence = 22
+      } else if (text.includes('较为确信') || text.includes('比较确定')) {
+        scores.confidence = 18
+      } else if (text.includes('一定把握') || text.includes('有信心')) {
+        scores.confidence = 15
+      } else {
+        scores.confidence = 12 // 默认
+      }
+
+      // 3. 风险评估 (0-25分，风险越低分越高)
+      if (text.includes('风险较低') || text.includes('低风险') || text.includes('风险可控')) {
+        scores.risk = 23
+      } else if (text.includes('风险适中') || text.includes('中等风险')) {
+        scores.risk = 18
+      } else if (text.includes('风险较高') || text.includes('高风险') || text.includes('风险较大')) {
+        scores.risk = 10
+      } else if (text.includes('风险极高') || text.includes('极高风险')) {
+        scores.risk = 5
+      } else {
+        scores.risk = 15 // 默认
+      }
+
+      // 4. 时机评估 (0-20分)
+      if (text.includes('绝佳时机') || text.includes('最佳时机') || text.includes('难得机会')) {
+        scores.timing = 20
+      } else if (text.includes('较好时机') || text.includes('不错的时机') || text.includes('适合入场')) {
+        scores.timing = 16
+      } else if (text.includes('时机一般') || text.includes('可以考虑')) {
+        scores.timing = 12
+      } else if (text.includes('时机不佳') || text.includes('不是好时机') || text.includes('等待更好')) {
+        scores.timing = 6
+      } else {
+        scores.timing = 10 // 默认
+      }
+
+      // 计算总分 (0-100)
+      const total = scores.recommendation + scores.confidence + scores.risk + scores.timing
+      return Math.min(100, Math.max(0, total))
+    },
+    gmScoreClass() {
+      const score = this.gmScore
+      if (score === null) return ''
+      if (score >= 80) return 'score-excellent'
+      if (score >= 65) return 'score-good'
+      if (score >= 50) return 'score-medium'
+      if (score >= 35) return 'score-low'
+      return 'score-poor'
+    },
+    gmScoreTooltip() {
+      const score = this.gmScore
+      if (score === null) return ''
+      if (score >= 80) return '综合评分优秀，投资价值高'
+      if (score >= 65) return '综合评分良好，可考虑投资'
+      if (score >= 50) return '综合评分中等，需谨慎考虑'
+      if (score >= 35) return '综合评分偏低，风险较大'
+      return '综合评分较差，建议回避'
     }
   },
   methods: {
@@ -471,6 +599,13 @@ export default {
         'interpreter': '准备翻译成大白话...'
       }
       return waitingDescriptions[this.agent.id] || '准备开始分析...'
+    },
+    formatDuration(value) {
+      if (!value || value <= 0) {
+        return ''
+      }
+      const seconds = Number(value)
+      return `${seconds.toFixed(1)}s`
     }
   },
   setup(props) {
@@ -627,6 +762,68 @@ export default {
 .status-badge.error {
   background: rgba(239, 68, 68, 0.2);
   color: #ef4444;
+}
+
+/* GM评分样式 */
+.gm-score {
+  padding: 0.25rem 0.625rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  animation: scoreAppear 0.5s ease-out;
+}
+
+@keyframes scoreAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 优秀 80-100 绿色 */
+.gm-score.score-excellent {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.3) 0%, rgba(5, 150, 105, 0.2) 100%);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+}
+
+/* 良好 65-79 蓝色 */
+.gm-score.score-good {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(37, 99, 235, 0.2) 100%);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
+}
+
+/* 中等 50-64 黄色 */
+.gm-score.score-medium {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.3) 0%, rgba(217, 119, 6, 0.2) 100%);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+}
+
+/* 偏低 35-49 橙色 */
+.gm-score.score-low {
+  background: linear-gradient(135deg, rgba(251, 146, 60, 0.3) 0%, rgba(249, 115, 22, 0.2) 100%);
+  color: #fb923c;
+  border: 1px solid rgba(251, 146, 60, 0.5);
+  box-shadow: 0 0 12px rgba(251, 146, 60, 0.4);
+}
+
+/* 较差 0-34 红色 */
+.gm-score.score-poor {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.3) 0%, rgba(220, 38, 38, 0.2) 100%);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
 }
 
 @keyframes pulse {

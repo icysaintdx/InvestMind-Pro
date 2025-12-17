@@ -1,13 +1,13 @@
 @echo off
 chcp 65001 >nul
 echo ============================================
-echo AlphaCouncil - Full Stack Launcher
+echo InvestMindPro - Full Stack Launcher
 echo ============================================
 echo.
 echo Starting Backend and Frontend...
 echo.
 
-cd /d D:\AlphaCouncil
+cd /d D:\InvestMindPro
 
 REM Phase 1: Quick dependency check
 echo [1/4] Checking dependencies...
@@ -20,7 +20,7 @@ set PYTHONPATH=%cd%;%PYTHONPATH%
 REM Phase 3: Start Backend Server
 echo [3/4] Starting Backend Server...
 echo Backend will run on http://localhost:8000
-start "AlphaCouncil Backend" cmd /k "python backend/server.py"
+start "InvestMindPro Backend" cmd /k "python backend/server.py"
 
 REM Wait for backend to initialize
 timeout /t 5 /nobreak >nul
@@ -29,11 +29,11 @@ REM Phase 4: Start Frontend
 echo [4/4] Starting Frontend...
 echo Frontend will run on http://localhost:8080
 cd alpha-council-vue
-start "AlphaCouncil Frontend" cmd /k "npm run serve"
+start "InvestMindPro Frontend" cmd /k "npm run serve"
 
 echo.
 echo ============================================
-echo AlphaCouncil Started Successfully!
+echo InvestMindPro Started Successfully!
 echo ============================================
 echo.
 echo Backend:  http://localhost:8000
@@ -44,8 +44,8 @@ echo Press any key to stop all services...
 pause >nul
 
 REM Stop all services
-taskkill /FI "WINDOWTITLE eq AlphaCouncil Backend*" /T /F >nul 2>&1
-taskkill /FI "WINDOWTITLE eq AlphaCouncil Frontend*" /T /F >nul 2>&1
+taskkill /FI "WINDOWTITLE eq InvestMindPro Backend*" /T /F >nul 2>&1
+taskkill /FI "WINDOWTITLE eq InvestMindPro Frontend*" /T /F >nul 2>&1
 
 echo.
 echo All services stopped.

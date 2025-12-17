@@ -5,7 +5,7 @@ echo ========================================
 echo.
 
 echo 正在删除 __pycache__ 目录...
-for /d /r "d:\AlphaCouncil\backend" %%d in (__pycache__) do (
+for /d /r "d:\InvestMindPro\backend" %%d in (__pycache__) do (
     if exist "%%d" (
         echo 删除: %%d
         rd /s /q "%%d"
@@ -14,7 +14,7 @@ for /d /r "d:\AlphaCouncil\backend" %%d in (__pycache__) do (
 
 echo.
 echo 正在删除 .pyc 文件...
-del /s /q "d:\AlphaCouncil\backend\*.pyc" 2>nul
+del /s /q "d:\InvestMindPro\backend\*.pyc" 2>nul
 
 echo.
 echo ✅ 缓存清除完成！

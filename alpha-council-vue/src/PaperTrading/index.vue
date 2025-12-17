@@ -1,14 +1,13 @@
 <template>
-  <div class="paper-trading">
-    <div class="header">
-      <div class="title">
-        <el-icon style="margin-right:8px"><CreditCard /></el-icon>
-        <span>模拟交易</span>
-      </div>
-      <div class="actions">
-        <el-button :icon="Refresh" text size="small" @click="refreshAll">刷新</el-button>
-        <el-button type="primary" :icon="Plus" @click="openOrderDialog">下市场单</el-button>
-        <el-button type="danger" plain :icon="Delete" @click="confirmReset">重置账户</el-button>
+  <div class="paper-trading-container">
+    <!-- 页面标题 -->
+    <div class="page-header">
+      <h1>💼 模拟交易</h1>
+      <p class="subtitle">虚拟资金练习交易，零风险学习投资</p>
+      <div class="action-buttons">
+        <button @click="loadPortfolio" class="btn-secondary">🔄 刷新</button>
+        <button @click="showTradeDialog = true" class="btn-primary">📈 买入/卖出</button>
+        <button @click="resetAccount" class="btn-danger">♻️ 重置账户</button>
       </div>
     </div>
 

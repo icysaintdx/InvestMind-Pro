@@ -113,6 +113,8 @@ async def get_agents_list(
                 "icon": agent.icon,
                 "color": agent.color,
                 "description": agent.description,
+                "priority": agent.priority.value,
+                "dependencies": agent.dependencies or [],
                 "is_legacy": agent.is_legacy,
                 "is_active": agent.is_active
             })

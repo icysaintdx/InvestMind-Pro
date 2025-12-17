@@ -170,7 +170,7 @@ if (result.success && result.sources) {
 
 ### 1. 启动后端
 ```bash
-cd d:\AlphaCouncil
+cd d:\InvestMindPro
 python backend/server.py
 ```
 

@@ -241,7 +241,7 @@ export default {
     const testApi = async (provider) => {
       // AKShare 不需要 API Key
       if (provider !== 'akshare' && !localKeys.value[provider]) {
-        alert(`请先输入 ${getProviderLabel(provider)} 的 API Key`)
+        window.$toast && window.$toast.warning(`请先输入 ${getProviderLabel(provider)} 的 API Key`)
         return
       }
 
@@ -268,15 +268,15 @@ export default {
           if (result.test_response) {
             message += `\n响应示例:\n${result.test_response}`
           }
-          alert(message)
+          window.$toast && window.$toast.success(message)
         } else {
           emit('updateStatus', provider, 'error')
-          alert(`❌ ${getProviderLabel(provider)} 测试失败\n\n错误信息: ${result.error || '未知错误'}`)
+          window.$toast && window.$toast.error(`${getProviderLabel(provider)} 测试失败: ${result.error || '未知错误'}`)
         }
       } catch (error) {
         emit('updateStatus', provider, 'error')
         console.error(`Test ${provider} error:`, error)
-        alert(`❌ ${getProviderLabel(provider)} 测试失败\n\n错误: ${error.message}\n\n请检查:\n1. 后端服务是否运行\n2. API Key 是否正确\n3. 网络连接是否正常`)
+        window.$toast && window.$toast.error(`${getProviderLabel(provider)} 测试失败: ${error.message}`, 5000)
       }
     }
 

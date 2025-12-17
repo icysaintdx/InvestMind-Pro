@@ -12,7 +12,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 print("=" * 80)
-print("🧪 AlphaCouncil 数据源测试")
+print("🧪 InvestMindPro 数据源测试")
 print("=" * 80)
 print()
 

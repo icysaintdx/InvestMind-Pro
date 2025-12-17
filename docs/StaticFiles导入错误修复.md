@@ -7,7 +7,7 @@
 
 服务器在启动时报错：
 ```python
-File "D:\AlphaCouncil\backend\server.py", line 1209
+File "D:\InvestMindPro\backend\server.py", line 1209
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 NameError: name 'StaticFiles' is not defined
 ```

@@ -2,7 +2,7 @@
 # NAS 最终修复脚本
 
 echo "=========================================="
-echo "AlphaCouncil NAS 最终修复"
+echo "InvestMindPro NAS 最终修复"
 echo "=========================================="
 echo
 

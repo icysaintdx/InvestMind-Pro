@@ -1,6 +1,6 @@
 @echo off
 echo ============================================
-echo AlphaCouncil Server - READY TO START
+echo InvestMindPro Server - READY TO START
 echo ============================================
 echo.
 echo All import issues have been fixed:
@@ -10,14 +10,14 @@ echo - LangChain compatibility layer created
 echo - config.py fixed
 echo.
 
-cd /d D:\AlphaCouncil
+cd /d D:\InvestMindPro
 
 echo Setting Python path...
 set PYTHONPATH=%cd%;%PYTHONPATH%
 
 echo.
 echo ============================================
-echo Starting AlphaCouncil Server
+echo Starting InvestMindPro Server
 echo ============================================
 echo.
 

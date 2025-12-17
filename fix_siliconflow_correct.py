@@ -6,7 +6,7 @@ import sys
 import os
 
 def fix_siliconflow_api():
-    file_path = r"d:\AlphaCouncil\backend\server.py"
+    file_path = r"d:\InvestMindPro\backend\server.py"
     
     # 读取文件
     with open(file_path, 'r', encoding='utf-8') as f:

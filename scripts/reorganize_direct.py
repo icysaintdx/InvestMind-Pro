@@ -10,10 +10,10 @@ from pathlib import Path
 
 def main():
     # 获取项目根目录
-    project_root = Path("d:/AlphaCouncil")
+    project_root = Path("d:/InvestMindPro")
     
     print("=" * 60)
-    print("AlphaCouncil 项目重组")
+    print("InvestMindPro 项目重组")
     print("=" * 60)
     
     # 1. 检查agents目录是否存在

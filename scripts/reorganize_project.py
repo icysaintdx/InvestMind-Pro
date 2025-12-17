@@ -14,7 +14,7 @@ def main():
     project_root = Path(__file__).parent.parent
     
     print("=" * 60)
-    print("AlphaCouncil 项目目录重组工具")
+    print("InvestMindPro 项目目录重组工具")
     print("=" * 60)
     print()
     

@@ -48,7 +48,7 @@ export default {
             extension = 'md'
             break
           case 'pdf':
-            alert('PDF导出功能即将上线，请先使用HTML或Markdown格式')
+            window.$toast && window.$toast.info('PDF导出功能即将上线，请先使用HTML或Markdown格式', 3000)
             this.isExporting = false
             return
           default:
@@ -75,7 +75,7 @@ export default {
         console.log(`${format.toUpperCase()}报告导出成功`)
       } catch (error) {
         console.error('报告导出失败:', error)
-        alert('报告导出失败，请重试')
+        window.$toast && window.$toast.error('报告导出失败，请重试')
       } finally {
         this.isExporting = false
       }

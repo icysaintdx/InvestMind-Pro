@@ -251,19 +251,19 @@ const dataChannelStatus = ref({
 ## 🔧 相关文件
 
 ### 修改的文件
-1. `d:\AlphaCouncil\alpha-council-vue\src\components\AgentCard.vue`
+1. `d:\InvestMindPro\alpha-council-vue\src\components\AgentCard.vue`
    - 改为 CSS hover 实现 Tooltip
    - 移除 JavaScript 点击逻辑
    - 添加气泡样式和动画
 
-2. `d:\AlphaCouncil\alpha-council-vue\src\components\ApiConfig.vue`
+2. `d:\InvestMindPro\alpha-council-vue\src\components\ApiConfig.vue`
    - 重构模态框结构
    - 添加固定状态区域
    - 优化滚动体验
    - 添加配置徽章
    - 重新组织数据渠道
 
-3. `d:\AlphaCouncil\alpha-council-vue\src\App.vue`
+3. `d:\InvestMindPro\alpha-council-vue\src\App.vue`
    - 调整状态管理
    - 聚合数据移到数据渠道
    - 更新状态映射

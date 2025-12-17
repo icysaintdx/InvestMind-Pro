@@ -1,6 +1,6 @@
 @echo off
 echo ============================================================
-echo AlphaCouncil v2.0.0-beta Quick Start
+echo InvestMindPro v2.0.0-beta Quick Start
 echo ============================================================
 echo.
 
@@ -30,6 +30,6 @@ python scripts\test_all_apis.py
 
 echo.
 echo ============================================================
-echo AlphaCouncil is Ready!
+echo InvestMindPro is Ready!
 echo ============================================================
 pause

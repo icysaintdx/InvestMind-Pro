@@ -1,10 +1,10 @@
 @echo off
 echo ========================================
-echo Restarting AlphaCouncil Server
+echo Restarting InvestMindPro Server
 echo ========================================
 echo.
 
-cd /d D:\AlphaCouncil
+cd /d D:\InvestMindPro
 
 echo Setting Python path...
 set PYTHONPATH=%cd%;%PYTHONPATH%

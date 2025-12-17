@@ -29,35 +29,35 @@
 docker-build-all-in-one.bat
 
 # 2. 生成的文件
-alphacouncil-all-in-one.tar (~1.5GB)
+InvestMindPro-all-in-one.tar (~1.5GB)
 ```
 
 ### NAS 部署
 
 ```bash
 # 1. 上传文件到 NAS
-# - alphacouncil-all-in-one.tar
+# - InvestMindPro-all-in-one.tar
 # - .env
 
 # 2. SSH 连接
 ssh admin@your-nas-ip
-cd /volume1/docker/alphacouncil
+cd /volume1/docker/InvestMindPro
 
 # 3. 加载镜像
-docker load -i alphacouncil-all-in-one.tar
+docker load -i InvestMindPro-all-in-one.tar
 
 # 4. 启动容器
 docker run -d \
-  --name alphacouncil \
+  --name InvestMindPro \
   -p 8808:80 \
   -v $(pwd)/data:/app/data \
   --env-file .env \
   --restart unless-stopped \
-  alphacouncil:latest \
+  InvestMindPro:latest \
   /bin/bash -c "nginx && cd /app/backend && python server.py"
 
 # 5. 查看日志
-docker logs -f alphacouncil
+docker logs -f InvestMindPro
 ```
 
 ### 访问
@@ -147,15 +147,15 @@ server {
 **原因**: 缺少依赖或配置错误  
 **解决**: 
 ```bash
-docker logs alphacouncil
-docker exec -it alphacouncil bash
+docker logs InvestMindPro
+docker exec -it InvestMindPro bash
 ```
 
 ### Q3: API 调用失败
 **原因**: Nginx 代理配置错误  
 **解决**:
 ```bash
-docker exec -it alphacouncil bash
+docker exec -it InvestMindPro bash
 curl http://127.0.0.1:8000/health
 curl http://127.0.0.1/api/models
 ```
@@ -217,7 +217,7 @@ curl http://127.0.0.1/api/models
 
 ## 🎊 恭喜！
 
-你已经成功部署了 AlphaCouncil 到 NAS！
+你已经成功部署了 InvestMindPro 到 NAS！
 
 现在可以：
 1. 访问 `http://your-nas-ip:8808`

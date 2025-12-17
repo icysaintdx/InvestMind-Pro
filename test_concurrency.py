@@ -173,7 +173,7 @@ class ConcurrencyTester:
     async def run_all_tests(self):
         """运行所有测试"""
         print("="*60)
-        print("🧪 AlphaCouncil 后端并发测试")
+        print("🧪 InvestMindPro 后端并发测试")
         print("="*60)
         print(f"测试时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         print(f"后端地址: {BASE_URL}")

@@ -56,7 +56,7 @@ async def analyze_stock(request: AnalyzeRequest):
             
             # 构建系统提示词
             role_name = get_agent_role(agent_id)
-            system_prompt = f"你是一个专业的{role_name}，隶属于AlphaCouncil顶级投研团队。你的目标是提供深度、犀利且独到的投资见解。"
+            system_prompt = f"你是一个专业的{role_name}，隶属于InvestMindPro顶级投研团队。你的目标是提供深度、犀利且独到的投资见解。"
             system_prompt += "\n\n【风格要求】\n1. 直接切入主题，严禁废话。\n2. 严禁在开头复述股票代码、名称、当前价格等基础信息（除非数据出现重大异常）。\n3. 像华尔街资深分析师一样说话，使用专业术语但逻辑清晰。\n4. 必须引用前序同事的分析结论作为支撑或反驳的依据。"
 
             # 构建用户提示词

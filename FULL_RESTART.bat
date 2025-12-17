@@ -21,11 +21,11 @@ echo Port 8080 is now free!
 echo.
 
 echo Step 3: Starting backend server...
-start cmd /k "cd /d d:\AlphaCouncil && python backend\server.py"
+start cmd /k "cd /d d:\InvestMindPro && python backend\server.py"
 timeout /t 3 /nobreak > nul
 
 echo Step 4: Starting frontend...
-start cmd /k "cd /d d:\AlphaCouncil\alpha-council-vue && npm run serve"
+start cmd /k "cd /d d:\InvestMindPro\alpha-council-vue && npm run serve"
 
 echo.
 echo ========================================

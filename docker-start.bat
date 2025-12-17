@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 > nul
 echo ============================================================
-echo AlphaCouncil Docker Deployment
+echo InvestMindPro Docker Deployment
 echo ============================================================
 echo.
 
@@ -59,7 +59,7 @@ if errorlevel 1 (
 
 echo.
 echo ============================================================
-echo SUCCESS: AlphaCouncil is running!
+echo SUCCESS: InvestMindPro is running!
 echo ============================================================
 echo.
 echo Frontend: http://localhost

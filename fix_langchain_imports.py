@@ -75,7 +75,7 @@ def main():
     
     # 需要修复的目录
     directories = [
-        r"d:\AlphaCouncil\backend\agents",
+        r"d:\InvestMindPro\backend\agents",
     ]
     
     fixed_files = []

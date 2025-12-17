@@ -132,7 +132,7 @@ Token减少35% → 处理时间减少约30%
 ```bash
 # 停止当前后端 Ctrl+C
 # 重新启动
-cd d:\AlphaCouncil
+cd d:\InvestMindPro
 python backend\server.py
 ```
 

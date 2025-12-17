@@ -12,14 +12,14 @@ docker-build-offline.bat
 ```
 
 等待完成后，会生成：
-- `alphacouncil-backend.tar` (~500MB)
-- `alphacouncil-frontend.tar` (~200MB)
+- `InvestMindPro-backend.tar` (~500MB)
+- `InvestMindPro-frontend.tar` (~200MB)
 
 ### 2. 准备文件
 ```
 需要上传到 NAS 的文件：
-├── alphacouncil-backend.tar
-├── alphacouncil-frontend.tar
+├── InvestMindPro-backend.tar
+├── InvestMindPro-frontend.tar
 ├── docker-compose-nas.yml
 ├── .env (包含 API Keys)
 └── backend/agent_configs.json
@@ -30,18 +30,18 @@ docker-build-offline.bat
 ## NAS 操作
 
 ### 1. 上传文件
-将上述文件上传到 NAS 目录（如 `/volume1/docker/alphacouncil/`）
+将上述文件上传到 NAS 目录（如 `/volume1/docker/InvestMindPro/`）
 
 ### 2. SSH 连接
 ```bash
 ssh admin@your-nas-ip
-cd /volume1/docker/alphacouncil
+cd /volume1/docker/InvestMindPro
 ```
 
 ### 3. 加载镜像
 ```bash
-docker load -i alphacouncil-backend.tar
-docker load -i alphacouncil-frontend.tar
+docker load -i InvestMindPro-backend.tar
+docker load -i InvestMindPro-frontend.tar
 ```
 
 ### 4. 创建目录
@@ -65,17 +65,17 @@ docker-compose -f docker-compose-nas.yml up -d
 **方法 B: 单独运行容器**
 ```bash
 # 启动后端
-docker run -d --name alphacouncil-backend \
+docker run -d --name InvestMindPro-backend \
   -p 8000:8000 \
   -v $(pwd)/data:/app/data \
   -v $(pwd)/backend/agent_configs.json:/app/backend/agent_configs.json \
   --env-file .env \
-  alphacouncil-backend:latest
+  InvestMindPro-backend:latest
 
 # 启动前端
-docker run -d --name alphacouncil-frontend \
+docker run -d --name InvestMindPro-frontend \
   -p 80:80 \
-  alphacouncil-frontend:latest
+  InvestMindPro-frontend:latest
 ```
 
 ### 7. 查看状态
@@ -110,7 +110,7 @@ docker-compose -f docker-compose-nas.yml restart
 docker-compose -f docker-compose-nas.yml logs -f
 
 # 备份数据
-cp data/alphacouncil.db data/backup_$(date +%Y%m%d).db
+cp data/InvestMindPro.db data/backup_$(date +%Y%m%d).db
 ```
 
 ---
@@ -123,7 +123,7 @@ cp data/alphacouncil.db data/backup_$(date +%Y%m%d).db
 ls -lh *.tar
 
 # 重新加载
-docker load -i alphacouncil-backend.tar
+docker load -i InvestMindPro-backend.tar
 ```
 
 ### 容器无法启动
@@ -149,4 +149,4 @@ netstat -tuln | grep 8000
 
 ## ✅ 完成！
 
-现在访问 http://your-nas-ip 开始使用 AlphaCouncil！
+现在访问 http://your-nas-ip 开始使用 InvestMindPro！

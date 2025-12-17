@@ -14,7 +14,7 @@ from backend.database.database import init_database, test_connection, drop_all_t
 
 def main():
     print("=" * 60)
-    print("AlphaCouncil 数据库初始化")
+    print("InvestMindPro 数据库初始化")
     print("=" * 60)
     
     # 测试连接
@@ -50,7 +50,7 @@ def main():
     print("✅ 数据库初始化完成！")
     print("=" * 60)
     
-    print("\n数据库文件位置: ./alphacouncil.db")
+    print("\n数据库文件位置: ./InvestMindPro.db")
     print("可以使用 SQLite 工具查看数据库内容")
     print("\n测试 API:")
     print("  curl http://localhost:8000/api/analysis/db/sessions/active")

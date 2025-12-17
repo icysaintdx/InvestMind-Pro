@@ -24,7 +24,7 @@ LLM_SEMAPHORE = Semaphore(2)
 
 **修复方法**:
 
-1. 打开 `d:\AlphaCouncil\backend\server.py`
+1. 打开 `d:\InvestMindPro\backend\server.py`
 2. 找到第704行的 `@app.post("/api/analyze")` 
 3. 将整个函数体包裹在 `async with LLM_SEMAPHORE:` 中
 
@@ -92,7 +92,7 @@ async def analyze_stock(...):               # 0空格
 
 ### 1. 重启后端
 ```bash
-cd d:\AlphaCouncil
+cd d:\InvestMindPro
 python backend\server.py
 ```
 

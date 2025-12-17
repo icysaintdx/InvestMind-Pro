@@ -1,10 +1,10 @@
 @echo off
 echo ===================================
-echo AlphaCouncil Startup Fix Script
+echo InvestMindPro Startup Fix Script
 echo ===================================
 echo.
 
-cd /d D:\AlphaCouncil
+cd /d D:\InvestMindPro
 
 echo Step 1: Installing dependencies...
 echo Installing colorlog and related packages...

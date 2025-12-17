@@ -18,7 +18,7 @@ def install_package(package):
 
 def main():
     print("="*60)
-    print("🚀 Installing AlphaCouncil Dependencies")
+    print("🚀 Installing InvestMindPro Dependencies")
     print("="*60)
     print()
     

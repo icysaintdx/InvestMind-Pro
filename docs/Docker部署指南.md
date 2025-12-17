@@ -116,7 +116,7 @@ docker-compose up -d --build
 
 ```
 ./data/
-├── alphacouncil.db      # SQLite 数据库
+├── InvestMindPro.db      # SQLite 数据库
 └── logs/                # 日志文件
 ```
 
@@ -124,10 +124,10 @@ docker-compose up -d --build
 
 ```bash
 # 备份数据库
-docker-compose exec backend cp /app/data/alphacouncil.db /app/data/backup_$(date +%Y%m%d).db
+docker-compose exec backend cp /app/data/InvestMindPro.db /app/data/backup_$(date +%Y%m%d).db
 
 # 或直接复制本地文件
-cp ./data/alphacouncil.db ./data/backup_$(date +%Y%m%d).db
+cp ./data/InvestMindPro.db ./data/backup_$(date +%Y%m%d).db
 ```
 
 ### 恢复数据
@@ -137,7 +137,7 @@ cp ./data/alphacouncil.db ./data/backup_$(date +%Y%m%d).db
 docker-compose stop
 
 # 恢复数据库
-cp ./data/backup_20251208.db ./data/alphacouncil.db
+cp ./data/backup_20251208.db ./data/InvestMindPro.db
 
 # 启动服务
 docker-compose start
@@ -298,7 +298,7 @@ services:
 
 ```yaml
 networks:
-  alphacouncil-network:
+  InvestMindPro-network:
     driver: bridge
     ipam:
       config:
@@ -404,8 +404,8 @@ curl http://localhost/
 docker stats
 
 # 查看容器详情
-docker inspect alphacouncil-backend
-docker inspect alphacouncil-frontend
+docker inspect InvestMindPro-backend
+docker inspect InvestMindPro-frontend
 ```
 
 ### 日志分析
@@ -442,7 +442,7 @@ docker-compose up -d --build
 docker-compose down -v
 
 # 备份数据
-cp ./data/alphacouncil.db ./data/backup.db
+cp ./data/InvestMindPro.db ./data/backup.db
 
 # 进入容器
 docker-compose exec backend bash
@@ -480,6 +480,6 @@ docker-compose exec backend bash
 
 ## 🎉 完成！
 
-现在你的 AlphaCouncil 已经通过 Docker 部署完成！
+现在你的 InvestMindPro 已经通过 Docker 部署完成！
 
 访问 http://localhost 开始使用！

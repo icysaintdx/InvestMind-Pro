@@ -6,7 +6,7 @@
 
 ## 📊 集成概述
 
-成功为AlphaCouncil项目创建了统一的LLM（大语言模型）调用系统，支持多个主流AI服务商，为所有20个智能体提供统一的语言模型能力。
+成功为InvestMindPro项目创建了统一的LLM（大语言模型）调用系统，支持多个主流AI服务商，为所有20个智能体提供统一的语言模型能力。
 
 ## ✅ 已完成功能
 
@@ -108,7 +108,7 @@ SILICONFLOW_API_KEY=your_siliconflow_key
 start_backend.bat
 
 # 或直接运行
-cd d:\AlphaCouncil
+cd d:\InvestMindPro
 python backend/server.py
 ```
 
@@ -196,7 +196,7 @@ POST /api/agents/call
 
 ## 🎯 总结
 
-LLM集成模块已基本完成，为AlphaCouncil的20个智能体提供了统一、灵活、可扩展的语言模型调用能力。系统支持多个主流AI服务商，并为不同类型的智能体提供了优化的配置策略。
+LLM集成模块已基本完成，为InvestMindPro的20个智能体提供了统一、灵活、可扩展的语言模型调用能力。系统支持多个主流AI服务商，并为不同类型的智能体提供了优化的配置策略。
 
 **完成度**: 85%  
 **剩余工作**: 完善toolkit实现、添加流式响应、集成本地模型

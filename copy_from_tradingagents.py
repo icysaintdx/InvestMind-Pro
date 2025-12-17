@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """
-从 TradingAgents-CN-main 复制缺失的文件到 AlphaCouncil
+从 TradingAgents-CN-main 复制缺失的文件到 InvestMindPro
 """
 
 import shutil
 from pathlib import Path
 
 # 源项目路径（请根据实际情况修改）
-SOURCE_PROJECT = Path(r"D:\AlphaCouncil\TradingAgents-CN-main\tradingagents")
-TARGET_PROJECT = Path(r"D:\AlphaCouncil\backend\dataflows")
+SOURCE_PROJECT = Path(r"D:\InvestMindPro\TradingAgents-CN-main\tradingagents")
+TARGET_PROJECT = Path(r"D:\InvestMindPro\backend\dataflows")
 
 # 需要复制的文件映射
 FILES_TO_COPY = {
-    # 从 TradingAgents-CN-main/dataflows/ 复制到 AlphaCouncil/backend/dataflows/
+    # 从 TradingAgents-CN-main/dataflows/ 复制到 InvestMindPro/backend/dataflows/
     "dataflows": [
         "akshare_utils.py",
         "finnhub_utils.py",
@@ -28,7 +28,7 @@ FILES_TO_COPY = {
 def copy_files():
     """复制文件"""
     print("=" * 80)
-    print("📋 从 TradingAgents-CN-main 复制文件到 AlphaCouncil")
+    print("📋 从 TradingAgents-CN-main 复制文件到 InvestMindPro")
     print("=" * 80)
     print()
     

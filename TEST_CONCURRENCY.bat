@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul
 echo ========================================
-echo AlphaCouncil Backend Concurrency Test
+echo InvestMindPro Backend Concurrency Test
 echo ========================================
 echo.
 

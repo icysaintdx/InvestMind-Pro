@@ -1,0 +1,134 @@
+[
+  {
+    "record_id": "DR20251216123116",
+    "task_id": "AT20251216123116",
+    "timestamp": "2025-12-16T12:31:16.843594",
+    "market_data": {
+      "stock_code": "600519",
+      "current_price": 100.0,
+      "change_rate": 1.5,
+      "volume": 1000000.0,
+      "news_summary": "市场整体表现良好"
+    },
+    "decision": {
+      "action": "hold",
+      "quantity": 0,
+      "reason": "市场波动正常，建议继续持有观望",
+      "confidence": 0.8811323070114153,
+      "risk_level": "medium",
+      "stop_loss": null,
+      "take_profit": null
+    },
+    "executed": true,
+    "execution_result": {
+      "success": true,
+      "action": "hold",
+      "message": "持有观望"
+    }
+  },
+  {
+    "record_id": "DR20251217153519",
+    "task_id": "AT20251217153503",
+    "timestamp": "2025-12-17T15:35:19.048747",
+    "market_data": {
+      "stock_code": "600085",
+      "current_price": 32.57,
+      "change_rate": -0.82,
+      "volume": 67348.0,
+      "news_summary": "无最新新闻"
+    },
+    "decision": {
+      "action": "hold",
+      "quantity": 0,
+      "reason": "当前市场情绪偏弱，同仁堂股价日内下跌0.82%，技术面显示短期震荡格局，且无最新新闻影响。结合行业处于政策驱动型复苏阶段，但需求端承压，整体投资信号不明确，因此选择持有观望。",
+      "confidence": 0.75,
+      "risk_level": "medium",
+      "stop_loss": 95.0,
+      "take_profit": 110.0
+    },
+    "executed": true,
+    "execution_result": {
+      "success": true,
+      "action": "hold",
+      "message": "持有观望"
+    }
+  },
+  {
+    "record_id": "DR20251217161448",
+    "task_id": "AT20251217161435",
+    "timestamp": "2025-12-17T16:14:48.611589",
+    "market_data": {
+      "stock_code": "600085",
+      "current_price": 32.57,
+      "change_rate": -0.82,
+      "volume": 67348.0,
+      "news_summary": "无最新新闻"
+    },
+    "decision": {
+      "action": "buy",
+      "quantity": 300,
+      "reason": "当前无持仓，且同仁堂处于政策驱动型复苏阶段，中医药行业整体有利好预期。虽然今日市场情绪偏弱，但技术面显示短期震荡格局，可视为建仓机会。建议小仓位试探性买入，控制风险。",
+      "confidence": 0.75,
+      "risk_level": "medium",
+      "stop_loss": 31.0,
+      "take_profit": 35.0
+    },
+    "executed": true,
+    "execution_result": {
+      "success": true,
+      "trade_id": "T20251217161448",
+      "message": "交易成功: BUY 300股 @ 32.57",
+      "trade": {
+        "trade_id": "T20251217161448",
+        "timestamp": "2025-12-17T16:14:48.608597",
+        "stock_code": "600085",
+        "stock_name": "同仁堂",
+        "action": "BUY",
+        "quantity": 300,
+        "price": 32.57,
+        "amount": 9771.0,
+        "commission": 5.0,
+        "status": "EXECUTED"
+      }
+    }
+  },
+  {
+    "record_id": "DR20251217173102",
+    "task_id": "AT20251217172957",
+    "timestamp": "2025-12-17T17:31:02.936691",
+    "market_data": {
+      "stock_code": "600223",
+      "current_price": 7.33,
+      "change_rate": 0.41,
+      "volume": 72006.0,
+      "news_summary": "52只股中线走稳 站上半年线; 食品饮料行业今日净流入资金3.02亿元，黑芝麻等5股净流入资金超3000万元; 【数据揭秘】融资客看好个股一览"
+    },
+    "decision": {
+      "action": "buy",
+      "quantity": 300,
+      "reason": "当前无持仓，且股票处于横盘震荡状态，短期均线粘合，技术面未明确给出卖出信号。最新新闻显示食品饮料行业资金净流入，市场情绪偏积极，且无明显利空因素。结合建仓建议，可考虑小仓位试探性买入。",
+      "confidence": 0.75,
+      "risk_level": "medium",
+      "stop_loss": 7.0,
+      "take_profit": 8.5
+    },
+    "executed": true,
+    "execution_result": {
+      "success": true,
+      "trade_id": "T20251217173033",
+      "message": "交易成功: BUY 300股 @ 7.33",
+      "trade": {
+        "trade_id": "T20251217173033",
+        "timestamp": "2025-12-17T17:30:33.561651",
+        "stock_code": "600223",
+        "stock_name": "福瑞达",
+        "action": "BUY",
+        "quantity": 300,
+        "price": 7.33,
+        "amount": 2199.0,
+        "commission": 5.0,
+        "status": "EXECUTED"
+      }
+    }
+  }
+]

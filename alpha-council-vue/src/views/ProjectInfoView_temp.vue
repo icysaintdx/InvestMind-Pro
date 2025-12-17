@@ -5,7 +5,7 @@
       <div class="header-content">
         <h1 class="title">
           <span class="icon">🏆</span>
-          AlphaCouncil
+          InvestMindPro
         </h1>
         <p class="subtitle">新一代AI驱动的智能投资决策系统</p>
         <div class="badges">
@@ -23,7 +23,7 @@
       <section class="info-section">
         <h2 class="section-title">📌 项目概述</h2>
         <p class="section-text">
-          <strong>AlphaCouncil（阿尔法议会）</strong>是一个革命性的AI驱动投资决策系统，
+          <strong>InvestMindPro（阿尔法议会）</strong>是一个革命性的AI驱动投资决策系统，
           通过<strong>21个专业AI智能体</strong>的协同工作，模拟真实投资机构的决策流程，
           为投资者提供<strong>全方位、多维度、深层次</strong>的投资分析和决策支持。
         </p>
@@ -211,7 +211,7 @@
 
       <!-- 页脚 -->
       <div class="info-footer">
-        <p><strong>AlphaCouncil - 让投资决策更智能！</strong></p>
+        <p><strong>InvestMindPro - 让投资决策更智能！</strong></p>
         <p>版本: v1.3.4 | 最后更新: 2024-12-05</p>
         <p>文档总数: 74篇 | 代码行数: 50,000+</p>
       </div>

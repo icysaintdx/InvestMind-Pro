@@ -8,7 +8,7 @@ import os
 import sys
 
 # Add project root to path
-project_root = r"D:\AlphaCouncil"
+project_root = r"D:\InvestMindPro"
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
@@ -23,7 +23,7 @@ def check_module(module_path, name):
         return False, f"⚠️ {str(e)}"
 
 print("=" * 60)
-print("AlphaCouncil 最终状态检查")
+print("InvestMindPro 最终状态检查")
 print("=" * 60)
 print()
 

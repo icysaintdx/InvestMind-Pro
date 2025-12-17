@@ -7,7 +7,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 print("=" * 60)
-print("验证AlphaCouncil修复状态")
+print("验证InvestMindPro修复状态")
 print("=" * 60)
 
 errors = []

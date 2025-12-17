@@ -59,11 +59,16 @@ async def log_stream(agent_id: str):
     except Exception as e:
         logger.error(f"[SSE] 日志流错误: {agent_id}, {str(e)}")
     finally:
-        # 清理队列
+        # ✅ 修复：不删除队列，只清空它，让后端可以继续执行
         async with queue_lock:
             if agent_id in agent_log_queues:
-                del agent_log_queues[agent_id]
-                logger.info(f"[SSE] 清理队列: {agent_id}")
+                # 清空队列但不删除
+                while not agent_log_queues[agent_id].empty():
+                    try:
+                        agent_log_queues[agent_id].get_nowait()
+                    except:
+                        break
+                logger.info(f"[SSE] 清空队列（保留）: {agent_id}")
 
 
 @router.get("/stream/{agent_id}")
@@ -101,7 +106,7 @@ def push_agent_log(agent_id: str, log_type: str, message: str, metadata: Optiona
     """
     # 如果队列不存在，创建它
     if agent_id not in agent_log_queues:
-        agent_log_queues[agent_id] = asyncio.Queue()
+        agent_log_queues[agent_id] = asyncio.Queue(maxsize=100)  # ✅ 限制队列大小
         logger.info(f"[SSE] 创建日志队列: {agent_id}")
     
     log_entry = {
@@ -112,8 +117,16 @@ def push_agent_log(agent_id: str, log_type: str, message: str, metadata: Optiona
     }
     try:
         agent_log_queues[agent_id].put_nowait(log_entry)
+    except asyncio.QueueFull:
+        # ✅ 队列满了，丢弃最旧的日志
+        try:
+            agent_log_queues[agent_id].get_nowait()
+            agent_log_queues[agent_id].put_nowait(log_entry)
+        except:
+            pass  # 静默失败，不阻塞后端执行
     except Exception as e:
-        logger.error(f"[SSE] 推送日志失败: {agent_id}, {str(e)}")
+        # ✅ 任何错误都不应该阻塞后端执行
+        logger.warning(f"[SSE] 推送日志失败（忽略）: {agent_id}, {str(e)}")
 
 
 def end_agent_log_stream(agent_id: str):

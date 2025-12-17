@@ -9,7 +9,7 @@ import sys
 import traceback
 
 # Add project root to path
-project_root = r"D:\AlphaCouncil"
+project_root = r"D:\InvestMindPro"
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 

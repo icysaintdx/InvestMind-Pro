@@ -177,7 +177,7 @@ async def test_concurrent(num_concurrent):
 
 async def main():
     print("="*70)
-    print("🧪 AlphaCouncil 复杂并发测试（真实风控智能体提示词）")
+    print("🧪 InvestMindPro 复杂并发测试（真实风控智能体提示词）")
     print("="*70)
     print(f"测试时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"后端地址: {BASE_URL}")

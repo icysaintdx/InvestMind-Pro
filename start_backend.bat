@@ -1,10 +1,10 @@
 @echo off
 echo ===================================
-echo Starting AlphaCouncil Backend Server
+echo Starting InvestMindPro Backend Server
 echo ===================================
 echo.
 
-cd /d D:\AlphaCouncil
+cd /d D:\InvestMindPro
 
 echo Setting Python path...
 set PYTHONPATH=%cd%;%PYTHONPATH%

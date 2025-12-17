@@ -23,14 +23,10 @@ try:
 except ImportError:
     print("[数据源管理器] 警告: python-dotenv 未安装，无法加载 .env 文件")
 
-# 导入日志模块
-from backend.utils.logging_config import get_logger
-logger = get_logger('agents')
-warnings.filterwarnings('ignore')
-
 # 导入统一日志系统
 from backend.utils.logging_config import get_logger
 logger = get_logger("dataflow")
+warnings.filterwarnings('ignore')
 
 
 class ChinaDataSource(Enum):
@@ -54,9 +50,51 @@ class DataSourceManager:
         self.available_sources = self._check_available_sources()
         self.current_source = self.default_source
 
+        # 初始化断路器
+        self._init_circuit_breakers()
+
         logger.info(f"📊 数据源管理器初始化完成")
         logger.info(f"   默认数据源: {self.default_source.value}")
         logger.info(f"   可用数据源: {[s.value for s in self.available_sources]}")
+
+    def _init_circuit_breakers(self):
+        """初始化各数据源的断路器"""
+        try:
+            from backend.dataflows.utils.circuit_breaker import get_data_source_breaker
+            self._breakers = {
+                ChinaDataSource.AKSHARE: get_data_source_breaker("akshare"),
+                ChinaDataSource.TUSHARE: get_data_source_breaker("tushare"),
+                ChinaDataSource.SINA: get_data_source_breaker("sina"),
+                ChinaDataSource.JUHE: get_data_source_breaker("juhe"),
+                ChinaDataSource.BAOSTOCK: get_data_source_breaker("baostock"),
+            }
+            logger.debug("断路器初始化完成")
+        except Exception as e:
+            logger.warning(f"断路器初始化失败，将不使用断路器保护: {e}")
+            self._breakers = {}
+
+    def _can_use_source(self, source: ChinaDataSource) -> bool:
+        """检查数据源是否可用（断路器未熔断）"""
+        if not self._breakers:
+            return True
+        breaker = self._breakers.get(source)
+        if breaker:
+            return breaker.can_execute()
+        return True
+
+    def _record_source_success(self, source: ChinaDataSource):
+        """记录数据源调用成功"""
+        if self._breakers:
+            breaker = self._breakers.get(source)
+            if breaker:
+                breaker.record_success()
+
+    def _record_source_failure(self, source: ChinaDataSource):
+        """记录数据源调用失败"""
+        if self._breakers:
+            breaker = self._breakers.get(source)
+            if breaker:
+                breaker.record_failure()
 
     def _get_default_source(self) -> ChinaDataSource:
         """获取默认数据源"""
@@ -787,8 +825,10 @@ class DataSourceManager:
             return 0
 
     def _try_fallback_sources(self, symbol: str, start_date: str, end_date: str) -> str:
-        """尝试备用数据源 - 避免递归调用"""
-        logger.error(f"🔄 {self.current_source.value}失败，尝试备用数据源...")
+        """尝试备用数据源 - 使用断路器保护"""
+        # 记录当前数据源失败
+        self._record_source_failure(self.current_source)
+        logger.warning(f"🔄 {self.current_source.value}失败，尝试备用数据源...")
 
         # 备用数据源优先级: AKShare > 聚合数据 > 新浪财经 > Tushare > BaoStock
         fallback_order = [
@@ -801,6 +841,11 @@ class DataSourceManager:
 
         for source in fallback_order:
             if source != self.current_source and source in self.available_sources:
+                # 检查断路器状态
+                if not self._can_use_source(source):
+                    logger.debug(f"⏸️ 数据源{source.value}断路器已熔断，跳过")
+                    continue
+
                 try:
                     logger.info(f"🔄 尝试备用数据源: {source.value}")
 
@@ -820,15 +865,21 @@ class DataSourceManager:
                         continue
 
                     if "❌" not in result:
+                        # 记录成功
+                        self._record_source_success(source)
                         logger.info(f"✅ 备用数据源{source.value}获取成功")
                         return result
                     else:
+                        # 记录失败
+                        self._record_source_failure(source)
                         logger.warning(f"⚠️ 备用数据源{source.value}返回错误结果")
 
                 except Exception as e:
+                    # 记录失败
+                    self._record_source_failure(source)
                     logger.error(f"❌ 备用数据源{source.value}也失败: {e}")
                     continue
-        
+
         return f"❌ 所有数据源都无法获取{symbol}的数据"
     
     def get_stock_info(self, symbol: str) -> Dict:
@@ -1057,50 +1108,29 @@ def get_china_stock_data_unified(symbol: str, start_date: str, end_date: str) ->
     Returns:
         str: 格式化的股票数据
     """
-    from backend.utils.logging_config import get_logger
-
-
-    # 添加详细的股票代码追踪日志
-    logger.info(f"🔍 [股票代码追踪] data_source_manager.get_china_stock_data_unified 接收到的股票代码: '{symbol}' (类型: {type(symbol)})")
-    logger.info(f"🔍 [股票代码追踪] 股票代码长度: {len(str(symbol))}")
-    logger.info(f"🔍 [股票代码追踪] 股票代码字符: {list(str(symbol))}")
+    # 简化日志，避免过多输出
+    logger.debug(f"[数据源] 获取股票数据: {symbol}, {start_date} - {end_date}")
 
     manager = get_data_source_manager()
-    logger.info(f"🔍 [股票代码追踪] 调用 manager.get_stock_data，传入参数: symbol='{symbol}', start_date='{start_date}', end_date='{end_date}'")
     result = manager.get_stock_data(symbol, start_date, end_date)
-    # 分析返回结果的详细信息
+
     if result:
         lines = result.split('\n')
-        data_lines = [line for line in lines if '2025-' in line and symbol in line]
-        logger.info(f"🔍 [股票代码追踪] 返回结果统计: 总行数={len(lines)}, 数据行数={len(data_lines)}, 结果长度={len(result)}字符")
-        logger.info(f"🔍 [股票代码追踪] 返回结果前500字符: {result[:500]}")
-        if len(data_lines) > 0:
-            logger.info(f"🔍 [股票代码追踪] 数据行示例: 第1行='{data_lines[0][:100]}', 最后1行='{data_lines[-1][:100]}'")
+        logger.debug(f"[数据源] 返回 {len(lines)} 行数据")
     else:
-        logger.info(f"🔍 [股票代码追踪] 返回结果: None")
+        logger.warning(f"[数据源] 未获取到数据: {symbol}")
     return result
 
 
 def get_china_stock_info_unified(symbol: str) -> Dict:
     """
     统一的中国股票信息获取接口
-    
+
     Args:
         symbol: 股票代码
-        
+
     Returns:
         Dict: 股票基本信息
     """
     manager = get_data_source_manager()
     return manager.get_stock_info(symbol)
-
-
-# 全局数据源管理器实例
-_data_source_manager = None
-
-def get_data_source_manager() -> DataSourceManager:
-    """获取全局数据源管理器实例"""
-    global _data_source_manager
-    if _data_source_manager is None:
-        _data_source_manager = DataSourceManager()
-    return _data_source_manager

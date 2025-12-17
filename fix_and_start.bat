@@ -1,10 +1,10 @@
 @echo off
 echo ============================================
-echo AlphaCouncil Complete Fix and Start Script
+echo InvestMindPro Complete Fix and Start Script
 echo ============================================
 echo.
 
-cd /d D:\AlphaCouncil
+cd /d D:\InvestMindPro
 
 echo [1/4] Installing missing dependencies...
 echo Installing colorlog and related packages...

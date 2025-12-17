@@ -11,7 +11,7 @@ project_root = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, project_root)
 
 print("=" * 60)
-print("测试AlphaCouncil导入链")
+print("测试InvestMindPro导入链")
 print("=" * 60)
 print()
 
@@ -51,10 +51,6 @@ except ImportError as e:
     success = False
 
 try:
-    print("  导入trading_api...")
-    from backend.api.trading_api import router as trading_router
-    print("    ✅ trading_api")
-except ImportError as e:
     print(f"    ❌ trading_api: {e}")
     success = False
 

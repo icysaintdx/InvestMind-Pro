@@ -1,6 +1,6 @@
 @echo off
 echo ===================================
-echo Installing AlphaCouncil Dependencies
+echo Installing InvestMindPro Dependencies
 echo ===================================
 echo.
 

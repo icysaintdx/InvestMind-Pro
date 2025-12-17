@@ -1,17 +1,17 @@
 @echo off
 echo ========================================
-echo Testing AlphaCouncil Server
+echo Testing InvestMindPro Server
 echo ========================================
 echo.
 
-cd /d D:\AlphaCouncil
+cd /d D:\InvestMindPro
 
 echo Setting Python path...
 set PYTHONPATH=%cd%;%PYTHONPATH%
 
 echo.
 echo Testing critical imports...
-python -c "import sys; sys.path.insert(0, r'D:\AlphaCouncil'); from backend.agents.utils.agent_utils import Toolkit; print('Import successful')" 2>&1
+python -c "import sys; sys.path.insert(0, r'D:\InvestMindPro'); from backend.agents.utils.agent_utils import Toolkit; print('Import successful')" 2>&1
 
 echo.
 echo If you see 'Import successful' above, the server should work.

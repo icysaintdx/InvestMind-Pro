@@ -99,6 +99,10 @@
             <span class="btn-icon">⚙️</span>
             <span class="btn-text">配置模式</span>
           </button>
+          <button @click="showAgentConfig = true" class="nav-btn">
+            <span class="btn-icon">🤖</span>
+            <span class="btn-text">智能体</span>
+          </button>
           <button @click="showModelManager = true" class="nav-btn">
             <span class="btn-icon">🎯</span>
             <span class="btn-text">模型</span>
@@ -115,9 +119,75 @@
       </div>
     </header>
     
+    <!-- 选项卡导航 -->
+    <div class="tab-navigation">
+      <button 
+        @click="currentView = 'analysis'" 
+        :class="['tab-btn', { active: currentView === 'analysis' }]"
+      >
+        <span class="tab-icon">📊</span>
+        <span class="tab-text">智能分析</span>
+      </button>
+      <button 
+        @click="currentView = 'analysis-summary'" 
+        :class="['tab-btn', { active: currentView === 'analysis-summary' }]"
+      >
+        <span class="tab-icon">🧭</span>
+        <span class="tab-text">分析总结</span>
+      </button>
+      <button 
+        @click="currentView = 'backtest'" 
+        :class="['tab-btn', { active: currentView === 'backtest' }]"
+      >
+        <span class="tab-icon">📈</span>
+        <span class="tab-text">策略回测</span>
+      </button>
+      <button 
+        @click="currentView = 'paper-trading'" 
+        :class="['tab-btn', { active: currentView === 'paper-trading' }]"
+      >
+        <span class="tab-icon">💼</span>
+        <span class="tab-text">模拟交易</span>
+      </button>
+      <button 
+        @click="currentView = 'tracking-center'" 
+        :class="['tab-btn', { active: currentView === 'tracking-center' }]"
+      >
+        <span class="tab-icon">🔄</span>
+        <span class="tab-text">跟踪验证</span>
+      </button>
+      <button 
+        @click="currentView = 'llm-config'" 
+        :class="['tab-btn', { active: currentView === 'llm-config' }]"
+      >
+        <span class="tab-icon">⚙️</span>
+        <span class="tab-text">LLM配置</span>
+      </button>
+    </div>
+    
     <!-- 主内容区 -->
-    <main class="pt-20 container mx-auto px-4 pb-8">
-      <AnalysisView />
+    <main class="pt-32 container mx-auto px-4 pb-8">
+      <AnalysisView v-if="currentView === 'analysis'" />
+      <AnalysisSummaryView 
+        v-if="currentView === 'analysis-summary'"
+        @goto-backtest="handleGotoBacktest"
+        @goto-paper-trading="handleGotoPaperTrading"
+        @goto-tracking="handleGotoTracking"
+        @goto-analysis="() => currentView = 'analysis'"
+      />
+      <BacktestView 
+        v-if="currentView === 'backtest'"
+        :integrationContext="integrationContext"
+      />
+      <PaperTradingView 
+        v-if="currentView === 'paper-trading'"
+        :integrationContext="integrationContext"
+      />
+      <TrackingCenterView 
+        v-if="currentView === 'tracking-center'"
+        :integrationContext="integrationContext"
+      />
+      <LLMConfigView v-if="currentView === 'llm-config'" />
     </main>
     
     <!-- 更新日志模态框 -->
@@ -158,12 +228,20 @@
     
     <!-- 热榜模态框 -->
     <HotRankModal :isOpen="showHotRankModal" @close="showHotRankModal = false" />
+    
+    <!-- 智能体配置面板 -->
+    <AgentConfigPanel :visible="showAgentConfig" @close="showAgentConfig = false" @save="handleAgentConfigSave" />
   </div>
 </template>
 
 <script>
-import { defineComponent, ref, computed, provide, onMounted, onUnmounted } from 'vue'
+import { defineComponent, ref, reactive, computed, provide, onMounted, onUnmounted } from 'vue'
 import AnalysisView from './views/AnalysisView.vue'
+import AnalysisSummaryView from './views/AnalysisSummaryView.vue'
+import BacktestView from './views/BacktestView.vue'
+import PaperTradingView from './views/PaperTradingView.vue'
+import TrackingCenterView from './views/TrackingCenterView.vue'
+import LLMConfigView from './views/TradingLLMConfig.vue'
 import ChangelogView from './views/ChangelogView.vue'
 import ProjectInfoView from './views/ProjectInfoView.vue'
 import DocumentView from './views/DocumentView.vue'
@@ -172,12 +250,18 @@ import ParticleBackground from './components/ParticleBackground.vue'
 import StockDataPanel from './components/StockDataPanel.vue'
 import NewsDataPanel from './components/NewsDataPanel.vue'
 import HotRankModal from './components/HotRankModal.vue'
+import AgentConfigPanel from './components/AgentConfigPanel.vue'
 import { getVersionInfo } from './data/changelog.js'
 
 export default defineComponent({
   name: 'App',
   components: {
     AnalysisView,
+    AnalysisSummaryView,
+    BacktestView,
+    PaperTradingView,
+    TrackingCenterView,
+    LLMConfigView,
     ChangelogView,
     ProjectInfoView,
     DocumentView,
@@ -185,9 +269,11 @@ export default defineComponent({
     ParticleBackground,
     StockDataPanel,
     NewsDataPanel,
-    HotRankModal
+    HotRankModal,
+    AgentConfigPanel
   },
   setup() {
+    const currentView = ref('analysis')  // 当前视图
     const configMode = ref(false)
     const showModelManager = ref(false)
     const showApiConfig = ref(false)
@@ -198,6 +284,7 @@ export default defineComponent({
     const showHotRankModal = ref(false)
     const showLogWindow = ref(false)  // 全局日志窗口显示状态
     const showHistory = ref(false)  // 历史记录显示状态
+    const showAgentConfig = ref(false)  // 智能体配置面板显示状态
     
     const versionInfo = ref(getVersionInfo())
     
@@ -226,6 +313,12 @@ export default defineComponent({
       finnhub: 'unconfigured',
       tushare: 'unconfigured',
       akshare: 'configured'
+    })
+
+    const integrationContext = reactive({
+      stockCode: '',
+      sessionId: '',
+      analysis: null
     })
 
     // 后端连接状态
@@ -533,7 +626,36 @@ export default defineComponent({
     provide('stockDataPanel', stockDataPanel)
     provide('newsDataPanel', newsDataPanel)
 
+    // 处理智能体配置保存
+    const updateIntegrationContext = (session) => {
+      integrationContext.stockCode = session?.stock_code || ''
+      integrationContext.sessionId = session?.session_id || ''
+      integrationContext.analysis = session || null
+    }
+
+    const handleGotoBacktest = (session) => {
+      updateIntegrationContext(session)
+      currentView.value = 'backtest'
+    }
+
+    const handleGotoPaperTrading = (session) => {
+      updateIntegrationContext(session)
+      currentView.value = 'paper-trading'
+    }
+
+    const handleGotoTracking = (session) => {
+      updateIntegrationContext(session)
+      currentView.value = 'tracking-center'
+    }
+
+    const handleAgentConfigSave = (config) => {
+      console.log('智能体配置已保存:', config)
+      // 配置已在AgentConfigPanel组件中通过API保存
+      // 这里可以添加额外的处理逻辑，比如显示成功提示
+    }
+
     return {
+      currentView,
       configMode,
       showModelManager,
       showApiConfig,
@@ -544,6 +666,8 @@ export default defineComponent({
       showHotRankModal,
       showLogWindow,
       showHistory,
+      showAgentConfig,
+      integrationContext,
       versionInfo,
       backendStatus,
       backendStatusText,
@@ -567,7 +691,11 @@ export default defineComponent({
       getDataChannelName,
       getDataChannelShort,
       saveApiConfig,
-      updateApiStatus
+      updateApiStatus,
+      handleAgentConfigSave,
+      handleGotoBacktest,
+      handleGotoPaperTrading,
+      handleGotoTracking
     }
   }
 })
@@ -1092,8 +1220,9 @@ export default defineComponent({
 }
 
 .log-btn.active {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.4) 0%, rgba(37, 99, 235, 0.4) 100%);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.6);
+  background: linear-gradient(135deg, #06b6d4, #0891b2);
+  transform: scale(1.05);
+  z-index: 1000;
 }
 
 .log-btn .log-icon {
@@ -1374,5 +1503,80 @@ export default defineComponent({
     font-size: 2rem;
     z-index: 1000;
   }
+}
+
+/* 选项卡导航样式 */
+.tab-navigation {
+  position: fixed;
+  top: 4rem;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  background: rgba(30, 41, 59, 0.95);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+  padding: 0 1rem;
+  display: flex;
+  gap: 1rem;
+  height: 3rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.5rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  color: #94a3b8;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.tab-btn:hover {
+  background: rgba(51, 65, 85, 0.3);
+  color: #e2e8f0;
+}
+
+.tab-btn.active {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border-color: #3b82f6;
+  color: white;
+}
+
+.tab-icon {
+  font-size: 1.1rem;
+}
+
+.tab-text {
+  font-size: 0.9rem;
+}
+
+/* 调整主内容区域 */
+.pt-32 {
+  padding-top: 8rem; /* 调整为顶部导航+选项卡的总高度 */
+}
+
+/* 模拟交易占位样式 */
+.paper-trading-placeholder {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #94a3b8;
+}
+
+.paper-trading-placeholder h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: #e2e8f0;
+}
+
+.paper-trading-placeholder p {
+  font-size: 1.1rem;
 }
 </style>

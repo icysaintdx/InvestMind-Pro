@@ -1,0 +1,192 @@
+{
+  "TK20251216123122": {
+    "task_id": "TK20251216123122",
+    "stock_code": "600519",
+    "analysis_id": "test_001",
+    "strategy_id": null,
+    "auto_trading_task_id": null,
+    "initial_analysis": {
+      "analysis_id": "test_001",
+      "stock_code": "600519",
+      "summary": "测试分析"
+    },
+    "trigger_condition": {
+      "price_change_threshold": 5.0,
+      "volume_change_threshold": 50.0,
+      "check_news": true,
+      "check_interval_hours": 24
+    },
+    "status": "paused",
+    "created_at": "2025-12-16T12:31:22.314585",
+    "last_check_at": "2025-12-17T01:26:53.335497",
+    "check_count": 4,
+    "trigger_count": 3,
+    "decisions": [
+      {
+        "timestamp": "2025-12-16T12:31:22.319168",
+        "triggered": true,
+        "reason": "价格变动6.01%，超过阈值5.0%; 成交量变动59.23%，超过阈值50.0%",
+        "market_data": {
+          "price_change": 6.006942072714798,
+          "volume_change": 59.22580758782608,
+          "has_major_news": false,
+          "news_summary": "市场出现调整"
+        },
+        "decision": "adjust",
+        "confidence": 0.7439745073670563,
+        "action_details": {
+          "suggested_action": "根据市场情况调整止损止盈位",
+          "risk_level": "medium"
+        }
+      },
+      {
+        "timestamp": "2025-12-17T00:20:12.525507",
+        "triggered": true,
+        "reason": "价格变动6.81%，超过阈值5.0%; 成交量变动58.80%，超过阈值50.0%",
+        "market_data": {
+          "price_change": 6.806854543179085,
+          "volume_change": 58.79817412331896,
+          "has_major_news": false,
+          "news_summary": "市场出现调整"
+        },
+        "decision": "adjust",
+        "confidence": 0.759919374329142,
+        "action_details": {
+          "suggested_action": "根据市场情况调整止损止盈位",
+          "risk_level": "medium"
+        }
+      },
+      {
+        "timestamp": "2025-12-17T01:26:53.337460",
+        "triggered": true,
+        "reason": "价格变动6.91%，超过阈值5.0%; 检测到重大新闻",
+        "market_data": {
+          "price_change": 6.9125985390902045,
+          "volume_change": 11.431802939117347,
+          "has_major_news": true,
+          "news_summary": "市场整体表现良好"
+        },
+        "decision": "adjust",
+        "confidence": 0.7319610379394255,
+        "action_details": {
+          "suggested_action": "根据市场情况调整止损止盈位",
+          "risk_level": "medium"
+        }
+      }
+    ],
+    "duration_days": 30,
+    "end_date": "2026-01-15T12:31:22.314585",
+    "paused_at": "2025-12-17T00:20:17.147462"
+  },
+  "TK20251217024156": {
+    "task_id": "TK20251217024156",
+    "stock_code": "600085",
+    "analysis_id": null,
+    "strategy_id": "buffett_value",
+    "auto_trading_task_id": "AT20251217024155",
+    "initial_analysis": {
+      "stock_code": "600085",
+      "stock_name": "同仁堂",
+      "analysis_summary": "新闻舆情分析师：【同仁堂(600085)投资价值分析】   当前股价32.84元，日内跌幅-0.99%，成交额8148.5万，市场情绪偏弱。  **1. 新闻与公告分析**  ...\n行业轮动分析师：**同仁堂(600085)投资价值分析**  **1. 行业周期判断**   当前中医药行业处于**政策驱动型复苏阶段**，但市场情绪偏弱，反映短期需求端承压。...\n宏观政策分析师：**同仁堂(600085)投资价值分析（宏观视角）**  **1. 货币政策对该行业的影响**   当前中国货币政策维持中性偏宽松基调，央行通过降准、MLF操作...\n技术分析专家：**同仁堂(600085)技术面深度分析**  **1. K线形态与趋势**   当前K线呈现**短期震荡格局**，日内收阴，技术面情绪偏弱。结合前序分析，短期...",
+      "technical_score": null,
+      "fundamental_score": null,
+      "sentiment_score": null,
+      "risk_level": "未评估",
+      "investment_advice": ""
+    },
+    "trigger_condition": {
+      "price_change_threshold": 5.0,
+      "volume_change_threshold": 50.0,
+      "check_news": true,
+      "check_interval_hours": 24
+    },
+    "status": "active",
+    "created_at": "2025-12-17T02:41:56.856431",
+    "last_check_at": "2025-12-17T02:42:29.889162",
+    "check_count": 1,
+    "trigger_count": 1,
+    "decisions": [
+      {
+        "timestamp": "2025-12-17T02:42:29.890163",
+        "triggered": true,
+        "reason": "成交量变动52.31%，超过阈值50.0%",
+        "market_data": {
+          "price_change": -2.0942208890032408,
+          "volume_change": -52.30749500782568,
+          "has_major_news": false,
+          "news_summary": "市场出现调整"
+        },
+        "decision": "hold",
+        "confidence": 0.7682629874212976,
+        "action_details": {
+          "suggested_action": "根据市场情况调整止损止盈位",
+          "risk_level": "medium"
+        }
+      }
+    ],
+    "duration_days": 30,
+    "end_date": "2026-01-16T02:41:56.856431"
+  },
+  "TK20251217124900": {
+    "task_id": "TK20251217124900",
+    "stock_code": "600085",
+    "analysis_id": null,
+    "strategy_id": "bollinger_breakout",
+    "auto_trading_task_id": "AT20251217124853",
+    "initial_analysis": {
+      "stock_code": "600085",
+      "stock_name": "同仁堂",
+      "analysis_summary": "新闻舆情分析师：【同仁堂(600085)投资价值分析】   当前股价32.84元，日内跌幅-0.99%，成交额8148.5万，市场情绪偏弱。  **1. 新闻与公告分析**  ...\n行业轮动分析师：**同仁堂(600085)投资价值分析**  **1. 行业周期判断**   当前中医药行业处于**政策驱动型复苏阶段**，但市场情绪偏弱，反映短期需求端承压。...\n宏观政策分析师：**同仁堂(600085)投资价值分析（宏观视角）**  **1. 货币政策对该行业的影响**   当前中国货币政策维持中性偏宽松基调，央行通过降准、MLF操作...\n技术分析专家：**同仁堂(600085)技术面深度分析**  **1. K线形态与趋势**   当前K线呈现**短期震荡格局**，日内收阴，技术面情绪偏弱。结合前序分析，短期...",
+      "technical_score": null,
+      "fundamental_score": null,
+      "sentiment_score": null,
+      "risk_level": "未评估",
+      "investment_advice": ""
+    },
+    "trigger_condition": {
+      "price_change_threshold": 5.0,
+      "volume_change_threshold": 50.0,
+      "check_news": true,
+      "check_interval_hours": 24
+    },
+    "status": "active",
+    "created_at": "2025-12-17T12:49:00.851044",
+    "last_check_at": null,
+    "check_count": 0,
+    "trigger_count": 0,
+    "decisions": [],
+    "duration_days": 30,
+    "end_date": "2026-01-16T12:49:00.851044"
+  },
+  "TK20251217173408": {
+    "task_id": "TK20251217173408",
+    "stock_code": "600223",
+    "analysis_id": null,
+    "strategy_id": "trident",
+    "auto_trading_task_id": "AT20251217172957",
+    "initial_analysis": {
+      "stock_code": "600223",
+      "stock_name": "福瑞达",
+      "analysis_summary": "新闻舆情分析师：【福瑞达(600223)投资价值分析】  **核心观点：当前舆情偏中性，情绪评分约0分，短期无明显催化剂，需关注基本面变化与行业政策动向。**  ---  ##...\n行业轮动分析师：**行业周期判断：**   医美行业处于**政策调整期**，整体仍处于**复苏后期向繁荣过渡阶段**，但监管趋严对行业短期情绪形成压制。当前行业增速放缓，部分细...\n宏观政策分析师：**宏观分析：福瑞达(600223)投资价值评估**  **1. 货币政策对该行业的影响**   当前中国央行维持宽松基调，MLF利率与LPR保持稳定，流动性环...\n技术分析专家：**福瑞达(600223)技术面深度分析**  **一、K线形态与趋势**   当前K线呈现**横盘震荡**态势，短期均线（MA5、MA10）处于粘合状态，缺乏...",
+      "technical_score": null,
+      "fundamental_score": null,
+      "sentiment_score": null,
+      "risk_level": "未评估",
+      "investment_advice": ""
+    },
+    "trigger_condition": {
+      "price_change_threshold": 5.0,
+      "volume_change_threshold": 50.0,
+      "check_news": true,
+      "check_interval_hours": 24
+    },
+    "status": "active",
+    "created_at": "2025-12-17T17:34:08.808922",
+    "last_check_at": null,
+    "check_count": 0,
+    "trigger_count": 0,
+    "decisions": [],
+    "duration_days": 30,
+    "end_date": "2026-01-16T17:34:08.808922"
+  }
+}

@@ -1,4 +1,4 @@
-# 🚀 AlphaCouncil 一体化部署（最简单）
+# 🚀 InvestMindPro 一体化部署（最简单）
 
 ## 特点
 
@@ -10,7 +10,7 @@
 
 ✅ **一条命令启动**
 ```bash
-docker run -d -p 80:80 --env-file .env alphacouncil:latest
+docker run -d -p 80:80 --env-file .env InvestMindPro:latest
 ```
 
 ✅ **只需要一个端口（80）**
@@ -25,7 +25,7 @@ docker-build-all-in-one.bat
 ```
 
 等待完成后生成：
-- `alphacouncil-all-in-one.tar` (~1-1.5GB)
+- `InvestMindPro-all-in-one.tar` (~1-1.5GB)
 
 ---
 
@@ -34,8 +34,8 @@ docker-build-all-in-one.bat
 ### 1. 上传文件到 NAS
 
 ```
-/volume1/docker/alphacouncil/
-├── alphacouncil-all-in-one.tar
+/volume1/docker/InvestMindPro/
+├── InvestMindPro-all-in-one.tar
 ├── .env
 └── data/ (可选，用于持久化)
 ```
@@ -44,13 +44,13 @@ docker-build-all-in-one.bat
 
 ```bash
 ssh admin@your-nas-ip
-cd /volume1/docker/alphacouncil
+cd /volume1/docker/InvestMindPro
 ```
 
 ### 3. 加载镜像
 
 ```bash
-docker load -i alphacouncil-all-in-one.tar
+docker load -i InvestMindPro-all-in-one.tar
 ```
 
 ### 4. 配置环境变量
@@ -72,18 +72,18 @@ JUHE_API_KEY=your_key
 
 ```bash
 docker run -d \
-  --name alphacouncil \
+  --name InvestMindPro \
   -p 8808:80 \
   -v $(pwd)/data:/app/data \
   --env-file .env \
   --restart unless-stopped \
-  alphacouncil:latest
+  InvestMindPro:latest
 ```
 
 ### 6. 查看日志
 
 ```bash
-docker logs -f alphacouncil
+docker logs -f InvestMindPro
 ```
 
 ### 7. 访问
@@ -96,28 +96,28 @@ http://your-nas-ip
 
 ```bash
 # 启动
-docker start alphacouncil
+docker start InvestMindPro
 
 # 停止
-docker stop alphacouncil
+docker stop InvestMindPro
 
 # 重启
-docker restart alphacouncil
+docker restart InvestMindPro
 
 # 查看日志
-docker logs -f alphacouncil
+docker logs -f InvestMindPro
 
 # 查看状态
-docker ps | grep alphacouncil
+docker ps | grep InvestMindPro
 
 # 进入容器
-docker exec -it alphacouncil bash
+docker exec -it InvestMindPro bash
 
 # 删除容器
-docker rm -f alphacouncil
+docker rm -f InvestMindPro
 
 # 删除镜像
-docker rmi alphacouncil:latest
+docker rmi InvestMindPro:latest
 ```
 
 ---
@@ -126,23 +126,23 @@ docker rmi alphacouncil:latest
 
 ```bash
 # 1. 停止并删除旧容器
-docker stop alphacouncil
-docker rm alphacouncil
+docker stop InvestMindPro
+docker rm InvestMindPro
 
 # 2. 删除旧镜像
-docker rmi alphacouncil:latest
+docker rmi InvestMindPro:latest
 
 # 3. 加载新镜像
-docker load -i alphacouncil-all-in-one-new.tar
+docker load -i InvestMindPro-all-in-one-new.tar
 
 # 4. 启动新容器
 docker run -d \
-  --name alphacouncil \
+  --name InvestMindPro \
   -p 80:80 \
   -v $(pwd)/data:/app/data \
   --env-file .env \
   --restart unless-stopped \
-  alphacouncil:latest
+  InvestMindPro:latest
 ```
 
 ---
@@ -151,10 +151,10 @@ docker run -d \
 
 ```bash
 # 备份数据库
-docker exec alphacouncil cp /app/data/alphacouncil.db /app/data/backup.db
+docker exec InvestMindPro cp /app/data/InvestMindPro.db /app/data/backup.db
 
 # 或直接复制
-cp data/alphacouncil.db data/backup_$(date +%Y%m%d).db
+cp data/InvestMindPro.db data/backup_$(date +%Y%m%d).db
 ```
 
 ---
@@ -165,7 +165,7 @@ cp data/alphacouncil.db data/backup_$(date +%Y%m%d).db
 
 ```bash
 # 查看详细日志
-docker logs alphacouncil
+docker logs InvestMindPro
 
 # 检查端口占用
 netstat -tuln | grep 80
@@ -175,7 +175,7 @@ netstat -tuln | grep 80
 
 ```bash
 # 进入容器检查
-docker exec -it alphacouncil bash
+docker exec -it InvestMindPro bash
 
 # 检查后端进程
 ps aux | grep python
@@ -191,10 +191,10 @@ curl http://localhost:8000/health
 
 ```bash
 # 检查 Nginx 配置
-docker exec alphacouncil nginx -t
+docker exec InvestMindPro nginx -t
 
 # 重启 Nginx
-docker exec alphacouncil nginx -s reload
+docker exec InvestMindPro nginx -s reload
 ```
 
 ---
@@ -246,7 +246,7 @@ docker exec alphacouncil nginx -s reload
 
 现在只需要：
 1. 运行 `docker-build-all-in-one.bat`
-2. 上传 `alphacouncil-all-in-one.tar` 到 NAS
+2. 上传 `InvestMindPro-all-in-one.tar` 到 NAS
 3. 一条命令启动
 
 就这么简单！

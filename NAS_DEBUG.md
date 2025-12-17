@@ -10,7 +10,7 @@
 
 ```bash
 # 进入容器
-docker exec -it alphacouncil bash
+docker exec -it InvestMindPro bash
 
 # 查看 Nginx 错误日志
 cat /var/log/nginx/error.log
@@ -42,7 +42,7 @@ ls -la /usr/share/nginx/html/
 
 ```bash
 # 查看配置
-cat /etc/nginx/sites-available/alphacouncil
+cat /etc/nginx/sites-available/InvestMindPro
 
 # 检查软链接
 ls -la /etc/nginx/sites-enabled/
@@ -101,10 +101,10 @@ chown -R nginx:nginx /app/frontend/dist/
 ### 方案 A: 重新配置 Nginx
 
 ```bash
-docker exec -it alphacouncil bash
+docker exec -it InvestMindPro bash
 
 # 创建简单的 Nginx 配置
-cat > /etc/nginx/sites-available/alphacouncil << 'EOF'
+cat > /etc/nginx/sites-available/InvestMindPro << 'EOF'
 server {
     listen 80;
     server_name localhost;
@@ -133,10 +133,10 @@ exit
 ### 方案 B: 使用默认配置
 
 ```bash
-docker exec -it alphacouncil bash
+docker exec -it InvestMindPro bash
 
 # 使用默认配置
-rm /etc/nginx/sites-enabled/alphacouncil
+rm /etc/nginx/sites-enabled/InvestMindPro
 cat > /etc/nginx/conf.d/default.conf << 'EOF'
 server {
     listen 80;
@@ -163,7 +163,7 @@ exit
 
 ```bash
 # 查看日志
-docker logs -f alphacouncil
+docker logs -f InvestMindPro
 
 # 访问
 curl http://your-nas-ip:8808

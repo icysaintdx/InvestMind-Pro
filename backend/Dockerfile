@@ -1,4 +1,4 @@
-# AlphaCouncil Backend Dockerfile
+# InvestMindPro Backend Dockerfile
 FROM python:3.11-slim
 
 # 设置工作目录

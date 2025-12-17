@@ -6,7 +6,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: alphacouncil-backend
+    container_name: InvestMindPro-backend
     restart: unless-stopped
     ports:
       - "8000:8000"
@@ -20,14 +20,14 @@ services:
       - SILICONFLOW_API_KEY=${SILICONFLOW_API_KEY}
       - JUHE_API_KEY=${JUHE_API_KEY}
       # 数据库配置
-      - DATABASE_URL=sqlite:///./data/alphacouncil.db
+      - DATABASE_URL=sqlite:///./data/InvestMindPro.db
     volumes:
       # 持久化数据库
       - ./data:/app/data
       # 持久化配置文件
       - ./backend/agent_configs.json:/app/agent_configs.json
     networks:
-      - alphacouncil-network
+      - InvestMindPro-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
       interval: 30s
@@ -40,14 +40,14 @@ services:
     build:
       context: ./alpha-council-vue
       dockerfile: Dockerfile
-    container_name: alphacouncil-frontend
+    container_name: InvestMindPro-frontend
     restart: unless-stopped
     ports:
       - "80:80"
     depends_on:
       - backend
     networks:
-      - alphacouncil-network
+      - InvestMindPro-network
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
       interval: 30s
@@ -56,7 +56,7 @@ services:
       start_period: 5s
 
 networks:
-  alphacouncil-network:
+  InvestMindPro-network:
     driver: bridge
 
 volumes:

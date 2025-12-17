@@ -174,7 +174,7 @@ export default {
         sessions.value = data.sessions || []
       } catch (error) {
         console.error('加载历史失败:', error)
-        alert('加载失败，请检查后端服务')
+        window.$toast && window.$toast.error('加载失败，请检查后端服务')
       } finally {
         loading.value = false
       }
@@ -198,7 +198,7 @@ export default {
         sessions.value = data.sessions || []
       } catch (error) {
         console.error('搜索失败:', error)
-        alert('搜索失败')
+        window.$toast && window.$toast.error('搜索失败')
       } finally {
         loading.value = false
       }
@@ -266,7 +266,7 @@ export default {
         showDetail.value = true
       } catch (error) {
         console.error('加载详情失败:', error)
-        alert('加载详情失败')
+        window.$toast && window.$toast.error('加载详情失败')
       }
     }
     
@@ -280,7 +280,7 @@ export default {
     // 重新分析
     const reanalyze = (session) => {
       // 由于没有 router，直接关闭弹窗并提示用户
-      alert(`请在主页面输入股票代码 ${session.stock_code} 进行分析`)
+      window.$toast && window.$toast.info(`请在主页面输入股票代码 ${session.stock_code} 进行分析`, 3000)
       // 可以通过 emit 事件通知父组件
     }
     

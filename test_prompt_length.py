@@ -6,7 +6,7 @@
 # 模拟第三阶段的提示词构建
 def calculate_prompt_length():
     # 系统提示词
-    system_prompt = """你是一个专业的激进风控师，隶属于AlphaCouncil顶级投研团队。你的目标是提供深度、犀利且独到的投资见解。
+    system_prompt = """你是一个专业的激进风控师，隶属于InvestMindPro顶级投研团队。你的目标是提供深度、犀利且独到的投资见解。
 
 【风格要求】
 1. 直接切入主题，严禁废话。

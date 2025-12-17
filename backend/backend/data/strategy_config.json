@@ -1,0 +1,13 @@
+{
+  "active": [
+    "turtle_trading",
+    "buffett_value",
+    "ma_cross"
+  ],
+  "weights": {
+    "buffett_value": 0.4,
+    "turtle_trading": 0.3,
+    "ma_cross": 0.3
+  },
+  "updated_at": "2025-12-17T01:20:23.282909"
+}

@@ -1,13 +1,73 @@
 {
   "portfolio": {
     "initial_capital": 1000000,
-    "cash_balance": 1000000,
-    "total_value": 1000000,
-    "positions_value": 0,
+    "cash_balance": 988020.0,
+    "total_value": 999990.0,
+    "positions_value": 11970.0,
     "total_profit_loss": 0,
-    "total_profit_loss_rate": 0
+    "total_profit_loss_rate": -0.001
   },
-  "positions": {},
-  "trade_history": [],
-  "last_update": "2025-12-03T20:20:53.415068"
+  "positions": {
+    "600085": {
+      "stock_code": "600085",
+      "stock_name": "同仁堂",
+      "quantity": 300,
+      "avg_cost": 32.57,
+      "open_date": "2025-12-17T16:14:48.608597",
+      "last_update": "2025-12-17T16:14:48.608597",
+      "market": "CN",
+      "trades": [
+        {
+          "date": "2025-12-17T16:14:48.608597",
+          "quantity": 300,
+          "price": 32.57,
+          "market": "CN"
+        }
+      ]
+    },
+    "600223": {
+      "stock_code": "600223",
+      "stock_name": "福瑞达",
+      "quantity": 300,
+      "avg_cost": 7.33,
+      "open_date": "2025-12-17T17:30:33.561651",
+      "last_update": "2025-12-17T17:30:33.561651",
+      "market": "CN",
+      "trades": [
+        {
+          "date": "2025-12-17T17:30:33.561651",
+          "quantity": 300,
+          "price": 7.33,
+          "market": "CN"
+        }
+      ]
+    }
+  },
+  "trade_history": [
+    {
+      "trade_id": "T20251217161448",
+      "timestamp": "2025-12-17T16:14:48.608597",
+      "stock_code": "600085",
+      "stock_name": "同仁堂",
+      "action": "BUY",
+      "quantity": 300,
+      "price": 32.57,
+      "amount": 9771.0,
+      "commission": 5.0,
+      "status": "EXECUTED"
+    },
+    {
+      "trade_id": "T20251217173033",
+      "timestamp": "2025-12-17T17:30:33.561651",
+      "stock_code": "600223",
+      "stock_name": "福瑞达",
+      "action": "BUY",
+      "quantity": 300,
+      "price": 7.33,
+      "amount": 2199.0,
+      "commission": 5.0,
+      "status": "EXECUTED"
+    }
+  ],
+  "last_update": "2025-12-17T17:31:02.934650"
 }

@@ -1,11 +1,20 @@
 <template>
   <div class="stock-search-input">
     <input
-      v-model="searchQuery"
+      ref="inputRef"
+      :value="searchQuery"
       @input="handleInput"
-      @focus="showDropdown = true"
+      @keyup="handleKeyup"
+      @change="handleChange"
+      @focus="handleFocus"
       @blur="handleBlur"
-      type="text"
+      @touchstart="handleTouch"
+      type="search"
+      inputmode="search"
+      autocomplete="off"
+      autocorrect="off"
+      autocapitalize="off"
+      spellcheck="false"
       :placeholder="placeholder"
       class="search-input"
     />
@@ -32,7 +41,7 @@
 </template>
 
 <script>
-import { ref, watch } from 'vue'
+import { ref, watch, onUnmounted } from 'vue'
 import axios from 'axios'
 
 export default {
@@ -49,28 +58,85 @@ export default {
   },
   emits: ['update:modelValue', 'select'],
   setup(props, { emit }) {
+    const inputRef = ref(null)
     const searchQuery = ref(props.modelValue)
     const searchResults = ref([])
     const showDropdown = ref(false)
     const loading = ref(false)
     let searchTimeout = null
-
-    const handleInput = () => {
-      emit('update:modelValue', searchQuery.value)
+    let pollingInterval = null
+    let lastValue = ''
+    
+    // 搜索触发函数
+    const triggerSearch = (value) => {
+      searchQuery.value = value
+      emit('update:modelValue', value)
       
-      // 防抖搜索
+      // 清除旧的防抖定时器
       if (searchTimeout) {
         clearTimeout(searchTimeout)
       }
       
-      if (searchQuery.value.length < 1) {
+      if (!value || value.length < 1) {
         searchResults.value = []
+        showDropdown.value = false
         return
       }
       
+      // 移动端使用更短的防抖
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+      const delay = isMobile ? 100 : 300
+      
       searchTimeout = setTimeout(() => {
         searchStock()
-      }, 300)
+      }, delay)
+    }
+
+    const handleInput = (event) => {
+      triggerSearch(event.target.value)
+    }
+    
+    const handleKeyup = (event) => {
+      triggerSearch(event.target.value)
+    }
+    
+    const handleChange = (event) => {
+      triggerSearch(event.target.value)
+    }
+    
+    const handleFocus = () => {
+      showDropdown.value = true
+      startPolling()
+      
+      if (searchResults.value.length > 0) {
+        showDropdown.value = true
+      }
+    }
+    
+    // iOS 修复：轮询检查输入框值变化
+    const startPolling = () => {
+      if (pollingInterval) return
+      
+      pollingInterval = setInterval(() => {
+        if (!inputRef.value) return
+        
+        const currentValue = inputRef.value.value
+        if (currentValue !== lastValue) {
+          lastValue = currentValue
+          triggerSearch(currentValue)
+        }
+      }, 100)
+    }
+    
+    const stopPolling = () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval)
+        pollingInterval = null
+      }
+    }
+    
+    const handleTouch = () => {
+      startPolling()
     }
 
     const searchStock = async () => {
@@ -82,7 +148,27 @@ export default {
       loading.value = true
       
       try {
-        const response = await axios.get('http://localhost:8000/api/akshare/stock/search', {
+        // 智能 URL 构建：适配多种部署场景
+        let apiUrl
+        
+        if (process.env.NODE_ENV === 'development') {
+          // 开发环境：使用当前主机名，支持局域网访问
+          const hostname = window.location.hostname
+          apiUrl = `http://${hostname}:8000/api/akshare/stock/search`
+        } else if (window.location.port === '8080' || window.location.port === '80' || window.location.port === '443') {
+          // 生产环境
+          const protocol = window.location.protocol
+          const hostname = window.location.hostname
+          const port = window.location.port === '8080' ? ':8000' : ''
+          apiUrl = `${protocol}//${hostname}${port}/api/akshare/stock/search`
+        } else {
+          // 默认
+          const protocol = window.location.protocol
+          const hostname = window.location.hostname
+          apiUrl = `${protocol}//${hostname}:8000/api/akshare/stock/search`
+        }
+        
+        const response = await axios.get(apiUrl, {
           params: {
             keyword: searchQuery.value,
             limit: 10
@@ -113,19 +199,30 @@ export default {
       // 延迟关闭，以便点击事件能触发
       setTimeout(() => {
         showDropdown.value = false
+        stopPolling()  // 停止轮询
       }, 200)
     }
 
     watch(() => props.modelValue, (newVal) => {
       searchQuery.value = newVal
     })
+    
+    // 清理轮询
+    onUnmounted(() => {
+      stopPolling()
+    })
 
     return {
+      inputRef,
       searchQuery,
       searchResults,
       showDropdown,
       loading,
       handleInput,
+      handleKeyup,
+      handleChange,
+      handleFocus,
+      handleTouch,
       selectStock,
       handleBlur
     }

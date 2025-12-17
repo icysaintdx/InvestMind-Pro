@@ -62,7 +62,7 @@ async def siliconflow_api(request: SiliconFlowRequest):
 ```
 
 ## 修改位置
-- **文件**：`d:\AlphaCouncil\backend\server.py`
+- **文件**：`d:\InvestMindPro\backend\server.py`
 - **函数**：`siliconflow_api`
 - **行数**：约416-554行
 

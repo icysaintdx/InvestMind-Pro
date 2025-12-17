@@ -80,13 +80,13 @@
     },
     {
       "id": "bull_researcher",
-      "modelName": "Qwen/Qwen2.5-7B-Instruct",
+      "modelName": "Qwen/Qwen3-8B",
       "modelProvider": "AUTO",
       "temperature": 0.3
     },
     {
       "id": "bear_researcher",
-      "modelName": "Qwen/Qwen2.5-7B-Instruct",
+      "modelName": "Qwen/Qwen3-8B",
       "modelProvider": "AUTO",
       "temperature": 0.3
     },

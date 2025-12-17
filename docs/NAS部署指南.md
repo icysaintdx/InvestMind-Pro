@@ -10,25 +10,25 @@ docker-build-and-save.bat
 
 # 或手动执行
 cd backend
-docker build -t alphacouncil-backend:latest .
+docker build -t InvestMindPro-backend:latest .
 cd ..
 
 cd alpha-council-vue
-docker build -t alphacouncil-frontend:latest .
+docker build -t InvestMindPro-frontend:latest .
 cd ..
 
 # 保存为 tar 文件
-docker save alphacouncil-backend:latest -o alphacouncil-backend.tar
-docker save alphacouncil-frontend:latest -o alphacouncil-frontend.tar
+docker save InvestMindPro-backend:latest -o InvestMindPro-backend.tar
+docker save InvestMindPro-frontend:latest -o InvestMindPro-frontend.tar
 ```
 
 ### 2. 文件清单
 
 需要上传到 NAS 的文件：
 ```
-alphacouncil/
-├── alphacouncil-backend.tar       # 后端镜像
-├── alphacouncil-frontend.tar      # 前端镜像
+InvestMindPro/
+├── InvestMindPro-backend.tar       # 后端镜像
+├── InvestMindPro-frontend.tar      # 前端镜像
 ├── docker-compose-nas.yml         # NAS 专用配置
 ├── .env                           # 环境变量（包含 API Keys）
 ├── data/                          # 数据目录（可选）
@@ -42,9 +42,9 @@ alphacouncil/
 
 ### 步骤 1: 上传文件到 NAS
 
-将以下文件上传到 NAS 的某个目录（如 `/volume1/docker/alphacouncil/`）：
-- `alphacouncil-backend.tar`
-- `alphacouncil-frontend.tar`
+将以下文件上传到 NAS 的某个目录（如 `/volume1/docker/InvestMindPro/`）：
+- `InvestMindPro-backend.tar`
+- `InvestMindPro-frontend.tar`
 - `docker-compose-nas.yml`
 - `.env`
 - `backend/agent_configs.json`
@@ -58,22 +58,22 @@ ssh admin@your-nas-ip
 ### 步骤 3: 加载 Docker 镜像
 
 ```bash
-cd /volume1/docker/alphacouncil
+cd /volume1/docker/InvestMindPro
 
 # 加载后端镜像
-docker load -i alphacouncil-backend.tar
+docker load -i InvestMindPro-backend.tar
 
 # 加载前端镜像
-docker load -i alphacouncil-frontend.tar
+docker load -i InvestMindPro-frontend.tar
 
 # 验证镜像已加载
-docker images | grep alphacouncil
+docker images | grep InvestMindPro
 ```
 
 应该看到：
 ```
-alphacouncil-backend   latest   xxx   xxx   xxx MB
-alphacouncil-frontend  latest   xxx   xxx   xxx MB
+InvestMindPro-backend   latest   xxx   xxx   xxx MB
+InvestMindPro-frontend  latest   xxx   xxx   xxx MB
 ```
 
 ### 步骤 4: 创建数据目录
@@ -125,7 +125,7 @@ docker-compose -f docker-compose-nas.yml ps
 ### 服务管理
 
 ```bash
-cd /volume1/docker/alphacouncil
+cd /volume1/docker/InvestMindPro
 
 # 启动
 docker-compose -f docker-compose-nas.yml up -d
@@ -153,8 +153,8 @@ docker-compose -f docker-compose-nas.yml down
 docker images
 
 # 删除旧镜像
-docker rmi alphacouncil-backend:latest
-docker rmi alphacouncil-frontend:latest
+docker rmi InvestMindPro-backend:latest
+docker rmi InvestMindPro-frontend:latest
 
 # 清理未使用的镜像
 docker image prune -a
@@ -164,10 +164,10 @@ docker image prune -a
 
 ```bash
 # 备份数据库
-cp data/alphacouncil.db data/backup_$(date +%Y%m%d).db
+cp data/InvestMindPro.db data/backup_$(date +%Y%m%d).db
 
 # 或打包整个数据目录
-tar -czf alphacouncil_backup_$(date +%Y%m%d).tar.gz data/
+tar -czf InvestMindPro_backup_$(date +%Y%m%d).tar.gz data/
 ```
 
 ---
@@ -178,7 +178,7 @@ tar -czf alphacouncil_backup_$(date +%Y%m%d).tar.gz data/
 
 1. 打开 **Container Manager**
 2. 点击 **映像** → **新增** → **从文件添加**
-3. 上传 `alphacouncil-backend.tar` 和 `alphacouncil-frontend.tar`
+3. 上传 `InvestMindPro-backend.tar` 和 `InvestMindPro-frontend.tar`
 4. 等待导入完成
 
 ### 使用 Docker Compose
@@ -205,10 +205,10 @@ ports:
 
 ```bash
 # 检查 tar 文件是否完整
-ls -lh alphacouncil-*.tar
+ls -lh InvestMindPro-*.tar
 
 # 重新加载
-docker load -i alphacouncil-backend.tar
+docker load -i InvestMindPro-backend.tar
 ```
 
 ### 2. 容器启动失败
@@ -257,10 +257,10 @@ chmod -R 777 data/
 ```bash
 # 在 NAS 上执行
 docker-compose -f docker-compose-nas.yml down
-docker rmi alphacouncil-backend:latest
-docker rmi alphacouncil-frontend:latest
-docker load -i alphacouncil-backend-new.tar
-docker load -i alphacouncil-frontend-new.tar
+docker rmi InvestMindPro-backend:latest
+docker rmi InvestMindPro-frontend:latest
+docker load -i InvestMindPro-backend-new.tar
+docker load -i InvestMindPro-frontend-new.tar
 docker-compose -f docker-compose-nas.yml up -d
 ```
 
@@ -268,8 +268,8 @@ docker-compose -f docker-compose-nas.yml up -d
 
 构建时使用版本标签：
 ```bash
-docker build -t alphacouncil-backend:v2.0 .
-docker save alphacouncil-backend:v2.0 -o alphacouncil-backend-v2.0.tar
+docker build -t InvestMindPro-backend:v2.0 .
+docker save InvestMindPro-backend:v2.0 -o InvestMindPro-backend-v2.0.tar
 ```
 
 ---
@@ -309,7 +309,7 @@ services:
 将数据目录放在 SSD 缓存卷上：
 ```yaml
 volumes:
-  - /volume1/@docker/alphacouncil/data:/app/data
+  - /volume1/@docker/InvestMindPro/data:/app/data
 ```
 
 ---
@@ -346,7 +346,7 @@ server {
 设置定时任务自动备份数据库：
 ```bash
 # 在 NAS 控制面板中创建计划任务
-0 2 * * * cd /volume1/docker/alphacouncil && tar -czf backup_$(date +\%Y\%m\%d).tar.gz data/
+0 2 * * * cd /volume1/docker/InvestMindPro && tar -czf backup_$(date +\%Y\%m\%d).tar.gz data/
 ```
 
 ---
@@ -360,26 +360,26 @@ server {
 # 配置
 NAS_IP="192.168.1.100"
 NAS_USER="admin"
-NAS_PATH="/volume1/docker/alphacouncil"
+NAS_PATH="/volume1/docker/InvestMindPro"
 
 # 上传文件
 echo "Uploading files to NAS..."
-scp alphacouncil-backend.tar ${NAS_USER}@${NAS_IP}:${NAS_PATH}/
-scp alphacouncil-frontend.tar ${NAS_USER}@${NAS_IP}:${NAS_PATH}/
+scp InvestMindPro-backend.tar ${NAS_USER}@${NAS_IP}:${NAS_PATH}/
+scp InvestMindPro-frontend.tar ${NAS_USER}@${NAS_IP}:${NAS_PATH}/
 scp docker-compose-nas.yml ${NAS_USER}@${NAS_IP}:${NAS_PATH}/
 scp .env ${NAS_USER}@${NAS_IP}:${NAS_PATH}/
 
 # SSH 到 NAS 并部署
 echo "Deploying on NAS..."
 ssh ${NAS_USER}@${NAS_IP} << 'EOF'
-cd /volume1/docker/alphacouncil
+cd /volume1/docker/InvestMindPro
 
 # 停止旧容器
 docker-compose -f docker-compose-nas.yml down
 
 # 加载新镜像
-docker load -i alphacouncil-backend.tar
-docker load -i alphacouncil-frontend.tar
+docker load -i InvestMindPro-backend.tar
+docker load -i InvestMindPro-frontend.tar
 
 # 启动新容器
 docker-compose -f docker-compose-nas.yml up -d
@@ -414,6 +414,6 @@ echo "Access: http://${NAS_IP}"
 
 ## 🎉 完成！
 
-现在你的 AlphaCouncil 已经在 NAS 上运行了！
+现在你的 InvestMindPro 已经在 NAS 上运行了！
 
 访问 http://your-nas-ip 开始使用！

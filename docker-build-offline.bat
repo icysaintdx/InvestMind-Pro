@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 > nul
 echo ============================================================
-echo AlphaCouncil Docker Build (Offline/Slow Network)
+echo InvestMindPro Docker Build (Offline/Slow Network)
 echo ============================================================
 echo.
 
@@ -20,11 +20,11 @@ echo Step 1: Build Backend Image
 echo ============================================================
 echo.
 cd backend
-echo Building alphacouncil-backend:latest...
+echo Building InvestMindPro-backend:latest...
 echo This may take a while on first run...
 echo.
 
-docker build --progress=plain -t alphacouncil-backend:latest .
+docker build --progress=plain -t InvestMindPro-backend:latest .
 
 if errorlevel 1 (
     echo.
@@ -50,11 +50,11 @@ echo Step 2: Build Frontend Image
 echo ============================================================
 echo.
 cd alpha-council-vue
-echo Building alphacouncil-frontend:latest...
+echo Building InvestMindPro-frontend:latest...
 echo This includes Node.js build process...
 echo.
 
-docker build --progress=plain -t alphacouncil-frontend:latest .
+docker build --progress=plain -t InvestMindPro-frontend:latest .
 
 if errorlevel 1 (
     echo.
@@ -81,7 +81,7 @@ echo ============================================================
 echo.
 
 echo Saving backend image...
-docker save alphacouncil-backend:latest -o alphacouncil-backend.tar
+docker save InvestMindPro-backend:latest -o InvestMindPro-backend.tar
 if errorlevel 1 (
     echo ERROR: Failed to save backend image!
     pause
@@ -89,7 +89,7 @@ if errorlevel 1 (
 )
 
 echo Saving frontend image...
-docker save alphacouncil-frontend:latest -o alphacouncil-frontend.tar
+docker save InvestMindPro-frontend:latest -o InvestMindPro-frontend.tar
 if errorlevel 1 (
     echo ERROR: Failed to save frontend image!
     pause
@@ -103,15 +103,15 @@ echo ============================================================
 echo.
 
 echo Files created:
-for %%F in (alphacouncil-*.tar) do (
+for %%F in (InvestMindPro-*.tar) do (
     echo   %%F - %%~zF bytes
 )
 
 echo.
 echo Next steps:
 echo 1. Upload TAR files to your NAS
-echo 2. On NAS, run: docker load -i alphacouncil-backend.tar
-echo 3. On NAS, run: docker load -i alphacouncil-frontend.tar
+echo 2. On NAS, run: docker load -i InvestMindPro-backend.tar
+echo 3. On NAS, run: docker load -i InvestMindPro-frontend.tar
 echo 4. Use docker-compose-nas.yml to start services
 echo.
 echo See docs/NAS部署指南.md for detailed instructions

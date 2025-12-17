@@ -19,7 +19,7 @@ async def test_api():
         results = []
         
         print("=" * 60)
-        print("AlphaCouncil API 端点测试")
+        print("InvestMindPro API 端点测试")
         print("=" * 60)
         print()
         
@@ -293,7 +293,7 @@ async def test_api():
 
 async def main():
     """主函数"""
-    print("🚀 开始测试AlphaCouncil API...")
+    print("🚀 开始测试InvestMindPro API...")
     print("请确保后端服务已启动 (python backend/server.py)")
     print()
     

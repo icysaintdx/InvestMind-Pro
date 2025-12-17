@@ -109,7 +109,7 @@ AKShare(优化) → 新浪财经 → 聚合数据 → Tushare → BaoStock → �
 
 ### 重启后端使用新适配器
 ```bash
-cd d:\AlphaCouncil
+cd d:\InvestMindPro
 python backend\server.py
 ```
 

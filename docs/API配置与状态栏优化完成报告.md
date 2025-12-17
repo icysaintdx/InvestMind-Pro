@@ -273,28 +273,28 @@ beforeUnmount() {
 ## 🔧 相关文件
 
 ### 前端文件
-1. `d:\AlphaCouncil\alpha-council-vue\src\App.vue`
+1. `d:\InvestMindPro\alpha-council-vue\src\App.vue`
    - 添加 apiKeys 状态管理
    - 添加 dataChannelStatus 状态
    - 扩展顶部状态栏
    - 实现保存和更新功能
 
-2. `d:\AlphaCouncil\alpha-council-vue\src\components\ApiConfig.vue`
+2. `d:\InvestMindPro\alpha-council-vue\src\components\ApiConfig.vue`
    - 添加自动加载配置
    - 实现真实 API 测试
    - 添加数据渠道配置
 
-3. `d:\AlphaCouncil\alpha-council-vue\src\components\AgentCard.vue`
+3. `d:\InvestMindPro\alpha-council-vue\src\components\AgentCard.vue`
    - 优化 Tooltip 为点击切换
    - 添加点击外部关闭功能
    - 改进样式和交互
 
-4. `d:\AlphaCouncil\alpha-council-vue\src\views\AnalysisView.vue`
+4. `d:\InvestMindPro\alpha-council-vue\src\views\AnalysisView.vue`
    - 注入新的 provide 值
    - 实现配置保存处理
 
 ### 后端文件
-1. `d:\AlphaCouncil\backend\server.py`
+1. `d:\InvestMindPro\backend\server.py`
    - 添加 POST /api/config 接口
    - 添加 POST /api/test/{provider} 接口
    - 实现真实 API 测试逻辑

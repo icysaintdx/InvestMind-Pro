@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 > nul
 echo ============================================================
-echo Stop AlphaCouncil Docker Services
+echo Stop InvestMindPro Docker Services
 echo ============================================================
 echo.
 

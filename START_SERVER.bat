@@ -1,12 +1,12 @@
 @echo off
 echo ============================================
-echo AlphaCouncil Server - FINAL START
+echo InvestMindPro Server - FINAL START
 echo ============================================
 echo.
 echo Checking and fixing dependencies...
 echo.
 
-cd /d D:\AlphaCouncil
+cd /d D:\InvestMindPro
 
 echo 1. Fixing NumPy/ChromaDB compatibility...
 python fix_chromadb_auto.py
@@ -21,7 +21,7 @@ python -c "from backend.agents.utils.agent_utils import Toolkit; print('Import t
 
 echo.
 echo ============================================
-echo Starting AlphaCouncil Server
+echo Starting InvestMindPro Server
 echo ============================================
 echo.
 echo Note: If you see ChromaDB warnings, memory 

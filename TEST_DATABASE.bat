@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 > nul
 echo ============================================================
-echo AlphaCouncil Database Integration Test
+echo InvestMindPro Database Integration Test
 echo ============================================================
 echo.
 

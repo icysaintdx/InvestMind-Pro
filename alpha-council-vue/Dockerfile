@@ -1,4 +1,4 @@
-# AlphaCouncil Frontend Dockerfile
+# InvestMindPro Frontend Dockerfile
 # 多阶段构建：构建阶段 + 运行阶段
 
 # ==================== 构建阶段 ====================

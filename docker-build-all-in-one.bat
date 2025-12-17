@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 > nul
 echo ============================================================
-echo AlphaCouncil All-in-One Docker Build
+echo InvestMindPro All-in-One Docker Build
 echo ============================================================
 echo.
 
@@ -19,7 +19,7 @@ echo Building all-in-one image...
 echo This may take 5-15 minutes...
 echo.
 
-docker build -f Dockerfile.all-in-one -t alphacouncil:latest .
+docker build -f Dockerfile.all-in-one -t InvestMindPro:latest .
 
 if errorlevel 1 (
     echo.
@@ -37,7 +37,7 @@ echo ============================================================
 echo.
 
 echo Saving to TAR file...
-docker save alphacouncil:latest -o alphacouncil-all-in-one.tar
+docker save InvestMindPro:latest -o InvestMindPro-all-in-one.tar
 
 if errorlevel 1 (
     echo ERROR: Failed to save image!
@@ -51,7 +51,7 @@ echo Build Complete!
 echo ============================================================
 echo.
 
-for %%F in (alphacouncil-all-in-one.tar) do (
+for %%F in (InvestMindPro-all-in-one.tar) do (
     echo File: %%F
     echo Size: %%~zF bytes (~%%~zF / 1024 / 1024 MB)
 )
@@ -62,16 +62,16 @@ echo Quick Start
 echo ============================================================
 echo.
 echo Local Test:
-echo   docker run -p 80:80 --env-file .env alphacouncil:latest
+echo   docker run -p 80:80 --env-file .env InvestMindPro:latest
 echo.
 echo NAS Deployment:
-echo   1. Upload alphacouncil-all-in-one.tar to NAS
-echo   2. docker load -i alphacouncil-all-in-one.tar
+echo   1. Upload InvestMindPro-all-in-one.tar to NAS
+echo   2. docker load -i InvestMindPro-all-in-one.tar
 echo   3. docker run -d -p 80:80 \
 echo        -v ./data:/app/data \
 echo        --env-file .env \
-echo        --name alphacouncil \
-echo        alphacouncil:latest
+echo        --name InvestMindPro \
+echo        InvestMindPro:latest
 echo.
 echo Access: http://your-nas-ip
 echo.

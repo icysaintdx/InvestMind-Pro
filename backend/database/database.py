@@ -13,7 +13,7 @@ from backend.database.models import Base
 # 数据库配置
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "sqlite:///./alphacouncil.db"  # 默认使用 SQLite
+    "sqlite:///./InvestMindPro.db"  # 默认使用 SQLite
 )
 
 # 创建引擎

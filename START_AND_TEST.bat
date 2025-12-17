@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul
 echo ============================================================
-echo AlphaCouncil - Start Server and Test APIs
+echo InvestMindPro - Start Server and Test APIs
 echo ============================================================
 
 echo.
@@ -14,7 +14,7 @@ timeout /t 2 /nobreak >nul
 
 echo.
 echo [Step 2] Starting backend server...
-start "AlphaCouncil Backend" python backend/server.py
+start "InvestMindPro Backend" python backend/server.py
 echo Waiting for server to start (10 seconds)...
 timeout /t 10 /nobreak
 

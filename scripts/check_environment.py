@@ -185,7 +185,7 @@ def check_api_files():
 def main():
     """主函数"""
     print("=" * 60)
-    print("AlphaCouncil 环境检查工具")
+    print("InvestMindPro 环境检查工具")
     print("=" * 60)
     print()
     

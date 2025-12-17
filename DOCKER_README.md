@@ -1,4 +1,4 @@
-# 🐳 AlphaCouncil Docker 快速开始
+# 🐳 InvestMindPro Docker 快速开始
 
 ## 一键启动
 
@@ -90,7 +90,7 @@ docker-compose down
 ## 数据持久化
 
 数据保存在 `./data/` 目录：
-- `alphacouncil.db` - 数据库文件
+- `InvestMindPro.db` - 数据库文件
 - `logs/` - 日志文件
 
 ---
@@ -128,4 +128,4 @@ docker-compose up -d --build
 
 ## 🎉 完成！
 
-现在访问 http://localhost 开始使用 AlphaCouncil！
+现在访问 http://localhost 开始使用 InvestMindPro！

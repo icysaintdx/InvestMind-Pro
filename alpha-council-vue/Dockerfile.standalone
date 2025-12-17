@@ -1,4 +1,4 @@
-# AlphaCouncil Frontend Dockerfile (Standalone Version)
+# InvestMindPro Frontend Dockerfile (Standalone Version)
 # 用于单独运行前端容器，不依赖 docker-compose
 
 # ==================== 构建阶段 ====================

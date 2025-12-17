@@ -64,3 +64,5 @@ config/secrets.json
 
 # 可选：忽略所有tar压缩包
 *.tar
+
+

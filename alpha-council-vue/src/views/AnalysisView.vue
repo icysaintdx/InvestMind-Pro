@@ -40,6 +40,25 @@
             全流程智能研判中...
           </span>
         </button>
+        
+        <!-- 强制停止按钮 -->
+        <button 
+          v-if="isAnalyzing"
+          @click="forceStop"
+          class="force-stop-btn"
+          title="强制停止分析并清除状态"
+        >
+          ⏹️ 强制停止
+        </button>
+        
+        <!-- 降级监控按钮 -->
+        <button 
+          @click="showFallbackMonitor = true"
+          class="monitor-btn"
+          title="查看降级监控面板"
+        >
+          📊 降级监控
+        </button>
       </div>
     </div>
 
@@ -66,6 +85,8 @@
             :thoughts="agentThoughts[agent.id]"
             :dataSources="agentDataSources[agent.id]"
             :tokens="agentTokens[agent.id]"
+            :duration-seconds="agentDurations[agent.id]"
+            :fallback-level="agentFallbackLevels[agent.id] || 0"
             :show-config="configMode"
             :model-update-trigger="modelUpdateTrigger"
             :is-expanded="cardsExpanded"
@@ -93,6 +114,8 @@
             :thoughts="agentThoughts[agent.id]"
             :dataSources="agentDataSources[agent.id]"
             :tokens="agentTokens[agent.id]"
+            :duration-seconds="agentDurations[agent.id]"
+            :fallback-level="agentFallbackLevels[agent.id] || 0"
             :show-config="configMode"
             :model-update-trigger="modelUpdateTrigger"
             :is-expanded="cardsExpanded"
@@ -134,6 +157,8 @@
             :thoughts="agentThoughts[agent.id]"
             :dataSources="agentDataSources[agent.id]"
             :tokens="agentTokens[agent.id]"
+            :duration-seconds="agentDurations[agent.id]"
+            :fallback-level="agentFallbackLevels[agent.id] || 0"
             :show-config="configMode"
             :model-update-trigger="modelUpdateTrigger"
             :is-expanded="cardsExpanded"
@@ -177,6 +202,8 @@
             :thoughts="agentThoughts[agent.id]"
             :dataSources="agentDataSources[agent.id]"
             :tokens="agentTokens[agent.id]"
+            :duration-seconds="agentDurations[agent.id]"
+            :fallback-level="agentFallbackLevels[agent.id] || 0"
             :show-config="configMode"
             :model-update-trigger="modelUpdateTrigger"
             :is-expanded="cardsExpanded"
@@ -192,7 +219,7 @@
           <div class="flex items-center justify-between mb-6">
             <h2 class="text-3xl font-bold text-white flex items-center gap-3">
               <span>📑</span>
-              <span>AlphaCouncil 最终决策报告</span>
+              <span>InvestMindPro 最终决策报告</span>
             </h2>
             <ReportExporter 
               :stockCode="stockCode"
@@ -234,9 +261,77 @@
               </button>
             </div>
             
-            <!-- 专业版报告 -->
-            <div v-show="reportView === 'professional'" class="report-content bg-slate-900/50 rounded-xl p-6 max-h-[800px] overflow-y-auto border border-slate-800">
-              <div class="prose prose-invert max-w-none" v-html="finalReportHtml"></div>
+            <!-- 专业版报告 - 阶段标签切换 -->
+            <div v-show="reportView === 'professional'" class="report-content professional-report">
+              <!-- 阶段标签栏 -->
+              <div class="stage-tabs">
+                <button
+                  v-for="(stageInfo, stageKey) in reportStages"
+                  :key="stageKey"
+                  @click="activeReportStage = stageKey"
+                  :class="['stage-tab', { active: activeReportStage === stageKey }]"
+                  :disabled="!stageInfo.hasContent"
+                >
+                  <span class="stage-tab-icon">{{ stageInfo.icon }}</span>
+                  <span class="stage-tab-title">{{ stageInfo.title }}</span>
+                  <span v-if="stageInfo.agentCount > 0" class="stage-tab-count">{{ stageInfo.agentCount }}</span>
+                </button>
+              </div>
+
+              <!-- 阶段内容区 -->
+              <div class="stage-content-area">
+                <div v-for="(stageInfo, stageKey) in reportStages" :key="stageKey" v-show="activeReportStage === stageKey">
+                  <div class="stage-content-header">
+                    <span class="stage-content-icon">{{ stageInfo.icon }}</span>
+                    <h3 class="stage-content-title">{{ stageInfo.fullTitle }}</h3>
+                  </div>
+
+                  <!-- 智能体分析结果列表 -->
+                  <div class="agent-results-list">
+                    <div
+                      v-for="agent in getStageAgentsWithOutput(stageKey)"
+                      :key="agent.id"
+                      class="agent-result-card"
+                      :class="getAgentCardClass(agent)"
+                    >
+                      <div class="agent-result-header">
+                        <span class="agent-result-icon">{{ agent.icon }}</span>
+                        <span class="agent-result-title">{{ agent.title }}</span>
+                        <span v-if="agentDurations[agent.id]" class="agent-result-duration">
+                          {{ formatDuration(agentDurations[agent.id]) }}
+                        </span>
+                        <span v-if="agentTokens[agent.id]" class="agent-result-tokens">
+                          {{ agentTokens[agent.id].toLocaleString() }} tokens
+                        </span>
+                      </div>
+                      <div class="agent-result-content prose prose-invert max-w-none" v-html="parseMarkdown(agentOutputs[agent.id])"></div>
+                    </div>
+                  </div>
+
+                  <!-- 辩论摘要（仅在第二、三阶段显示） -->
+                  <div v-if="stageKey === 'stage2' && bullBearDebateConclusion" class="debate-summary">
+                    <div class="debate-summary-header">
+                      <span>🐂🐻</span>
+                      <span>多空辩论摘要</span>
+                    </div>
+                    <div class="debate-summary-content">
+                      <div class="debate-score">方向评分：<strong>{{ bullBearDebateConclusion.score || 'N/A' }} / 100</strong></div>
+                      <div class="debate-conclusion">{{ bullBearDebateConclusion.content }}</div>
+                    </div>
+                  </div>
+
+                  <div v-if="stageKey === 'stage3' && riskDebateConclusion" class="debate-summary risk">
+                    <div class="debate-summary-header">
+                      <span>⚖️</span>
+                      <span>风控辩论与仓位建议</span>
+                    </div>
+                    <div class="debate-summary-content">
+                      <div class="debate-score">风险评分：<strong>{{ riskDebateConclusion.score || 'N/A' }} / 100</strong></div>
+                      <div class="debate-conclusion">{{ riskDebateConclusion.content }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
             
             <!-- 白话解读版 -->
@@ -315,11 +410,20 @@
         </div>
       </div>
     </div>
+    
+    <!-- 降级监控面板 -->
+    <FallbackMonitor 
+      v-model:visible="showFallbackMonitor"
+      :fallback-data="{
+        agentFallbackLevels: agentFallbackLevels
+      }"
+    />
   </div>
 </template>
 
 <script>
 import { ref, computed, inject, onBeforeUnmount, onMounted } from 'vue'
+import axios from 'axios'
 import AgentCard from '@/components/AgentCard.vue'
 import DebatePanel from '@/components/DebatePanel.vue'
 import ModelManager from '@/components/ModelManager.vue'
@@ -328,11 +432,23 @@ import StyleConfig from '@/components/StyleConfig.vue'
 import ReportExporter from '@/components/ReportExporter.vue'
 import StockSearchInput from '@/components/StockSearchInput.vue'
 import GlobalLogWindow from '@/components/GlobalLogWindow.vue'
+import FallbackMonitor from '@/components/FallbackMonitorSimple.vue'
 import { marked } from 'marked'
-import { saveAnalysisState, loadAnalysisState, clearAnalysisState } from '@/utils/analysisState'
+import {
+  saveAnalysisState,
+  loadAnalysisState,
+  clearAnalysisState,
+  forceCleanAllState,
+  clearForceStopFlag,
+  isForceStoppedState,
+  saveSessionId,
+  getSessionId,
+  clearSessionId,
+  markAnalysisComplete
+} from '@/utils/analysisState'
 import { fetchWithSmartTimeout, ProgressMonitor } from '@/utils/smartTimeout'
 
-// 21个智能体完整定义
+// 22个智能体完整定义（21个可配置 + 1个特殊的interpreter嵌入在GM卡片中）
 const AGENTS = [
   // Stage 1 - Group 1: 舆情与市场
   { id: 'news_analyst', role: 'NEWS', title: '新闻舆情分析师', icon: '📰', color: 'emerald', stage: 1, group: 1 },
@@ -369,7 +485,17 @@ const AGENTS = [
 
 export default {
   name: 'AnalysisView',
-  components: { AgentCard, DebatePanel, ModelManager, ApiConfig, StyleConfig, ReportExporter, StockSearchInput, GlobalLogWindow },
+  components: { 
+    AgentCard, 
+    DebatePanel, 
+    ModelManager, 
+    ApiConfig, 
+    StyleConfig, 
+    ReportExporter, 
+    StockSearchInput, 
+    GlobalLogWindow, 
+    FallbackMonitor
+  },
   setup() {
     // 注入数据透明化面板
     const currentStockData = inject('currentStockData')
@@ -384,6 +510,10 @@ export default {
     const analysisElapsedTime = ref(0)
     const analysisTimer = ref(null)
     const pollingInterval = ref(null)  // 轮询定时器
+
+    // 标签页标题提示
+    const originalTitle = 'InvestMind Pro - AI投资决策系统'
+    let titleFlashInterval = null
     
     // Injected states
     const configMode = inject('configMode')
@@ -400,9 +530,12 @@ export default {
     const agentOutputs = ref({})
     const agentTokens = ref({})
     const agentThoughts = ref({}) // Stores array of thought steps
-    const agentDataSources = ref({}) // Stores array of sources
+    const agentDataSources = ref({}) // Stores array of data sources
+    const agentFallbackLevels = ref({}) // 存储降级级别
+    const agentDurations = ref({}) // 存储单智能体耗时（秒）
     const modelUpdateTrigger = ref(0)
     const cardsExpanded = ref(false) // 卡片是否展开，默认折叠
+    const agentConfig = ref({}) // 智能体配置
 
     // Debate states
     const showBullBearDebate = ref(false)
@@ -419,6 +552,7 @@ export default {
     const reportView = ref('professional') // 默认显示专业版
     const enableSimpleSummary = ref(true) // 白话总结开关，默认开启
     const showInterpreterConfig = ref(false) // 白话解读员配置弹窗
+    const activeReportStage = ref('stage1') // 当前激活的报告阶段标签
     const interpreterModel = ref('Qwen/Qwen2.5-7B-Instruct') // 白话解读员模型
     const interpreterTemperature = ref(0.7) // 白话解读员温度
     const availableModels = ref([]) // 可用模型列表，从后端加载
@@ -426,6 +560,9 @@ export default {
     // 全局日志窗口（从 App.vue 注入）
     const showGlobalLogWindow = inject('showLogWindow')
     const globalLogWindowRef = ref(null)
+    
+    // 降级监控面板
+    const showFallbackMonitor = ref(false)
     
     // 轮询状态
     const lastPollingTime = ref(0)  // 上次轮询时间
@@ -440,16 +577,38 @@ export default {
         agentTokens.value[a.id] = 0
         agentThoughts.value[a.id] = []
         agentDataSources.value[a.id] = []
+        agentDurations.value[a.id] = 0
       })
     }
     initAgents()
 
-    // Computed Groups
-    const stage1Agents = computed(() => AGENTS.filter(a => a.stage === 1))
-    const stage2Agents = computed(() => AGENTS.filter(a => a.stage === 2))
-    const stage3Agents = computed(() => AGENTS.filter(a => a.stage === 3))
-    const stage4Agents = computed(() => AGENTS.filter(a => a.stage === 4))
-    const stage4AgentsFiltered = computed(() => AGENTS.filter(a => a.stage === 4 && a.id !== 'interpreter'))
+    // 加载智能体配置
+    const loadAgentConfig = async () => {
+      try {
+        const response = await axios.get('/api/agents/config/current')
+        agentConfig.value = response.data.config
+        console.log('[配置] 加载智能体配置:', agentConfig.value)
+      } catch (error) {
+        console.error('[配置] 加载失败:', error)
+        // 失败时使用默认配置（全部启用）
+        agentConfig.value = {}
+        AGENTS.forEach(a => {
+          agentConfig.value[a.id] = true
+        })
+      }
+    }
+    
+    // 启用的智能体列表（根据配置过滤）
+    const enabledAgents = computed(() => {
+      return AGENTS.filter(a => agentConfig.value[a.id] === true)
+    })
+
+    // Computed Groups（使用启用的智能体）
+    const stage1Agents = computed(() => enabledAgents.value.filter(a => a.stage === 1))
+    const stage2Agents = computed(() => enabledAgents.value.filter(a => a.stage === 2))
+    const stage3Agents = computed(() => enabledAgents.value.filter(a => a.stage === 3))
+    const stage4Agents = computed(() => enabledAgents.value.filter(a => a.stage === 4))
+    const stage4AgentsFiltered = computed(() => enabledAgents.value.filter(a => a.stage === 4 && a.id !== 'interpreter'))
     const isValidCode = computed(() => /^\d{6}$/.test(stockCode.value))
     
     const finalReportHtml = computed(() => {
@@ -466,7 +625,85 @@ export default {
             return `<pre>${agentOutputs.value['interpreter']}</pre>`
         }
     })
-    
+
+    // 报告阶段配置（动态计算有内容的智能体数量）
+    const reportStages = computed(() => {
+      const getStageAgentCount = (stage) => {
+        return AGENTS.filter(a => a.stage === stage && agentOutputs.value[a.id] && a.id !== 'interpreter').length
+      }
+
+      return {
+        stage1: {
+          icon: '🌐',
+          title: '信息采集',
+          fullTitle: '第一阶段：全维信息采集与分析',
+          agentCount: getStageAgentCount(1),
+          hasContent: getStageAgentCount(1) > 0
+        },
+        stage2: {
+          icon: '🎯',
+          title: '策略研判',
+          fullTitle: '第二阶段：策略整合与方向研判',
+          agentCount: getStageAgentCount(2),
+          hasContent: getStageAgentCount(2) > 0
+        },
+        stage3: {
+          icon: '🛡️',
+          title: '风险控制',
+          fullTitle: '第三阶段：风险控制终审',
+          agentCount: getStageAgentCount(3),
+          hasContent: getStageAgentCount(3) > 0
+        },
+        stage4: {
+          icon: '👑',
+          title: '最终决策',
+          fullTitle: '第四阶段：投资决策执行',
+          agentCount: getStageAgentCount(4),
+          hasContent: getStageAgentCount(4) > 0
+        }
+      }
+    })
+
+    // 获取指定阶段有输出的智能体列表
+    const getStageAgentsWithOutput = (stageKey) => {
+      const stageNum = parseInt(stageKey.replace('stage', ''))
+      return AGENTS.filter(a => a.stage === stageNum && agentOutputs.value[a.id] && a.id !== 'interpreter')
+    }
+
+    // 获取智能体卡片样式类
+    const getAgentCardClass = (agent) => {
+      const colorMap = {
+        slate: 'agent-card-slate',
+        cyan: 'agent-card-cyan',
+        violet: 'agent-card-violet',
+        emerald: 'agent-card-emerald',
+        blue: 'agent-card-blue',
+        indigo: 'agent-card-indigo',
+        fuchsia: 'agent-card-fuchsia',
+        orange: 'agent-card-orange',
+        amber: 'agent-card-amber',
+        red: 'agent-card-red',
+        green: 'agent-card-green'
+      }
+      return colorMap[agent.color] || 'agent-card-blue'
+    }
+
+    // 解析 Markdown
+    const parseMarkdown = (text) => {
+      if (!text) return ''
+      try {
+        return marked.parse(text)
+      } catch (e) {
+        return `<pre>${text}</pre>`
+      }
+    }
+
+    // 格式化耗时
+    const formatDuration = (seconds) => {
+      if (!seconds || seconds <= 0) return ''
+      return `${Number(seconds).toFixed(1)}s`
+    }
+
     // 处理股票选择
     const handleStockSelect = (stock) => {
       console.log('选择股票:', stock)
@@ -477,6 +714,10 @@ export default {
     // Analysis Logic
     const startAnalysis = async () => {
       if (!isValidCode.value || isAnalyzing.value) return
+
+      // 清除强制停止标记（允许新分析）
+      clearForceStopFlag()
+
       isAnalyzing.value = true
       cardsExpanded.value = true // 开始分析时自动展开所有卡片
       agentDataSources.value = {}
@@ -484,21 +725,22 @@ export default {
       agentOutputs.value = {}
       agentTokens.value = {}
       agentThoughts.value = {}
+      agentDurations.value = {}
+      agentFallbackLevels.value = {}
       showReport.value = false
       
       // 清空旧日志（如果窗口打开）
       if (globalLogWindowRef.value && globalLogWindowRef.value.clearLogs) {
         globalLogWindowRef.value.clearLogs()
       }
-      
-      // 启动计时器
+
+      // 更新标题为分析中
+      document.title = `⏳ 分析中... - ${stockCode.value}`
+
+      // 记录开始时间（不再使用前端独立计时器）
       analysisStartTime.value = Date.now()
       analysisElapsedTime.value = 0
-      analysisTimer.value = setInterval(() => {
-        analysisElapsedTime.value = Math.floor((Date.now() - analysisStartTime.value) / 1000)
-        // 定期保存状态
-        saveCurrentState()
-      }, 1000)
+      // 注意：不再启动前端计时器，时间将由后端轮询更新
       bullBearDebateMessages.value = []
       riskDebateMessages.value = []
       
@@ -530,9 +772,9 @@ export default {
         
         const sessionData = await sessionResponse.json()
         currentSessionId.value = sessionData.session_id
-        
-        // 保存到 localStorage
-        localStorage.setItem('current_session_id', currentSessionId.value)
+
+        // 保存到 localStorage（使用统一的函数）
+        saveSessionId(currentSessionId.value)
         console.log('[会话] 会话创建成功:', currentSessionId.value)
         console.log('[会话] 股票名称:', fetchedStockData.name)
         
@@ -548,23 +790,35 @@ export default {
         startPolling()
 
         // 2. 执行第一阶段：全维信息采集与分析（细分三步）
+        // ✅ 根据配置过滤启用的智能体
         // Step 1.1: 数据采集层 (News, Social, China)
-        const step1Agents = ['news_analyst', 'social_analyst', 'china_market']
-        await runAgentsParallel(step1Agents, fetchedStockData)
+        const step1AgentsCandidates = ['news_analyst', 'social_analyst', 'china_market']
+        const step1Agents = step1AgentsCandidates.filter(id => agentConfig.value[id] === true)
+        if (step1Agents.length > 0) {
+          await runAgentsParallel(step1Agents, fetchedStockData)
+        }
 
         // Step 1.2: 行业与宏观分析层 (Industry, Macro) - 依赖Step 1.1
-        const step2Agents = ['industry', 'macro']
-        await runAgentsParallel(step2Agents, fetchedStockData)
+        const step2AgentsCandidates = ['industry', 'macro']
+        const step2Agents = step2AgentsCandidates.filter(id => agentConfig.value[id] === true)
+        if (step2Agents.length > 0) {
+          await runAgentsParallel(step2Agents, fetchedStockData)
+        }
 
         // Step 1.3: 深度专业分析层 (Technical, Funds, Fundamental) - 依赖Step 1.2
-        const step3Agents = ['technical', 'funds', 'fundamental']
-        await runAgentsParallel(step3Agents, fetchedStockData)
+        const step3AgentsCandidates = ['technical', 'funds', 'fundamental']
+        const step3Agents = step3AgentsCandidates.filter(id => agentConfig.value[id] === true)
+        if (step3Agents.length > 0) {
+          await runAgentsParallel(step3Agents, fetchedStockData)
+        }
 
         // 3. 执行第二阶段：策略整合 (并发执行)
         console.log('[startAnalysis] 开始第二阶段...')
-        const stage2Ids = AGENTS.filter(a => a.stage === 2).map(a => a.id)
+        const stage2Ids = enabledAgents.value.filter(a => a.stage === 2).map(a => a.id)
         console.log('[startAnalysis] 第二阶段智能体:', stage2Ids)
-        await runAgentsParallel(stage2Ids, fetchedStockData)
+        if (stage2Ids.length > 0) {
+          await runAgentsParallel(stage2Ids, fetchedStockData)
+        }
         console.log('[startAnalysis] 第二阶段完成')
 
         // 2. 触发多空辩论 (模拟或真实API)
@@ -572,9 +826,11 @@ export default {
 
         // 5. 执行第三阶段：风控终审（分批处理，避免并发过载）
         console.log('[startAnalysis] 开始第三阶段...')
-        const stage3Ids = AGENTS.filter(a => a.stage === 3).map(a => a.id)
+        const stage3Ids = enabledAgents.value.filter(a => a.stage === 3).map(a => a.id)
         console.log('[startAnalysis] 第三阶段智能体:', stage3Ids)
-        await runAgentsInBatches(stage3Ids, fetchedStockData, 2) // 每批最多2个
+        if (stage3Ids.length > 0) {
+          await runAgentsInBatches(stage3Ids, fetchedStockData, 2) // 每批最多2个
+        }
         console.log('[startAnalysis] 第三阶段完成')
 
         // 4. 触发风控辩论
@@ -583,12 +839,14 @@ export default {
         console.log('[startAnalysis] 风控辩论完成')
 
         // 6. 执行第四阶段：最终决策
-        const stage4Ids = AGENTS.filter(a => a.stage === 4).map(a => a.id)
-        await runAgentsParallel(stage4Ids, fetchedStockData)
+        const stage4Ids = enabledAgents.value.filter(a => a.stage === 4).map(a => a.id)
+        if (stage4Ids.length > 0) {
+          await runAgentsParallel(stage4Ids, fetchedStockData)
+        }
 
         showReport.value = true
         scrollToBottom()
-        
+
         // 标记分析完成
         if (currentSessionId.value) {
           try {
@@ -603,9 +861,12 @@ export default {
           }
         }
 
+        // 触发标题闪烁提示（如果页面在后台）
+        startTitleFlash(stockData.value?.name)
+
       } catch (error) {
         console.error('分析流程异常:', error)
-        alert(`分析中断: ${error.message}`)
+        window.$toast && window.$toast.error(`分析中断: ${error.message}`)
         
         // 标记分析失败
         if (currentSessionId.value) {
@@ -629,8 +890,17 @@ export default {
         // 停止轮询
         stopPolling()
         // 清除保存的状态（分析已完成）
-        clearAnalysisState()
+        markAnalysisComplete()
         console.log('[分析完成] 已清除保存的状态')
+
+        // 如果页面在前台，更新标题
+        if (document.visibilityState === 'visible') {
+          if (showReport.value) {
+            document.title = `✅ 分析完成 - ${stockData.value?.name || stockCode.value}`
+          } else {
+            document.title = originalTitle
+          }
+        }
       }
     }
 
@@ -1144,11 +1414,31 @@ export default {
         
         // ✅ 关键：数据源设置完成后，再调用API进行分析
         agentStatus.value[agent.id] = 'analyzing'
-        
+
+        // 记录开始时间（前端计时）
+        const agentStartTime = Date.now()
+
+        // 记录开始时间到数据库（用于持久化）
+        if (currentSessionId.value) {
+          try {
+            await fetch(`/api/analysis/db/session/${currentSessionId.value}/update`, {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({
+                agent_id: agent.id,
+                agent_name: agent.title,
+                status: 'running'
+              })
+            })
+          } catch (e) {
+            console.warn(`[数据库] 记录开始时间失败: ${agent.id}`, e)
+          }
+        }
+
         // 使用智能超时机制
         const progressMonitor = new ProgressMonitor(agent.id, 10000)
         progressMonitor.start()
-        
+
         try {
           const response = await fetchWithSmartTimeout(
             '/api/analyze',
@@ -1187,6 +1477,33 @@ export default {
           agentOutputs.value[agent.id] = analysisResult
           agentTokens.value[agent.id] = Math.floor(analysisResult.length / 1.5)
           agentStatus.value[agent.id] = 'success'
+
+          // 计算耗时（从开始到收到响应）
+          const agentEndTime = Date.now()
+          const durationSeconds = (agentEndTime - agentStartTime) / 1000
+          agentDurations.value[agent.id] = durationSeconds
+          console.log(`[${agent.id}] 耗时: ${durationSeconds.toFixed(1)}s`)
+
+          // 处理降级级别
+          if (result.fallback_level !== undefined) {
+            agentFallbackLevels.value[agent.id] = result.fallback_level
+            console.log(`[${agent.id}] 降级级别: ${result.fallback_level}`)
+            
+            // 如果使用了降级，显示通知
+            if (result.fallback_level > 0) {
+              const message = result.fallback_level === 99 
+                ? `${agent.title} 使用了预设的保守建议` 
+                : `${agent.title} 提示词已压缩到${
+                    result.fallback_level === 1 ? '50%' : 
+                    result.fallback_level === 2 ? '25%' : '10%'
+                  }`
+              
+              // 显示 Element Plus 通知
+              if (window.$message) {
+                window.$message.warning(message)
+              }
+            }
+          }
           
           // 保存到数据库
           if (currentSessionId.value) {
@@ -2345,10 +2662,10 @@ export default {
         
         console.log('白话解读员配置已保存:', interpreterConfig)
         showInterpreterConfig.value = false
-        alert('配置已保存！')
+        window.$toast && window.$toast.success('配置已保存！')
       } catch (error) {
         console.error('保存配置失败:', error)
-        alert('保存失败，请重试')
+        window.$toast && window.$toast.error('保存失败，请重试')
       }
     }
     
@@ -2438,6 +2755,12 @@ export default {
         const status = await response.json()
         console.log(`[轮询] 进度: ${status.progress}%, 阶段: ${status.current_stage}, 完成: ${status.completed_agents.length}/${status.total_agents}`)
         
+        // ✅ 关键修复：使用后端时间作为唯一真相源
+        if (status.elapsed_time !== undefined) {
+          analysisElapsedTime.value = Math.floor(status.elapsed_time)
+          console.log(`[轮询] 更新时间: ${analysisElapsedTime.value}秒`)
+        }
+        
         // 更新进度
         if (status.current_stage > 0) {
           // 检查新完成的智能体
@@ -2460,7 +2783,7 @@ export default {
           console.error('[轮询] 分析失败:', status.error_message)
           isAnalyzing.value = false
           stopPolling()
-          alert(`分析失败: ${status.error_message}`)
+          window.$toast && window.$toast.error(`分析失败: ${status.error_message}`)
         }
         
       } catch (error) {
@@ -2488,6 +2811,8 @@ export default {
           agentTokens.value[agentId] = result.tokens || 0
           agentThoughts.value[agentId] = result.thoughts || []
           agentDataSources.value[agentId] = result.data_sources || []
+          // 记录单智能体耗时（由后端计算 start_time/end_time）
+          agentDurations.value[agentId] = result.duration_seconds || 0
         }
       } catch (error) {
         console.error(`[轮询] 获取智能体结果失败: ${agentId}`, error)
@@ -2499,15 +2824,35 @@ export default {
      * 移动端后台/前台切换时触发
      */
     const setupVisibilityListener = () => {
-      document.addEventListener('visibilitychange', () => {
+      document.addEventListener('visibilitychange', async () => {
         if (document.hidden) {
-          console.log('[页面状态] 进入后台，继续轮询')
-          // 移动端后台时，轮询继续运行
+          console.log('[页面状态] 进入后台，后端继续分析')
+          // 移动端后台时，后端继续运行，轮询继续
         } else {
-          console.log('[页面状态] 回到前台，检查状态')
-          // 回到前台时，立即检查一次
-          if (isAnalyzing.value) {
-            pollBackendStatus()
+          console.log('[页面状态] 回到前台，强制同步后端状态')
+
+          // 停止标题闪烁
+          stopTitleFlash()
+
+          // 更新标题
+          if (showReport.value && !isAnalyzing.value) {
+            document.title = `✅ 分析完成 - ${stockData.value?.name || stockCode.value}`
+          } else if (isAnalyzing.value) {
+            document.title = `⏳ 分析中... - ${stockData.value?.name || stockCode.value}`
+          } else {
+            document.title = originalTitle
+          }
+
+          // ✅ 关键修复：回到前台时立即同步
+          if (isAnalyzing.value && currentSessionId.value) {
+            // 立即轮询一次，获取最新状态
+            await pollBackendStatus()
+
+            // 如果还在分析中，确保轮询正在运行
+            if (isAnalyzing.value && !pollingInterval.value) {
+              console.log('[页面状态] 重启轮询')
+              startPolling()
+            }
           }
         }
       })
@@ -2531,6 +2876,7 @@ export default {
           agentTokens: agentTokens.value,
           agentThoughts: agentThoughts.value,
           agentDataSources: agentDataSources.value,
+          agentDurations: agentDurations.value,
           analysisStartTime: analysisStartTime.value,
           analysisElapsedTime: analysisElapsedTime.value,
           showReport: showReport.value,
@@ -2566,6 +2912,7 @@ export default {
         agentTokens.value = savedState.agentTokens || {}
         agentThoughts.value = savedState.agentThoughts || {}
         agentDataSources.value = savedState.agentDataSources || {}
+        agentDurations.value = savedState.agentDurations || {}
         
         // 恢复显示状态
         showReport.value = savedState.showReport || false
@@ -2578,23 +2925,14 @@ export default {
         bullBearDebateConclusion.value = savedState.bullBearDebateConclusion || null
         riskDebateConclusion.value = savedState.riskDebateConclusion || null
         
-        // 恢复计时器
+        // 恢复时间（不再启动前端计时器）
         if (isAnalyzing.value && savedState.analysisStartTime) {
           analysisStartTime.value = savedState.analysisStartTime
           const elapsed = Date.now() - savedState.analysisStartTime
           analysisElapsedTime.value = Math.floor(elapsed / 1000)
           
-          // 重启计时器
-          if (analysisTimer.value) {
-            clearInterval(analysisTimer.value)
-          }
-          
-          analysisTimer.value = setInterval(() => {
-            analysisElapsedTime.value = Math.floor((Date.now() - analysisStartTime.value) / 1000)
-            saveCurrentState()
-          }, 1000)
-          
-          console.log(`[状态恢复] 已运行 ${Math.floor(elapsed / 1000)} 秒`)
+          console.log(`[状态恢复] 已运行 ${Math.floor(elapsed / 1000)} 秒，等待后端轮询更新`)
+          // 注意：不再启动前端计时器，时间将由后端轮询更新
         }
         
         // 展开卡片
@@ -2604,12 +2942,135 @@ export default {
         console.log('[状态恢复] 智能体状态:', agentStatus.value)
         
         // 显示提示
-        alert('✅ 已恢复上次分析状态\n\n注意：如果后端分析已完成，请手动刷新页面查看最新结果。')
+        window.$toast && window.$toast.info('已恢复上次分析状态。如果后端分析已完成，请刷新页面查看最新结果。', 5000)
         
       } catch (error) {
         console.error('[状态恢复] 失败:', error)
         clearAnalysisState()
       }
+    }
+
+    // ==================== 标签页标题提示 ====================
+
+    /**
+     * 开始标题闪烁提示（分析完成时调用）
+     */
+    const startTitleFlash = (stockName) => {
+      // 如果页面在前台，不需要闪烁
+      if (document.visibilityState === 'visible') {
+        document.title = `✅ 分析完成 - ${stockName || stockCode.value}`
+        return
+      }
+
+      // 页面在后台，开始闪烁
+      let isOriginal = false
+      const flashTitle = `✅ 分析完成 - ${stockName || stockCode.value}`
+
+      // 清除之前的闪烁
+      if (titleFlashInterval) {
+        clearInterval(titleFlashInterval)
+      }
+
+      titleFlashInterval = setInterval(() => {
+        document.title = isOriginal ? flashTitle : '📊 点击查看结果'
+        isOriginal = !isOriginal
+      }, 1000)
+
+      // 尝试播放提示音（需要用户之前有交互）
+      playNotificationSound()
+    }
+
+    /**
+     * 停止标题闪烁
+     */
+    const stopTitleFlash = () => {
+      if (titleFlashInterval) {
+        clearInterval(titleFlashInterval)
+        titleFlashInterval = null
+      }
+      document.title = originalTitle
+    }
+
+    /**
+     * 播放提示音
+     */
+    const playNotificationSound = () => {
+      try {
+        // 使用 Web Audio API 生成简单的提示音
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+        const oscillator = audioContext.createOscillator()
+        const gainNode = audioContext.createGain()
+
+        oscillator.connect(gainNode)
+        gainNode.connect(audioContext.destination)
+
+        oscillator.frequency.value = 800  // 频率
+        oscillator.type = 'sine'
+        gainNode.gain.value = 0.1  // 音量（较小）
+
+        oscillator.start()
+
+        // 渐弱效果
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3)
+        oscillator.stop(audioContext.currentTime + 0.3)
+
+        console.log('[提示音] 已播放')
+      } catch (e) {
+        // 静默失败（用户可能没有交互过页面）
+        console.log('[提示音] 无法播放:', e.message)
+      }
+    }
+
+    /**
+     * 强制停止分析
+     * 用于解决移动端卡住的问题
+     */
+    const forceStop = async () => {
+      console.log('[强制停止] 开始清理...')
+
+      // 1. 停止所有计时和轮询
+      if (analysisTimer.value) {
+        clearInterval(analysisTimer.value)
+        analysisTimer.value = null
+      }
+      stopPolling()
+
+      // 2. 通知后端取消会话
+      if (currentSessionId.value) {
+        try {
+          await axios.post(`/api/analysis/db/session/${currentSessionId.value}/cancel`)
+          console.log('[强制停止] 已通知后端取消')
+        } catch (error) {
+          console.error('[强制停止] 通知后端失败:', error)
+        }
+      }
+
+      // 3. 使用统一的清除函数（设置强制停止标记）
+      forceCleanAllState()
+      console.log('[强制停止] 已清除所有 localStorage')
+
+      // 4. 重置所有状态
+      isAnalyzing.value = false
+      analysisElapsedTime.value = 0
+      analysisStartTime.value = 0
+      currentSessionId.value = null
+      agentStatus.value = {}
+      agentOutputs.value = {}
+      agentTokens.value = {}
+      agentThoughts.value = {}
+      agentDataSources.value = {}
+      agentDurations.value = {}
+      agentFallbackLevels.value = {}
+      showReport.value = false
+      showBullBearDebate.value = false
+      showRiskDebate.value = false
+      bullBearDebateMessages.value = []
+      riskDebateMessages.value = []
+      bullBearDebateConclusion.value = null
+      riskDebateConclusion.value = null
+
+      console.log('[强制停止] 清理完成')
+      window.$toast && window.$toast.success('已强制停止分析并清除所有状态，可以重新开始了！')
     }
     
     /**
@@ -2617,12 +3078,24 @@ export default {
      */
     onMounted(async () => {
       console.log('[页面加载] 检查保存的状态...')
-      
+
+      // ✅ 加载智能体配置
+      await loadAgentConfig()
+
+      // ✅ 检查是否被强制停止
+      if (isForceStoppedState()) {
+        console.log('[页面加载] 检测到强制停止标记，清除并跳过恢复')
+        // 清除强制停止标记（下次可以正常分析）
+        clearForceStopFlag()
+        setupVisibilityListener()
+        return
+      }
+
       // 设置页面可见性监听器
       setupVisibilityListener()
-      
+
       // 优先检查后端会话
-      const sessionId = localStorage.getItem('current_session_id')
+      const sessionId = getSessionId()
       
       if (sessionId) {
         console.log('[页面加载] 发现会话 ID:', sessionId)
@@ -2652,19 +3125,18 @@ export default {
               // 启动轮询
               startPolling()
               
-              // 重启计时器
+              // 设置时间（不再启动前端计时器）
               analysisStartTime.value = status.start_time * 1000
               analysisElapsedTime.value = Math.floor(status.elapsed_time)
-              analysisTimer.value = setInterval(() => {
-                analysisElapsedTime.value = Math.floor((Date.now() - analysisStartTime.value) / 1000)
-              }, 1000)
+              // 注意：不再启动前端计时器，时间将由后端轮询更新
               
-              console.log('[页面加载] 从后端恢复会话成功')
-              alert('✅ 已从后端恢复分析状态')
+              console.log('[页面加载] 从后端恢复会话成功，当前时间:', analysisElapsedTime.value, '秒')
+              window.$toast && window.$toast.success('已从后端恢复分析状态')
               return
             } else if (status.status === 'completed') {
               console.log('[页面加载] 分析已完成，清除会话')
-              localStorage.removeItem('current_session_id')
+              clearSessionId()
+              clearAnalysisState()
             }
           }
         } catch (error) {
@@ -2673,10 +3145,11 @@ export default {
       }
       
       // 如果后端没有会话，尝试从 localStorage 恢复
-      const savedState = loadAnalysisState()
-      if (savedState && savedState.isAnalyzing) {
+      // 注意：不再重新声明 savedState，使用开头已经检查过的
+      const stateToRestore = loadAnalysisState()
+      if (stateToRestore && stateToRestore.isAnalyzing) {
         console.log('[页面加载] 从 localStorage 恢复状态')
-        restoreState(savedState)
+        restoreState(stateToRestore)
       } else {
         console.log('[页面加载] 无保存的状态')
       }
@@ -2689,10 +3162,16 @@ export default {
       if (analysisTimer.value) {
         clearInterval(analysisTimer.value)
       }
-      
+
       // 停止轮询
       stopPolling()
-      
+
+      // 停止标题闪烁
+      stopTitleFlash()
+
+      // 恢复原始标题
+      document.title = originalTitle
+
       // 如果分析已完成，清除保存的状态
       if (!isAnalyzing.value && showReport.value) {
         clearAnalysisState()
@@ -2704,7 +3183,7 @@ export default {
         stockCode, stockData, isAnalyzing, isValidCode, startAnalysis,
         AGENTS,
         configMode, showModelManager, showApiConfig, showStyleConfig, apiStatus,
-        agentStatus, agentOutputs, agentTokens, agentThoughts, agentDataSources,
+        agentStatus, agentOutputs, agentTokens, agentThoughts, agentDataSources, agentFallbackLevels, agentDurations,
         modelUpdateTrigger,
         cardsExpanded,
         stage1Agents, stage2Agents, stage3Agents, stage4Agents, stage4AgentsFiltered,
@@ -2718,7 +3197,11 @@ export default {
         fetchNewsData,  // 新增: 新闻数据获取函数
         analysisElapsedTime, formatTime,  // 新增: 计时器
         handleStockSelect,  // 新增: 股票选择处理
-        showGlobalLogWindow, globalLogWindowRef  // 新增: 全局日志窗口
+        showGlobalLogWindow, globalLogWindowRef,  // 新增: 全局日志窗口
+        forceStop,  // 新增: 强制停止
+        showFallbackMonitor,  // 新增: 降级监控面板
+        // 专业版报告阶段切换
+        activeReportStage, reportStages, getStageAgentsWithOutput, getAgentCardClass, parseMarkdown, formatDuration
     }
   }
 }
@@ -2727,7 +3210,7 @@ export default {
 <style scoped>
 .analysis-container {
   padding: 2rem;
-  max-width: 1800px;
+  max-width: 1400px;  /* 从1800px减少到1400px，为两侧面板留出空间 */
   margin: 0 auto;
   min-height: 100vh;
 }
@@ -2773,6 +3256,58 @@ export default {
 .analyze-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* 强制停止按钮 */
+.force-stop-btn {
+  margin-top: 1rem;
+  width: 100%;
+  padding: 1rem 2rem;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border: none;
+  border-radius: 0.75rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.force-stop-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(239, 68, 68, 0.4);
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+}
+
+.force-stop-btn:active {
+  transform: translateY(0);
+}
+
+/* 降级监控按钮 */
+.monitor-btn {
+  margin-top: 1rem;
+  width: 100%;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.monitor-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(59, 130, 246, 0.4);
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+}
+
+.monitor-btn:active {
+  transform: translateY(0);
 }
 
 .floating-timer {
@@ -3382,6 +3917,343 @@ export default {
     width: 2.5rem;
     height: 2.5rem;
     font-size: 1.5rem;
+  }
+}
+
+/* ========================================
+   专业版报告 - 阶段标签切换样式
+   ======================================== */
+.professional-report {
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 16px;
+  border: 1px solid rgba(71, 85, 105, 0.3);
+  overflow: hidden;
+}
+
+/* 阶段标签栏 */
+.stage-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 12px 16px;
+  background: rgba(30, 41, 59, 0.8);
+  border-bottom: 1px solid rgba(71, 85, 105, 0.3);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.stage-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: rgba(51, 65, 85, 0.4);
+  border: 1px solid rgba(71, 85, 105, 0.3);
+  border-radius: 10px;
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.stage-tab:hover:not(:disabled) {
+  background: rgba(71, 85, 105, 0.5);
+  color: #e2e8f0;
+  transform: translateY(-2px);
+}
+
+.stage-tab.active {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(99, 102, 241, 0.3) 100%);
+  border-color: #3b82f6;
+  color: #60a5fa;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.stage-tab:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.stage-tab-icon {
+  font-size: 18px;
+}
+
+.stage-tab-title {
+  font-weight: 600;
+}
+
+.stage-tab-count {
+  background: rgba(59, 130, 246, 0.3);
+  color: #93c5fd;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.stage-tab.active .stage-tab-count {
+  background: rgba(59, 130, 246, 0.5);
+  color: #fff;
+}
+
+/* 阶段内容区 */
+.stage-content-area {
+  padding: 20px;
+  max-height: 700px;
+  overflow-y: auto;
+}
+
+.stage-content-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid rgba(59, 130, 246, 0.3);
+}
+
+.stage-content-icon {
+  font-size: 28px;
+}
+
+.stage-content-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin: 0;
+}
+
+/* 智能体结果列表 */
+.agent-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 智能体结果卡片 */
+.agent-result-card {
+  background: rgba(30, 41, 59, 0.6);
+  border-radius: 12px;
+  border: 1px solid rgba(71, 85, 105, 0.3);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.agent-result-card:hover {
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* 智能体卡片颜色变体 */
+.agent-card-emerald { border-left: 4px solid #10b981; }
+.agent-card-cyan { border-left: 4px solid #06b6d4; }
+.agent-card-red { border-left: 4px solid #ef4444; }
+.agent-card-blue { border-left: 4px solid #3b82f6; }
+.agent-card-slate { border-left: 4px solid #64748b; }
+.agent-card-violet { border-left: 4px solid #8b5cf6; }
+.agent-card-indigo { border-left: 4px solid #6366f1; }
+.agent-card-green { border-left: 4px solid #22c55e; }
+.agent-card-amber { border-left: 4px solid #f59e0b; }
+.agent-card-orange { border-left: 4px solid #f97316; }
+.agent-card-fuchsia { border-left: 4px solid #d946ef; }
+
+.agent-result-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  background: rgba(15, 23, 42, 0.5);
+  border-bottom: 1px solid rgba(71, 85, 105, 0.2);
+}
+
+.agent-result-icon {
+  font-size: 22px;
+}
+
+.agent-result-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #e2e8f0;
+  flex: 1;
+}
+
+.agent-result-duration {
+  font-size: 12px;
+  color: #60a5fa;
+  background: rgba(59, 130, 246, 0.15);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-weight: 600;
+}
+
+.agent-result-tokens {
+  font-size: 12px;
+  color: #94a3b8;
+  background: rgba(71, 85, 105, 0.3);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: monospace;
+}
+
+.agent-result-content {
+  padding: 18px;
+  color: #cbd5e1;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.agent-result-content h1,
+.agent-result-content h2,
+.agent-result-content h3,
+.agent-result-content h4 {
+  color: #e2e8f0;
+  margin-top: 16px;
+  margin-bottom: 10px;
+}
+
+.agent-result-content h1 { font-size: 1.5em; }
+.agent-result-content h2 { font-size: 1.3em; }
+.agent-result-content h3 { font-size: 1.15em; }
+
+.agent-result-content ul,
+.agent-result-content ol {
+  padding-left: 20px;
+  margin: 10px 0;
+}
+
+.agent-result-content li {
+  margin: 6px 0;
+}
+
+.agent-result-content strong {
+  color: #fbbf24;
+  font-weight: 600;
+}
+
+.agent-result-content code {
+  background: rgba(71, 85, 105, 0.4);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+/* 辩论摘要样式 */
+.debate-summary {
+  margin-top: 20px;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(245, 158, 11, 0.1) 100%);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.debate-summary.risk {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(79, 70, 229, 0.1) 100%);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.debate-summary-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  background: rgba(0, 0, 0, 0.2);
+  font-size: 16px;
+  font-weight: 600;
+  color: #fbbf24;
+}
+
+.debate-summary.risk .debate-summary-header {
+  color: #818cf8;
+}
+
+.debate-summary-content {
+  padding: 16px 18px;
+}
+
+.debate-score {
+  font-size: 14px;
+  color: #e2e8f0;
+  margin-bottom: 10px;
+}
+
+.debate-score strong {
+  color: #fbbf24;
+  font-size: 18px;
+}
+
+.debate-summary.risk .debate-score strong {
+  color: #818cf8;
+}
+
+.debate-conclusion {
+  font-size: 14px;
+  color: #cbd5e1;
+  line-height: 1.6;
+}
+
+/* 滚动条样式 */
+.stage-content-area::-webkit-scrollbar {
+  width: 8px;
+}
+
+.stage-content-area::-webkit-scrollbar-track {
+  background: rgba(30, 41, 59, 0.3);
+  border-radius: 4px;
+}
+
+.stage-content-area::-webkit-scrollbar-thumb {
+  background: rgba(71, 85, 105, 0.5);
+  border-radius: 4px;
+}
+
+.stage-content-area::-webkit-scrollbar-thumb:hover {
+  background: rgba(71, 85, 105, 0.7);
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .stage-tabs {
+    padding: 8px 12px;
+    gap: 6px;
+  }
+
+  .stage-tab {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .stage-tab-icon {
+    font-size: 16px;
+  }
+
+  .stage-tab-title {
+    display: none;
+  }
+
+  .stage-content-area {
+    padding: 12px;
+    max-height: 500px;
+  }
+
+  .stage-content-header {
+    margin-bottom: 12px;
+  }
+
+  .stage-content-title {
+    font-size: 16px;
+  }
+
+  .agent-result-header {
+    padding: 10px 12px;
+    flex-wrap: wrap;
+  }
+
+  .agent-result-content {
+    padding: 12px;
+    font-size: 13px;
   }
 }
 </style>

@@ -43,7 +43,7 @@
 ## 📊 数据源架构（最终版）
 
 ```
-AlphaCouncil 数据源
+InvestMindPro 数据源
 │
 ├── 新闻数据 ✅ (100%成功率)
 │   ├── realtime_news.py - 实时新闻聚合器 ✅

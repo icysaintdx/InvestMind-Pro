@@ -23,7 +23,7 @@ docker-build-all-in-one.bat
 
 **部署**：
 ```bash
-docker run -d -p 80:80 --env-file .env alphacouncil:latest
+docker run -d -p 80:80 --env-file .env InvestMindPro:latest
 ```
 
 **文档**: `NAS_ALL_IN_ONE.md`
@@ -79,10 +79,10 @@ docker-build-for-nas.bat
 **部署**：
 ```bash
 # 后端
-docker run -d -p 8000:8000 alphacouncil-backend:latest
+docker run -d -p 8000:8000 InvestMindPro-backend:latest
 
 # 前端
-docker run -d -p 80:80 alphacouncil-frontend:latest
+docker run -d -p 80:80 InvestMindPro-frontend:latest
 ```
 
 **文档**: `NAS_QUICK_START.md`
@@ -132,9 +132,9 @@ docker run -d -p 80:80 alphacouncil-frontend:latest
 
 | 脚本 | 方案 | 输出 |
 |------|------|------|
-| `docker-build-all-in-one.bat` | 一体化 | `alphacouncil-all-in-one.tar` |
-| `docker-build-offline.bat` | docker-compose | `alphacouncil-backend.tar` + `alphacouncil-frontend.tar` |
-| `docker-build-for-nas.bat` | 独立容器 | `alphacouncil-backend.tar` + `alphacouncil-frontend.tar` |
+| `docker-build-all-in-one.bat` | 一体化 | `InvestMindPro-all-in-one.tar` |
+| `docker-build-offline.bat` | docker-compose | `InvestMindPro-backend.tar` + `InvestMindPro-frontend.tar` |
+| `docker-build-for-nas.bat` | 独立容器 | `InvestMindPro-backend.tar` + `InvestMindPro-frontend.tar` |
 
 ---
 
@@ -147,14 +147,14 @@ docker run -d -p 80:80 alphacouncil-frontend:latest
 docker-build-all-in-one.bat
 
 # 2. 本地测试
-docker run -p 80:80 --env-file .env alphacouncil:latest
+docker run -p 80:80 --env-file .env InvestMindPro:latest
 
 # 3. 上传到 NAS
-# 上传 alphacouncil-all-in-one.tar
+# 上传 InvestMindPro-all-in-one.tar
 
 # 4. NAS 部署
-docker load -i alphacouncil-all-in-one.tar
-docker run -d -p 80:80 --env-file .env alphacouncil:latest
+docker load -i InvestMindPro-all-in-one.tar
+docker run -d -p 80:80 --env-file .env InvestMindPro:latest
 ```
 
 ### 生产环境（最稳定）

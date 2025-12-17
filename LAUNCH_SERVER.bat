@@ -1,10 +1,10 @@
 @echo off
 echo ============================================
-echo AlphaCouncil Server - Complete Launch
+echo InvestMindPro Server - Complete Launch
 echo ============================================
 echo.
 
-cd /d D:\AlphaCouncil
+cd /d D:\InvestMindPro
 
 echo Phase 1: Checking and fixing dependencies...
 echo ----------------------------------------
@@ -41,7 +41,7 @@ python -c "from backend.api.news_api import router; print('  API routes: OK')" 2
 echo.
 
 echo ============================================
-echo Starting AlphaCouncil Server
+echo Starting InvestMindPro Server
 echo ============================================
 echo.
 echo Server will start on http://localhost:8000

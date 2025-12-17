@@ -112,7 +112,7 @@ def test_full_workflow():
     print("✅ 测试完成！所有功能正常工作")
     print("=" * 60)
     
-    print("\n📊 数据库文件位置: ./alphacouncil.db")
+    print("\n📊 数据库文件位置: ./InvestMindPro.db")
     print("可以使用 DB Browser for SQLite 查看数据")
     
     print("\n🔍 查询示例:")

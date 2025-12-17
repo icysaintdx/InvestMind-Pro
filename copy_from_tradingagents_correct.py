@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-从 TradingAgents-CN-main 复制正确的文件到 AlphaCouncil
+从 TradingAgents-CN-main 复制正确的文件到 InvestMindPro
 基于实际的项目结构
 """
 
@@ -8,8 +8,8 @@ import shutil
 from pathlib import Path
 
 # 源项目路径
-SOURCE_BASE = Path(r"D:\AlphaCouncil\TradingAgents-CN-main\tradingagents")
-TARGET_BASE = Path(r"D:\AlphaCouncil\backend")
+SOURCE_BASE = Path(r"D:\InvestMindPro\TradingAgents-CN-main\tradingagents")
+TARGET_BASE = Path(r"D:\InvestMindPro\backend")
 
 print("=" * 80)
 print("📋 从 TradingAgents-CN-main 复制文件（正确版本）")

@@ -1,0 +1,39 @@
+{
+  "active": [
+    "vegas_adx",
+    "ema_breakout",
+    "martingale_refined",
+    "dragon_leader",
+    "scalping_blade",
+    "buffett_value",
+    "lynch_growth",
+    "graham_margin",
+    "trident",
+    "bollinger_breakout",
+    "macd_crossover",
+    "turtle_trading",
+    "limit_up_trading",
+    "volume_price_surge",
+    "sentiment_resonance",
+    "debate_weighted"
+  ],
+  "weights": {
+    "vegas_adx": 0.8,
+    "ema_breakout": 0.7,
+    "macd_crossover": 0.7,
+    "bollinger_breakout": 0.7,
+    "turtle_trading": 0.8,
+    "trident": 0.6,
+    "buffett_value": 0.9,
+    "lynch_growth": 0.85,
+    "graham_margin": 0.85,
+    "martingale_refined": 0.5,
+    "dragon_leader": 0.6,
+    "scalping_blade": 0.5,
+    "limit_up_trading": 0.6,
+    "volume_price_surge": 0.6,
+    "sentiment_resonance": 0.75,
+    "debate_weighted": 0.8
+  },
+  "updated_at": "2025-12-17T02:15:00.000000"
+}

@@ -52,8 +52,8 @@ def main():
     
     # 需要修复的文件
     files_to_fix = [
-        r"d:\AlphaCouncil\backend\agents\utils\agent_utils.py",
-        r"d:\AlphaCouncil\backend\dataflows\agent_utils.py",
+        r"d:\InvestMindPro\backend\agents\utils\agent_utils.py",
+        r"d:\InvestMindPro\backend\dataflows\agent_utils.py",
     ]
     
     fixed_files = []
@@ -82,8 +82,8 @@ def main():
     # 扫描其他可能的文件
     print("\n扫描其他文件...")
     directories = [
-        r"d:\AlphaCouncil\backend\agents",
-        r"d:\AlphaCouncil\backend\dataflows",
+        r"d:\InvestMindPro\backend\agents",
+        r"d:\InvestMindPro\backend\dataflows",
     ]
     
     for directory in directories:

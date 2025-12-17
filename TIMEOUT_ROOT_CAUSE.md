@@ -187,7 +187,7 @@ max_retries = 2  # 最多2次重试（总共3次尝试）
 Ctrl+C
 
 # 重新启动
-cd d:\AlphaCouncil
+cd d:\InvestMindPro
 python backend\server.py
 ```
 

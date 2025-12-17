@@ -8,7 +8,7 @@
 ### 步骤 1: 停止并删除旧容器
 
 ```bash
-docker rm -f alphacouncil
+docker rm -f InvestMindPro
 ```
 
 ### 步骤 2: 重新构建本地镜像
@@ -24,29 +24,29 @@ docker-build-all-in-one.bat
 
 ### 步骤 3: 上传新镜像到 NAS
 
-上传新生成的 `alphacouncil-all-in-one.tar`
+上传新生成的 `InvestMindPro-all-in-one.tar`
 
 ### 步骤 4: 在 NAS 上部署
 
 ```bash
 # 删除旧镜像
-docker rmi alphacouncil:latest
+docker rmi InvestMindPro:latest
 
 # 加载新镜像
-docker load -i alphacouncil-all-in-one.tar
+docker load -i InvestMindPro-all-in-one.tar
 
 # 启动容器
 docker run -d \
-  --name alphacouncil \
+  --name InvestMindPro \
   -p 8808:80 \
   -v $(pwd)/data:/app/data \
   --env-file .env \
   --restart unless-stopped \
-  alphacouncil:latest \
+  InvestMindPro:latest \
   /bin/bash -c "nginx && cd /app/backend && python server.py"
 
 # 查看日志
-docker logs -f alphacouncil
+docker logs -f InvestMindPro
 ```
 
 ---
@@ -60,7 +60,7 @@ docker logs -f alphacouncil
 docker run --rm -it \
   -v $(pwd)/data:/app/data \
   --env-file .env \
-  alphacouncil:latest \
+  InvestMindPro:latest \
   /bin/bash
 
 # 2. 在容器内修复 interface.py
@@ -90,7 +90,7 @@ python server.py
 exit
 
 # 7. 提交为新镜像
-docker commit CONTAINER_ID alphacouncil:fixed
+docker commit CONTAINER_ID InvestMindPro:fixed
 ```
 
 ---
@@ -138,7 +138,7 @@ docker-build-all-in-one.bat
 
 ```bash
 # 测试运行
-docker run -p 8808:80 --env-file .env alphacouncil:latest
+docker run -p 8808:80 --env-file .env InvestMindPro:latest
 
 # 访问
 http://localhost:8808

@@ -4,7 +4,7 @@
 """
 
 def fix_indentation():
-    file_path = r'd:\AlphaCouncil\backend\server.py'
+    file_path = r'd:\InvestMindPro\backend\server.py'
     
     with open(file_path, 'r', encoding='utf-8') as f:
         lines = f.readlines()

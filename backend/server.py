@@ -24,6 +24,9 @@ from dotenv import load_dotenv
 import uvicorn
 from asyncio import Semaphore
 
+# 导入降级处理器
+from backend.utils.llm_fallback_handler import get_fallback_handler
+
 # 全局并发控制器 - 限制同时发送到SiliconFlow的请求数
 siliconflow_semaphore = Semaphore(10)  # 最多10个并发请求
 
@@ -79,12 +82,24 @@ from backend.api.debate_api import router as debate_router
 from backend.api.trading_api import router as trading_router
 from backend.api.verification_api import router as verification_router
 from backend.api.agents_api import router as agents_router
+from backend.api.agent_config_api import router as agent_config_router
 from backend.api.unified_news_api_endpoint import router as unified_news_router
 from backend.api.documents_api import router as documents_router
 from backend.api.akshare_data_api import router as akshare_router
 from backend.api.agent_logs_api import router as agent_logs_router
 from backend.api.analysis_session_api import router as analysis_session_router  # 分析会话 API
 from backend.api.analysis_session_db_api import router as analysis_session_db_router  # 数据库版会话 API
+from backend.api.backtest_api import router as backtest_router  # 回测API
+from backend.api.strategy_api import router as strategy_router  # 策略API
+from backend.api.llm_config_api import router as llm_config_router  # LLM配置API（智能分析）
+from backend.api.trading_llm_config_api import router as trading_llm_config_router  # 交易LLM配置API（新功能）
+from backend.api.strategy_selection_api import router as strategy_selection_router  # 智能策略选择API
+from backend.api.auto_trading_api import router as auto_trading_router  # 自动交易API
+from backend.api.tracking_api import router as tracking_router  # 持续跟踪API
+from backend.api.verification_api import router as verification_router  # 验证报告API
+from backend.api.kline_api import router as kline_router  # K线API
+from backend.api.scheduler_api import router as scheduler_router  # 调度器API
+from backend.api.data_source_health_api import router as data_source_health_router  # 数据源健康检查API
 
 # ==================== 配置 ====================
 
@@ -183,15 +198,33 @@ async def lifespan(app: FastAPI):
     )
     
     print("✅ HTTP连接池初始化成功")
-    
+
+    # 启动交易调度器（可选，根据环境变量控制）
+    import os
+    if os.getenv("ENABLE_SCHEDULER", "false").lower() == "true":
+        try:
+            from backend.services.scheduler_service import start_scheduler
+            start_scheduler()
+            print("✅ 交易调度器已启动")
+        except Exception as e:
+            print(f"⚠️ 交易调度器启动失败: {e}")
+
     # yield 控制权给应用
     yield
     
+    # 停止调度器
+    try:
+        from backend.services.scheduler_service import stop_scheduler
+        stop_scheduler()
+        print("✅ 交易调度器已停止")
+    except:
+        pass
+
     # 关闭时清理连接池
     for name, client in http_clients.items():
         await client.aclose()
         print(f"✅ 关闭 {name} 连接池")
-    
+
     http_clients.clear()
     print("✅ 所有HTTP连接池已关闭")
 
@@ -208,12 +241,24 @@ app.include_router(debate_router)
 app.include_router(trading_router)
 app.include_router(verification_router)
 app.include_router(agents_router)
+app.include_router(agent_config_router)  # 智能体配置API
 app.include_router(unified_news_router)  # 统一新闻API
 app.include_router(documents_router)  # 文档API
 app.include_router(akshare_router)  # AKShare数据 API
 app.include_router(agent_logs_router)  # 智能体日志流API
 app.include_router(analysis_session_router)  # 分析会话 API
 app.include_router(analysis_session_db_router)  # 数据库版会话 API
+app.include_router(backtest_router)  # 回测API
+app.include_router(strategy_router)  # 策略API
+app.include_router(llm_config_router)  # LLM配置API（智能分析）
+app.include_router(trading_llm_config_router)  # 交易LLM配置API（新功能）
+app.include_router(strategy_selection_router)  # 智能策略选择API
+app.include_router(auto_trading_router)  # 自动交易API
+app.include_router(tracking_router)  # 持续跟踪API
+app.include_router(verification_router)  # 验证报告API
+app.include_router(kline_router)  # K线API
+app.include_router(scheduler_router)  # 调度器API
+app.include_router(data_source_health_router)  # 数据源健康检查API
 
 # 配置 CORS
 app.add_middleware(
@@ -257,6 +302,8 @@ class SiliconFlowRequest(BaseModel):
     # 仅用于能力画像/压测等高级用法：覆盖默认max_tokens与是否开启thinking能力
     maxTokens: Optional[int] = None
     enableThinking: Optional[bool] = None
+    # 智能体角色（用于降级策略）
+    agentRole: Optional[str] = None
 
 class StockRequest(BaseModel):
     symbol: str
@@ -489,16 +536,27 @@ async def siliconflow_api(request: SiliconFlowRequest):
             api_key = request.apiKey or API_KEYS["siliconflow"]
             if not api_key:
                 raise HTTPException(status_code=500, detail="未配置 SiliconFlow API Key")
-            
+
+            # ✅ 动态超时配置：根据智能体类型调整
+            # 复杂智能体（news_analyst, fundamental）需要更长时间
+            agent_role = request.agentRole if hasattr(request, 'agentRole') else None
+            complex_agents = ['NEWS', 'FUNDAMENTAL', 'TECHNICAL', 'MACRO', 'INDUSTRY']
+
+            if agent_role in complex_agents:
+                read_timeout = 60.0  # 复杂智能体 60秒
+                total_timeout = 90.0
+            else:
+                read_timeout = 45.0  # 普通智能体 45秒
+                total_timeout = 60.0
+
             # 为每个请求创建独立的客户端，避免连接池死锁
-            # 调整超时配置：更快降级，避免单次调用占满前端180秒总超时
             client = httpx.AsyncClient(
                 timeout=httpx.Timeout(
-                    timeout=150.0,   # 总默认超时150秒（原60秒）
-                    connect=20.0,    # 连接超时20秒（原15秒）
-                    read=90.0,       # 读取超时90秒（原30秒）← 关键改动
-                    write=20.0,      # 写入超时20秒（原15秒）
-                    pool=20.0        # 连接池获取超时20秒（原15秒）
+                    timeout=total_timeout,
+                    connect=15.0,
+                    read=read_timeout,
+                    write=15.0,
+                    pool=15.0
                 ),
                 limits=httpx.Limits(
                     max_connections=10,        # 保守设置，避免过多连接
@@ -541,10 +599,76 @@ async def siliconflow_api(request: SiliconFlowRequest):
             if enable_thinking is not None:
                 data["enable_thinking"] = enable_thinking
             
-            # 超时设置和重试机制
-            # 说明：
-            # - 对 ReadTimeout/TimeoutError 不再重试，直接快速降级
-            # - 仅对连接类错误（ConnectTimeout/ConnectError/NetworkError/RemoteProtocolError）保留一次重试
+            # 使用降级处理器执行请求
+            fallback_handler = get_fallback_handler()
+            
+            # 检查是否启用降级（可通过环境变量控制）
+            use_fallback = os.getenv("USE_FALLBACK", "true").lower() == "true"
+            
+            if use_fallback and agent_role:
+                try:
+                    result, metrics = await fallback_handler.execute_with_fallback(
+                        client=client,
+                        url=API_ENDPOINTS["siliconflow"],
+                        headers=headers,
+                        data=data,
+                        agent_role=agent_role,
+                        max_retries=4
+                    )
+                    
+                    # 记录指标
+                    total_time = time.time() - request._start_time
+                    print(f"[SiliconFlow] [{req_time}] 🏁 请求完成")
+                    print(f"  - 总耗时: {total_time:.1f}秒")
+                    print(f"  - 最终状态: {metrics.final_status}")
+                    print(f"  - 尝试次数: {len(metrics.attempt_times)}")
+                    
+                    # 仅在实际发生降级（压缩或默认响应）时打印提示日志
+                    fallback_level = result.get("fallback_level", 0)
+                    if fallback_level and fallback_level > 0:
+                        level_name = {
+                            1: "轻度压缩",
+                            2: "深度压缩",
+                            3: "最小化",
+                            99: "默认响应"
+                        }.get(fallback_level, f"级别{fallback_level}")
+                        print(f"[SiliconFlow] 使用降级处理器 (角色: {agent_role}, 级别: {fallback_level}, 模式: {level_name})")
+                    
+                    if metrics.final_status.startswith("success"):
+                        print(f"  - ✅ 成功")
+                    elif "cached" in metrics.final_status:
+                        print(f"  - ⚡ 使用缓存")
+                    elif "default" in metrics.final_status:
+                        print(f"  - ⚠️ 使用默认响应")
+                        
+                    # 提取响应文本
+                    text = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+                    usage = result.get("usage", {})
+                    
+                    return {
+                        "success": True,
+                        "text": text,
+                        "usage": usage,
+                        "fallback_level": result.get("fallback_level", 0),
+                        "metrics": {
+                            "total_time": total_time,
+                            "attempts": len(metrics.attempt_times),
+                            "final_status": metrics.final_status
+                        }
+                    }
+                    
+                except Exception as e:
+                    print(f"[SiliconFlow] 降级处理器错误: {e}")
+                    # 降级处理器失败，使用原有逻辑
+                    pass
+            
+            # 原有重试逻辑（作为后备）
+            if not agent_role:
+                # 从请求中尝试推断角色（analyze请求可能传递了agent_id）
+                agent_role = "UNKNOWN"
+                print(f"[SiliconFlow] 警告: 未提供agent_role，使用默认值 UNKNOWN")
+            
+            print(f"[SiliconFlow] 使用原有重试逻辑（agent_role={agent_role}）")
             max_retries = 2
             response = None
             
@@ -559,11 +683,11 @@ async def siliconflow_api(request: SiliconFlowRequest):
                         print(f"[SiliconFlow] 重新建立连接...")
                         client = httpx.AsyncClient(
                             timeout=httpx.Timeout(
-                                timeout=150.0,  # 总默认超时150秒（原60秒）
-                                connect=20.0,   # 连接超时20秒（原15秒）
-                                read=90.0,      # 读取超时90秒（原30秒）
-                                write=20.0,     # 写入超时20秒（原15秒）
-                                pool=20.0       # 连接池超时20秒（原15秒）
+                                timeout=total_timeout,
+                                connect=15.0,
+                                read=read_timeout,
+                                write=15.0,
+                                pool=15.0
                             ),
                             limits=httpx.Limits(
                                 max_connections=10,
@@ -622,13 +746,27 @@ async def siliconflow_api(request: SiliconFlowRequest):
                     elapsed = time.time() - start_time if 'start_time' in locals() else 0
                     print(f"[SiliconFlow] [{time.strftime('%H:%M:%S')}] {error_type} 发生在 {elapsed:.1f}秒 错误: {str(e)[:200]}")
 
-                    # 对超时类错误不再重试，直接快速降级
+                    # 对超时类错误使用降级处理器的默认响应
                     if error_type in ["ReadTimeout", "TimeoutError"]:
-                        print(f"[SiliconFlow] {error_type} 超时，不再重试，直接返回降级响应")
+                        print(f"[SiliconFlow] {error_type} 超时，使用降级默认响应")
+                        # 使用降级处理器的默认响应
+                        if not fallback_handler:
+                            fallback_handler = get_fallback_handler()
+                        
+                        default_response = fallback_handler._get_default_response(
+                            agent_role, 
+                            f"超时错误: {error_type} (已等待{elapsed:.0f}秒)"
+                        )
+                        
+                        # 返回默认响应而不是抛出异常
+                        text = default_response['choices'][0]['message']['content']
+                        print(f"[SiliconFlow] 返回默认响应: {text[:100]}...")
+                        
                         return {
                             "success": True,
-                            "text": f"⚠️ AI 响应超时（已等待约 {elapsed:.0f} 秒）。建议：\n1. 减少提示词长度\n2. 减少同时运行的智能体数量\n3. 稍后在网络更稳定时重试",
+                            "text": text,
                             "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+                            "fallback_level": 99,  # 标记为默认响应
                             "timeout": True
                         }
 
@@ -1483,7 +1621,7 @@ async def analyze_stock(request: AnalyzeRequest):
         
         # 构建系统提示词
         role_name = get_agent_role(agent_id)
-        system_prompt = f"你是一个专业的{role_name}，隶属于AlphaCouncil顶级投研团队。你的目标是提供深度、犀利且独到的投资见解。"
+        system_prompt = f"你是一个专业的{role_name}，隶属于InvestMindPro顶级投研团队。你的目标是提供深度、犀利且独到的投资见解。"
         system_prompt += "\n\n【风格要求】\n1. 直接切入主题，严禁废话。\n2. 严禁在开头复述股票代码、名称、当前价格等基础信息（除非数据出现重大异常）。\n3. 像华尔街资深分析师一样说话，使用专业术语但逻辑清晰。\n4. 必须引用前序同事的分析结论作为支撑或反驳的依据。"
 
         # 构建用户提示词
@@ -1543,17 +1681,44 @@ async def analyze_stock(request: AnalyzeRequest):
             )
             result = await qwen_api(req)
         else:
+            # 获取智能体角色（用于降级策略）
+            agent_role_map = {
+                'news_analyst': 'NEWS',
+                'fundamental': 'FUNDAMENTAL',
+                'technical': 'TECHNICAL',
+                'bull_researcher': 'BULL',
+                'bear_researcher': 'BEAR',
+                'risk_manager': 'RISK',
+                'risk_aggressive': 'RISK',
+                'risk_conservative': 'RISK',
+                'risk_neutral': 'RISK',
+                'research_manager': 'MANAGER',
+                'trader': 'TRADER',
+                'macro': 'MACRO',
+                'industry': 'INDUSTRY',
+                'funds': 'FUNDAMENTAL',
+                'manager_fundamental': 'MANAGER',
+                'manager_momentum': 'MANAGER',
+                'risk_system': 'RISK',
+                'risk_portfolio': 'RISK',
+                'gm': 'MANAGER',
+                'china_market': 'NEWS',
+                'social_analyst': 'NEWS'
+            }
+            
             req = SiliconFlowRequest(
-                prompt=user_prompt,
-                systemPrompt=system_prompt,
                 model=model_name,
-                temperature=temperature
+                systemPrompt=system_prompt,
+                prompt=user_prompt,
+                temperature=temperature,
+                agentRole=agent_role_map.get(request.agent_id, 'UNKNOWN')  # 添加智能体角色
             )
             # 添加详细日志
             prompt_len = len(system_prompt) + len(user_prompt)
             print(f"[分析] {request.agent_id} 系统提示词: {len(system_prompt)} 字符")
             print(f"[分析] {request.agent_id} 用户提示词: {len(user_prompt)} 字符")
             print(f"[分析] {request.agent_id} 总长度: {prompt_len} 字符 (~{prompt_len//2} tokens)")
+            print(f"[分析] {request.agent_id} 降级角色: {req.agentRole}")  # 显示降级角色
             
             # 打印前序输出长度
             if previous_outputs:
@@ -1571,7 +1736,13 @@ async def analyze_stock(request: AnalyzeRequest):
         
         if result.get("success"):
             print(f"[分析] {request.agent_id} 分析完成")
-            return {"success": True, "result": result.get("text", "")}
+            # 始终返回 fallback_level，默认为 0（原始请求）
+            fallback_level = result.get("fallback_level", 0)
+            return {
+                "success": True,
+                "result": result.get("text", ""),
+                "fallback_level": fallback_level
+            }
         else:
             print(f"[分析] {request.agent_id} 分析失败: {result.get('error')}")
             return {"success": False, "error": result.get("error", "分析失败")}

@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 print("=" * 60)
-print("AlphaCouncil 综合修复脚本")
+print("InvestMindPro 综合修复脚本")
 print("=" * 60)
 print()
 
@@ -16,7 +16,7 @@ fixes_applied = 0
 # 1. 确保tool_logging.py有log_analysis_step别名
 print("1. 检查tool_logging别名...")
 try:
-    with open(r"d:\AlphaCouncil\backend\utils\tool_logging.py", 'r', encoding='utf-8') as f:
+    with open(r"d:\InvestMindPro\backend\utils\tool_logging.py", 'r', encoding='utf-8') as f:
         content = f.read()
     
     if "log_analysis_step = log_analyst_module" not in content:
@@ -26,7 +26,7 @@ try:
         else:
             content += '\n\n# 创建别名以保持向后兼容性\nlog_analysis_step = log_analyst_module\n'
         
-        with open(r"d:\AlphaCouncil\backend\utils\tool_logging.py", 'w', encoding='utf-8') as f:
+        with open(r"d:\InvestMindPro\backend\utils\tool_logging.py", 'w', encoding='utf-8') as f:
             f.write(content)
         print("  ✅ 添加了log_analysis_step别名")
         fixes_applied += 1
@@ -45,7 +45,7 @@ except Exception as e:
     print(f"  ❌ config.py有问题: {e}")
     # 尝试修复
     try:
-        config_path = r"d:\AlphaCouncil\backend\dataflows\config.py"
+        config_path = r"d:\InvestMindPro\backend\dataflows\config.py"
         with open(config_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
         
@@ -73,7 +73,7 @@ except Exception as e:
 
 # 3. 检查agent_utils.py
 print("\n3. 检查agent_utils.py...")
-agent_utils_path = r"d:\AlphaCouncil\backend\agents\utils\agent_utils.py"
+agent_utils_path = r"d:\InvestMindPro\backend\agents\utils\agent_utils.py"
 try:
     with open(agent_utils_path, 'r', encoding='utf-8') as f:
         content = f.read()
@@ -97,10 +97,10 @@ except Exception as e:
 # 4. 创建必要目录
 print("\n4. 创建必要目录...")
 dirs_to_create = [
-    r"d:\AlphaCouncil\backend\data",
-    r"d:\AlphaCouncil\backend\dataflows\data",
-    r"d:\AlphaCouncil\backend\dataflows\cache",
-    r"d:\AlphaCouncil\logs"
+    r"d:\InvestMindPro\backend\data",
+    r"d:\InvestMindPro\backend\dataflows\data",
+    r"d:\InvestMindPro\backend\dataflows\cache",
+    r"d:\InvestMindPro\logs"
 ]
 
 for dir_path in dirs_to_create:

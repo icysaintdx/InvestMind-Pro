@@ -5,7 +5,7 @@
 
 from typing import Dict, Any, List, Optional, Callable
 from enum import Enum
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from backend.utils.logging_config import get_logger
 
 logger = get_logger("agent_registry")
@@ -27,6 +27,12 @@ class AgentStage(Enum):
     STAGE_3 = 3  # 第三阶段：风险评估
     STAGE_4 = 4  # 第四阶段：决策执行
 
+class AgentPriority(Enum):
+    """智能体优先级"""
+    CORE = "core"              # 核心必需（不可禁用）
+    IMPORTANT = "important"    # 重要增强（默认启用，可选禁用）
+    OPTIONAL = "optional"      # 可选补充（默认禁用，可选启用）
+
 @dataclass
 class AgentConfig:
     """智能体配置"""
@@ -40,7 +46,8 @@ class AgentConfig:
     description: str           # 描述
     module_path: Optional[str] = None  # Python模块路径
     api_endpoint: Optional[str] = None # API端点
-    dependencies: List[str] = None     # 依赖的其他智能体
+    dependencies: Optional[List[str]] = field(default=None)  # 依赖的其他智能体
+    priority: AgentPriority = AgentPriority.IMPORTANT  # 优先级
     is_active: bool = True            # 是否激活
     is_legacy: bool = False          # 是否为旧系统智能体
 
@@ -66,6 +73,7 @@ class AgentRegistry:
             color="slate",
             description="分析宏观经济政策、货币政策、财政政策对市场的影响",
             api_endpoint="/api/analyze",
+            priority=AgentPriority.IMPORTANT,
             is_legacy=True
         ))
         
@@ -79,6 +87,7 @@ class AgentRegistry:
             color="cyan",
             description="研究行业周期、板块轮动、产业链上下游关系",
             api_endpoint="/api/analyze",
+            priority=AgentPriority.IMPORTANT,
             is_legacy=True
         ))
         
@@ -92,6 +101,7 @@ class AgentRegistry:
             color="violet",
             description="运用技术指标、K线形态、趋势分析等方法预测价格走势",
             api_endpoint="/api/analyze",
+            priority=AgentPriority.CORE,
             is_legacy=True
         ))
         
@@ -105,6 +115,7 @@ class AgentRegistry:
             color="emerald",
             description="追踪主力资金动向、北向资金、机构持仓变化",
             api_endpoint="/api/analyze",
+            priority=AgentPriority.IMPORTANT,
             is_legacy=True
         ))
         
@@ -118,6 +129,7 @@ class AgentRegistry:
             color="blue",
             description="分析财务报表、估值模型、公司基本面",
             api_endpoint="/api/analyze",
+            priority=AgentPriority.CORE,
             is_legacy=True
         ))
         
@@ -133,6 +145,7 @@ class AgentRegistry:
             description="整合基本面相关分析，形成价值投资观点",
             api_endpoint="/api/analyze",
             dependencies=["fundamental", "macro", "industry"],
+            priority=AgentPriority.IMPORTANT,
             is_legacy=True
         ))
         
@@ -147,6 +160,7 @@ class AgentRegistry:
             description="整合技术面和资金面分析，判断市场动能",
             api_endpoint="/api/analyze",
             dependencies=["technical", "funds"],
+            priority=AgentPriority.OPTIONAL,
             is_legacy=True
         ))
         
@@ -162,6 +176,7 @@ class AgentRegistry:
             description="评估系统性风险、市场风险、政策风险",
             api_endpoint="/api/analyze",
             dependencies=["manager_fundamental", "manager_momentum"],
+            priority=AgentPriority.OPTIONAL,
             is_legacy=True
         ))
         
@@ -176,6 +191,7 @@ class AgentRegistry:
             description="管理组合风险、仓位配置、风险敞口",
             api_endpoint="/api/analyze",
             dependencies=["manager_fundamental", "manager_momentum"],
+            priority=AgentPriority.OPTIONAL,
             is_legacy=True
         ))
         
@@ -191,6 +207,7 @@ class AgentRegistry:
             description="综合所有分析，做出最终投资决策",
             api_endpoint="/api/analyze",
             dependencies=["risk_system", "risk_portfolio"],
+            priority=AgentPriority.CORE,
             is_legacy=True
         ))
         
@@ -206,24 +223,26 @@ class AgentRegistry:
             color="teal",
             description="分析新闻舆情、市场情绪、热点事件影响",
             module_path="backend.agents.analysts.news_analyst",
-            api_endpoint="/api/news/analyze"
+            api_endpoint="/api/news/analyze",
+            priority=AgentPriority.CORE
         ))
         
         self.register(AgentConfig(
-            id="social_media_analyst",
+            id="social_analyst",
             name="社交媒体分析师",
             english_name="Social Media Analyst",
             type=AgentType.ANALYST,
             stage=AgentStage.STAGE_1,
-            icon="💬",
-            color="pink",
+            icon="🗣️",
+            color="cyan",
             description="监控社交媒体动态、投资者情绪、市场热度",
             module_path="backend.agents.analysts.social_media_analyst",
-            api_endpoint="/api/social/analyze"
+            api_endpoint="/api/social/analyze",
+            priority=AgentPriority.OPTIONAL
         ))
-        
+
         self.register(AgentConfig(
-            id="china_market_analyst",
+            id="china_market",
             name="中国市场专家",
             english_name="China Market Specialist",
             type=AgentType.ANALYST,
@@ -232,7 +251,8 @@ class AgentRegistry:
             color="red",
             description="专注A股市场特性、政策解读、中国特色分析",
             module_path="backend.agents.analysts.china_market_analyst",
-            api_endpoint="/api/china/analyze"
+            api_endpoint="/api/china/analyze",
+            priority=AgentPriority.OPTIONAL
         ))
         
         # 研究员（辩论层）
@@ -247,7 +267,8 @@ class AgentRegistry:
             description="从乐观角度分析，寻找上涨理由和机会",
             module_path="backend.agents.researchers.bull_researcher",
             api_endpoint="/api/debate/research",
-            dependencies=["news_analyst", "fundamental", "technical"]
+            dependencies=["news_analyst", "fundamental", "technical"],
+            priority=AgentPriority.CORE
         ))
         
         self.register(AgentConfig(
@@ -261,47 +282,51 @@ class AgentRegistry:
             description="从谨慎角度分析，识别下跌风险和问题",
             module_path="backend.agents.researchers.bear_researcher",
             api_endpoint="/api/debate/research",
-            dependencies=["news_analyst", "fundamental", "technical"]
+            dependencies=["news_analyst", "fundamental", "technical"],
+            priority=AgentPriority.CORE
         ))
         
         # 风控辩论员
         self.register(AgentConfig(
-            id="aggressive_debator",
+            id="risk_aggressive",
             name="激进风控师",
             english_name="Aggressive Risk Debator",
             type=AgentType.DEBATOR,
             stage=AgentStage.STAGE_3,
-            icon="🔥",
-            color="red",
+            icon="⚔️",
+            color="orange",
             description="倾向高风险高收益策略，追求超额收益",
             module_path="backend.agents.risk_mgmt.aggresive_debator",
-            api_endpoint="/api/debate/risk"
+            api_endpoint="/api/debate/risk",
+            priority=AgentPriority.IMPORTANT
         ))
-        
+
         self.register(AgentConfig(
-            id="conservative_debator",
+            id="risk_conservative",
             name="保守风控师",
             english_name="Conservative Risk Debator",
             type=AgentType.DEBATOR,
             stage=AgentStage.STAGE_3,
             icon="🛡️",
-            color="blue",
+            color="slate",
             description="注重风险控制，追求稳健收益",
             module_path="backend.agents.risk_mgmt.conservative_debator",
-            api_endpoint="/api/debate/risk"
+            api_endpoint="/api/debate/risk",
+            priority=AgentPriority.IMPORTANT
         ))
-        
+
         self.register(AgentConfig(
-            id="neutral_debator",
+            id="risk_neutral",
             name="中立风控师",
             english_name="Neutral Risk Debator",
             type=AgentType.DEBATOR,
             stage=AgentStage.STAGE_3,
             icon="⚖️",
-            color="gray",
+            color="blue",
             description="平衡风险与收益，寻求最优配置",
             module_path="backend.agents.risk_mgmt.neutral_debator",
-            api_endpoint="/api/debate/risk"
+            api_endpoint="/api/debate/risk",
+            priority=AgentPriority.IMPORTANT
         ))
         
         # 新增管理者
@@ -316,23 +341,25 @@ class AgentRegistry:
             description="整合多空观点，形成研究结论",
             module_path="backend.agents.managers.research_manager",
             api_endpoint="/api/debate/research",
-            dependencies=["bull_researcher", "bear_researcher"]
+            dependencies=["bull_researcher", "bear_researcher"],
+            priority=AgentPriority.CORE
         ))
         
         self.register(AgentConfig(
             id="risk_manager",
-            name="风险经理",
+            name="风控部经理",
             english_name="Risk Manager",
             type=AgentType.MANAGER,
             stage=AgentStage.STAGE_3,
-            icon="🎯",
-            color="orange",
+            icon="👮",
+            color="indigo",
             description="综合风险评估，制定风控策略",
             module_path="backend.agents.managers.risk_manager",
             api_endpoint="/api/debate/risk",
-            dependencies=["aggressive_debator", "conservative_debator", "neutral_debator"]
+            dependencies=["risk_aggressive", "risk_conservative", "risk_neutral"],
+            priority=AgentPriority.CORE
         ))
-        
+
         # 交易员
         self.register(AgentConfig(
             id="trader",
@@ -340,13 +367,17 @@ class AgentRegistry:
             english_name="Quantitative Trader",
             type=AgentType.TRADER,
             stage=AgentStage.STAGE_4,
-            icon="💹",
-            color="green",
+            icon="🤖",
+            color="cyan",
             description="执行交易策略，生成交易信号和订单",
             module_path="backend.agents.trader.trader",
             api_endpoint="/api/trading/execute",
-            dependencies=["gm", "risk_manager"]
+            dependencies=["gm", "risk_manager"],
+            priority=AgentPriority.CORE
         ))
+
+        # 注意：interpreter（白话解读员）不在此注册
+        # 它是嵌入在 GM（投资决策总经理）卡片中的功能，不作为独立智能体配置
         
     def register(self, config: AgentConfig):
         """注册智能体"""

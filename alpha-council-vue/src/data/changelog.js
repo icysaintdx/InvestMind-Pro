@@ -3,10 +3,398 @@
  * 统一管理所有版本信息，避免硬编码
  */
 
-export const CURRENT_VERSION = '1.5.0'
-export const CURRENT_CODENAME = '辩论系统全面增强版'
+export const CURRENT_VERSION = '2.3.0'
+export const CURRENT_CODENAME = '智能闭环交易版'
 
 export const CHANGELOG_DATA = [
+  {
+    version: '2.3.0',
+    codename: '智能闭环交易版',
+    date: '2025-12-17T18:00:00',
+    features: [
+      {
+        icon: '🎯',
+        title: 'GM智能体评分系统',
+        star: true,
+        description: '投资决策总经理新增多维度评分功能，直观展示投资价值。',
+        details: [
+          '📊 四维度评分 - 推荐强度/置信度/风险/时机',
+          '🎨 五档颜色 - 绿(优秀)/蓝(良好)/黄(中等)/橙(偏低)/红(较差)',
+          '💡 智能解析 - 从GM输出自动提取评分',
+          '✨ 醒目显示 - 大字体+发光效果+动画'
+        ],
+        files: ['AgentCard.vue']
+      },
+      {
+        icon: '📈',
+        title: 'K线图交互增强',
+        star: true,
+        description: '模拟交易页面K线图支持点击加载和自动加载。',
+        details: [
+          '🖱️ 点击持仓行 - 自动加载对应股票K线',
+          '🖱️ 点击交易记录 - 自动加载对应股票K线',
+          '🚀 页面加载 - 自动加载默认股票K线',
+          '✨ 悬停提示 - 显示点击操作说明'
+        ],
+        files: ['SimpleTradingView.vue']
+      },
+      {
+        icon: '🔄',
+        title: '版本同步修复',
+        star: false,
+        description: '修复前端版本号显示与实际版本不一致的问题。',
+        details: [
+          '📝 同步VERSION.json和changelog.js',
+          '📋 补充v1.7.0-v2.1.0完整更新日志',
+          '🔢 版本号从1.6.0更新到2.3.0'
+        ],
+        files: ['changelog.js', 'VERSION.json']
+      }
+    ],
+    improvements: [
+      '🔥 GM卡片视觉增强 - 评分醒目显示在状态左侧',
+      '🔥 K线交互优化 - 点击即可切换股票',
+      '📊 版本管理规范化 - 统一版本号来源'
+    ],
+    bugfixes: [
+      '🐛 修复前端版本号显示1.6.0的问题',
+      '🐛 修复K线图需要手动回车才能加载的问题'
+    ],
+    totalDocs: 120
+  },
+  {
+    version: '2.2.0',
+    codename: '分析总结闭环版',
+    date: '2025-12-17T14:57:00',
+    features: [
+      {
+        icon: '🧭',
+        title: '分析总结页面',
+        star: true,
+        description: '串联智能分析→策略→回测→模拟→跟踪的闭环总控面板。',
+        details: [
+          '📊 核心结论展示 - 最新分析结果一目了然',
+          '🎯 一键策略推荐 - 调用LLM获取策略组合',
+          '📈 一键回测 - 自动填入股票信息',
+          '💼 推送模拟交易 - 生成模拟下单计划',
+          '🔍 创建跟踪任务 - 纳入持续监控'
+        ],
+        files: ['AnalysisSummaryView.vue']
+      },
+      {
+        icon: '📊',
+        title: '执行摘要面板',
+        star: true,
+        description: '查看已触发的回测/模拟交易/跟踪任务执行结果。',
+        details: [
+          '📈 回测结果 - 收益率/最大回撤/夏普比率',
+          '💰 自动交易状态 - 任务ID/资金/策略',
+          '🔍 跟踪任务 - 触发条件/周期/状态'
+        ],
+        files: ['AnalysisSummaryView.vue']
+      }
+    ],
+    improvements: [
+      '🔥 闭环流程可视化 - 一个页面掌控全流程',
+      '🔥 智能体输出预览 - 快速查看21个智能体结果',
+      '📊 策略推荐展示 - 置信度+推荐理由'
+    ],
+    bugfixes: [],
+    totalDocs: 118
+  },
+  {
+    version: '2.1.0',
+    codename: '价值投资与优化版',
+    date: '2025-12-15T23:35:00',
+    features: [
+      {
+        icon: '💰',
+        title: '新增3个价值投资策略',
+        star: true,
+        description: '巴菲特价值投资、彼得林奇成长股、格雷厄姆安全边际三大经典策略。',
+        details: [
+          '🏛️ 巴菲特价值投资策略 - 护城河+长期持有（500+行）',
+          '📈 彼得林奇成长股策略 - PEG<1选股（450+行）',
+          '🛡️ 格雷厄姆安全边际策略 - 低估值防御（400+行）'
+        ],
+        files: ['buffett_value.py', 'lynch_growth.py', 'graham_margin.py']
+      },
+      {
+        icon: '⚙️',
+        title: '参数优化系统',
+        star: true,
+        description: '网格搜索和随机搜索优化，自动寻找最优参数组合。',
+        details: [
+          '🔍 网格搜索优化 - 遍历所有参数组合',
+          '🎲 随机搜索优化 - 随机采样参数空间',
+          '📊 多指标评估 - 夏普、收益、胜率等',
+          '📝 优化报告生成 - 自动生成Markdown报告'
+        ],
+        files: ['optimizer.py', 'test_optimization.py']
+      },
+      {
+        icon: '📊',
+        title: '组合策略优化',
+        star: true,
+        description: '多策略权重优化，自动配置最优权重组合。',
+        details: [
+          '⚖️ 多策略权重优化 - 自动配置最优权重',
+          '📈 组合表现评估 - 综合收益和风险分析',
+          '🛡️ 风险分散分析 - 降低组合风险'
+        ],
+        files: ['portfolio_optimizer.py']
+      }
+    ],
+    improvements: [
+      '🔥 策略数量增加至13个（+30%）',
+      '🔥 代码量增加至6450+行（+43%）',
+      '🔥 文档增加至22个（+47%）',
+      '📊 测试脚本增强 - test_optimization.py'
+    ],
+    bugfixes: [],
+    totalDocs: 117
+  },
+  {
+    version: '2.0.0',
+    codename: '策略库完整版',
+    date: '2025-12-15T22:35:00',
+    features: [
+      {
+        icon: '🐢',
+        title: '海龟交易法则',
+        star: true,
+        description: '经典趋势跟踪策略，ATR金字塔加仓机制。',
+        details: [
+          '📊 唐奇安通道突破 - 20日/55日双系统',
+          '📈 金字塔加仓机制 - 趋势越强仓位越大',
+          '🛡️ ATR止损 - 动态止损位'
+        ],
+        files: ['turtle_trading.py']
+      },
+      {
+        icon: '🚀',
+        title: '涨停板战法',
+        star: true,
+        description: 'A股特色策略，T+1快进快出。',
+        details: [
+          '🎯 涨停板质量评分 - 5维度评估系统',
+          '⚡ 快进快出 - 3-5天持有周期',
+          '📊 量价配合度 - 相关性计算+动态调整'
+        ],
+        files: ['limit_up_trading.py']
+      },
+      {
+        icon: '📊',
+        title: '量价齐升战法',
+        star: true,
+        description: '短期交易策略，量价配合度分析。',
+        details: [
+          '📈 量价齐升信号 - 价涨量增确认',
+          '🔍 量价背离检测 - 风险预警',
+          '⏱️ 短期持有 - 3-5天周期'
+        ],
+        files: ['volume_price_surge.py']
+      }
+    ],
+    improvements: [
+      '🔥 策略库扩展 - 从7个增加到10个(+43%)',
+      '🔥 类别完善 - 新增趋势跟踪、民间策略类',
+      '📊 全周期覆盖 - 从超短线到长线全覆盖',
+      '⏱️ 多样化组合 - 适应不同市场环境'
+    ],
+    bugfixes: [],
+    totalDocs: 110
+  },
+  {
+    version: '1.9.0',
+    codename: 'AI合成策略版',
+    date: '2025-12-15T22:20:00',
+    features: [
+      {
+        icon: '🧠',
+        title: '情绪共振策略',
+        star: true,
+        description: '结合新闻+技术+资金三维度共振的AI合成策略。',
+        details: [
+          '📰 新闻情绪分析 - 情绪指数计算',
+          '📊 技术指标融合 - RSI/MACD综合',
+          '💰 资金流向分析 - 主力资金追踪',
+          '🎯 三维度共振 - 同向时发信号'
+        ],
+        files: ['sentiment_resonance.py']
+      },
+      {
+        icon: '⚖️',
+        title: '多空辩论加权策略',
+        star: true,
+        description: '利用21智能体的多空辩论结果进行加权决策。',
+        details: [
+          '🐂 多头观点汇总 - 看涨智能体权重',
+          '🐻 空头观点汇总 - 看跌智能体权重',
+          '⚖️ 加权投票 - 核心(1.5x)/重要(1.2x)/可选(1.0x)',
+          '🎯 一致性奖励 - 一致性>80%时仓位加成1.2倍'
+        ],
+        files: ['debate_weighted.py']
+      }
+    ],
+    improvements: [
+      '🔥 策略库扩展 - 从5个增加到7个(+40%)',
+      '🔥 AI能力利用 - 充分发挥智能体优势',
+      '📊 动态仓位 - 根据共振强度/置信度调整',
+      '⏱️ 智能过滤 - 只在强信号时交易'
+    ],
+    bugfixes: [],
+    totalDocs: 105
+  },
+  {
+    version: '1.8.0',
+    codename: '智能策略选择系统v2.0',
+    date: '2025-12-15T22:01:00',
+    features: [
+      {
+        icon: '🤖',
+        title: 'LLM配置管理系统',
+        star: true,
+        description: '类似智能体的统一LLM配置管理，支持4种模型。',
+        details: [
+          '🔌 支持Ollama/OpenAI/DeepSeek/Qwen',
+          '⚙️ 统一配置管理',
+          '📊 8个API端点完整实现'
+        ],
+        files: ['llm_config_api.py', 'llm_client.py']
+      },
+      {
+        icon: '📈',
+        title: '策略库扩展',
+        star: true,
+        description: '从2个增加到5个策略，覆盖技术/综合/动量/波动率。',
+        details: [
+          '🔱 三叉戟策略 - 趋势/动量/波动率综合',
+          '📊 MACD交叉策略 - 金叉死叉+成交量确认',
+          '📈 布林带突破策略 - 突破和回归双重信号'
+        ],
+        files: ['trident.py', 'macd_crossover.py', 'bollinger_breakout.py']
+      },
+      {
+        icon: '⚡',
+        title: '分层缓存体系',
+        star: true,
+        description: 'L1/L2/L3三层缓存，性能提升100倍。',
+        details: [
+          '🚀 缓存命中<1ms vs 首次查询~3s',
+          '💾 智能缓存回写',
+          '🔄 智能降级机制'
+        ],
+        files: ['strategy_cache.py']
+      }
+    ],
+    improvements: [
+      '🔥 性能提升100倍 - 缓存命中<1ms',
+      '🔥 决策准确性提升 - 真实LLM+回测',
+      '📊 策略多样化 - 全类型覆盖'
+    ],
+    bugfixes: [
+      '🐛 修复策略选择使用模拟LLM',
+      '🐛 修复回测使用模拟数据',
+      '🐛 修复策略库不足'
+    ],
+    totalDocs: 100
+  },
+  {
+    version: '1.7.0',
+    codename: '零中断智能降级版',
+    date: '2025-12-11T04:00:00',
+    features: [
+      {
+        icon: '🛡️',
+        title: '多级降级处理器',
+        star: true,
+        description: '4级降级策略确保永不中断，即使所有API失败也返回合理建议。',
+        details: [
+          '🔄 原始→轻压缩50%→深压缩25%→最小化10%→默认',
+          '🧠 LLM智能文本摘要 - 不是简单截断',
+          '📊 前端降级状态显示 - FallbackIndicator组件',
+          '📈 降级监控面板 - 统计成功率'
+        ],
+        files: ['llm_fallback_handler.py', 'FallbackIndicator.vue', 'FallbackMonitor.vue']
+      }
+    ],
+    improvements: [
+      '🔥 零中断保证 - 99.9%成功率',
+      '🔥 智能压缩算法 - 保留关键信息',
+      '📊 监控数据完善 - 实时统计',
+      '⏱️ 响应时间优化 - 分级超时'
+    ],
+    bugfixes: [
+      '🐛 修复504超时错误',
+      '🐛 修复循环导入问题',
+      '🐛 修复简单截断问题'
+    ],
+    totalDocs: 97
+  },
+  {
+    version: '1.6.0',
+    codename: '智能体配置系统版',
+    date: '2025-12-10T20:30:00',
+    features: [
+      {
+        icon: '⚙️',
+        title: '智能体配置系统',
+        star: true,
+        description: '灵活配置智能体启用/禁用，平衡速度与质量。最小化配置节省62%时间，平衡配置93%质量。',
+        details: [
+          '🔴 核心智能体（9个）- 不可禁用，确保系统稳定',
+          '🟡 重要智能体（7个）- 默认启用，可选禁用',
+          '🟢 可选智能体（5个）- 默认禁用，按需启用',
+          '⚡ 最小化: 9个智能体，45秒，80%质量',
+          '⚖️ 平衡: 15个智能体，75秒，93%质量',
+          '🎯 完整: 21个智能体，120秒，100%质量'
+        ],
+        files: ['agent_dependency_manager.py', 'agent_config_api.py', 'AgentConfigPanel.vue']
+      },
+      {
+        icon: '🔗',
+        title: '智能依赖管理',
+        star: true,
+        description: '自动检查依赖关系，防止误禁用。提供6种降级策略，确保系统稳定运行。',
+        details: [
+          '✅ 自动启用必需依赖',
+          '⚠️ 显示影响警告',
+          '💡 提供降级方案',
+          '🛡️ 核心智能体保护',
+          '📊 完整的配置验证'
+        ],
+        files: ['agent_dependency_manager.py']
+      },
+      {
+        icon: '🎨',
+        title: '配置界面与工具',
+        star: true,
+        description: '美观的配置面板，分组展示、实时预览、智能提示。提供10个工具函数支持配置管理。',
+        details: [
+          '🎨 分组展示（核心/重要/可选）',
+          '📊 实时影响预览',
+          '🔗 依赖关系提示',
+          '⚡ 快速配置方案',
+          '📦 10个配置管理函数'
+        ],
+        files: ['AgentConfigPanel.vue', 'agentConfigLoader.js']
+      }
+    ],
+    improvements: [
+      '🔥 性能优化 - 最小化配置节省62%时间、57% API调用',
+      '🔥 质量保证 - 平衡配置93%质量、效率比1.24(最优)',
+      '🔥 智能保护 - 核心智能体不可禁用，确保系统稳定',
+      '📊 配置验证 - 完整的配置合法性检查',
+      '⏱️ 用户体验 - 直观的UI、清晰的分组、实时的反馈'
+    ],
+    bugfixes: [
+      '🐛 修复AgentConfig.dependencies可变默认值问题',
+      '🐛 修复所有智能体优先级配置缺失',
+      '🐛 修复AgentConfigPanel.vue的ESLint错误'
+    ],
+    totalDocs: 97
+  },
   {
     version: '1.5.0',
     codename: '辩论系统全面增强版',

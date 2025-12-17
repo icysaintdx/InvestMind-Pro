@@ -1,0 +1,155 @@
+{
+  "version": "1.0.0",
+  "updated_at": "2025-12-15T21:00:00+08:00",
+  "description": "LLM策略选择的三层规则体系配置",
+  
+  "mandatory_conditions": [
+    "所选策略的适用周期（天）与智能体分析建议的持有周期（天）偏差≤3天（例如分析建议15天，策略适用周期需在12-18天之间）",
+    "所选策略的最大仓位≤分析结果中的风险等级对应的仓位上限（高风险≤50%，中风险≤30%，低风险≤15%）",
+    "所选策略的止损阈值≥分析结果中的风险预警阈值（确保风险可控）",
+    "策略近3次同周期回测的胜率≥40%（兜底策略除外，确保策略有效性）"
+  ],
+  
+  "forbidden_conditions": [
+    "在市场波动率>8%时选择无止损机制的策略（高波动环境必须有止损保护）",
+    "在新闻情绪指数<-0.7时选择高仓位进攻型策略（负面情绪下避免激进）",
+    "选择回测最大回撤>20%的策略（高风险场景除外，保护本金安全）",
+    "同一股票连续3天选择同一策略（避免策略过度单一，需要适应性调整）"
+  ],
+  
+  "priority_rules": [
+    {
+      "rule": "周期匹配度（权重30%）>风险适配性（权重25%）>历史收益（权重20%）>新闻敏感度（权重15%）>市场适配性（权重10%）",
+      "description": "策略选择的优先级权重分配，周期匹配最重要"
+    },
+    {
+      "rule": "震荡市场优先选择区间交易策略，单边行情优先选择趋势跟踪策略",
+      "description": "根据市场状态选择合适的策略类型"
+    },
+    {
+      "rule": "基本面优但技术面弱时，优先选择中长期低频率策略",
+      "description": "基本面驱动的股票适合长期持有"
+    },
+    {
+      "rule": "新闻敏感度高的策略仅在新闻情绪波动>0.5时优先考虑",
+      "description": "新闻驱动策略需要明显的情绪波动"
+    }
+  ],
+  
+  "output_format": {
+    "required_fields": [
+      "selected_strategy_id",
+      "selection_reason",
+      "rule_matching_details",
+      "risk_check_result",
+      "alternative_strategies"
+    ],
+    "format_example": {
+      "selected_strategy_id": "vegas_adx",
+      "selection_reason": "1. 周期匹配：策略适用14天，分析建议15天（偏差1天）；2. 风险适配：中风险对应30%仓位上限，策略最大仓位25%；3. 回测胜率45%≥40%；4. 市场震荡，优先区间交易策略",
+      "rule_matching_details": {
+        "mandatory_conditions_met": true,
+        "forbidden_conditions_violated": false,
+        "priority_score": 85
+      },
+      "risk_check_result": "止损阈值5%≥风险预警阈值4%，最大回撤12%<20%，风险合规",
+      "alternative_strategies": [
+        {
+          "strategy_id": "ema_breakout",
+          "score": 78,
+          "reason": "新闻敏感度匹配但周期偏差4天"
+        }
+      ]
+    }
+  },
+  
+  "scenario_rules": {
+    "market_conditions": {
+      "high_volatility": {
+        "threshold": 8,
+        "rule": "高波动率场景：优先选择止损严格、仓位低的保守型策略，避免杠杆类策略"
+      },
+      "sideways_market": {
+        "rule": "震荡市场场景：优先选择区间交易、高抛低吸类策略，避免趋势跟踪策略"
+      },
+      "bear_market": {
+        "rule": "熊市场景：最大仓位不超过20%，优先选择空头策略或空仓，禁止选择进攻型策略"
+      },
+      "bull_market": {
+        "rule": "牛市场景：可适当提高仓位，优先选择趋势跟踪策略，关注动量指标"
+      }
+    },
+    
+    "stock_types": {
+      "growth_stock": {
+        "rule": "成长股场景：优先选择中长期策略（≥30天），关注业绩预告相关的新闻敏感度"
+      },
+      "value_stock": {
+        "rule": "价值股场景：优先选择低估值策略，关注分红、回购等价值信号"
+      },
+      "cyclical_stock": {
+        "rule": "周期股场景：优先选择与行业轮动匹配的策略，关注宏观经济指标匹配度"
+      }
+    },
+    
+    "analysis_features": {
+      "fundamental_strong_technical_weak": {
+        "condition": "fundamental_score > 80 and technical_score < 60",
+        "rule": "基本面优但技术面弱：优先选择低频率建仓的中长期策略，避免短期交易"
+      },
+      "technical_strong_fundamental_weak": {
+        "condition": "fundamental_score < 60 and technical_score > 80",
+        "rule": "技术面优但基本面弱：优先选择短线策略（≤7天），严格设置止损，快进快出"
+      },
+      "high_risk_weak_fundamental": {
+        "condition": "risk_level == 'high' and fundamental_score < 70",
+        "rule": "高风险+基本面差：禁止选择任何高仓位策略，最大仓位≤15%"
+      }
+    }
+  },
+  
+  "feedback_optimization": {
+    "metrics": [
+      "rule_compliance",
+      "strategy_effectiveness",
+      "priority_matching",
+      "scenario_fit",
+      "risk_control"
+    ],
+    "optimization_triggers": {
+      "low_compliance_rate": {
+        "threshold": 0.8,
+        "action": "优化规则描述，增加清晰度"
+      },
+      "low_effectiveness_rate": {
+        "threshold": 0.5,
+        "action": "调整优先级权重，重新评估规则"
+      },
+      "high_false_positive": {
+        "threshold": 0.2,
+        "action": "收紧必选条件，减少误判"
+      }
+    },
+    "update_frequency": "weekly",
+    "review_cycle": "monthly"
+  },
+  
+  "risk_thresholds": {
+    "max_position_by_risk": {
+      "high": 0.50,
+      "medium": 0.30,
+      "low": 0.15
+    },
+    "max_drawdown_limit": 0.20,
+    "min_win_rate": 0.40,
+    "volatility_threshold": 0.08,
+    "sentiment_threshold": -0.7
+  },
+  
+  "strategy_categories": {
+    "technical": ["vegas_adx", "ema_breakout", "macd_crossover", "bollinger_breakout"],
+    "value": ["buffett_value", "graham_margin", "lynch_growth"],
+    "folk": ["limit_up", "volume_surge", "leader_stock"],
+    "ai_synthetic": ["sentiment_resonance", "debate_weighted"]
+  }
+}

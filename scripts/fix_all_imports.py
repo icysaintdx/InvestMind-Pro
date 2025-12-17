@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Comprehensive import path fixing script for AlphaCouncil project
+Comprehensive import path fixing script for InvestMindPro project
 Fixes all tradingagents imports to local project paths
 """
 
@@ -116,7 +116,7 @@ class ImportFixer:
     def run(self) -> None:
         """Run the import fixing process"""
         print("=" * 70)
-        print("AlphaCouncil Import Path Fixer")
+        print("InvestMindPro Import Path Fixer")
         print("=" * 70)
         print(f"Project root: {self.project_root}")
         print()

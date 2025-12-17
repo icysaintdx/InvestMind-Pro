@@ -220,8 +220,8 @@ docker-pull-images.bat
 docker-build-offline.bat
 
 # 5. 如果成功，会生成 TAR 文件
-# alphacouncil-backend.tar
-# alphacouncil-frontend.tar
+# InvestMindPro-backend.tar
+# InvestMindPro-frontend.tar
 ```
 
 ---

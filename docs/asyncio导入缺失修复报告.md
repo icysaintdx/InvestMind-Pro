@@ -13,7 +13,7 @@ NameError: name 'asyncio' is not defined
 
 ### 错误位置
 ```python
-File "D:\AlphaCouncil\backend\utils\tool_logging.py", line 300, in decorator
+File "D:\InvestMindPro\backend\utils\tool_logging.py", line 300, in decorator
     if asyncio.iscoroutinefunction(func):
        ^^^^^^^
 NameError: name 'asyncio' is not defined

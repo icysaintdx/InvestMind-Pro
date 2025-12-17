@@ -1,6 +1,6 @@
 # test_qwen3_heavy.py 使用说明
 
-**文件位置**: `d:\AlphaCouncil\test_qwen3_heavy.py`  
+**文件位置**: `d:\InvestMindPro\test_qwen3_heavy.py`  
 **作用**: 发现后端卡住问题的关键工具  
 **创建时间**: 2025-12-07  
 

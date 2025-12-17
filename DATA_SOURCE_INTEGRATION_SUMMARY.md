@@ -259,7 +259,7 @@ agentDataSources.value['fund_flow'] = [
 
 ### 后端启动
 ```bash
-cd d:\AlphaCouncil
+cd d:\InvestMindPro
 python backend/server.py
 ```
 

@@ -1,0 +1,136 @@
+{
+  "version": "1.0.0",
+  "updated_at": "2025-12-15T22:01:00+08:00",
+  "description": "LLM配置管理 - 统一管理所有LLM调用的模型和参数",
+  
+  "default_provider": "ollama",
+  "default_model": "qwen2.5:latest",
+  
+  "providers": {
+    "ollama": {
+      "name": "Ollama本地模型",
+      "base_url": "http://localhost:11434",
+      "available_models": [
+        "qwen2.5:latest",
+        "qwen2.5:7b",
+        "qwen2.5:14b",
+        "llama3.1:latest",
+        "deepseek-r1:latest"
+      ],
+      "default_model": "qwen2.5:latest",
+      "requires_api_key": false
+    },
+    "openai": {
+      "name": "OpenAI",
+      "base_url": "https://api.openai.com/v1",
+      "available_models": [
+        "gpt-4",
+        "gpt-4-turbo",
+        "gpt-3.5-turbo"
+      ],
+      "default_model": "gpt-4",
+      "requires_api_key": true,
+      "api_key_env": "OPENAI_API_KEY"
+    },
+    "deepseek": {
+      "name": "DeepSeek",
+      "base_url": "https://api.deepseek.com/v1",
+      "available_models": [
+        "deepseek-chat",
+        "deepseek-coder"
+      ],
+      "default_model": "deepseek-chat",
+      "requires_api_key": true,
+      "api_key_env": "DEEPSEEK_API_KEY"
+    },
+    "qwen": {
+      "name": "通义千问",
+      "base_url": "https://dashscope.aliyuncs.com/api/v1",
+      "available_models": [
+        "qwen-max",
+        "qwen-turbo",
+        "qwen-plus"
+      ],
+      "default_model": "qwen-max",
+      "requires_api_key": true,
+      "api_key_env": "QWEN_API_KEY"
+    }
+  },
+  
+  "llm_tasks": {
+    "strategy_selection": {
+      "name": "策略选择",
+      "description": "LLM驱动的策略选择和排序",
+      "provider": "ollama",
+      "model": "qwen2.5:latest",
+      "temperature": 0.3,
+      "max_tokens": 1500,
+      "timeout": 30,
+      "retry_times": 2,
+      "format": "json",
+      "enabled": true
+    },
+    "text_summarization": {
+      "name": "文本摘要",
+      "description": "智能体输出摘要和压缩",
+      "provider": "ollama",
+      "model": "qwen2.5:latest",
+      "temperature": 0.5,
+      "max_tokens": 1000,
+      "timeout": 20,
+      "retry_times": 2,
+      "format": "text",
+      "enabled": true
+    },
+    "market_analysis": {
+      "name": "市场分析",
+      "description": "市场趋势和情绪分析",
+      "provider": "ollama",
+      "model": "qwen2.5:latest",
+      "temperature": 0.4,
+      "max_tokens": 2000,
+      "timeout": 30,
+      "retry_times": 2,
+      "format": "text",
+      "enabled": true
+    },
+    "risk_assessment": {
+      "name": "风险评估",
+      "description": "投资风险评估和建议",
+      "provider": "ollama",
+      "model": "qwen2.5:latest",
+      "temperature": 0.2,
+      "max_tokens": 1500,
+      "timeout": 25,
+      "retry_times": 3,
+      "format": "json",
+      "enabled": true
+    },
+    "news_sentiment": {
+      "name": "新闻情绪分析",
+      "description": "新闻文本情绪分析",
+      "provider": "ollama",
+      "model": "qwen2.5:latest",
+      "temperature": 0.3,
+      "max_tokens": 1000,
+      "timeout": 20,
+      "retry_times": 2,
+      "format": "json",
+      "enabled": true
+    }
+  },
+  
+  "fallback_config": {
+    "enabled": true,
+    "fallback_provider": "ollama",
+    "fallback_model": "qwen2.5:7b",
+    "max_fallback_attempts": 3
+  },
+  
+  "monitoring": {
+    "log_requests": true,
+    "log_responses": false,
+    "track_performance": true,
+    "alert_on_failure": true
+  }
+}

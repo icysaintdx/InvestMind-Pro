@@ -964,9 +964,18 @@ export default {
           summarizerModel: summarizerModel.value
         })
         close()
+        
+        // 显示成功提示并刷新页面
+        console.log('模型配置已保存，正在刷新页面...')
+        window.$toast && window.$toast.success('模型配置保存成功，即将刷新页面')
+        
+        // 延迟刷新页面
+        setTimeout(() => {
+          window.location.reload()
+        }, 1000)
       } catch (error) {
         console.error('保存模型配置失败:', error)
-        alert('保存模型配置失败，请稍后重试')
+        window.$toast && window.$toast.error('保存模型配置失败，请稍后重试')
       }
     }
 
@@ -988,7 +997,7 @@ export default {
 
     const runCalibration = async () => {
       if (!calibration.value.enabled) {
-        alert('请先开启“模型能力画像 + 静默压测”开关')
+        window.$toast && window.$toast.warning('请先开启"模型能力画像 + 静默压测"开关')
         return
       }
       try {
@@ -1004,13 +1013,13 @@ export default {
         const data = await res.json()
         if (!res.ok || !data.success) {
           console.error('启动静默压测失败:', data)
-          alert(data.error || '启动静默压测失败，请稍后重试')
+          window.$toast && window.$toast.error(data.error || '启动静默压测失败，请稍后重试')
           return
         }
         await refreshCalibrationStatus()
       } catch (error) {
         console.error('启动静默压测失败:', error)
-        alert('启动静默压测失败，请稍后重试')
+        window.$toast && window.$toast.error('启动静默压测失败，请稍后重试')
       }
     }
 

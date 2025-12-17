@@ -1,4 +1,4 @@
-# AlphaCouncil All-in-One Dockerfile
+# InvestMindPro All-in-One Dockerfile
 # 前后端一体化部署
 
 FROM python:3.11-slim
@@ -58,7 +58,7 @@ RUN npm ci && npm run build
 
 # 配置 Nginx
 RUN rm -f /etc/nginx/sites-enabled/default && \
-    cat > /etc/nginx/sites-available/alphacouncil <<'NGINX_EOF'
+    cat > /etc/nginx/sites-available/InvestMindPro <<'NGINX_EOF'
 server {
     listen 80;
     server_name localhost;
@@ -103,7 +103,7 @@ server {
 }
 NGINX_EOF
 
-RUN ln -s /etc/nginx/sites-available/alphacouncil /etc/nginx/sites-enabled/alphacouncil
+RUN ln -s /etc/nginx/sites-available/InvestMindPro /etc/nginx/sites-enabled/InvestMindPro
 
 # ==================== 启动脚本 ====================
 WORKDIR /app
@@ -112,7 +112,7 @@ WORKDIR /app
 RUN echo '#!/bin/bash' > /app/start.sh && \
     echo 'set -e' >> /app/start.sh && \
     echo '' >> /app/start.sh && \
-    echo 'echo "Starting AlphaCouncil..."' >> /app/start.sh && \
+    echo 'echo "Starting InvestMindPro..."' >> /app/start.sh && \
     echo '' >> /app/start.sh && \
     echo '# 启动 Nginx' >> /app/start.sh && \
     echo 'echo "Starting Nginx..."' >> /app/start.sh && \

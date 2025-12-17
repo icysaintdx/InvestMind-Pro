@@ -82,10 +82,9 @@ async def list_strategies(
             "strategies": strategies,
             "categories": [
                 {"value": "value_investing", "label": "价值投资", "count": 3},
-                {"value": "technical", "label": "技术分析", "count": 5},
-                {"value": "quantitative", "label": "量化因子", "count": 4},
-                {"value": "folk", "label": "民间策略", "count": 6},
-                {"value": "machine_learning", "label": "机器学习", "count": 2}
+                {"value": "technical", "label": "技术分析", "count": 8},
+                {"value": "folk_strategy", "label": "民间策略", "count": 2},
+                {"value": "ai_composite", "label": "AI合成策略", "count": 2}
             ]
         }
         
@@ -320,14 +319,16 @@ async def configure_strategy(request: StrategyConfigRequest):
             
         return {
             "success": True,
+            "message": "策略配置已更新",
             "strategy_id": request.strategy_id,
-            "is_active": request.is_active,
-            "weight": request.weight,
-            "message": f"策略 {request.strategy_id} 配置已更新"
+            "config": {
+                "is_active": request.is_active,
+                "weight": request.weight,
+                "params": request.params
+            }
         }
-        
     except Exception as e:
-        logger.error(f"配置策略失败: {e}")
+        logger.error(f"更新策略配置失败: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -434,3 +435,176 @@ async def test_strategy_api():
         "total_strategies": len(strategy_manager.strategies),
         "timestamp": datetime.now().isoformat()
     }
+
+
+# ==================== 智能策略选择API ====================
+
+class StrategySelectionRequest(BaseModel):
+    """策略选择请求"""
+    stock_code: str = Field(..., description="股票代码")
+    analysis_id: Optional[str] = Field(None, description="关联的分析ID")
+    stock_analysis: Dict[str, Any] = Field(..., description="智能体分析结果")
+    market_data: Dict[str, Any] = Field(..., description="市场数据")
+    news_sentiment: float = Field(0.0, ge=-1.0, le=1.0, description="新闻情绪指数")
+    check_consistency: bool = Field(False, description="是否进行一致性校验")
+
+
+class StrategySelectionResponse(BaseModel):
+    """策略选择响应"""
+    success: bool
+    selected_strategy_id: str
+    selected_strategy_name: str
+    selection_reason: str
+    rule_matching_details: Dict[str, Any]
+    risk_check_result: str
+    alternative_strategies: List[Dict[str, Any]]
+    selected_at: str
+    consistency_checked: bool = False
+    consistency_rate: Optional[float] = None
+
+
+@router.post("/select", response_model=StrategySelectionResponse)
+@log_api_call("智能策略选择")
+async def select_strategy_endpoint(
+    request: StrategySelectionRequest
+) -> StrategySelectionResponse:
+    """
+    智能策略选择API
+    
+    基于三层规则体系和混合决策模型，为股票选择最优策略。
+    
+    决策流程：
+    1. 数据验证与清洗
+    2. 规则筛选候选策略
+    3. LLM优化排序
+    4. 回测验证
+    5. 加权融合得分
+    
+    Args:
+        request: 策略选择请求
+        
+    Returns:
+        策略选择结果
+    """
+    try:
+        from backend.services.strategy.selector import select_strategy
+        
+        logger.info(f"开始为股票 {request.stock_code} 选择策略")
+        
+        # 执行策略选择
+        result = await select_strategy(
+            stock_analysis=request.stock_analysis,
+            market_data=request.market_data,
+            news_sentiment=request.news_sentiment
+        )
+        
+        # 如果需要一致性校验
+        consistency_rate = None
+        if request.check_consistency:
+            from backend.services.strategy.selector import get_strategy_selector
+            from backend.services.strategy.data_validator import validate_strategy_inputs
+            
+            selector = get_strategy_selector()
+            validated_inputs = validate_strategy_inputs(
+                request.stock_analysis,
+                request.market_data,
+                request.news_sentiment
+            )
+            
+            # 执行一致性校验
+            final_strategy_id = await selector.check_decision_consistency(
+                result["selected_strategy_id"],
+                validated_inputs,
+                retry_times=3
+            )
+            
+            # 计算一致率
+            consistency_rate = 1.0 if final_strategy_id == result["selected_strategy_id"] else 0.7
+            result["selected_strategy_id"] = final_strategy_id
+        
+        logger.info(f"策略选择完成: {result['selected_strategy_id']}")
+        
+        return StrategySelectionResponse(
+            success=True,
+            selected_strategy_id=result["selected_strategy_id"],
+            selected_strategy_name=result["selected_strategy_name"],
+            selection_reason=result["selection_reason"],
+            rule_matching_details=result["rule_matching_details"],
+            risk_check_result=result["risk_check_result"],
+            alternative_strategies=result["alternative_strategies"],
+            selected_at=result["selected_at"],
+            consistency_checked=request.check_consistency,
+            consistency_rate=consistency_rate
+        )
+        
+    except ValueError as e:
+        logger.error(f"数据验证失败: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"策略选择失败: {e}")
+        raise HTTPException(status_code=500, detail=f"策略选择失败: {str(e)}")
+
+
+@router.get("/rules")
+@log_api_call("获取策略选择规则")
+async def get_selection_rules():
+    """
+    获取当前的策略选择规则配置
+    
+    Returns:
+        规则配置详情
+    """
+    try:
+        from backend.services.strategy.selector import get_strategy_selector
+        
+        selector = get_strategy_selector()
+        rules = selector.rules
+        
+        return {
+            "success": True,
+            "rules": {
+                "version": rules.get("version"),
+                "updated_at": rules.get("updated_at"),
+                "mandatory_conditions": rules.get("mandatory_conditions", []),
+                "forbidden_conditions": rules.get("forbidden_conditions", []),
+                "priority_rules": rules.get("priority_rules", []),
+                "risk_thresholds": rules.get("risk_thresholds", {})
+            }
+        }
+    except Exception as e:
+        logger.error(f"获取规则失败: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/available")
+@log_api_call("获取可用策略列表")
+async def get_available_strategies():
+    """
+    获取所有可用于选择的策略
+    
+    Returns:
+        策略列表
+    """
+    try:
+        from backend.services.strategy.selector import get_strategy_selector
+        
+        selector = get_strategy_selector()
+        strategies = selector.strategies
+        
+        return {
+            "success": True,
+            "count": len(strategies),
+            "strategies": [
+                {
+                    "strategy_id": s["strategy_id"],
+                    "name": s["name"],
+                    "category": s.get("category"),
+                    "description": s.get("description"),
+                    "parameters": s.get("parameters", {})
+                }
+                for s in strategies
+            ]
+        }
+    except Exception as e:
+        logger.error(f"获取策略列表失败: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
