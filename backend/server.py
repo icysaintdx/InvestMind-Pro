@@ -100,6 +100,7 @@ from backend.api.verification_api import router as verification_router  # 验证
 from backend.api.kline_api import router as kline_router  # K线API
 from backend.api.scheduler_api import router as scheduler_router  # 调度器API
 from backend.api.data_source_health_api import router as data_source_health_router  # 数据源健康检查API
+from backend.api.dataflow_api import router as dataflow_router  # 数据流监控API
 
 # ==================== 配置 ====================
 
@@ -259,6 +260,7 @@ app.include_router(verification_router)  # 验证报告API
 app.include_router(kline_router)  # K线API
 app.include_router(scheduler_router)  # 调度器API
 app.include_router(data_source_health_router)  # 数据源健康检查API
+app.include_router(dataflow_router)  # 数据流监控API
 
 # 配置 CORS
 app.add_middleware(

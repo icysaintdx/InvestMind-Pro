@@ -3,10 +3,100 @@
  * 统一管理所有版本信息，避免硬编码
  */
 
-export const CURRENT_VERSION = '2.3.0'
-export const CURRENT_CODENAME = '智能闭环交易版'
+export const CURRENT_VERSION = '2.4.0'
+export const CURRENT_CODENAME = '数据流监控增强版'
 
 export const CHANGELOG_DATA = [
+  {
+    version: '2.4.0',
+    codename: '数据流监控增强版',
+    date: '2025-12-17T22:50:00',
+    features: [
+      {
+        icon: '📈',
+        title: '股票详情弹窗系统',
+        star: true,
+        description: '数据流页面新增完整的股票详情展示系统。',
+        details: [
+          '👁️ 点击详情按钮 - 弹出完整数据面板',
+          '📊 数据概览 - 风险等级 + 情绪评分 + 更新时间',
+          '📚 三个Tab页签 - 新闻舆情/风险分析/情绪分析',
+          '📱 响应式设计 - 最大高度600px可滚动'
+        ],
+        files: ['DataFlowView.vue']
+      },
+      {
+        icon: '📰',
+        title: '新闻舆情智能分类',
+        star: true,
+        description: '多维度新闻筛选和关键信息高亮显示。',
+        details: [
+          '🏷️ 类型筛选 - 财报/公告/新闻/政策/研报',
+          '⚠️ 紧急度高亮 - 特别重大(红色+脉冲) + 重要(橙色)',
+          '🏷️ 关键信息 - 类型 + 情绪 + 紧急度 + 关键词',
+          '🤖 智能识别 - 5种报告类型自动分类'
+        ],
+        files: ['DataFlowView.vue', 'sentiment_engine.py']
+      },
+      {
+        icon: '⚠️',
+        title: '风险分析可视化',
+        star: true,
+        description: '多维度风险细分和直观的视觉展示。',
+        details: [
+          '📊 风险评分 - 大号数字 + 等级标记(绿/黄/红)',
+          '🚫 停复牌 - 已停牌/正常交易状态',
+          '⚠️ ST状态 - ST股票/非ST股票',
+          '📊 实时行情 - 最新价 + 涨跌幅(颜色编码)'
+        ],
+        files: ['DataFlowView.vue', 'risk_analyzer.py']
+      },
+      {
+        icon: '📊',
+        title: '情绪分析统计图表',
+        star: false,
+        description: '情绪数据可视化展示，一目了然。',
+        details: [
+          '🎯 总体情绪 - 大号分数(0-100) + 情绪标签',
+          '📊 情绪分布 - 正面/中性/负面条形图 + 百分比',
+          '⚡ 紧急度 - 特别重大/重要/一般/普通 4级',
+          '📋 报告类型 - 财报/研报/公告/新闻/政策统计'
+        ],
+        files: ['DataFlowView.vue', 'sentiment_engine.py']
+      },
+      {
+        icon: '📚',
+        title: '情感词典大幅扩展',
+        star: false,
+        description: '从48词增加到311词，增长548%。',
+        details: [
+          '👍 正面词汇 - 141个 (5大类：业绩/市场/运营/政策/创新)',
+          '👎 负面词汇 - 110个 (4大类：业绩/市场/问题/监管)',
+          '💪 强化词库 - 33个 (程度/时间/范围/确定性)',
+          '❌ 否定词库 - 27个 (基础/复合/程度否定)'
+        ],
+        files: ['sentiment_engine.py']
+      }
+    ],
+    improvements: [
+      '🚀 后端API - 新增3个股票详情API端点',
+      '🎨 UI/UX - 动画效果 + 颜色编码 + 深色主题',
+      '🛡️ Fallback - AKShare失败自动切换备用源',
+      '📅 数据提示 - 服务器仅保存1天数据警告'
+    ],
+    bugfixes: [
+      '🐛 修复查看详情按钮无效',
+      '🐛 修复AKShare新闻JSON解析错误',
+      '🐛 修复立即更新后新闻不显示',
+      '🐛 修复Vue模板语法错误'
+    ],
+    technical: [
+      '🏛️ 模块：DataFlowView.vue (+500行), dataflow_api.py (+87行)',
+      '🏛️ 情感分析：sentiment_engine.py (+150行)',
+      '🏛️ 多源新闻：multi_source_news_aggregator.py (+50行)',
+      '🏛️ 新增API：/stock/news + /stock/sentiment + /stock/risk'
+    ]
+  },
   {
     version: '2.3.0',
     codename: '智能闭环交易版',

@@ -136,6 +136,13 @@
         <span class="tab-text">分析总结</span>
       </button>
       <button 
+        @click="currentView = 'dataflow'" 
+        :class="['tab-btn', { active: currentView === 'dataflow' }]"
+      >
+        <span class="tab-icon">📊</span>
+        <span class="tab-text">数据流</span>
+      </button>
+      <button 
         @click="currentView = 'backtest'" 
         :class="['tab-btn', { active: currentView === 'backtest' }]"
       >
@@ -175,6 +182,7 @@
         @goto-tracking="handleGotoTracking"
         @goto-analysis="() => currentView = 'analysis'"
       />
+      <DataFlowView v-if="currentView === 'dataflow'" />
       <BacktestView 
         v-if="currentView === 'backtest'"
         :integrationContext="integrationContext"
@@ -238,6 +246,7 @@
 import { defineComponent, ref, reactive, computed, provide, onMounted, onUnmounted } from 'vue'
 import AnalysisView from './views/AnalysisView.vue'
 import AnalysisSummaryView from './views/AnalysisSummaryView.vue'
+import DataFlowView from './views/DataFlowView.vue'
 import BacktestView from './views/BacktestView.vue'
 import PaperTradingView from './views/PaperTradingView.vue'
 import TrackingCenterView from './views/TrackingCenterView.vue'
@@ -258,6 +267,7 @@ export default defineComponent({
   components: {
     AnalysisView,
     AnalysisSummaryView,
+    DataFlowView,
     BacktestView,
     PaperTradingView,
     TrackingCenterView,

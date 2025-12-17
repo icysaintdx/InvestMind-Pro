@@ -1,0 +1,22 @@
+{
+  "ts_code": "600519.SH",
+  "date": "2025-12-17",
+  "records": [
+    {
+      "timestamp": "2025-12-17T21:53:39.973988",
+      "data": {
+        "risk_level": "low",
+        "sentiment_score": 65.5,
+        "news_count": 10
+      }
+    },
+    {
+      "timestamp": "2025-12-17T21:59:39.350701",
+      "data": {
+        "risk_level": "low",
+        "sentiment_score": 65.5,
+        "news_count": 10
+      }
+    }
+  ]
+}
