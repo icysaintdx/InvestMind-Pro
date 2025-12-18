@@ -52,6 +52,10 @@ class RealtimeMonitor:
         try:
             import tushare as ts
             
+            # 修复: 先设置token
+            if self.token:
+                ts.set_token(self.token)
+            
             df = ts.realtime_quote(ts_code=ts_codes, src=src)
             
             if df is not None and not df.empty:
@@ -62,7 +66,7 @@ class RealtimeMonitor:
                 return None
                 
         except Exception as e:
-            logger.error(f"❌ 获取实时行情失败: {e}")
+            logger.error(f"❌ 获取实时行情失败: {str(e)[:100]}")
             return None
     
     def get_realtime_tick(

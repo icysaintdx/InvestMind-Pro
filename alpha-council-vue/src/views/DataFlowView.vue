@@ -276,26 +276,308 @@
           </div>
         </div>
 
-        <!-- 标签页切换 -->
+        <!-- 标签页切换 - 改为6大类 -->
         <div class="detail-tabs">
           <button 
-            :class="['detail-tab', { active: detailTab === 'news' }]"
-            @click="detailTab = 'news'"
+            :class="['detail-tab', { active: detailTab === 'realtime' }]"
+            @click="detailTab = 'realtime'"
           >
-            📰 新闻舆情 <span class="tab-badge">{{ stockNews.length }}</span>
+            📈 实时数据
+          </button>
+          <button 
+            :class="['detail-tab', { active: detailTab === 'financial' }]"
+            @click="detailTab = 'financial'"
+          >
+            💰 财务数据
           </button>
           <button 
             :class="['detail-tab', { active: detailTab === 'risk' }]"
             @click="detailTab = 'risk'"
           >
-            ⚠️ 风险分析
+            ⚠️ 风险监控
           </button>
           <button 
-            :class="['detail-tab', { active: detailTab === 'sentiment' }]"
-            @click="detailTab = 'sentiment'"
+            :class="['detail-tab', { active: detailTab === 'equity' }]"
+            @click="detailTab = 'equity'"
           >
-            📊 情绪分析
+            🏢 股权变动
           </button>
+          <button 
+            :class="['detail-tab', { active: detailTab === 'governance' }]"
+            @click="detailTab = 'governance'"
+          >
+            👔 公司治理
+          </button>
+          <button 
+            :class="['detail-tab', { active: detailTab === 'news' }]"
+            @click="detailTab = 'news'"
+          >
+            📰 新闻舆情 <span v-if="stockNews.length" class="tab-badge">{{ stockNews.length }}</span>
+          </button>
+        </div>
+
+        <!-- 1. 实时数据TAB -->
+        <div v-if="detailTab === 'realtime'" class="detail-content">
+          <div v-if="loadingComprehensive" class="loading-state">
+            <div class="spinner"></div>
+            <p>加载中...</p>
+          </div>
+          
+          <div v-else-if="comprehensiveData" class="comprehensive-panels">
+            <!-- 实时行情 -->
+            <div v-if="comprehensiveData.realtime?.status === 'success'" class="data-panel">
+              <h4>📈 实时行情</h4>
+              <div class="info-grid-3col">
+                <div class="info-card">
+                  <span class="label">最新价</span>
+                  <span class="value price-lg">{{ comprehensiveData.realtime.data.price }}</span>
+                </div>
+                <div class="info-card">
+                  <span class="label">涨跌幅</span>
+                  <span :class="['value', comprehensiveData.realtime.data.pct_change >= 0 ? 'up' : 'down']">
+                    {{ comprehensiveData.realtime.data.pct_change }}%
+                  </span>
+                </div>
+                <div class="info-card">
+                  <span class="label">成交量</span>
+                  <span class="value">{{ formatMoney(comprehensiveData.realtime.data.volume) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 涨跌停 -->
+            <div v-if="comprehensiveData.limit_list?.status === 'success'" class="data-panel">
+              <h4>🔴 涨跌停记录</h4>
+              <div class="mini-table">
+                <table>
+                  <tr v-for="(item, idx) in comprehensiveData.limit_list.data.slice(0, 5)" :key="idx">
+                    <td>{{ item.trade_date }}</td>
+                    <td>{{ item.limit }}</td>
+                    <td>{{ item.pct_change }}%</td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+            <div v-else class="empty-hint">{{ comprehensiveData.limit_list?.message }}</div>
+          </div>
+          
+          <div v-else class="empty-state"><p>暂无数据</p></div>
+        </div>
+
+        <!-- 2. 财务数据TAB -->
+        <div v-if="detailTab === 'financial'" class="detail-content">
+          <div v-if="loadingComprehensive" class="loading-state">
+            <div class="spinner"></div>
+            <p>加载中...</p>
+          </div>
+          
+          <div v-else-if="comprehensiveData?.financial" class="comprehensive-panels">
+            <!-- 利润表 -->
+            <div v-if="comprehensiveData.financial.income?.length" class="data-panel">
+              <h4>💰 利润表</h4>
+              <div class="financial-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>报告期</th>
+                      <th>营业收入</th>
+                      <th>净利润</th>
+                      <th>净利率</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(item, idx) in comprehensiveData.financial.income" :key="idx">
+                      <td>{{ item.end_date }}</td>
+                      <td>{{ formatMoney(item.revenue) }}</td>
+                      <td>{{ formatMoney(item.n_income) }}</td>
+                      <td>{{ (item.netprofit_margin * 100).toFixed(2) }}%</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 业绩预告 -->
+            <div v-if="comprehensiveData.forecast?.status === 'success'" class="data-panel">
+              <h4>📅 业绩预告</h4>
+              <div class="forecast-cards">
+                <div v-for="(item, idx) in [...(comprehensiveData.forecast.forecast || [])].slice(0, 3)" :key="idx" class="forecast-card">
+                  <div class="forecast-period">{{ item.end_date }}</div>
+                  <p class="forecast-text">{{ item.summary || item.notice_content }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div v-else class="empty-state"><p>无财务数据</p></div>
+        </div>
+
+        <!-- 3. 风险监控TAB -->
+        <div v-if="detailTab === 'risk'" class="detail-content">
+          <div v-if="loadingComprehensive" class="loading-state">
+            <div class="spinner"></div>
+            <p>加载中...</p>
+          </div>
+          
+          <div v-else-if="comprehensiveData" class="risk-cards-grid">
+            <!-- ST状态 -->
+            <div class="risk-card" :class="comprehensiveData.st_status?.is_st ? 'danger' : 'safe'">
+              <h4>⚠️ ST状态</h4>
+              <div class="risk-badge" :class="comprehensiveData.st_status?.is_st ? 'danger' : 'safe'">
+                {{ comprehensiveData.st_status?.message }}
+              </div>
+            </div>
+
+            <!-- 停复牌 -->
+            <div class="risk-card">
+              <h4>🚫 停复牌</h4>
+              <p>{{ comprehensiveData.suspend?.message }}</p>
+            </div>
+
+            <!-- 股权质押 -->
+            <div class="risk-card" :class="comprehensiveData.pledge?.pledge_ratio > 50 ? 'danger' : 'safe'">
+              <h4>🔒 股权质押</h4>
+              <div class="pledge-value">{{ comprehensiveData.pledge?.pledge_ratio || 0 }}%</div>
+            </div>
+
+            <!-- 融资融券 -->
+            <div v-if="comprehensiveData.margin?.status === 'success'" class="risk-card full-width">
+              <h4>📊 融资融券</h4>
+              <div class="mini-table">
+                <table>
+                  <tr v-for="(item, idx) in comprehensiveData.margin.data.slice(0, 5)" :key="idx">
+                    <td>{{ item.trade_date }}</td>
+                    <td>{{ formatMoney(item.rzye) }}</td>
+                    <td>{{ formatMoney(item.rqye) }}</td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+          </div>
+          
+          <div v-else class="empty-state"><p>无风险数据</p></div>
+        </div>
+
+        <!-- 4. 股权变动TAB -->
+        <div v-if="detailTab === 'equity'" class="detail-content">
+          <div v-if="loadingComprehensive" class="loading-state">
+            <div class="spinner"></div>
+            <p>加载中...</p>
+          </div>
+          
+          <div v-else-if="comprehensiveData" class="comprehensive-panels">
+            <!-- 分红送股 -->
+            <div v-if="comprehensiveData.dividend?.status === 'success'" class="data-panel">
+              <h4>🎁 分红送股</h4>
+              <div class="mini-table">
+                <table>
+                  <thead>
+                    <tr><th>实施日期</th><th>每10股派息</th><th>每10股转增</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(item, idx) in comprehensiveData.dividend.records.slice(0, 5)" :key="idx">
+                      <td>{{ item.ex_date }}</td>
+                      <td>{{ item.cash_div }}元</td>
+                      <td>{{ item.add_share || 0 }}股</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 股东增减持 -->
+            <div v-if="comprehensiveData.holder_trade?.status === 'success'" class="data-panel">
+              <h4>📄 股东增减持</h4>
+              <div class="mini-table">
+                <table>
+                  <tbody>
+                    <tr v-for="(item, idx) in comprehensiveData.holder_trade.records.slice(0, 5)" :key="idx">
+                      <td>{{ item.ann_date }}</td>
+                      <td>{{ item.holder_name }}</td>
+                      <td :class="item.change_vol > 0 ? 'up' : 'down'">
+                        {{ (item.change_vol / 10000).toFixed(2) }}万股
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          
+          <div v-else class="empty-state"><p>无股权变动数据</p></div>
+        </div>
+
+        <!-- 5. 公司治理TAB -->
+        <div v-if="detailTab === 'governance'" class="detail-content">
+          <div v-if="loadingComprehensive" class="loading-state">
+            <div class="spinner"></div>
+            <p>加载中...</p>
+          </div>
+          
+          <div v-else-if="comprehensiveData" class="comprehensive-panels">
+            <!-- 公司信息 -->
+            <div v-if="comprehensiveData.company_info?.status === 'success'" class="data-panel">
+              <h4>🏢 公司基本信息</h4>
+              <div class="info-grid-2col">
+                <div><span class="label">董事长：</span>{{ comprehensiveData.company_info.data.chairman }}</div>
+                <div><span class="label">总经理：</span>{{ comprehensiveData.company_info.data.manager }}</div>
+                <div><span class="label">注册资本：</span>{{ comprehensiveData.company_info.data.reg_capital }}万</div>
+                <div><span class="label">员工数：</span>{{ comprehensiveData.company_info.data.employees }}人</div>
+              </div>
+            </div>
+
+            <!-- 管理层 -->
+            <div v-if="comprehensiveData.managers?.status === 'success'" class="data-panel">
+              <h4>👔 管理层</h4>
+              <div class="mini-table">
+                <table>
+                  <tbody>
+                    <tr v-for="(item, idx) in comprehensiveData.managers.data.slice(0, 10)" :key="idx">
+                      <td>{{ item.name }}</td>
+                      <td>{{ item.title }}</td>
+                      <td>{{ item.edu }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 龙虎榜 -->
+            <div v-if="comprehensiveData.dragon_tiger?.status === 'success'" class="data-panel">
+              <h4>🐉 龙虎榜</h4>
+              <div class="mini-table">
+                <table>
+                  <tbody>
+                    <tr v-for="(item, idx) in comprehensiveData.dragon_tiger.records.slice(0, 5)" :key="idx">
+                      <td>{{ item.date }}</td>
+                      <td>{{ item.reason }}</td>
+                      <td :class="item.net > 0 ? 'up' : 'down'">
+                        {{ (item.net / 10000).toFixed(2) }}万
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 大宗交易 -->
+            <div v-if="comprehensiveData.block_trade?.status === 'success'" class="data-panel">
+              <h4>💼 大宗交易</h4>
+              <div class="mini-table">
+                <table>
+                  <tbody>
+                    <tr v-for="(item, idx) in comprehensiveData.block_trade.data.slice(0, 5)" :key="idx">
+                      <td>{{ item.交易日期 }}</td>
+                      <td>{{ item.成交价 }}</td>
+                      <td>{{ item.成交量 }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          
+          <div v-else class="empty-state"><p>无公司治理数据</p></div>
         </div>
 
         <!-- 新闻舆情页面 -->
@@ -527,8 +809,12 @@ export default {
     const showStockDetails = ref(false)
     const currentFilter = ref('全部')
     const newsSource = ref('all')
-    const detailTab = ref('news')  // news, risk, sentiment
+    const detailTab = ref('realtime')  // realtime, financial, risk, equity, governance, news
     const newsTypeFilter = ref('all')  // all, financial, announcement, news, policy, research
+    
+    // 综合数据
+    const loadingComprehensive = ref(false)
+    const comprehensiveData = ref(null)
     
     const monitoredStocks = ref([])
     const dataSources = ref([])
@@ -724,7 +1010,25 @@ export default {
     
     const loadStockDetails = async (code) => {
       try {
-        // 获取新闻详情
+        // 加载综合数据
+        loadingComprehensive.value = true
+        
+        // 1. 获取综合数据
+        try {
+          const comprehensiveResp = await fetch(`/api/dataflow/stock/comprehensive/${code}`)
+          const comprehensiveResult = await comprehensiveResp.json()
+          
+          if (comprehensiveResult.success) {
+            comprehensiveData.value = comprehensiveResult
+            console.log('📊 综合数据加载成功')
+          }
+        } catch (error) {
+          console.error('综合数据加载失败:', error)
+        } finally {
+          loadingComprehensive.value = false
+        }
+        
+        // 2. 获取新闻详情  
         const newsResp = await fetch(`/api/dataflow/stock/news/${code}?limit=20`)
         const newsData = await newsResp.json()
         
@@ -809,6 +1113,14 @@ export default {
       return 'neutral'
     }
     
+    const formatMoney = (value) => {
+      if (!value) return '0'
+      const num = parseFloat(value)
+      if (num >= 100000000) return (num / 100000000).toFixed(2) + '亿'
+      if (num >= 10000) return (num / 10000).toFixed(2) + '万'
+      return num.toFixed(2)
+    }
+    
     const getSentimentLabel = (sentiment) => {
       const map = {
         positive: '正面',
@@ -882,6 +1194,9 @@ export default {
       stockRisk,
       toasts,  // 添加toasts
       newMonitor,
+      // 综合数据
+      loadingComprehensive,
+      comprehensiveData,
       todayNewsCount,
       riskAlertCount,
       analysisTaskCount,
@@ -895,6 +1210,7 @@ export default {
       viewDetails,
       loadStockDetails,
       formatTime,
+      formatMoney,  // 新增
       getStatusText,
       getRiskText,
       getSentimentColor,
@@ -1694,6 +2010,249 @@ export default {
 
 .urgency-level {
   color: rgba(226, 232, 240, 0.7);
+}
+
+/* 新增：综合数据面板样式 */
+.comprehensive-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+}
+
+.data-panel {
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid rgba(71, 85, 105, 0.3);
+}
+
+.data-panel h4 {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+/* 信息网格 */
+.info-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  color: #cbd5e1;
+  font-size: 14px;
+}
+
+.info-grid-3col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.info-card {
+  background: rgba(51, 65, 85, 0.3);
+  border-radius: 6px;
+  padding: 16px;
+  text-align: center;
+}
+
+.info-card .label {
+  display: block;
+  color: rgba(226, 232, 240, 0.6);
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.info-card .value {
+  display: block;
+  color: #e2e8f0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.price-lg {
+  font-size: 24px !important;
+  color: #60a5fa;
+}
+
+/* 迷你表格 */
+.mini-table {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.mini-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.mini-table td,
+.mini-table th {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid rgba(71, 85, 105, 0.3);
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+.mini-table th {
+  color: #e2e8f0;
+  font-weight: 600;
+  background: rgba(51, 65, 85, 0.3);
+}
+
+.mini-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* 财务表格 */
+.financial-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.financial-table th,
+.financial-table td {
+  padding: 12px;
+  text-align: right;
+  border-bottom: 1px solid rgba(71, 85, 105, 0.3);
+  color: #cbd5e1;
+}
+
+.financial-table th {
+  color: #e2e8f0;
+  font-weight: 600;
+  background: rgba(51, 65, 85, 0.3);
+}
+
+.financial-table th:first-child,
+.financial-table td:first-child {
+  text-align: left;
+}
+
+/* 业绩预告卡片 */
+.forecast-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.forecast-card {
+  background: rgba(51, 65, 85, 0.3);
+  border-radius: 6px;
+  padding: 16px;
+  border-left: 3px solid #60a5fa;
+}
+
+.forecast-period {
+  color: #60a5fa;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.forecast-text {
+  color: #cbd5e1;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* 风险卡片网格 */
+.risk-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  padding: 20px;
+}
+
+.risk-card {
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid rgba(71, 85, 105, 0.3);
+}
+
+.risk-card.danger {
+  border-color: rgba(239, 68, 68, 0.5);
+  background: rgba(127, 29, 29, 0.2);
+}
+
+.risk-card.safe {
+  border-color: rgba(34, 197, 94, 0.5);
+  background: rgba(20, 83, 45, 0.2);
+}
+
+.risk-card.full-width {
+  grid-column: 1 / -1;
+}
+
+.risk-card h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #e2e8f0;
+}
+
+.risk-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.risk-badge.danger {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+}
+
+.risk-badge.safe {
+  background: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+}
+
+.pledge-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #e2e8f0;
+  text-align: center;
+  margin-top: 12px;
+}
+
+/* 空状态 */
+.empty-state,
+.empty-hint {
+  text-align: center;
+  padding: 40px;
+  color: rgba(226, 232, 240, 0.5);
+  font-size: 14px;
+}
+
+.loading-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.spinner {
+  border: 3px solid rgba(96, 165, 250, 0.2);
+  border-top-color: #60a5fa;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 涨跌颜色 */
+.up {
+  color: #22c55e !important;
+}
+
+.down {
+  color: #ef4444 !important;
 }
 
 .keywords {

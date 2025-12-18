@@ -49,6 +49,8 @@ class ComprehensiveStockDataService:
                 'pledge': {},  # 股权质押
                 'holder_trade': {},  # 股东增减持
                 'dragon_tiger': {},  # 龙虎榜
+                'top_inst': {},  # 龙虎榜机构明细
+                'block_trade': {},  # 大宗交易
                 'limit_list': {},  # 涨跌停数据
                 'margin': {},  # 融资融券
                 'company_info': {},  # 公司基本信息
@@ -79,6 +81,8 @@ class ComprehensiveStockDataService:
             'pledge': {},
             'holder_trade': {},
             'dragon_tiger': {},
+            'top_inst': {},
+            'block_trade': {},
             'limit_list': {},
             'margin': {},
             'company_info': {},
@@ -125,6 +129,12 @@ class ComprehensiveStockDataService:
         
         # 12. 龙虎榜
         result['dragon_tiger'] = self._get_dragon_tiger(ts_code)
+        
+        # 12.5 龙虎榜机构明细
+        result['top_inst'] = self._get_top_inst(ts_code)
+        
+        # 12.6 大宗交易
+        result['block_trade'] = self._get_block_trade(ts_code)
         
         # 13. 涨跌停数据
         result['limit_list'] = self._get_limit_list(ts_code)
@@ -538,54 +548,126 @@ class ComprehensiveStockDataService:
             return {'status': 'api_unavailable'}
         
         try:
-            # 获取最近30天的龙虎榜
-            end_date = datetime.now().strftime('%Y%m%d')
-            start_date = (datetime.now() - timedelta(days=30)).strftime('%Y%m%d')
+            # 获取最近30天的龙虎榜，逐天查询
+            end_date = datetime.now()
+            start_date = end_date - timedelta(days=30)
             
-            df = self.tushare_api.top_list(
-                ts_code=ts_code,
-                start_date=start_date,
-                end_date=end_date
-            )
+            all_records = []
+            current_date = end_date
+            days_checked = 0
             
-            if df is None or df.empty:
-                return {'status': 'no_data', 'message': '无龙虎榜数据'}
+            # 最多查询30个交易日，或者找到10条记录
+            while current_date >= start_date and len(all_records) < 10 and days_checked < 45:
+                # 跳过周末
+                if current_date.weekday() < 5:  # 0-4为周一到周五
+                    try:
+                        trade_date_str = current_date.strftime('%Y%m%d')
+                        df = self.tushare_api.top_list(
+                            trade_date=trade_date_str
+                        )
+                        
+                        if df is not None and not df.empty:
+                            # 筛选出当前股票的记录
+                            stock_df = df[df['ts_code'] == ts_code]
+                            if not stock_df.empty:
+                                for _, row in stock_df.iterrows():
+                                    all_records.append({
+                                        'date': row.get('trade_date', ''),
+                                        'reason': row.get('reason', ''),
+                                        'buy': float(row.get('buy', 0) or 0),
+                                        'sell': float(row.get('sell', 0) or 0),
+                                        'net': float(row.get('net', 0) or 0)
+                                    })
+                    except Exception as day_error:
+                        # 单日查询失败，继续下一天
+                        pass
+                
+                current_date -= timedelta(days=1)
+                days_checked += 1
             
-            records = []
-            for _, row in df.iterrows():
-                records.append({
-                    'date': row.get('trade_date', ''),
-                    'reason': row.get('reason', ''),
-                    'buy': float(row.get('buy', 0) or 0),
-                    'sell': float(row.get('sell', 0) or 0),
-                    'net': float(row.get('net', 0) or 0)
-                })
-            
-            return {
-                'status': 'success',
-                'count': len(records),
-                'records': records
-            }
+            if all_records:
+                return {
+                    'status': 'success',
+                    'count': len(all_records),
+                    'records': all_records
+                }
+            else:
+                return {'status': 'no_data', 'message': '近30天无龙虎榜数据'}
             
         except Exception as e:
             logger.warning(f"⚠️ 龙虎榜数据获取失败: {e}")
-            return {'status': 'error', 'message': str(e)}
+            return {'status': 'no_data', 'message': f'龙虎榜查询失败'}
     
-    def _get_realtime_tick(self, ts_code: str) -> Dict:
-        """获取实时成交数据（爬虫版）"""
+    def _get_top_inst(self, ts_code: str) -> Dict:
+        """获取龙虎榜机构明细"""
         try:
             if not self.tushare_api:
-                return {'status': 'error', 'error': 'Tushare API未初始化'}
+                return {'status': 'error', 'message': 'Tushare API未初始化'}
             
-            # 调用Tushare实时成交数据接口
-            df = self.tushare_api.realtime_tick(
-                ts_code=ts_code,
-                src='dc'  # 数据源：dc-直连
-            )
+            # 获取最近30天的机构明细
+            end_date = datetime.now()
+            start_date = end_date - timedelta(days=30)
+            
+            all_records = []
+            current_date = end_date
+            days_checked = 0
+            
+            while current_date >= start_date and len(all_records) < 10 and days_checked < 45:
+                if current_date.weekday() < 5:
+                    try:
+                        trade_date_str = current_date.strftime('%Y%m%d')
+                        df = self.tushare_api.top_inst(
+                            trade_date=trade_date_str
+                        )
+                        
+                        if df is not None and not df.empty:
+                            stock_df = df[df['ts_code'] == ts_code]
+                            if not stock_df.empty:
+                                for _, row in stock_df.iterrows():
+                                    all_records.append({
+                                        'trade_date': row.get('trade_date', ''),
+                                        'exalter': row.get('exalter', ''),
+                                        'buy': float(row.get('buy', 0) or 0),
+                                        'buy_rate': float(row.get('buy_rate', 0) or 0),
+                                        'sell': float(row.get('sell', 0) or 0),
+                                        'sell_rate': float(row.get('sell_rate', 0) or 0),
+                                        'net_buy': float(row.get('net_buy', 0) or 0)
+                                    })
+                    except:
+                        pass
+                
+                current_date -= timedelta(days=1)
+                days_checked += 1
+            
+            if all_records:
+                return {
+                    'status': 'success',
+                    'count': len(all_records),
+                    'records': all_records
+                }
+            else:
+                return {'status': 'no_data', 'message': '近30天无机构龙虎榜'}
+                
+        except Exception as e:
+            logger.warning(f"⚠️ 龙虎榜机构明细获取失败: {e}")
+            return {'status': 'no_data', 'message': '机构明细查询失败'}
+    
+    def _get_block_trade(self, ts_code: str) -> Dict:
+        """获取大宗交易数据（AKShare）"""
+        try:
+            import akshare as ak
+            
+            # 将Tushare代码转换为6位数字
+            symbol = ts_code.split('.')[0]
+            
+            # 获取最近3个月的大宗交易
+            start_date = (datetime.now() - timedelta(days=90)).strftime('%Y%m%d')
+            end_date = datetime.now().strftime('%Y%m%d')
+            
+            df = ak.stock_dzjy_mrmx(symbol=symbol)
             
             if df is not None and not df.empty:
-                # 只返回最新50条成交记录
-                records = df.head(50).to_dict('records')
+                records = df.head(20).to_dict('records')
                 return {
                     'status': 'success',
                     'count': len(records),
@@ -594,12 +676,50 @@ class ComprehensiveStockDataService:
             else:
                 return {
                     'status': 'no_data',
-                    'message': '无实时成交数据'
+                    'message': '近期无大宗交易'
                 }
                 
         except Exception as e:
-            logger.warning(f"⚠️ 实时成交数据获取失败: {e}")
-            return {'status': 'error', 'error': str(e)}
+            logger.warning(f"⚠️ 大宗交易数据获取失败: {e}")
+            return {'status': 'no_data', 'message': '大宗交易查询暂不可用'}
+    
+    def _get_realtime_tick(self, ts_code: str) -> Dict:
+        """获取实时成交数据（使用tick_5min）"""
+        try:
+            if not self.tushare_api:
+                return {'status': 'error', 'error': 'Tushare API未初始化'}
+            
+            # 使用5分钟tick数据代替（Tushare没有realtime_tick接口）
+            # 获取当天数据
+            trade_date = datetime.now().strftime('%Y%m%d')
+            
+            df = self.tushare_api.stk_mins(
+                ts_code=ts_code,
+                freq='5min'  # 5分钟频度
+            )
+            
+            if df is not None and not df.empty:
+                # 只返回最新20条
+                records = df.head(20).to_dict('records')
+                return {
+                    'status': 'success',
+                    'count': len(records),
+                    'data': records,
+                    'message': '5分钟tick数据'
+                }
+            else:
+                return {
+                    'status': 'no_data',
+                    'message': '无分钟级数据（可能需要更高权限）'
+                }
+                
+        except Exception as e:
+            logger.warning(f"⚠️ 分钟级数据获取失败: {e}")
+            # 降级：返回无数据而不是错误
+            return {
+                'status': 'no_data',
+                'message': f'暂不支持实时成交（{str(e)[:50]}）'
+            }
     
     def _get_limit_list(self, ts_code: str) -> Dict:
         """获取涨跌停数据"""
@@ -818,32 +938,73 @@ class ComprehensiveStockDataService:
             return {'status': 'error', 'error': str(e)}
     
     def _get_announcements(self, ts_code: str) -> Dict:
-        """获取上市公司公告（AKShare）"""
+        """获取上市公司公告（暂无可用接口）"""
+        # Tushare的公告接口需要高积分权限，AKShare的stock_notice_report也不稳定
+        # 作为替代，我们使用业绩预告和快报作为“重要公告”
         try:
-            import akshare as ak
+            if not self.tushare_api:
+                return {'status': 'no_data', 'message': '公告查询暂不可用'}
             
-            # 将Tushare代码转换为6位数字
-            symbol = ts_code.split('.')[0]
+            # 使用业绩预告作为重要公告的替代
+            announcements = []
             
-            # 获取公告列表（最近20条）
-            df = ak.stock_notice_report(symbol=symbol)
+            # 1. 业绩预告
+            try:
+                forecast_df = self.tushare_api.forecast(
+                    ts_code=ts_code,
+                    start_date=(datetime.now() - timedelta(days=365)).strftime('%Y%m%d'),
+                    end_date=datetime.now().strftime('%Y%m%d')
+                )
+                if forecast_df is not None and not forecast_df.empty:
+                    for _, row in forecast_df.head(5).iterrows():
+                        announcements.append({
+                            'type': '业绩预告',
+                            'ann_date': row.get('ann_date', ''),
+                            'end_date': row.get('end_date', ''),
+                            'summary': row.get('summary', ''),
+                            'change_reason': row.get('change_reason', '')
+                        })
+            except:
+                pass
             
-            if df is not None and not df.empty:
-                records = df.head(20).to_dict('records')
+            # 2. 业绩快报
+            try:
+                express_df = self.tushare_api.express(
+                    ts_code=ts_code,
+                    start_date=(datetime.now() - timedelta(days=365)).strftime('%Y%m%d'),
+                    end_date=datetime.now().strftime('%Y%m%d')
+                )
+                if express_df is not None and not express_df.empty:
+                    for _, row in express_df.head(5).iterrows():
+                        announcements.append({
+                            'type': '业绩快报',
+                            'ann_date': row.get('ann_date', ''),
+                            'end_date': row.get('end_date', ''),
+                            'revenue': row.get('revenue', 0),
+                            'profit': row.get('operate_profit', 0)
+                        })
+            except:
+                pass
+            
+            if announcements:
                 return {
                     'status': 'success',
-                    'count': len(records),
-                    'data': records
+                    'count': len(announcements),
+                    'data': announcements,
+                    'message': '重要公告（业绩预告/快报）'
                 }
             else:
                 return {
                     'status': 'no_data',
-                    'message': '无公告数据'
+                    'message': '近一年无重要公告'
                 }
                 
         except Exception as e:
             logger.warning(f"⚠️ 公告数据获取失败: {e}")
-            return {'status': 'error', 'error': str(e)}
+            return {
+                'status': 'no_data',
+                'message': '公告查询暂不可用'
+            }
     
     def _get_news_data(self, ts_code: str) -> List[Dict]:
         """获取新闻数据（调用现有的新闻聚合器）"""
@@ -933,6 +1094,14 @@ class ComprehensiveStockDataService:
             summary['dragon_tiger'] = f"✅ 龙虎榜{data['dragon_tiger']['count']}次"
         elif data['dragon_tiger'].get('status') == 'no_data':
             summary['dragon_tiger'] = '🔴 无龙虎榜数据'
+        
+        # 12.5 机构龙虎榜
+        if data.get('top_inst', {}).get('status') == 'success':
+            summary['top_inst'] = f"✅ 机构龙虎榜{data['top_inst']['count']}条"
+        
+        # 12.6 大宗交易
+        if data.get('block_trade', {}).get('status') == 'success':
+            summary['block_trade'] = f"✅ 大宗交易{data['block_trade']['count']}条"
         
         # 13. 涨跌停
         if data['limit_list'].get('status') == 'success':
