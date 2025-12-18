@@ -465,7 +465,7 @@ async def get_stock_realtime(ts_code: str):
     """
     try:
         realtime_data = get_stock_realtime_quote(ts_code)
-        
+
         if realtime_data:
             return {
                 "success": True,
@@ -476,28 +476,9 @@ async def get_stock_realtime(ts_code: str):
                 "success": False,
                 "error": "未能获取实时数据"
             }
-            
+
     except Exception as e:
         logger.error(f"获取实时数据失败: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/stock/risk/{ts_code}")
-@log_api_call("获取股票风险分析")
-async def get_stock_risk(ts_code: str):
-    """
-    获取股票风险分析结果
-    """
-    try:
-        risk_result = analyze_stock_risk(ts_code)
-        
-        return {
-            "success": True,
-            "data": risk_result
-        }
-            
-    except Exception as e:
-        logger.error(f"风险分析失败: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -509,81 +490,14 @@ async def get_stock_suspend(ts_code: str):
     """
     try:
         suspend_status = check_suspend_status(ts_code)
-        
+
         return {
             "success": True,
             "data": suspend_status
         }
-            
+
     except Exception as e:
         logger.error(f"检查停复牌失败: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/stock/news/{ts_code}")
-@log_api_call("获取股票新闻")
-async def get_stock_news(ts_code: str, limit: int = 10):
-    """
-    获取股票新闻
-    """
-    try:
-        news_aggregator = get_news_aggregator()
-        news_data = news_aggregator.aggregate_news(
-            ts_code,
-            include_tushare=False,
-            include_akshare=True,
-            limit_per_source=limit
-        )
-        
-        return {
-            "success": True,
-            "data": news_data
-        }
-            
-    except Exception as e:
-        logger.error(f"获取新闻失败: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/stock/sentiment/{ts_code}")
-@log_api_call("获取股票情绪分析")
-async def get_stock_sentiment(ts_code: str, limit: int = 20):
-    """
-    获取股票情绪分析
-    """
-    try:
-        # 首先获取新闻
-        news_aggregator = get_news_aggregator()
-        news_data = news_aggregator.aggregate_news(
-            ts_code,
-            include_tushare=False,
-            include_akshare=True,
-            limit_per_source=limit
-        )
-        
-        news_list = news_data.get('merged_news', [])
-        
-        if not news_list:
-            return {
-                "success": True,
-                "data": {
-                    "overall_score": 50,
-                    "overall_sentiment": "neutral",
-                    "message": "暂无新闻数据"
-                }
-            }
-        
-        # 分析情绪
-        sentiment_engine = get_sentiment_engine()
-        sentiment_result = sentiment_engine.analyze_news_list(news_list)
-        
-        return {
-            "success": True,
-            "data": sentiment_result
-        }
-            
-    except Exception as e:
-        logger.error(f"情绪分析失败: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
