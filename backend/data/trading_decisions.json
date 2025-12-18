@@ -130,5 +130,44 @@
         "status": "EXECUTED"
       }
     }
+  },
+  {
+    "record_id": "DR20251218011845",
+    "task_id": "AT20251218011638",
+    "timestamp": "2025-12-18T01:18:45.502348",
+    "market_data": {
+      "stock_code": "600519",
+      "current_price": 1433.1,
+      "change_rate": 0.78,
+      "volume": 31382.0,
+      "news_summary": "52只股中线走稳 站上半年线; 食品饮料行业今日净流入资金3.02亿元，黑芝麻等5股净流入资金超3000万元; 【数据揭秘】融资客看好个股一览"
+    },
+    "decision": {
+      "action": "buy",
+      "quantity": 300,
+      "reason": "当前贵州茅台（600519）价格微涨0.78%，成交量维持高位震荡态势，市场情绪呈现温和乐观。结合A股结构性行情和资金流向，食品饮料行业净流入资金3.02亿元，显示资金对消费板块的偏好。作为无持仓状态，这是一个积极的建仓机会，建议小仓位试探买入。",
+      "confidence": 0.75,
+      "risk_level": "medium",
+      "stop_loss": 1400.0,
+      "take_profit": 1500.0
+    },
+    "executed": true,
+    "execution_result": {
+      "success": true,
+      "trade_id": "T20251218011718",
+      "message": "交易成功: BUY 300股 @ 1433.1",
+      "trade": {
+        "trade_id": "T20251218011718",
+        "timestamp": "2025-12-18T01:17:18.697578",
+        "stock_code": "600519",
+        "stock_name": "贵州茅台",
+        "action": "BUY",
+        "quantity": 300,
+        "price": 1433.1,
+        "amount": 429930.0,
+        "commission": 128.98,
+        "status": "EXECUTED"
+      }
+    }
   }
 ]

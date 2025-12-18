@@ -1,11 +1,11 @@
 {
   "portfolio": {
     "initial_capital": 1000000,
-    "cash_balance": 988020.0,
-    "total_value": 999990.0,
-    "positions_value": 11970.0,
+    "cash_balance": 557961.02,
+    "total_value": 999861.02,
+    "positions_value": 441900.0,
     "total_profit_loss": 0,
-    "total_profit_loss_rate": -0.001
+    "total_profit_loss_rate": -0.013897999999998138
   },
   "positions": {
     "600085": {
@@ -41,6 +41,23 @@
           "market": "CN"
         }
       ]
+    },
+    "600519": {
+      "stock_code": "600519",
+      "stock_name": "贵州茅台",
+      "quantity": 300,
+      "avg_cost": 1433.1,
+      "open_date": "2025-12-18T01:17:18.697578",
+      "last_update": "2025-12-18T01:17:18.697578",
+      "market": "CN",
+      "trades": [
+        {
+          "date": "2025-12-18T01:17:18.697578",
+          "quantity": 300,
+          "price": 1433.1,
+          "market": "CN"
+        }
+      ]
     }
   },
   "trade_history": [
@@ -67,7 +84,19 @@
       "amount": 2199.0,
       "commission": 5.0,
       "status": "EXECUTED"
+    },
+    {
+      "trade_id": "T20251218011718",
+      "timestamp": "2025-12-18T01:17:18.697578",
+      "stock_code": "600519",
+      "stock_name": "贵州茅台",
+      "action": "BUY",
+      "quantity": 300,
+      "price": 1433.1,
+      "amount": 429930.0,
+      "commission": 128.98,
+      "status": "EXECUTED"
     }
   ],
-  "last_update": "2025-12-17T17:31:02.934650"
+  "last_update": "2025-12-18T01:18:45.500361"
 }

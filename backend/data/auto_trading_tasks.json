@@ -205,5 +205,29 @@
       "risk_level": "未评估",
       "investment_advice": ""
     }
+  },
+  "AT20251218011638": {
+    "task_id": "AT20251218011638",
+    "stock_code": "600519",
+    "strategy_id": "trident",
+    "initial_capital": 100000.0,
+    "current_capital": 100000.0,
+    "status": "running",
+    "created_at": "2025-12-18T01:16:38.485994",
+    "last_decision_at": "2025-12-18T01:18:45.504348",
+    "total_trades": 1,
+    "total_profit": 0,
+    "auto_select_strategy": false,
+    "risk_preference": "moderate",
+    "analysis_result": {
+      "stock_code": "600519",
+      "stock_name": "贵州茅台",
+      "analysis_summary": "新闻舆情分析师：【贵州茅台（600519）投资价值分析】   当前价格1433.1元，微涨0.78%，成交量313.82万手，维持高位震荡态势。结合近期市场动态与舆情分析，以下...\n社交媒体分析师：当前贵州茅台（600519）价格1433.1元，微涨0.78%，成交额3138.2万元。结合平台情绪数据，初步判断市场情绪呈现**温和乐观**态势，但缺乏明确方...\n中国市场专家：1. **A股大盘当前趋势**：当前A股处于震荡格局，但结构性行情特征明显。上证指数在3000点附近反复横跳，市场情绪偏谨慎，资金更倾向于防御性板块，如消费、医...\n行业轮动分析师：**贵州茅台（600519）投资价值分析**   当前价格1433.1元，微涨0.78%，成交量313.82万手，维持高位震荡态势。结合近期市场动态与舆情分析，...",
+      "technical_score": null,
+      "fundamental_score": null,
+      "sentiment_score": null,
+      "risk_level": "未评估",
+      "investment_advice": ""
+    }
   }
 }
