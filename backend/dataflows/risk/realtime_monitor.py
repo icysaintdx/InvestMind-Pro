@@ -49,22 +49,54 @@ class RealtimeMonitor:
             logger.warning("⚠️ Tushare Token未配置")
             return None
         
+        # 优先使用AKShare获取实时行情（更稳定）
+        try:
+            import akshare as ak
+
+            # 解析股票代码
+            codes = [c.strip().split('.')[0] for c in ts_codes.split(',')]
+
+            df = ak.stock_zh_a_spot_em()
+            if df is not None and not df.empty:
+                # 筛选目标股票
+                result_df = df[df['代码'].isin(codes)]
+                if not result_df.empty:
+                    # 转换列名以兼容原有格式
+                    result_df = result_df.rename(columns={
+                        '代码': 'TS_CODE',
+                        '名称': 'NAME',
+                        '最新价': 'PRICE',
+                        '涨跌幅': 'PCT_CHANGE',
+                        '涨跌额': 'CHANGE',
+                        '成交量': 'VOLUME',
+                        '成交额': 'AMOUNT',
+                        '最高': 'HIGH',
+                        '最低': 'LOW',
+                        '今开': 'OPEN',
+                        '昨收': 'PRE_CLOSE'
+                    })
+                    logger.info(f"✅ 获取实时行情(AKShare): {len(result_df)}只股票")
+                    return result_df
+        except Exception as e:
+            logger.debug(f"AKShare实时行情获取失败: {e}")
+
+        # 备选：使用Tushare
         try:
             import tushare as ts
-            
+
             # 修复: 先设置token
             if self.token:
                 ts.set_token(self.token)
-            
+
             df = ts.realtime_quote(ts_code=ts_codes, src=src)
-            
+
             if df is not None and not df.empty:
-                logger.info(f"✅ 获取实时行情: {len(df)}只股票 (来源:{src})")
+                logger.info(f"✅ 获取实时行情(Tushare): {len(df)}只股票 (来源:{src})")
                 return df
             else:
                 logger.warning(f"⚠️ 未获取到{ts_codes}的实时行情")
                 return None
-                
+
         except Exception as e:
             logger.error(f"❌ 获取实时行情失败: {str(e)[:100]}")
             return None

@@ -229,28 +229,62 @@ class ComprehensiveStockDataService:
         return result
     
     def _get_realtime_quote(self, ts_code: str) -> Dict:
-        """获取实时行情（Tushare爬虫接口）"""
+        """获取实时行情（优先使用AKShare，备选Tushare）"""
+        # 优先使用AKShare获取实时行情
+        try:
+            import akshare as ak
+            symbol = ts_code.split('.')[0]
+
+            # 使用东方财富实时行情
+            df = ak.stock_zh_a_spot_em()
+            if df is not None and not df.empty:
+                stock_data = df[df['代码'] == symbol]
+                if not stock_data.empty:
+                    row = stock_data.iloc[0]
+                    return {
+                        'status': 'success',
+                        'source': 'akshare',
+                        'data': {
+                            'name': str(row.get('名称', '')),
+                            'price': float(row.get('最新价', 0) or 0),
+                            'change': float(row.get('涨跌额', 0) or 0),
+                            'change_pct': float(row.get('涨跌幅', 0) or 0),
+                            'volume': int(row.get('成交量', 0) or 0),
+                            'amount': float(row.get('成交额', 0) or 0),
+                            'high': float(row.get('最高', 0) or 0),
+                            'low': float(row.get('最低', 0) or 0),
+                            'open': float(row.get('今开', 0) or 0),
+                            'pre_close': float(row.get('昨收', 0) or 0),
+                            'date': datetime.now().strftime('%Y-%m-%d'),
+                            'time': datetime.now().strftime('%H:%M:%S')
+                        }
+                    }
+        except Exception as e:
+            logger.debug(f"AKShare实时行情获取失败: {e}")
+
+        # 备选：使用Tushare
         try:
             import tushare as ts
             df = ts.realtime_quote(ts_code=ts_code)
-            
+
             if df is None or df.empty:
                 return {'status': 'no_data', 'message': '无实时行情数据'}
-            
+
             data = df.iloc[0].to_dict()
             return {
                 'status': 'success',
+                'source': 'tushare',
                 'data': {
                     'name': data.get('NAME', ''),
-                    'price': float(data.get('PRICE', 0)),
-                    'change': float(data.get('PRICE', 0)) - float(data.get('PRE_CLOSE', 0)),
-                    'change_pct': ((float(data.get('PRICE', 0)) - float(data.get('PRE_CLOSE', 0))) / float(data.get('PRE_CLOSE', 1)) * 100) if data.get('PRE_CLOSE') else 0,
-                    'volume': int(data.get('VOLUME', 0)),
-                    'amount': float(data.get('AMOUNT', 0)),
-                    'high': float(data.get('HIGH', 0)),
-                    'low': float(data.get('LOW', 0)),
-                    'open': float(data.get('OPEN', 0)),
-                    'pre_close': float(data.get('PRE_CLOSE', 0)),
+                    'price': float(data.get('PRICE', 0) or 0),
+                    'change': float(data.get('PRICE', 0) or 0) - float(data.get('PRE_CLOSE', 0) or 0),
+                    'change_pct': ((float(data.get('PRICE', 0) or 0) - float(data.get('PRE_CLOSE', 0) or 0)) / float(data.get('PRE_CLOSE', 1) or 1) * 100) if data.get('PRE_CLOSE') else 0,
+                    'volume': int(data.get('VOLUME', 0) or 0),
+                    'amount': float(data.get('AMOUNT', 0) or 0),
+                    'high': float(data.get('HIGH', 0) or 0),
+                    'low': float(data.get('LOW', 0) or 0),
+                    'open': float(data.get('OPEN', 0) or 0),
+                    'pre_close': float(data.get('PRE_CLOSE', 0) or 0),
                     'date': data.get('DATE', ''),
                     'time': data.get('TIME', '')
                 }
@@ -714,29 +748,48 @@ class ComprehensiveStockDataService:
         """获取大宗交易数据（AKShare）"""
         try:
             import akshare as ak
-            
-            # 将Tushare代码转换为6位数字
+
+            # 获取全市场大宗交易数据，然后筛选
             symbol = ts_code.split('.')[0]
-            
-            # 获取最近3个月的大宗交易
-            start_date = (datetime.now() - timedelta(days=90)).strftime('%Y%m%d')
-            end_date = datetime.now().strftime('%Y%m%d')
-            
-            df = ak.stock_dzjy_mrmx(symbol=symbol)
-            
-            if df is not None and not df.empty:
-                records = df.head(20).to_dict('records')
-                return {
-                    'status': 'success',
-                    'count': len(records),
-                    'data': records
-                }
-            else:
-                return {
-                    'status': 'no_data',
-                    'message': '近期无大宗交易'
-                }
-                
+
+            # 使用stock_dzjy_sctj获取大宗交易统计
+            try:
+                df = ak.stock_dzjy_sctj()
+                if df is not None and not df.empty:
+                    # 筛选当前股票
+                    stock_data = df[df['证券代码'].astype(str) == symbol]
+                    if not stock_data.empty:
+                        records = stock_data.head(20).to_dict('records')
+                        return {
+                            'status': 'success',
+                            'count': len(records),
+                            'data': records,
+                            'description': '大宗交易统计'
+                        }
+            except Exception as e1:
+                logger.debug(f"stock_dzjy_sctj失败: {e1}")
+
+            # 备选：获取每日明细
+            try:
+                df = ak.stock_dzjy_mrtj()
+                if df is not None and not df.empty:
+                    stock_data = df[df['证券代码'].astype(str) == symbol]
+                    if not stock_data.empty:
+                        records = stock_data.head(20).to_dict('records')
+                        return {
+                            'status': 'success',
+                            'count': len(records),
+                            'data': records,
+                            'description': '大宗交易每日统计'
+                        }
+            except Exception as e2:
+                logger.debug(f"stock_dzjy_mrtj失败: {e2}")
+
+            return {
+                'status': 'no_data',
+                'message': '近期无大宗交易'
+            }
+
         except Exception as e:
             logger.warning(f"⚠️ 大宗交易数据获取失败: {e}")
             return {'status': 'no_data', 'message': '大宗交易查询暂不可用'}
@@ -745,71 +798,115 @@ class ComprehensiveStockDataService:
         """获取上市公司公告（AKShare）"""
         try:
             import akshare as ak
-            
-            # 将Tushare代码转换为6位数字
+
             symbol = ts_code.split('.')[0]
-            
-            # 获取公告列表
-            df = ak.stock_notice_report(symbol=symbol)
-            
-            if df is not None and not df.empty:
-                # 取最近20条公告
-                records = []
-                for _, row in df.head(20).iterrows():
-                    records.append({
-                        'date': str(row.get('公告日期', '')),
-                        'title': str(row.get('公告标题', '')),
-                        'type': str(row.get('公告类型', '')),
-                        'url': str(row.get('公告链接', ''))
-                    })
-                
-                return {
-                    'status': 'success',
-                    'count': len(records),
-                    'data': records
-                }
-            else:
-                return {
-                    'status': 'no_data',
-                    'message': '近期无公告'
-                }
-                
+
+            # 方法1: 使用巨潮资讯公告查询
+            try:
+                end_date = datetime.now().strftime('%Y-%m-%d')
+                start_date = (datetime.now() - timedelta(days=90)).strftime('%Y-%m-%d')
+
+                df = ak.stock_notice_report(symbol=symbol, date=start_date)
+                if df is not None and not df.empty:
+                    records = []
+                    for _, row in df.head(20).iterrows():
+                        records.append({
+                            'date': str(row.get('公告日期', row.get('日期', ''))),
+                            'title': str(row.get('公告标题', row.get('标题', ''))),
+                            'type': str(row.get('公告类型', '')),
+                            'url': str(row.get('公告链接', row.get('链接', '')))
+                        })
+                    return {
+                        'status': 'success',
+                        'count': len(records),
+                        'data': records
+                    }
+            except Exception as e1:
+                logger.debug(f"stock_notice_report失败: {e1}")
+
+            # 方法2: 使用东方财富公告
+            try:
+                df = ak.stock_ggcg_em(symbol=symbol)
+                if df is not None and not df.empty:
+                    records = []
+                    for _, row in df.head(20).iterrows():
+                        records.append({
+                            'date': str(row.get('公告日期', '')),
+                            'title': str(row.get('公告标题', '')),
+                            'type': '公告',
+                            'url': ''
+                        })
+                    return {
+                        'status': 'success',
+                        'count': len(records),
+                        'data': records
+                    }
+            except Exception as e2:
+                logger.debug(f"stock_ggcg_em失败: {e2}")
+
+            return {
+                'status': 'no_data',
+                'message': '近期无公告'
+            }
+
         except Exception as e:
             logger.warning(f"⚠️ 公告数据获取失败: {e}")
             return {'status': 'no_data', 'message': '公告查询暂不可用'}
     
     def _get_news_sina(self, ts_code: str) -> Dict:
-        """获取新闻（使用东方财富主力）"""
+        """获取个股新闻（使用东方财富）"""
         try:
             import akshare as ak
-            
+
             symbol = ts_code.split('.')[0]
-            
-            # 使用东方财富主力资金动向作为替代
-            df = ak.stock_news_main_cx(symbol=symbol)
-            
-            if df is not None and not df.empty:
-                records = []
-                for _, row in df.head(20).iterrows():
-                    records.append({
-                        'title': str(row.get('标题', '')),
-                        'content': str(row.get('内容', '')),
-                        'time': str(row.get('时间', '')),
-                        'source': '东方财富',
-                        'url': ''
-                    })
-                
-                return {
-                    'status': 'success',
-                    'count': len(records),
-                    'data': records
-                }
-            else:
-                return {'status': 'no_data', 'message': '无主力动向数据'}
-                
+
+            # 方法1: 使用东方财富个股新闻
+            try:
+                df = ak.stock_news_em(symbol=symbol)
+                if df is not None and not df.empty:
+                    records = []
+                    for _, row in df.head(20).iterrows():
+                        records.append({
+                            'title': str(row.get('新闻标题', '')),
+                            'content': str(row.get('新闻内容', ''))[:200],
+                            'time': str(row.get('发布时间', '')),
+                            'source': str(row.get('文章来源', '东方财富')),
+                            'url': str(row.get('新闻链接', ''))
+                        })
+                    return {
+                        'status': 'success',
+                        'count': len(records),
+                        'data': records
+                    }
+            except Exception as e1:
+                logger.debug(f"stock_news_em失败: {e1}")
+
+            # 方法2: 使用财联社电报
+            try:
+                df = ak.stock_telegraph_cls()
+                if df is not None and not df.empty:
+                    records = []
+                    for _, row in df.head(20).iterrows():
+                        records.append({
+                            'title': str(row.get('标题', '')),
+                            'content': str(row.get('内容', ''))[:200],
+                            'time': str(row.get('发布时间', '')),
+                            'source': '财联社',
+                            'url': ''
+                        })
+                    return {
+                        'status': 'success',
+                        'count': len(records),
+                        'data': records
+                    }
+            except Exception as e2:
+                logger.debug(f"stock_telegraph_cls失败: {e2}")
+
+            return {'status': 'no_data', 'message': '无新闻数据'}
+
         except Exception as e:
-            logger.warning(f"⚠️ 主力动向数据获取失败: {e}")
-            return {'status': 'no_data', 'message': '主力动向暂不可用'}
+            logger.warning(f"⚠️ 新闻数据获取失败: {e}")
+            return {'status': 'no_data', 'message': '新闻暂不可用'}
     
     def _get_market_news_cninfo(self) -> Dict:
         """获取市场快讯（百度财经）"""
@@ -845,44 +942,56 @@ class ComprehensiveStockDataService:
         """获取巨潮资讯公告快讯（AKShare）"""
         try:
             import akshare as ak
-            from datetime import datetime, timedelta
-            
-            # 获取最近30天的公告
-            end_date = datetime.now().strftime('%Y%m%d')
-            start_date = (datetime.now() - timedelta(days=30)).strftime('%Y%m%d')
-            
-            # 巨潮资讯公告查询
-            df = ak.stock_zh_a_disclosure_report_cninfo(
-                symbol='',  # 空表示所有公司
-                market='沪深京',
-                category='',  # 空表示所有类别
-                start_date=start_date,
-                end_date=end_date
-            )
-            
-            if df is not None and not df.empty:
-                records = []
-                for _, row in df.head(50).iterrows():
-                    records.append({
-                        'time': str(row.get('公告日期', '')),
-                        'code': str(row.get('股票代码', '')),
-                        'name': str(row.get('股票简称', '')),
-                        'title': str(row.get('公告标题', '')),
-                        'category': str(row.get('公告类型', '')),
-                        'source': '巨潮资讯'
-                    })
-                
-                return {
-                    'status': 'success',
-                    'count': len(records),
-                    'data': records
-                }
-            else:
-                return {'status': 'no_data', 'message': '无巨潮公告'}
-                
+
+            # 方法1: 使用东方财富公告
+            try:
+                df = ak.stock_gsgg_em()
+                if df is not None and not df.empty:
+                    records = []
+                    for _, row in df.head(50).iterrows():
+                        records.append({
+                            'time': str(row.get('公告日期', '')),
+                            'code': str(row.get('代码', '')),
+                            'name': str(row.get('名称', '')),
+                            'title': str(row.get('公告标题', '')),
+                            'category': str(row.get('公告类型', '')),
+                            'source': '东方财富'
+                        })
+                    return {
+                        'status': 'success',
+                        'count': len(records),
+                        'data': records
+                    }
+            except Exception as e1:
+                logger.debug(f"stock_gsgg_em失败: {e1}")
+
+            # 方法2: 使用财联社电报作为替代
+            try:
+                df = ak.stock_telegraph_cls()
+                if df is not None and not df.empty:
+                    records = []
+                    for _, row in df.head(50).iterrows():
+                        records.append({
+                            'time': str(row.get('发布时间', '')),
+                            'code': '',
+                            'name': '',
+                            'title': str(row.get('标题', '')),
+                            'category': '快讯',
+                            'source': '财联社'
+                        })
+                    return {
+                        'status': 'success',
+                        'count': len(records),
+                        'data': records
+                    }
+            except Exception as e2:
+                logger.debug(f"stock_telegraph_cls失败: {e2}")
+
+            return {'status': 'no_data', 'message': '无公告快讯'}
+
         except Exception as e:
-            logger.warning(f"⚠️ 巨潮资讯获取失败: {e}")
-            return {'status': 'no_data', 'message': '巨潮资讯暂不可用'}
+            logger.warning(f"⚠️ 公告快讯获取失败: {e}")
+            return {'status': 'no_data', 'message': '公告快讯暂不可用'}
     
     def _get_industry_policy(self) -> Dict:
         """获取行业政策动态（AKShare）- 使用财经新闻作为政策信息源"""
@@ -989,15 +1098,35 @@ class ComprehensiveStockDataService:
         try:
             import akshare as ak
             symbol = ts_code.split('.')[0]
-            
-            # 股权质押详情
-            df = ak.stock_zh_a_pledge_ratio(symbol=symbol)
-            if df is not None and not df.empty:
-                return {
-                    'status': 'success',
-                    'count': len(df),
-                    'data': df.head(20).to_dict('records')
-                }
+
+            # 方法1: 使用股权质押市场概况
+            try:
+                df = ak.stock_gpzy_pledge_ratio_em()
+                if df is not None and not df.empty:
+                    stock_data = df[df['股票代码'].astype(str) == symbol]
+                    if not stock_data.empty:
+                        return {
+                            'status': 'success',
+                            'count': len(stock_data),
+                            'data': stock_data.to_dict('records')
+                        }
+            except Exception as e1:
+                logger.debug(f"stock_gpzy_pledge_ratio_em失败: {e1}")
+
+            # 方法2: 使用质押统计
+            try:
+                df = ak.stock_gpzy_profile_em()
+                if df is not None and not df.empty:
+                    stock_data = df[df['股票代码'].astype(str) == symbol]
+                    if not stock_data.empty:
+                        return {
+                            'status': 'success',
+                            'count': len(stock_data),
+                            'data': stock_data.to_dict('records')
+                        }
+            except Exception as e2:
+                logger.debug(f"stock_gpzy_profile_em失败: {e2}")
+
             return {'status': 'no_data', 'message': '无质押记录'}
         except Exception as e:
             logger.warning(f"⚠️ 质押详情获取失败: {e}")
@@ -1058,15 +1187,40 @@ class ComprehensiveStockDataService:
         try:
             import akshare as ak
             symbol = ts_code.split('.')[0]
-            
-            # 龙虎榜数据
-            df = ak.stock_lhb_detail_em(symbol=symbol)
-            if df is not None and not df.empty:
-                return {
-                    'status': 'success',
-                    'count': len(df),
-                    'data': df.head(10).to_dict('records')
-                }
+
+            # 方法1: 获取龙虎榜每日详情（不需要symbol参数）
+            try:
+                # 获取最近的龙虎榜数据
+                end_date = datetime.now().strftime('%Y%m%d')
+                start_date = (datetime.now() - timedelta(days=30)).strftime('%Y%m%d')
+
+                df = ak.stock_lhb_detail_em(start_date=start_date, end_date=end_date)
+                if df is not None and not df.empty:
+                    # 筛选当前股票
+                    stock_data = df[df['代码'].astype(str) == symbol]
+                    if not stock_data.empty:
+                        return {
+                            'status': 'success',
+                            'count': len(stock_data),
+                            'data': stock_data.head(10).to_dict('records')
+                        }
+            except Exception as e1:
+                logger.debug(f"stock_lhb_detail_em失败: {e1}")
+
+            # 方法2: 使用龙虎榜营业部统计
+            try:
+                df = ak.stock_lhb_stock_statistic_em(symbol="近一月")
+                if df is not None and not df.empty:
+                    stock_data = df[df['代码'].astype(str) == symbol]
+                    if not stock_data.empty:
+                        return {
+                            'status': 'success',
+                            'count': len(stock_data),
+                            'data': stock_data.to_dict('records')
+                        }
+            except Exception as e2:
+                logger.debug(f"stock_lhb_stock_statistic_em失败: {e2}")
+
             return {'status': 'no_data', 'message': '无龙虎榜数据'}
         except Exception as e:
             logger.warning(f"⚠️ 龙虎榜获取失败: {e}")
@@ -1077,15 +1231,37 @@ class ComprehensiveStockDataService:
         try:
             import akshare as ak
             symbol = ts_code.split('.')[0]
-            
-            # 业绩预告
-            df = ak.stock_yjyg_em(symbol=symbol)
-            if df is not None and not df.empty:
-                return {
-                    'status': 'success',
-                    'count': len(df),
-                    'data': df.to_dict('records')
-                }
+
+            # 方法1: 获取业绩预告汇总
+            try:
+                # 获取最新一期业绩预告
+                df = ak.stock_yjyg_em(date="")  # 空字符串获取最新
+                if df is not None and not df.empty:
+                    stock_data = df[df['股票代码'].astype(str) == symbol]
+                    if not stock_data.empty:
+                        return {
+                            'status': 'success',
+                            'count': len(stock_data),
+                            'data': stock_data.to_dict('records')
+                        }
+            except Exception as e1:
+                logger.debug(f"stock_yjyg_em失败: {e1}")
+
+            # 方法2: 使用业绩快报
+            try:
+                df = ak.stock_yjkb_em(date="")
+                if df is not None and not df.empty:
+                    stock_data = df[df['股票代码'].astype(str) == symbol]
+                    if not stock_data.empty:
+                        return {
+                            'status': 'success',
+                            'count': len(stock_data),
+                            'data': stock_data.to_dict('records'),
+                            'description': '业绩快报'
+                        }
+            except Exception as e2:
+                logger.debug(f"stock_yjkb_em失败: {e2}")
+
             return {'status': 'no_data', 'message': '无业绩预告'}
         except Exception as e:
             logger.warning(f"⚠️ 业绩预告获取失败: {e}")
@@ -1096,34 +1272,87 @@ class ComprehensiveStockDataService:
         try:
             import akshare as ak
             symbol = ts_code.split('.')[0]
-            
-            # 审计意见
-            df = ak.stock_audit_result_cninfo(symbol=symbol)
-            if df is not None and not df.empty:
-                return {
-                    'status': 'success',
-                    'count': len(df),
-                    'data': df.to_dict('records')
-                }
+
+            # 方法1: 使用财务审计意见汇总
+            try:
+                df = ak.stock_fhps_detail_em()
+                if df is not None and not df.empty:
+                    stock_data = df[df['代码'].astype(str) == symbol]
+                    if not stock_data.empty:
+                        return {
+                            'status': 'success',
+                            'count': len(stock_data),
+                            'data': stock_data.to_dict('records')
+                        }
+            except Exception as e1:
+                logger.debug(f"stock_fhps_detail_em失败: {e1}")
+
+            # 方法2: 使用Tushare的审计意见（如果可用）
+            if self.tushare_api:
+                try:
+                    df = self.tushare_api.fina_audit(ts_code=ts_code)
+                    if df is not None and not df.empty:
+                        return {
+                            'status': 'success',
+                            'count': len(df),
+                            'data': df.to_dict('records'),
+                            'source': 'tushare'
+                        }
+                except Exception as e2:
+                    logger.debug(f"tushare fina_audit失败: {e2}")
+
             return {'status': 'no_data', 'message': '无审计意见'}
         except Exception as e:
             logger.warning(f"⚠️ 审计意见获取失败: {e}")
             return {'status': 'no_data', 'message': '审计意见暂不可用'}
-    
+
     def _get_margin_trading_ak(self, ts_code: str) -> Dict:
         """获取融资融券（AKShare）"""
         try:
             import akshare as ak
             symbol = ts_code.split('.')[0]
-            
-            # 融资融券
-            df = ak.stock_margin_underlying_info_szse(symbol=symbol)
-            if df is not None and not df.empty:
-                return {
-                    'status': 'success',
-                    'count': len(df),
-                    'data': df.head(20).to_dict('records')
-                }
+
+            # 方法1: 使用融资融券明细
+            try:
+                df = ak.stock_margin_detail_szse(date="")  # 最新日期
+                if df is not None and not df.empty:
+                    stock_data = df[df['证券代码'].astype(str) == symbol]
+                    if not stock_data.empty:
+                        return {
+                            'status': 'success',
+                            'count': len(stock_data),
+                            'data': stock_data.head(20).to_dict('records')
+                        }
+            except Exception as e1:
+                logger.debug(f"stock_margin_detail_szse失败: {e1}")
+
+            # 方法2: 使用上交所融资融券
+            try:
+                df = ak.stock_margin_detail_sse(date="")
+                if df is not None and not df.empty:
+                    stock_data = df[df['标的证券代码'].astype(str) == symbol]
+                    if not stock_data.empty:
+                        return {
+                            'status': 'success',
+                            'count': len(stock_data),
+                            'data': stock_data.head(20).to_dict('records')
+                        }
+            except Exception as e2:
+                logger.debug(f"stock_margin_detail_sse失败: {e2}")
+
+            # 方法3: 使用东方财富融资融券汇总
+            try:
+                df = ak.stock_margin_sse(start_date=(datetime.now() - timedelta(days=30)).strftime('%Y%m%d'))
+                if df is not None and not df.empty:
+                    return {
+                        'status': 'success',
+                        'count': len(df),
+                        'data': df.head(20).to_dict('records'),
+                        'description': '市场融资融券汇总'
+                    }
+            except Exception as e3:
+                logger.debug(f"stock_margin_sse失败: {e3}")
+
             return {'status': 'no_data', 'message': '无融资融券数据'}
         except Exception as e:
             logger.warning(f"⚠️ 融资融券获取失败: {e}")

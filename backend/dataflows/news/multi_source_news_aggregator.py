@@ -102,67 +102,65 @@ class MultiSourceNewsAggregator:
             return []
     
     def get_stock_news_akshare(
-        self, 
-        symbol: str, 
+        self,
+        symbol: str,
         limit: int = 20
     ) -> List[Dict]:
         """
         从AKShare获取股票新闻(东方财富)
-        
+
         接口: stock_news_em
-        
+
         Args:
             symbol: 股票代码(6位数字)，如603777
             limit: 返回数量限制
         """
         try:
             import akshare as ak
-            
+
             # 转换股票代码格式
             if '.' in symbol:
                 symbol = symbol.split('.')[0]
-            
+
             logger.info(f"📰 获取{symbol}的AKShare新闻...")
-            
-            # 调用AKShare接口 - 使用更稳定的方式
+
+            # 方法1: 调用stock_news_em接口
             try:
                 df = ak.stock_news_em(symbol=symbol)
+                if df is not None and not df.empty:
+                    news_list = self._parse_news_dataframe(df, limit, 'AKShare-东方财富')
+                    if news_list:
+                        logger.info(f"✅ stock_news_em获取新闻: {len(news_list)}条")
+                        return news_list
             except Exception as e:
-                logger.warning(f"⚠️ stock_news_em接口调用失败: {e}")
-                # 尝试使用已有的realtime_news作为备选
-                logger.info("尝试使用备用新闻源...")
-                return self._get_news_from_realtime(symbol, limit)
-            
-            if df is None or df.empty:
-                logger.info("ℹ️ AKShare未返回新闻数据，尝试备用源")
-                return self._get_news_from_realtime(symbol, limit)
-            
-            news_list = []
-            for _, row in df.head(limit).iterrows():
-                try:
-                    # 确保所有字段都转换为字符串
-                    title = str(row.get('新闻标题', '') or '')
-                    content = str(row.get('新闻内容', '') or '')
-                    pub_time = str(row.get('发布时间', '') or '')
-                    url = str(row.get('新闻链接', '') or '')
-                    
-                    if not title:  # 跳过空标题
-                        continue
-                    
-                    news_list.append({
-                        'title': title,
-                        'content': content[:200] if content else '',
-                        'pub_time': pub_time,
-                        'source': 'AKShare-东方财富',
-                        'url': url
-                    })
-                except Exception as e:
-                    logger.debug(f"跳过一条新闻: {e}")
-                    continue
-            
-            logger.info(f"✅ AKShare获取新闻: {len(news_list)}条")
-            return news_list
-            
+                logger.debug(f"stock_news_em接口调用失败: {e}")
+
+            # 方法2: 使用财联社电报
+            try:
+                df = ak.stock_telegraph_cls()
+                if df is not None and not df.empty:
+                    news_list = []
+                    for _, row in df.head(limit).iterrows():
+                        title = str(row.get('标题', '') or '')
+                        if not title:
+                            continue
+                        news_list.append({
+                            'title': title,
+                            'content': str(row.get('内容', '') or '')[:200],
+                            'pub_time': str(row.get('发布时间', '') or ''),
+                            'source': 'AKShare-财联社',
+                            'url': ''
+                        })
+                    if news_list:
+                        logger.info(f"✅ 财联社电报获取新闻: {len(news_list)}条")
+                        return news_list
+            except Exception as e:
+                logger.debug(f"财联社电报获取失败: {e}")
+
+            # 方法3: 使用已有的realtime_news作为备选
+            logger.info("尝试使用备用新闻源...")
+            return self._get_news_from_realtime(symbol, limit)
+
         except ImportError:
             logger.error("❌ AKShare库未安装")
             return []
@@ -171,6 +169,32 @@ class MultiSourceNewsAggregator:
             import traceback
             logger.debug(traceback.format_exc())
             return []
+
+    def _parse_news_dataframe(self, df, limit: int, source: str) -> List[Dict]:
+        """解析新闻DataFrame为列表"""
+        news_list = []
+        for _, row in df.head(limit).iterrows():
+            try:
+                # 确保所有字段都转换为字符串
+                title = str(row.get('新闻标题', row.get('标题', '')) or '')
+                content = str(row.get('新闻内容', row.get('内容', '')) or '')
+                pub_time = str(row.get('发布时间', row.get('时间', '')) or '')
+                url = str(row.get('新闻链接', row.get('链接', '')) or '')
+
+                if not title:  # 跳过空标题
+                    continue
+
+                news_list.append({
+                    'title': title,
+                    'content': content[:200] if content else '',
+                    'pub_time': pub_time,
+                    'source': source,
+                    'url': url
+                })
+            except Exception as e:
+                logger.debug(f"跳过一条新闻: {e}")
+                continue
+        return news_list
     
     def _get_news_from_realtime(self, symbol: str, limit: int = 10) -> List[Dict]:
         """
