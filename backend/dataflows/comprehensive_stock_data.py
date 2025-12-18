@@ -77,6 +77,7 @@ class ComprehensiveStockDataService:
             'basic_info': {},
             'realtime': {},
             'realtime_tick': {},
+            'realtime_list': {},  # 新增：全市场实时行情
             'suspend': {},
             'st_status': {},
             'financial': {},
@@ -85,23 +86,29 @@ class ComprehensiveStockDataService:
             'dividend': {},
             'restricted': {},
             'pledge': {},
+            'pledge_detail': {},  # 新增：质押明细
             'holder_trade': {},
             'dragon_tiger': {},
             'top_inst': {},
             'block_trade': {},
             'limit_list': {},
+            'limit_list_ths': {},  # 新增：同花顺涨跌停
             'margin': {},
+            'margin_detail': {},  # 新增：融资融券明细
             'company_info': {},
             'managers': {},
             'manager_rewards': {},
             'main_business': {},
             'hsgt_holding': {},
+            'ggt_top10': {},  # 新增：港股通十大成交
+            'hk_hold': {},  # 新增：沪深港通持股明细
+            'moneyflow_hsgt': {},  # 新增：沪深港通资金流向
             'announcements': {},
             'news_sina': {},
+            'news_em': {},  # 新增：东方财富个股新闻
             'market_news': {},
             'industry_policy': {},
             'news': {},  # 多源新闻聚合
-
         }
         
         # 1. 实时行情
@@ -198,8 +205,20 @@ class ComprehensiveStockDataService:
             'audit_opinion_ak': self._get_audit_opinion_ak(ts_code),
             'margin_trading_ak': self._get_margin_trading_ak(ts_code)
         }
-        
-        # 21. 新闻数据（从多源新闻聚合器获取）
+
+        # 22. 新增Tushare接口
+        result['realtime_list'] = self._get_realtime_list()
+        result['pledge_detail'] = self._get_pledge_detail(ts_code)
+        result['margin_detail'] = self._get_margin_detail(ts_code)
+        result['ggt_top10'] = self._get_ggt_top10(ts_code)
+        result['hk_hold'] = self._get_hk_hold(ts_code)
+        result['moneyflow_hsgt'] = self._get_moneyflow_hsgt()
+        result['limit_list_ths'] = self._get_limit_list_ths(ts_code)
+
+        # 23. 新增AKShare接口
+        result['news_em'] = self._get_stock_news_em(ts_code)
+
+        # 24. 新闻数据（从多源新闻聚合器获取）
         result['news'] = self._get_news_data(ts_code)
         
         # 生成数据摘要
@@ -866,17 +885,60 @@ class ComprehensiveStockDataService:
             return {'status': 'no_data', 'message': '巨潮资讯暂不可用'}
     
     def _get_industry_policy(self) -> Dict:
-        """获取行业政策动态（AKShare）"""
+        """获取行业政策动态（AKShare）- 使用财经新闻作为政策信息源"""
         try:
             import akshare as ak
-            
-            # 行业政策新闻
-            df = ak.stock_industry_pe_ratio_cninfo(symbol="新能源")
-            
-            # 这里的接口实际上是行业市盈率，不是政策新闻
-            # 暂时返回不可用
-            return {'status': 'no_data', 'message': '行业政策接口暂未实现'}
-                
+
+            all_news = []
+
+            # 1. 尝试获取财联社电报（实时财经新闻，包含政策信息）
+            try:
+                df_cls = ak.stock_telegraph_cls()
+                if df_cls is not None and not df_cls.empty:
+                    for _, row in df_cls.head(30).iterrows():
+                        title = str(row.get('标题', ''))
+                        content = str(row.get('内容', ''))
+                        # 筛选政策相关新闻
+                        policy_keywords = ['政策', '监管', '央行', '证监会', '发改委', '国务院',
+                                         '部委', '法规', '条例', '意见', '通知', '规定']
+                        if any(kw in title or kw in content for kw in policy_keywords):
+                            all_news.append({
+                                'time': str(row.get('发布时间', '')),
+                                'title': title,
+                                'content': content[:200] if len(content) > 200 else content,
+                                'source': '财联社',
+                                'type': 'policy'
+                            })
+            except Exception as e:
+                logger.debug(f"财联社电报获取失败: {e}")
+
+            # 2. 尝试获取东方财富财经新闻
+            try:
+                df_em = ak.stock_news_em(symbol="财经")
+                if df_em is not None and not df_em.empty:
+                    for _, row in df_em.head(20).iterrows():
+                        title = str(row.get('新闻标题', ''))
+                        all_news.append({
+                            'time': str(row.get('发布时间', '')),
+                            'title': title,
+                            'content': str(row.get('新闻内容', ''))[:200],
+                            'source': '东方财富',
+                            'url': str(row.get('新闻链接', '')),
+                            'type': 'financial_news'
+                        })
+            except Exception as e:
+                logger.debug(f"东方财富新闻获取失败: {e}")
+
+            if all_news:
+                return {
+                    'status': 'success',
+                    'count': len(all_news),
+                    'data': all_news,
+                    'description': '财经政策新闻'
+                }
+            else:
+                return {'status': 'no_data', 'message': '暂无政策新闻'}
+
         except Exception as e:
             logger.warning(f"⚠️ 行业政策获取失败: {e}")
             return {'status': 'no_data', 'message': '行业政策暂不可用'}
@@ -961,23 +1023,35 @@ class ComprehensiveStockDataService:
             return {'status': 'no_data', 'message': '限售股暂不可用'}
     
     def _get_shareholder_change_ak(self, ts_code: str) -> Dict:
-        """获取股东增减持（AKShare）"""
+        """获取股东增减持（AKShare）- 使用股东人数变化数据"""
         try:
             import akshare as ak
             symbol = ts_code.split('.')[0]
-            
-            # 股东增减持
+
+            # 使用stock_zh_a_gdhs获取股东户数变化（这是正确的接口）
+            # 股东户数变化可以反映筹码集中度
             df = ak.stock_zh_a_gdhs(symbol=symbol)
             if df is not None and not df.empty:
+                records = []
+                for _, row in df.head(20).iterrows():
+                    records.append({
+                        '截止日期': str(row.get('截止日期', '')),
+                        '股东户数': int(row.get('股东户数', 0)) if pd.notna(row.get('股东户数')) else 0,
+                        '较上期变化': float(row.get('较上期变化', 0)) if pd.notna(row.get('较上期变化')) else 0,
+                        '人均流通股': float(row.get('人均流通股', 0)) if pd.notna(row.get('人均流通股')) else 0,
+                        '股价': float(row.get('股价', 0)) if pd.notna(row.get('股价')) else 0,
+                        '人均持股金额': float(row.get('人均持股金额', 0)) if pd.notna(row.get('人均持股金额')) else 0
+                    })
                 return {
                     'status': 'success',
-                    'count': len(df),
-                    'data': df.head(20).to_dict('records')
+                    'count': len(records),
+                    'data': records,
+                    'description': '股东户数变化（筹码集中度指标）'
                 }
-            return {'status': 'no_data', 'message': '无增减持记录'}
+            return {'status': 'no_data', 'message': '无股东户数数据'}
         except Exception as e:
-            logger.warning(f"⚠️ 增减持获取失败: {e}")
-            return {'status': 'no_data', 'message': '增减持暂不可用'}
+            logger.warning(f"⚠️ 股东户数获取失败: {e}")
+            return {'status': 'no_data', 'message': '股东户数暂不可用'}
     
     def _get_dragon_tiger_ak(self, ts_code: str) -> Dict:
         """获取龙虎榜（AKShare）"""
@@ -1382,7 +1456,7 @@ class ComprehensiveStockDataService:
         """获取新闻数据（调用现有的新闻聚合器）"""
         try:
             from backend.dataflows.news.multi_source_news_aggregator import get_news_aggregator
-            
+
             aggregator = get_news_aggregator()
             result = aggregator.aggregate_news(
                 ts_code=ts_code,
@@ -1391,13 +1465,236 @@ class ComprehensiveStockDataService:
                 include_akshare=True,
                 include_market_news=True
             )
-            
+
             return result.get('merged_news', [])
-            
+
         except Exception as e:
             logger.warning(f"⚠️ 新闻数据获取失败: {e}")
             return []
-    
+
+    # ==================== 缺失的Tushare接口补充 ====================
+
+    def _get_realtime_list(self) -> Dict:
+        """获取实时行情列表（Tushare realtime_list）- 全市场实时行情"""
+        try:
+            import tushare as ts
+            # 使用爬虫接口获取全市场实时行情
+            df = ts.realtime_list(src='dc')  # dc=东财
+
+            if df is not None and not df.empty:
+                records = df.head(100).to_dict('records')
+                return {
+                    'status': 'success',
+                    'count': len(records),
+                    'data': records,
+                    'description': '全市场实时行情TOP100'
+                }
+            return {'status': 'no_data', 'message': '无实时行情数据'}
+        except Exception as e:
+            logger.warning(f"⚠️ 实时行情列表获取失败: {e}")
+            return {'status': 'no_data', 'message': '实时行情列表暂不可用'}
+
+    def _get_pledge_detail(self, ts_code: str) -> Dict:
+        """获取股权质押明细（Tushare pledge_detail）"""
+        try:
+            if not self.tushare_api:
+                return {'status': 'error', 'message': 'Tushare API未初始化'}
+
+            df = self.tushare_api.pledge_detail(ts_code=ts_code)
+
+            if df is not None and not df.empty:
+                records = df.head(20).to_dict('records')
+                return {
+                    'status': 'success',
+                    'count': len(records),
+                    'data': records,
+                    'description': '股权质押明细'
+                }
+            return {'status': 'no_data', 'message': '无质押明细数据'}
+        except Exception as e:
+            logger.warning(f"⚠️ 质押明细获取失败: {e}")
+            return {'status': 'no_data', 'message': '质押明细暂不可用'}
+
+    def _get_margin_detail(self, ts_code: str) -> Dict:
+        """获取融资融券明细（Tushare margin_detail）"""
+        try:
+            if not self.tushare_api:
+                return {'status': 'error', 'message': 'Tushare API未初始化'}
+
+            end_date = datetime.now().strftime('%Y%m%d')
+            start_date = (datetime.now() - timedelta(days=30)).strftime('%Y%m%d')
+
+            df = self.tushare_api.margin_detail(
+                ts_code=ts_code,
+                start_date=start_date,
+                end_date=end_date
+            )
+
+            if df is not None and not df.empty:
+                records = df.head(30).to_dict('records')
+                return {
+                    'status': 'success',
+                    'count': len(records),
+                    'data': records,
+                    'description': '融资融券明细'
+                }
+            return {'status': 'no_data', 'message': '无融资融券明细'}
+        except Exception as e:
+            logger.warning(f"⚠️ 融资融券明细获取失败: {e}")
+            return {'status': 'no_data', 'message': '融资融券明细暂不可用'}
+
+    def _get_ggt_top10(self, ts_code: str = None) -> Dict:
+        """获取港股通十大成交股（Tushare ggt_top10）"""
+        try:
+            if not self.tushare_api:
+                return {'status': 'error', 'message': 'Tushare API未初始化'}
+
+            trade_date = datetime.now().strftime('%Y%m%d')
+
+            # 尝试获取最近5个交易日的数据
+            for i in range(5):
+                try:
+                    check_date = (datetime.now() - timedelta(days=i)).strftime('%Y%m%d')
+                    df = self.tushare_api.ggt_top10(trade_date=check_date)
+                    if df is not None and not df.empty:
+                        if ts_code:
+                            df = df[df['ts_code'] == ts_code]
+                        if not df.empty:
+                            records = df.to_dict('records')
+                            return {
+                                'status': 'success',
+                                'count': len(records),
+                                'data': records,
+                                'trade_date': check_date,
+                                'description': '港股通十大成交股'
+                            }
+                except:
+                    continue
+
+            return {'status': 'no_data', 'message': '无港股通十大成交数据'}
+        except Exception as e:
+            logger.warning(f"⚠️ 港股通十大成交获取失败: {e}")
+            return {'status': 'no_data', 'message': '港股通十大成交暂不可用'}
+
+    def _get_hk_hold(self, ts_code: str) -> Dict:
+        """获取沪深港通持股明细（Tushare hk_hold）"""
+        try:
+            if not self.tushare_api:
+                return {'status': 'error', 'message': 'Tushare API未初始化'}
+
+            end_date = datetime.now().strftime('%Y%m%d')
+            start_date = (datetime.now() - timedelta(days=30)).strftime('%Y%m%d')
+
+            df = self.tushare_api.hk_hold(
+                ts_code=ts_code,
+                start_date=start_date,
+                end_date=end_date
+            )
+
+            if df is not None and not df.empty:
+                records = df.head(30).to_dict('records')
+                return {
+                    'status': 'success',
+                    'count': len(records),
+                    'data': records,
+                    'description': '沪深港通持股明细'
+                }
+            return {'status': 'no_data', 'message': '无沪深港通持股明细'}
+        except Exception as e:
+            logger.warning(f"⚠️ 沪深港通持股明细获取失败: {e}")
+            return {'status': 'no_data', 'message': '沪深港通持股明细暂不可用'}
+
+    def _get_moneyflow_hsgt(self) -> Dict:
+        """获取沪深港通资金流向（Tushare moneyflow_hsgt）"""
+        try:
+            if not self.tushare_api:
+                return {'status': 'error', 'message': 'Tushare API未初始化'}
+
+            end_date = datetime.now().strftime('%Y%m%d')
+            start_date = (datetime.now() - timedelta(days=30)).strftime('%Y%m%d')
+
+            df = self.tushare_api.moneyflow_hsgt(
+                start_date=start_date,
+                end_date=end_date
+            )
+
+            if df is not None and not df.empty:
+                records = df.to_dict('records')
+                return {
+                    'status': 'success',
+                    'count': len(records),
+                    'data': records,
+                    'description': '沪深港通资金流向'
+                }
+            return {'status': 'no_data', 'message': '无沪深港通资金流向数据'}
+        except Exception as e:
+            logger.warning(f"⚠️ 沪深港通资金流向获取失败: {e}")
+            return {'status': 'no_data', 'message': '沪深港通资金流向暂不可用'}
+
+    def _get_limit_list_ths(self, ts_code: str = None) -> Dict:
+        """获取同花顺涨跌停数据（Tushare limit_list_ths）- 备用接口"""
+        try:
+            if not self.tushare_api:
+                return {'status': 'error', 'message': 'Tushare API未初始化'}
+
+            trade_date = datetime.now().strftime('%Y%m%d')
+
+            # 尝试获取最近5个交易日的数据
+            for i in range(5):
+                try:
+                    check_date = (datetime.now() - timedelta(days=i)).strftime('%Y%m%d')
+                    df = self.tushare_api.limit_list_d(trade_date=check_date)
+                    if df is not None and not df.empty:
+                        if ts_code:
+                            df = df[df['ts_code'] == ts_code]
+                        if not df.empty:
+                            records = df.to_dict('records')
+                            return {
+                                'status': 'success',
+                                'count': len(records),
+                                'data': records,
+                                'trade_date': check_date,
+                                'description': '涨跌停数据'
+                            }
+                except:
+                    continue
+
+            return {'status': 'no_data', 'message': '无涨跌停数据'}
+        except Exception as e:
+            logger.warning(f"⚠️ 涨跌停数据获取失败: {e}")
+            return {'status': 'no_data', 'message': '涨跌停数据暂不可用'}
+
+    # ==================== 缺失的AKShare接口补充 ====================
+
+    def _get_stock_news_em(self, ts_code: str) -> Dict:
+        """获取东方财富个股新闻（AKShare stock_news_em）"""
+        try:
+            import akshare as ak
+            symbol = ts_code.split('.')[0]
+
+            df = ak.stock_news_em(symbol=symbol)
+
+            if df is not None and not df.empty:
+                records = []
+                for _, row in df.head(30).iterrows():
+                    records.append({
+                        'title': str(row.get('新闻标题', '')),
+                        'content': str(row.get('新闻内容', ''))[:300],
+                        'time': str(row.get('发布时间', '')),
+                        'source': str(row.get('文章来源', '东方财富')),
+                        'url': str(row.get('新闻链接', ''))
+                    })
+                return {
+                    'status': 'success',
+                    'count': len(records),
+                    'data': records,
+                    'description': '东方财富个股新闻'
+                }
+            return {'status': 'no_data', 'message': '无个股新闻'}
+        except Exception as e:
+            logger.warning(f"⚠️ 东方财富新闻获取失败: {e}")
+            return {'status': 'no_data', 'message': '东方财富新闻暂不可用'}
+
     def _generate_summary(self, data: Dict) -> Dict:
         """生成数据摘要"""
         summary = {}
@@ -1533,14 +1830,48 @@ class ComprehensiveStockDataService:
 
         # 20.7 行业政策
         if data.get('industry_policy', {}).get('status') == 'success':
-            summary['industry_policy'] = "✅ 行业政策已更新"
+            summary['industry_policy'] = f"✅ 行业政策{data['industry_policy']['count']}条"
 
         # 21. 新闻
         if data['news']:
             summary['news'] = f"✅ 新闻{len(data['news'])}条"
         else:
             summary['news'] = '🔴 无新闻数据'
-        
+
+        # ==================== 新增接口摘要 ====================
+
+        # 22. 全市场实时行情
+        if data.get('realtime_list', {}).get('status') == 'success':
+            summary['realtime_list'] = f"✅ 全市场行情{data['realtime_list']['count']}条"
+
+        # 23. 质押明细
+        if data.get('pledge_detail', {}).get('status') == 'success':
+            summary['pledge_detail'] = f"✅ 质押明细{data['pledge_detail']['count']}条"
+
+        # 24. 融资融券明细
+        if data.get('margin_detail', {}).get('status') == 'success':
+            summary['margin_detail'] = f"✅ 融资融券明细{data['margin_detail']['count']}条"
+
+        # 25. 港股通十大成交
+        if data.get('ggt_top10', {}).get('status') == 'success':
+            summary['ggt_top10'] = f"✅ 港股通十大{data['ggt_top10']['count']}条"
+
+        # 26. 沪深港通持股明细
+        if data.get('hk_hold', {}).get('status') == 'success':
+            summary['hk_hold'] = f"✅ 沪深港通持股{data['hk_hold']['count']}条"
+
+        # 27. 沪深港通资金流向
+        if data.get('moneyflow_hsgt', {}).get('status') == 'success':
+            summary['moneyflow_hsgt'] = f"✅ 资金流向{data['moneyflow_hsgt']['count']}条"
+
+        # 28. 涨跌停数据（同花顺）
+        if data.get('limit_list_ths', {}).get('status') == 'success':
+            summary['limit_list_ths'] = f"✅ 涨跌停THS{data['limit_list_ths']['count']}条"
+
+        # 29. 东方财富个股新闻
+        if data.get('news_em', {}).get('status') == 'success':
+            summary['news_em'] = f"✅ 东财新闻{data['news_em']['count']}条"
+
         return summary
 
 
