@@ -60,8 +60,29 @@ class UpdateMonitorRequest(BaseModel):
 
 # ==================== 全局状态 ====================
 
-# 监控的股票列表（实际应用中应该使用数据库）
-monitored_stocks = {}
+# 导入持久化存储
+from backend.dataflows.persistence.monitor_storage import get_monitor_storage
+
+# 监控的股票列表（使用持久化存储）
+def _load_monitored_stocks():
+    """从持久化存储加载监控股票"""
+    try:
+        storage = get_monitor_storage()
+        return storage.get_monitored_stocks()
+    except Exception as e:
+        logger.error(f"加载监控股票失败: {e}")
+        return {}
+
+def _save_monitored_stocks():
+    """保存监控股票到持久化存储"""
+    try:
+        storage = get_monitor_storage()
+        storage.save_monitor_config({'stocks': monitored_stocks})
+    except Exception as e:
+        logger.error(f"保存监控股票失败: {e}")
+
+# 初始化时从文件加载
+monitored_stocks = _load_monitored_stocks()
 
 # 数据源状态
 data_sources_status = {
@@ -383,10 +404,13 @@ async def add_monitor(request: MonitorStockRequest, background_tasks: Background
             "lastUpdate": datetime.now().isoformat(),
             "pendingTasks": 0
         }
-        
+
+        # 保存到持久化存储
+        _save_monitored_stocks()
+
         # 添加后台任务：立即执行一次数据更新
         background_tasks.add_task(update_stock_data, code)
-        
+
         logger.info(f"添加监控股票: {code}")
         
         return {
@@ -413,9 +437,12 @@ async def remove_monitor(request: RemoveMonitorRequest):
         
         if code not in monitored_stocks:
             raise HTTPException(status_code=404, detail="该股票不在监控列表中")
-        
+
         del monitored_stocks[code]
-        
+
+        # 保存到持久化存储
+        _save_monitored_stocks()
+
         logger.info(f"移除监控股票: {code}")
         
         return {

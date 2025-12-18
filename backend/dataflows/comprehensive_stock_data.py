@@ -69,7 +69,7 @@ class ComprehensiveStockDataService:
             }
         """
         logger.info(f"📊 开始获取 {ts_code} 的全面数据...")
-        
+
         result = {
             'ts_code': ts_code,
             'timestamp': datetime.now().isoformat(),
@@ -77,7 +77,7 @@ class ComprehensiveStockDataService:
             'basic_info': {},
             'realtime': {},
             'realtime_tick': {},
-            'realtime_list': {},  # 新增：全市场实时行情
+            'realtime_list': {},
             'suspend': {},
             'st_status': {},
             'financial': {},
@@ -86,140 +86,105 @@ class ComprehensiveStockDataService:
             'dividend': {},
             'restricted': {},
             'pledge': {},
-            'pledge_detail': {},  # 新增：质押明细
+            'pledge_detail': {},
             'holder_trade': {},
             'dragon_tiger': {},
             'top_inst': {},
             'block_trade': {},
             'limit_list': {},
-            'limit_list_ths': {},  # 新增：同花顺涨跌停
+            'limit_list_ths': {},
             'margin': {},
-            'margin_detail': {},  # 新增：融资融券明细
+            'margin_detail': {},
             'company_info': {},
             'managers': {},
             'manager_rewards': {},
             'main_business': {},
             'hsgt_holding': {},
-            'ggt_top10': {},  # 新增：港股通十大成交
-            'hk_hold': {},  # 新增：沪深港通持股明细
-            'moneyflow_hsgt': {},  # 新增：沪深港通资金流向
+            'ggt_top10': {},
+            'hk_hold': {},
+            'moneyflow_hsgt': {},
             'announcements': {},
             'news_sina': {},
-            'news_em': {},  # 新增：东方财富个股新闻
+            'news_em': {},
             'market_news': {},
             'industry_policy': {},
-            'news': {},  # 多源新闻聚合
-        }
-        
-        # 1. 实时行情
-        result['realtime'] = self._get_realtime_quote(ts_code)
-        
-        # 2. 实时成交数据
-        result['realtime_tick'] = self._get_realtime_tick(ts_code)
-        
-        # 3. 停复牌信息
-        result['suspend'] = self._get_suspend_info(ts_code)
-        
-        # 4. ST状态检查
-        result['st_status'] = self._check_st_status(ts_code)
-        
-        # 5. 财务数据（最新3期）
-        result['financial'] = self._get_financial_data(ts_code)
-        
-        # 6. 财务审计意见
-        result['audit'] = self._get_audit_opinion(ts_code)
-        
-        # 7. 业绩预告/快报
-        result['forecast'] = self._get_performance_forecast(ts_code)
-        
-        # 8. 分红送股
-        result['dividend'] = self._get_dividend_data(ts_code)
-        
-        # 9. 限售股解禁
-        result['restricted'] = self._get_restricted_release(ts_code)
-        
-        # 10. 股权质押
-        result['pledge'] = self._get_pledge_data(ts_code)
-        
-        # 11. 股东增减持
-        result['holder_trade'] = self._get_holder_trade(ts_code)
-        
-        # 12. 龙虎榜
-        result['dragon_tiger'] = self._get_dragon_tiger(ts_code)
-        
-        # 12.5 龙虎榜机构明细
-        result['top_inst'] = self._get_top_inst(ts_code)
-        
-        # 12.6 大宗交易
-        result['block_trade'] = self._get_block_trade(ts_code)
-        
-        # 13. 涨跌停数据
-        result['limit_list'] = self._get_limit_list(ts_code)
-        
-        # 14. 融资融券
-        result['margin'] = self._get_margin_data(ts_code)
-        
-        # 15. 公司基本信息
-        result['company_info'] = self._get_company_info(ts_code)
-        
-        # 16. 管理层信息
-        result['managers'] = self._get_managers(ts_code)
-        
-        # 17. 管理层薪酬
-        result['manager_rewards'] = self._get_manager_rewards(ts_code)
-        
-        # 18. 主营业务构成
-        result['main_business'] = self._get_main_business(ts_code)
-        
-        # 19. 沪深港通持股
-        result['hsgt_holding'] = self._get_hsgt_holding(ts_code)
-        
-        # 20. 上市公司公告（优先使用AKShare）
-        announcements_ak = self._get_announcements_akshare(ts_code)
-        if announcements_ak.get('status') == 'success':
-            result['announcements'] = announcements_ak
-        else:
-            result['announcements'] = self._get_announcements(ts_code)
-        
-        # 20.5 新浪财经新闻
-        result['news_sina'] = self._get_news_sina(ts_code)
-        
-        # 20.6 市场快讯（百度财经）
-        result['market_news'] = self._get_market_news_cninfo()
-        
-        # 20.7 巨潮资讯公告
-        result['cninfo_news'] = self._get_cninfo_news()
-        
-        # 20.8 行业政策
-        result['industry_policy'] = self._get_industry_policy()
-        
-        # 21. AKShare扩展数据
-        result['akshare_ext'] = {
-            'st_info': self._get_stock_st_info_ak(ts_code),
-            'suspension_info': self._get_suspension_info_ak(ts_code),
-            'pledge_detail_ak': self._get_pledge_detail_ak(ts_code),
-            'restricted_ak': self._get_restricted_shares_ak(ts_code),
-            'shareholder_change_ak': self._get_shareholder_change_ak(ts_code),
-            'dragon_tiger_ak': self._get_dragon_tiger_ak(ts_code),
-            'performance_forecast_ak': self._get_performance_forecast_ak(ts_code),
-            'audit_opinion_ak': self._get_audit_opinion_ak(ts_code),
-            'margin_trading_ak': self._get_margin_trading_ak(ts_code)
+            'news': {},
+            'akshare_ext': {},
         }
 
-        # 22. 新增Tushare接口
-        result['realtime_list'] = self._get_realtime_list()
-        result['pledge_detail'] = self._get_pledge_detail(ts_code)
-        result['margin_detail'] = self._get_margin_detail(ts_code)
-        result['ggt_top10'] = self._get_ggt_top10(ts_code)
-        result['hk_hold'] = self._get_hk_hold(ts_code)
-        result['moneyflow_hsgt'] = self._get_moneyflow_hsgt()
-        result['limit_list_ths'] = self._get_limit_list_ths(ts_code)
+        # 使用并发执行加速数据获取
+        import concurrent.futures
+        from functools import partial
 
-        # 23. 新增AKShare接口
-        result['news_em'] = self._get_stock_news_em(ts_code)
+        # 定义数据获取任务
+        tasks = {
+            # 核心数据（优先级高）
+            'realtime': (self._get_realtime_quote, ts_code),
+            'st_status': (self._check_st_status, ts_code),
+            'suspend': (self._get_suspend_info, ts_code),
+            'financial': (self._get_financial_data, ts_code),
+            'forecast': (self._get_performance_forecast, ts_code),
+            'pledge': (self._get_pledge_data, ts_code),
+            'holder_trade': (self._get_holder_trade, ts_code),
+            'news_sina': (self._get_news_sina, ts_code),
 
-        # 24. 新闻数据（从多源新闻聚合器获取）
-        result['news'] = self._get_news_data(ts_code)
+            # 次要数据
+            'audit': (self._get_audit_opinion, ts_code),
+            'dividend': (self._get_dividend_data, ts_code),
+            'restricted': (self._get_restricted_release, ts_code),
+            'dragon_tiger': (self._get_dragon_tiger, ts_code),
+            'block_trade': (self._get_block_trade, ts_code),
+            'margin': (self._get_margin_data, ts_code),
+            'company_info': (self._get_company_info, ts_code),
+            'announcements': (self._get_announcements_akshare, ts_code),
+        }
+
+        # 使用线程池并发执行（限制并发数避免API限流）
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            future_to_key = {}
+            for key, (func, arg) in tasks.items():
+                future = executor.submit(func, arg)
+                future_to_key[future] = key
+
+            # 设置超时时间（30秒）
+            for future in concurrent.futures.as_completed(future_to_key, timeout=30):
+                key = future_to_key[future]
+                try:
+                    result[key] = future.result(timeout=10)
+                except concurrent.futures.TimeoutError:
+                    logger.warning(f"⚠️ {key} 获取超时")
+                    result[key] = {'status': 'timeout', 'message': '获取超时'}
+                except Exception as e:
+                    logger.warning(f"⚠️ {key} 获取失败: {e}")
+                    result[key] = {'status': 'error', 'message': str(e)}
+
+        # 获取新闻数据（单独处理，避免阻塞）
+        try:
+            result['news'] = self._get_news_data(ts_code)
+        except Exception as e:
+            logger.warning(f"⚠️ 新闻数据获取失败: {e}")
+            result['news'] = []
+
+        # 跳过耗时的次要接口，使用空数据
+        # 这些数据可以在用户需要时单独加载
+        result['realtime_tick'] = {'status': 'deferred', 'message': '按需加载'}
+        result['top_inst'] = {'status': 'deferred', 'message': '按需加载'}
+        result['limit_list'] = {'status': 'deferred', 'message': '按需加载'}
+        result['managers'] = {'status': 'deferred', 'message': '按需加载'}
+        result['manager_rewards'] = {'status': 'deferred', 'message': '按需加载'}
+        result['main_business'] = {'status': 'deferred', 'message': '按需加载'}
+        result['hsgt_holding'] = {'status': 'deferred', 'message': '按需加载'}
+        result['market_news'] = {'status': 'deferred', 'message': '按需加载'}
+        result['industry_policy'] = {'status': 'deferred', 'message': '按需加载'}
+        result['realtime_list'] = {'status': 'deferred', 'message': '按需加载'}
+        result['pledge_detail'] = {'status': 'deferred', 'message': '按需加载'}
+        result['margin_detail'] = {'status': 'deferred', 'message': '按需加载'}
+        result['ggt_top10'] = {'status': 'deferred', 'message': '按需加载'}
+        result['hk_hold'] = {'status': 'deferred', 'message': '按需加载'}
+        result['moneyflow_hsgt'] = {'status': 'deferred', 'message': '按需加载'}
+        result['limit_list_ths'] = {'status': 'deferred', 'message': '按需加载'}
+        result['news_em'] = {'status': 'deferred', 'message': '按需加载'}
+        result['akshare_ext'] = {'status': 'deferred', 'message': '按需加载'}
         
         # 生成数据摘要
         result['data_summary'] = self._generate_summary(result)
@@ -248,7 +213,8 @@ class ComprehensiveStockDataService:
                             'name': str(row.get('名称', '')),
                             'price': float(row.get('最新价', 0) or 0),
                             'change': float(row.get('涨跌额', 0) or 0),
-                            'change_pct': float(row.get('涨跌幅', 0) or 0),
+                            'pct_change': float(row.get('涨跌幅', 0) or 0),  # 前端使用pct_change
+                            'change_pct': float(row.get('涨跌幅', 0) or 0),  # 兼容旧字段
                             'volume': int(row.get('成交量', 0) or 0),
                             'amount': float(row.get('成交额', 0) or 0),
                             'high': float(row.get('最高', 0) or 0),
@@ -271,6 +237,7 @@ class ComprehensiveStockDataService:
                 return {'status': 'no_data', 'message': '无实时行情数据'}
 
             data = df.iloc[0].to_dict()
+            pct = ((float(data.get('PRICE', 0) or 0) - float(data.get('PRE_CLOSE', 0) or 0)) / float(data.get('PRE_CLOSE', 1) or 1) * 100) if data.get('PRE_CLOSE') else 0
             return {
                 'status': 'success',
                 'source': 'tushare',
@@ -278,7 +245,8 @@ class ComprehensiveStockDataService:
                     'name': data.get('NAME', ''),
                     'price': float(data.get('PRICE', 0) or 0),
                     'change': float(data.get('PRICE', 0) or 0) - float(data.get('PRE_CLOSE', 0) or 0),
-                    'change_pct': ((float(data.get('PRICE', 0) or 0) - float(data.get('PRE_CLOSE', 0) or 0)) / float(data.get('PRE_CLOSE', 1) or 1) * 100) if data.get('PRE_CLOSE') else 0,
+                    'pct_change': pct,  # 前端使用pct_change
+                    'change_pct': pct,  # 兼容旧字段
                     'volume': int(data.get('VOLUME', 0) or 0),
                     'amount': float(data.get('AMOUNT', 0) or 0),
                     'high': float(data.get('HIGH', 0) or 0),
@@ -1359,42 +1327,67 @@ class ComprehensiveStockDataService:
             return {'status': 'no_data', 'message': '融资融券暂不可用'}
     
     def _get_realtime_tick(self, ts_code: str) -> Dict:
-        """获取实时成交数据（使用tick_5min）"""
+        """获取实时成交数据（优先使用AKShare）"""
+        symbol = ts_code.split('.')[0]
+
+        # 方法1: 使用AKShare获取分时数据
         try:
-            if not self.tushare_api:
-                return {'status': 'error', 'error': 'Tushare API未初始化'}
-            
-            # 使用5分钟tick数据代替（Tushare没有realtime_tick接口）
-            # 获取当天数据
-            trade_date = datetime.now().strftime('%Y%m%d')
-            
-            df = self.tushare_api.stk_mins(
-                ts_code=ts_code,
-                freq='5min'  # 5分钟频度
-            )
-            
+            import akshare as ak
+
+            # 获取分时成交数据
+            df = ak.stock_zh_a_tick_tx_js(symbol=symbol)
             if df is not None and not df.empty:
-                # 只返回最新20条
-                records = df.head(20).to_dict('records')
+                records = df.tail(20).to_dict('records')
                 return {
                     'status': 'success',
                     'count': len(records),
                     'data': records,
-                    'message': '5分钟tick数据'
+                    'source': 'akshare',
+                    'message': '分时成交数据'
                 }
-            else:
-                return {
-                    'status': 'no_data',
-                    'message': '无分钟级数据（可能需要更高权限）'
-                }
-                
         except Exception as e:
-            logger.warning(f"⚠️ 分钟级数据获取失败: {e}")
-            # 降级：返回无数据而不是错误
-            return {
-                'status': 'no_data',
-                'message': f'暂不支持实时成交（{str(e)[:50]}）'
-            }
+            logger.debug(f"AKShare分时数据获取失败: {e}")
+
+        # 方法2: 使用AKShare获取分钟K线
+        try:
+            import akshare as ak
+
+            df = ak.stock_zh_a_minute(symbol=symbol, period='5', adjust="qfq")
+            if df is not None and not df.empty:
+                records = df.tail(20).to_dict('records')
+                return {
+                    'status': 'success',
+                    'count': len(records),
+                    'data': records,
+                    'source': 'akshare',
+                    'message': '5分钟K线数据'
+                }
+        except Exception as e:
+            logger.debug(f"AKShare分钟K线获取失败: {e}")
+
+        # 方法3: 备选Tushare（如果有高权限）
+        try:
+            if self.tushare_api:
+                df = self.tushare_api.stk_mins(
+                    ts_code=ts_code,
+                    freq='5min'
+                )
+                if df is not None and not df.empty:
+                    records = df.head(20).to_dict('records')
+                    return {
+                        'status': 'success',
+                        'count': len(records),
+                        'data': records,
+                        'source': 'tushare',
+                        'message': '5分钟tick数据'
+                    }
+        except Exception as e:
+            logger.debug(f"Tushare分钟数据获取失败: {e}")
+
+        return {
+            'status': 'no_data',
+            'message': '暂无分时数据'
+        }
     
     def _get_limit_list(self, ts_code: str) -> Dict:
         """获取涨跌停数据"""
