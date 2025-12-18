@@ -58,8 +58,12 @@ class ComprehensiveStockDataService:
                 'manager_rewards': {},  # 管理层薪酬
                 'main_business': {},  # 主营业务
                 'hsgt_holding': {},  # 沪深港通持股
-                'announcements': {},  # 上市公司公告
-                'news': []  # 新闻数据
+                'announcements': {},  # 公告  
+                'news_sina': {},  # 新浪新闻
+                'market_news': {},  # 市场快讯
+                'industry_policy': {},  # 行业政策
+                'news': {},  # 多源新闻聚合
+
             }
         """
         logger.info(f"📊 开始获取 {ts_code} 的全面数据...")
@@ -91,7 +95,11 @@ class ComprehensiveStockDataService:
             'main_business': {},
             'hsgt_holding': {},
             'announcements': {},
-            'news': []
+            'news_sina': {},
+            'market_news': {},
+            'industry_policy': {},
+            'news': {},  # 多源新闻聚合
+
         }
         
         # 1. 实时行情
@@ -157,8 +165,21 @@ class ComprehensiveStockDataService:
         # 19. 沪深港通持股
         result['hsgt_holding'] = self._get_hsgt_holding(ts_code)
         
-        # 20. 上市公司公告
-        result['announcements'] = self._get_announcements(ts_code)
+        # 20. 上市公司公告（优先使用AKShare）
+        announcements_ak = self._get_announcements_akshare(ts_code)
+        if announcements_ak.get('status') == 'success':
+            result['announcements'] = announcements_ak
+        else:
+            result['announcements'] = self._get_announcements(ts_code)
+        
+        # 20.5 新浪财经新闻
+        result['news_sina'] = self._get_news_sina(ts_code)
+        
+        # 20.6 市场快讯（巨潮资讯）
+        result['market_news'] = self._get_market_news_cninfo()
+        
+        # 20.7 行业政策
+        result['industry_policy'] = self._get_industry_policy()
         
         # 21. 新闻数据（从多源新闻聚合器获取）
         result['news'] = self._get_news_data(ts_code)
@@ -683,6 +704,122 @@ class ComprehensiveStockDataService:
             logger.warning(f"⚠️ 大宗交易数据获取失败: {e}")
             return {'status': 'no_data', 'message': '大宗交易查询暂不可用'}
     
+    def _get_announcements_akshare(self, ts_code: str) -> Dict:
+        """获取上市公司公告（AKShare）"""
+        try:
+            import akshare as ak
+            
+            # 将Tushare代码转换为6位数字
+            symbol = ts_code.split('.')[0]
+            
+            # 获取公告列表
+            df = ak.stock_notice_report(symbol=symbol)
+            
+            if df is not None and not df.empty:
+                # 取最近20条公告
+                records = []
+                for _, row in df.head(20).iterrows():
+                    records.append({
+                        'date': str(row.get('公告日期', '')),
+                        'title': str(row.get('公告标题', '')),
+                        'type': str(row.get('公告类型', '')),
+                        'url': str(row.get('公告链接', ''))
+                    })
+                
+                return {
+                    'status': 'success',
+                    'count': len(records),
+                    'data': records
+                }
+            else:
+                return {
+                    'status': 'no_data',
+                    'message': '近期无公告'
+                }
+                
+        except Exception as e:
+            logger.warning(f"⚠️ 公告数据获取失败: {e}")
+            return {'status': 'no_data', 'message': '公告查询暂不可用'}
+    
+    def _get_news_sina(self, ts_code: str) -> Dict:
+        """获取新闻（使用东方财富主力）"""
+        try:
+            import akshare as ak
+            
+            symbol = ts_code.split('.')[0]
+            
+            # 使用东方财富主力资金动向作为替代
+            df = ak.stock_news_main_cx(symbol=symbol)
+            
+            if df is not None and not df.empty:
+                records = []
+                for _, row in df.head(20).iterrows():
+                    records.append({
+                        'title': str(row.get('标题', '')),
+                        'content': str(row.get('内容', '')),
+                        'time': str(row.get('时间', '')),
+                        'source': '东方财富',
+                        'url': ''
+                    })
+                
+                return {
+                    'status': 'success',
+                    'count': len(records),
+                    'data': records
+                }
+            else:
+                return {'status': 'no_data', 'message': '无主力动向数据'}
+                
+        except Exception as e:
+            logger.warning(f"⚠️ 主力动向数据获取失败: {e}")
+            return {'status': 'no_data', 'message': '主力动向暂不可用'}
+    
+    def _get_market_news_cninfo(self) -> Dict:
+        """获取市场快讯（百度财经）"""
+        try:
+            import akshare as ak
+            
+            # 百度财经新闻
+            df = ak.news_economic_baidu()
+            
+            if df is not None and not df.empty:
+                records = []
+                for _, row in df.head(30).iterrows():
+                    records.append({
+                        'time': str(row.get('发布时间', '')),
+                        'title': str(row.get('标题', '')),
+                        'content': str(row.get('内容', '')),
+                        'source': '百度财经'
+                    })
+                
+                return {
+                    'status': 'success',
+                    'count': len(records),
+                    'data': records
+                }
+            else:
+                return {'status': 'no_data', 'message': '无市场快讯'}
+                
+        except Exception as e:
+            logger.warning(f"⚠️ 市场快讯获取失败: {e}")
+            return {'status': 'no_data', 'message': '市场快讯暂不可用'}
+    
+    def _get_industry_policy(self) -> Dict:
+        """获取行业政策动态（AKShare）"""
+        try:
+            import akshare as ak
+            
+            # 行业政策新闻
+            df = ak.stock_industry_pe_ratio_cninfo(symbol="新能源")
+            
+            # 这里的接口实际上是行业市盈率，不是政策新闻
+            # 暂时返回不可用
+            return {'status': 'no_data', 'message': '行业政策接口暂未实现'}
+                
+        except Exception as e:
+            logger.warning(f"⚠️ 行业政策获取失败: {e}")
+            return {'status': 'no_data', 'message': '行业政策暂不可用'}
+    
     def _get_realtime_tick(self, ts_code: str) -> Dict:
         """获取实时成交数据（使用tick_5min）"""
         try:
@@ -1150,7 +1287,19 @@ class ComprehensiveStockDataService:
             summary['announcements'] = f"✅ 公告{data['announcements']['count']}条"
         elif data['announcements'].get('status') == 'no_data':
             summary['announcements'] = '🔴 无公告数据'
-        
+
+        # 20.5 新浪新闻
+        if data.get('news_sina', {}).get('status') == 'success':
+            summary['news_sina'] = f"✅ 新浪新闻{data['news_sina']['count']}条"
+
+        # 20.6 市场快讯
+        if data.get('market_news', {}).get('status') == 'success':
+            summary['market_news'] = f"✅ 市场快讯{data['market_news']['count']}条"
+
+        # 20.7 行业政策
+        if data.get('industry_policy', {}).get('status') == 'success':
+            summary['industry_policy'] = "✅ 行业政策已更新"
+
         # 21. 新闻
         if data['news']:
             summary['news'] = f"✅ 新闻{len(data['news'])}条"
