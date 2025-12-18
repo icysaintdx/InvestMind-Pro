@@ -61,7 +61,9 @@ class ComprehensiveStockDataService:
                 'announcements': {},  # 公告  
                 'news_sina': {},  # 新浪新闻
                 'market_news': {},  # 市场快讯
+                'cninfo_news': {},  # 巨潮资讯
                 'industry_policy': {},  # 行业政策
+                'akshare_ext': {},  # AKShare扩展数据
                 'news': {},  # 多源新闻聚合
 
             }
@@ -175,11 +177,27 @@ class ComprehensiveStockDataService:
         # 20.5 新浪财经新闻
         result['news_sina'] = self._get_news_sina(ts_code)
         
-        # 20.6 市场快讯（巨潮资讯）
+        # 20.6 市场快讯（百度财经）
         result['market_news'] = self._get_market_news_cninfo()
         
-        # 20.7 行业政策
+        # 20.7 巨潮资讯公告
+        result['cninfo_news'] = self._get_cninfo_news()
+        
+        # 20.8 行业政策
         result['industry_policy'] = self._get_industry_policy()
+        
+        # 21. AKShare扩展数据
+        result['akshare_ext'] = {
+            'st_info': self._get_stock_st_info_ak(ts_code),
+            'suspension_info': self._get_suspension_info_ak(ts_code),
+            'pledge_detail_ak': self._get_pledge_detail_ak(ts_code),
+            'restricted_ak': self._get_restricted_shares_ak(ts_code),
+            'shareholder_change_ak': self._get_shareholder_change_ak(ts_code),
+            'dragon_tiger_ak': self._get_dragon_tiger_ak(ts_code),
+            'performance_forecast_ak': self._get_performance_forecast_ak(ts_code),
+            'audit_opinion_ak': self._get_audit_opinion_ak(ts_code),
+            'margin_trading_ak': self._get_margin_trading_ak(ts_code)
+        }
         
         # 21. 新闻数据（从多源新闻聚合器获取）
         result['news'] = self._get_news_data(ts_code)
@@ -804,6 +822,49 @@ class ComprehensiveStockDataService:
             logger.warning(f"⚠️ 市场快讯获取失败: {e}")
             return {'status': 'no_data', 'message': '市场快讯暂不可用'}
     
+    def _get_cninfo_news(self) -> Dict:
+        """获取巨潮资讯公告快讯（AKShare）"""
+        try:
+            import akshare as ak
+            from datetime import datetime, timedelta
+            
+            # 获取最近30天的公告
+            end_date = datetime.now().strftime('%Y%m%d')
+            start_date = (datetime.now() - timedelta(days=30)).strftime('%Y%m%d')
+            
+            # 巨潮资讯公告查询
+            df = ak.stock_zh_a_disclosure_report_cninfo(
+                symbol='',  # 空表示所有公司
+                market='沪深京',
+                category='',  # 空表示所有类别
+                start_date=start_date,
+                end_date=end_date
+            )
+            
+            if df is not None and not df.empty:
+                records = []
+                for _, row in df.head(50).iterrows():
+                    records.append({
+                        'time': str(row.get('公告日期', '')),
+                        'code': str(row.get('股票代码', '')),
+                        'name': str(row.get('股票简称', '')),
+                        'title': str(row.get('公告标题', '')),
+                        'category': str(row.get('公告类型', '')),
+                        'source': '巨潮资讯'
+                    })
+                
+                return {
+                    'status': 'success',
+                    'count': len(records),
+                    'data': records
+                }
+            else:
+                return {'status': 'no_data', 'message': '无巨潮公告'}
+                
+        except Exception as e:
+            logger.warning(f"⚠️ 巨潮资讯获取失败: {e}")
+            return {'status': 'no_data', 'message': '巨潮资讯暂不可用'}
+    
     def _get_industry_policy(self) -> Dict:
         """获取行业政策动态（AKShare）"""
         try:
@@ -819,6 +880,180 @@ class ComprehensiveStockDataService:
         except Exception as e:
             logger.warning(f"⚠️ 行业政策获取失败: {e}")
             return {'status': 'no_data', 'message': '行业政策暂不可用'}
+    
+    def _get_stock_st_info_ak(self, ts_code: str) -> Dict:
+        """获取ST股票详细信息（AKShare）"""
+        try:
+            import akshare as ak
+            symbol = ts_code.split('.')[0]
+            
+            # ST股票统计
+            df = ak.stock_zh_a_st_em()
+            if df is not None and not df.empty:
+                stock_data = df[df['代码'] == symbol]
+                if not stock_data.empty:
+                    return {
+                        'status': 'success',
+                        'data': stock_data.iloc[0].to_dict()
+                    }
+            return {'status': 'no_data', 'message': '非ST股票'}
+        except Exception as e:
+            logger.warning(f"⚠️ ST信息获取失败: {e}")
+            return {'status': 'no_data', 'message': 'ST信息暂不可用'}
+    
+    def _get_suspension_info_ak(self, ts_code: str) -> Dict:
+        """获取停复牌信息（AKShare）"""
+        try:
+            import akshare as ak
+            symbol = ts_code.split('.')[0]
+            
+            # 停复牌信息
+            df = ak.stock_zh_a_stop_em()
+            if df is not None and not df.empty:
+                stock_data = df[df['代码'] == symbol]
+                if not stock_data.empty:
+                    return {
+                        'status': 'success',
+                        'count': len(stock_data),
+                        'data': stock_data.to_dict('records')
+                    }
+            return {'status': 'no_data', 'message': '无停复牌记录'}
+        except Exception as e:
+            logger.warning(f"⚠️ 停复牌信息获取失败: {e}")
+            return {'status': 'no_data', 'message': '停复牌信息暂不可用'}
+    
+    def _get_pledge_detail_ak(self, ts_code: str) -> Dict:
+        """获取股权质押详情（AKShare）"""
+        try:
+            import akshare as ak
+            symbol = ts_code.split('.')[0]
+            
+            # 股权质押详情
+            df = ak.stock_zh_a_pledge_ratio(symbol=symbol)
+            if df is not None and not df.empty:
+                return {
+                    'status': 'success',
+                    'count': len(df),
+                    'data': df.head(20).to_dict('records')
+                }
+            return {'status': 'no_data', 'message': '无质押记录'}
+        except Exception as e:
+            logger.warning(f"⚠️ 质押详情获取失败: {e}")
+            return {'status': 'no_data', 'message': '质押详情暂不可用'}
+    
+    def _get_restricted_shares_ak(self, ts_code: str) -> Dict:
+        """获取限售股解禁（AKShare）"""
+        try:
+            import akshare as ak
+            symbol = ts_code.split('.')[0]
+            
+            # 限售股解禁
+            df = ak.stock_restricted_release_queue_sina(symbol=symbol)
+            if df is not None and not df.empty:
+                return {
+                    'status': 'success',
+                    'count': len(df),
+                    'data': df.to_dict('records')
+                }
+            return {'status': 'no_data', 'message': '无解禁数据'}
+        except Exception as e:
+            logger.warning(f"⚠️ 限售股获取失败: {e}")
+            return {'status': 'no_data', 'message': '限售股暂不可用'}
+    
+    def _get_shareholder_change_ak(self, ts_code: str) -> Dict:
+        """获取股东增减持（AKShare）"""
+        try:
+            import akshare as ak
+            symbol = ts_code.split('.')[0]
+            
+            # 股东增减持
+            df = ak.stock_zh_a_gdhs(symbol=symbol)
+            if df is not None and not df.empty:
+                return {
+                    'status': 'success',
+                    'count': len(df),
+                    'data': df.head(20).to_dict('records')
+                }
+            return {'status': 'no_data', 'message': '无增减持记录'}
+        except Exception as e:
+            logger.warning(f"⚠️ 增减持获取失败: {e}")
+            return {'status': 'no_data', 'message': '增减持暂不可用'}
+    
+    def _get_dragon_tiger_ak(self, ts_code: str) -> Dict:
+        """获取龙虎榜（AKShare）"""
+        try:
+            import akshare as ak
+            symbol = ts_code.split('.')[0]
+            
+            # 龙虎榜数据
+            df = ak.stock_lhb_detail_em(symbol=symbol)
+            if df is not None and not df.empty:
+                return {
+                    'status': 'success',
+                    'count': len(df),
+                    'data': df.head(10).to_dict('records')
+                }
+            return {'status': 'no_data', 'message': '无龙虎榜数据'}
+        except Exception as e:
+            logger.warning(f"⚠️ 龙虎榜获取失败: {e}")
+            return {'status': 'no_data', 'message': '龙虎榜暂不可用'}
+    
+    def _get_performance_forecast_ak(self, ts_code: str) -> Dict:
+        """获取业绩预告（AKShare）"""
+        try:
+            import akshare as ak
+            symbol = ts_code.split('.')[0]
+            
+            # 业绩预告
+            df = ak.stock_yjyg_em(symbol=symbol)
+            if df is not None and not df.empty:
+                return {
+                    'status': 'success',
+                    'count': len(df),
+                    'data': df.to_dict('records')
+                }
+            return {'status': 'no_data', 'message': '无业绩预告'}
+        except Exception as e:
+            logger.warning(f"⚠️ 业绩预告获取失败: {e}")
+            return {'status': 'no_data', 'message': '业绩预告暂不可用'}
+    
+    def _get_audit_opinion_ak(self, ts_code: str) -> Dict:
+        """获取审计意见（AKShare）"""
+        try:
+            import akshare as ak
+            symbol = ts_code.split('.')[0]
+            
+            # 审计意见
+            df = ak.stock_audit_result_cninfo(symbol=symbol)
+            if df is not None and not df.empty:
+                return {
+                    'status': 'success',
+                    'count': len(df),
+                    'data': df.to_dict('records')
+                }
+            return {'status': 'no_data', 'message': '无审计意见'}
+        except Exception as e:
+            logger.warning(f"⚠️ 审计意见获取失败: {e}")
+            return {'status': 'no_data', 'message': '审计意见暂不可用'}
+    
+    def _get_margin_trading_ak(self, ts_code: str) -> Dict:
+        """获取融资融券（AKShare）"""
+        try:
+            import akshare as ak
+            symbol = ts_code.split('.')[0]
+            
+            # 融资融券
+            df = ak.stock_margin_underlying_info_szse(symbol=symbol)
+            if df is not None and not df.empty:
+                return {
+                    'status': 'success',
+                    'count': len(df),
+                    'data': df.head(20).to_dict('records')
+                }
+            return {'status': 'no_data', 'message': '无融资融券数据'}
+        except Exception as e:
+            logger.warning(f"⚠️ 融资融券获取失败: {e}")
+            return {'status': 'no_data', 'message': '融资融券暂不可用'}
     
     def _get_realtime_tick(self, ts_code: str) -> Dict:
         """获取实时成交数据（使用tick_5min）"""
