@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 import asyncio
+import os
 
 from backend.utils.logging_config import get_logger
 from backend.utils.tool_logging import log_api_call
@@ -84,7 +85,8 @@ def _save_monitored_stocks():
 # 初始化时从文件加载
 monitored_stocks = _load_monitored_stocks()
 
-# 数据源状态
+# 数据缓存 - 避免重复请求
+data_cache = {}
 data_sources_status = {
     "tushare": {
         "id": "tushare",
@@ -164,18 +166,85 @@ async def get_monitored_stocks():
 @log_api_call("获取数据源状态")
 async def get_data_sources_status():
     """
-    获取所有数据源的状态
+    获取所有数据源的状态（自动检测）
     """
     try:
+        # 自动检测数据源状态
+        await _check_all_data_sources()
+
         sources = list(data_sources_status.values())
         return {
             "success": True,
             "sources": sources
         }
-        
+
     except Exception as e:
         logger.error(f"获取数据源状态失败: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+async def _check_all_data_sources():
+    """检测所有数据源状态"""
+    try:
+        # 检测AKShare
+        try:
+            import akshare as ak
+            # 尝试获取一个简单的数据
+            df = ak.stock_zh_a_spot_em()
+            if df is not None and not df.empty:
+                data_sources_status["akshare"]["status"] = "online"
+                data_sources_status["akshare"]["lastUpdate"] = datetime.now().isoformat()
+                data_sources_status["akshare"]["error"] = None
+            else:
+                data_sources_status["akshare"]["status"] = "error"
+                data_sources_status["akshare"]["error"] = "无法获取数据"
+        except Exception as e:
+            data_sources_status["akshare"]["status"] = "error"
+            data_sources_status["akshare"]["error"] = str(e)
+
+        # 检测Tushare
+        try:
+            import tushare as ts
+            # 检查是否有token
+            token = os.getenv('TUSHARE_TOKEN')
+            if token:
+                ts.set_token(token)
+                df = ts.daily(ts_code='000001.SZ', start_date='20240101', end_date='20240102')
+                if df is not None and not df.empty:
+                    data_sources_status["tushare"]["status"] = "online"
+                    data_sources_status["tushare"]["lastUpdate"] = datetime.now().isoformat()
+                    data_sources_status["tushare"]["error"] = None
+                else:
+                    data_sources_status["tushare"]["status"] = "error"
+                    data_sources_status["tushare"]["error"] = "无法获取数据"
+            else:
+                data_sources_status["tushare"]["status"] = "offline"
+                data_sources_status["tushare"]["error"] = "未配置TUSHARE_TOKEN"
+        except Exception as e:
+            data_sources_status["tushare"]["status"] = "error"
+            data_sources_status["tushare"]["error"] = str(e)
+
+        # 检测其他数据源
+        for source in ["eastmoney", "juhe"]:
+            if data_sources_status[source]["status"] == "offline":
+                try:
+                    # 简单的网络测试
+                    import requests
+                    if source == "eastmoney":
+                        response = requests.get("https://push2.eastmoney.com/api/qt/stock/get", timeout=5)
+                    else:  # juhe
+                        response = requests.get("https://apis.juhe.cn/1.0/api/v1/stock/news", timeout=5)
+
+                    if response.status_code == 200:
+                        data_sources_status[source]["status"] = "online"
+                        data_sources_status[source]["lastUpdate"] = datetime.now().isoformat()
+                        data_sources_status[source]["error"] = None
+                except Exception as e:
+                    data_sources_status[source]["status"] = "error"
+                    data_sources_status[source]["error"] = str(e)
+
+    except Exception as e:
+        logger.error(f"检测数据源失败: {e}")
 
 
 @router.post("/sources/check")
@@ -351,24 +420,53 @@ async def get_stock_risk(ts_code: str):
 
 @router.get("/stock/comprehensive/{ts_code}")
 @log_api_call("获取股票综合数据")
-async def get_stock_comprehensive(ts_code: str):
+async def get_stock_comprehensive(ts_code: str, force_update: bool = False):
     """
     获取股票的所有综合数据
     包括：实时行情、停复牌、ST状态、财务数据、审计意见、
           业绩预告、分红送股、限售解禁、股权质押、
           股东增减持、龙虎榜、新闻等
+
+    Args:
+        ts_code: 股票代码
+        force_update: 是否强制更新（忽略缓存）
     """
     try:
         logger.info(f"📊 开始获取 {ts_code} 的综合数据...")
-        
+
+        # 检查缓存
+        cache_key = f"comprehensive_{ts_code}"
+        current_time = datetime.now()
+
+        # 如果缓存存在且不超过5分钟，直接返回
+        if not force_update and cache_key in data_cache:
+            cached_data = data_cache[cache_key]
+            cache_time = datetime.fromisoformat(cached_data.get('cached_at', '1970-01-01'))
+            if (current_time - cache_time).total_seconds() < 300:  # 5分钟缓存
+                logger.info(f"📦 使用缓存数据 ({(current_time - cache_time).total_seconds():.1f}s前)")
+                return {
+                    "success": True,
+                    "cached": True,
+                    **cached_data['data']
+                }
+
+        # 获取新数据
+        logger.info(f"🔄 获取新数据...")
         service = get_comprehensive_service()
         result = service.get_all_stock_data(ts_code)
-        
+
+        # 保存到缓存
+        data_cache[cache_key] = {
+            'cached_at': current_time.isoformat(),
+            'data': result
+        }
+
         return {
             "success": True,
+            "cached": False,
             **result
         }
-        
+
     except Exception as e:
         logger.error(f"综合数据获取失败: {e}")
         import traceback

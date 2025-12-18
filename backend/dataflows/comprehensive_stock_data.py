@@ -115,6 +115,11 @@ class ComprehensiveStockDataService:
         # 使用并发执行加速数据获取
         import concurrent.futures
         from functools import partial
+        import threading
+        import time
+
+        logger.info("🔄 开始并发获取数据...")
+        start_time = time.time()
 
         # 定义数据获取任务
         tasks = {
@@ -139,24 +144,52 @@ class ComprehensiveStockDataService:
             'announcements': (self._get_announcements_akshare, ts_code),
         }
 
+        # 创建一个锁来保护日志输出
+        log_lock = threading.Lock()
+
+        def execute_task(key, func, arg):
+            """执行单个任务并记录日志"""
+            task_start = time.time()
+            logger.info(f"📥 开始获取 {key}...")
+            try:
+                result_data = func(arg)
+                elapsed = time.time() - task_start
+                with log_lock:
+                    if isinstance(result_data, dict) and result_data.get('status') in ['success', 'has_suspend', 'normal']:
+                        logger.info(f"✅ {key} 获取成功 ({elapsed:.2f}s) - 状态: {result_data.get('status')}")
+                    else:
+                        logger.warning(f"⚠️ {key} 获取失败 ({elapsed:.2f}s) - {str(result_data)[:100]}")
+                return result_data
+            except Exception as e:
+                elapsed = time.time() - task_start
+                with log_lock:
+                    logger.error(f"❌ {key} 执行异常 ({elapsed:.2f}s) - {str(e)[:100]}")
+                return {'status': 'error', 'message': str(e)}
+
         # 使用线程池并发执行（限制并发数避免API限流）
-        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+            # 提交所有任务
             future_to_key = {}
             for key, (func, arg) in tasks.items():
-                future = executor.submit(func, arg)
+                future = executor.submit(execute_task, key, func, arg)
                 future_to_key[future] = key
 
-            # 设置超时时间（30秒）
+            # 等待所有任务完成
+            completed_count = 0
             for future in concurrent.futures.as_completed(future_to_key, timeout=30):
                 key = future_to_key[future]
                 try:
                     result[key] = future.result(timeout=10)
+                    completed_count += 1
                 except concurrent.futures.TimeoutError:
                     logger.warning(f"⚠️ {key} 获取超时")
                     result[key] = {'status': 'timeout', 'message': '获取超时'}
                 except Exception as e:
                     logger.warning(f"⚠️ {key} 获取失败: {e}")
                     result[key] = {'status': 'error', 'message': str(e)}
+
+        total_time = time.time() - start_time
+        logger.info(f"📊 数据获取完成: {completed_count}/{len(tasks)} 个接口，耗时 {total_time:.2f} 秒")
 
         # 获取新闻数据（单独处理，避免阻塞）
         try:
@@ -186,11 +219,81 @@ class ComprehensiveStockDataService:
         result['news_em'] = {'status': 'deferred', 'message': '按需加载'}
         result['akshare_ext'] = {'status': 'deferred', 'message': '按需加载'}
         
+        # 调整数据结构以匹配前端期望
+        result = self._adjust_data_structure(result)
+
         # 生成数据摘要
         result['data_summary'] = self._generate_summary(result)
-        
+
         logger.info(f"✅ 数据获取完成，共 {len(result['data_summary'])} 个类别")
-        
+
+        return result
+
+    def _adjust_data_structure(self, result: Dict) -> Dict:
+        """调整数据结构以匹配前端期望"""
+        logger.info("🔄 调整数据结构以匹配前端期望...")
+
+        # 1. 调整财务数据结构
+        if 'financial' not in result or not result['financial']:
+            result['financial'] = {
+                'income': [],
+                'balancesheet': [],
+                'cashflow': []
+            }
+        elif isinstance(result['financial'], dict) and result['financial'].get('status') == 'success':
+            # 保持原有结构
+            pass
+        else:
+            # 确保有默认结构
+            result['financial'] = {
+                'income': result['financial'].get('income', []),
+                'balancesheet': result['financial'].get('balancesheet', []),
+                'cashflow': result['financial'].get('cashflow', [])
+            }
+
+        # 2. 调整limit_list结构
+        if 'limit_list' in result and result['limit_list'].get('status') == 'success':
+            # 数据结构已正确
+            pass
+
+        # 3. 调整forecast结构
+        if 'forecast' in result and result['forecast'].get('status') == 'success':
+            # 确保forecast有正确的结构
+            if 'forecast' not in result['forecast']:
+                result['forecast']['forecast'] = result['forecast'].get('data', [])
+
+        # 4. 调整st_status结构
+        if 'st_status' in result:
+            if 'is_st' not in result['st_status']:
+                result['st_status']['is_st'] = result['st_status'].get('status') in ['st', 'success'] and 'ST' in str(result['st_status']).upper()
+            if 'message' not in result['st_status']:
+                result['st_status']['message'] = result['st_status'].get('message', '正常状态')
+
+        # 5. 确保realtime数据正确
+        if 'realtime' in result and result['realtime'].get('status') == 'success':
+            # 确保有价格变化百分比
+            if 'pct_change' not in result['realtime']['data']:
+                result['realtime']['data']['pct_change'] = result['realtime']['data'].get('change_pct', 0)
+
+        # 6. 调整suspend状态
+        if 'suspend' not in result or not result['suspend']:
+            result['suspend'] = {
+                'status': 'normal',
+                'message': '近期无停复牌记录'
+            }
+
+        # 7. 调整pledge数据，确保有pledge_ratio
+        if 'pledge' in result and result['pledge'].get('status') == 'success':
+            data = result['pledge']
+            if isinstance(data.get('data'), list) and data['data']:
+                # 计算质押比例
+                record = data['data'][0]
+                if 'pledge_ratio' not in record:
+                    # 尝试从其他字段计算
+                    record['pledge_ratio'] = 0  # 默认值
+            else:
+                data['pledge_ratio'] = 0
+
         return result
     
     def _get_realtime_quote(self, ts_code: str) -> Dict:

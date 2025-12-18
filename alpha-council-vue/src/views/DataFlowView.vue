@@ -617,7 +617,7 @@
               </div>
               
               <div class="news-detail-header">
-                <h4>{{ news.title }}</h4>
+                <h4 @click="openNewsLink(news)" :class="{ 'clickable-title': news.url }">{{ news.title }}</h4>
                 <div class="news-meta">
                   <span class="news-type-tag">{{ getReportTypeLabel(news.report_type) }}</span>
                   <span class="news-time">{{ news.pub_time }}</span>
@@ -1169,7 +1169,13 @@ export default {
       if (!total || total === 0) return 0
       return Math.round((value / total) * 100)
     }
-    
+
+    const openNewsLink = (news) => {
+      if (news.url) {
+        window.open(news.url, '_blank')
+      }
+    }
+
     // 生命周期
     onMounted(() => {
       refreshAllData()
@@ -1209,6 +1215,7 @@ export default {
       updateNow,
       viewDetails,
       loadStockDetails,
+      openNewsLink,
       formatTime,
       formatMoney,  // 新增
       getStatusText,
@@ -1957,6 +1964,17 @@ export default {
   font-size: 1.1rem;
   color: #e2e8f0;
   line-height: 1.4;
+}
+
+.news-detail-header h4.clickable-title {
+  cursor: pointer;
+  color: #60a5fa;
+  transition: color 0.2s;
+}
+
+.news-detail-header h4.clickable-title:hover {
+  color: #3b82f6;
+  text-decoration: underline;
 }
 
 .news-meta {
