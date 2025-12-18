@@ -24,6 +24,9 @@ from backend.dataflows.risk import (
 from backend.dataflows.news.multi_source_news_aggregator import get_news_aggregator
 from backend.dataflows.news.sentiment_engine import get_sentiment_engine
 
+# 导入综合数据服务
+from backend.dataflows.comprehensive_stock_data import get_comprehensive_service
+
 logger = get_logger("api.dataflow")
 router = APIRouter(prefix="/api/dataflow", tags=["Data Flow"])
 
@@ -322,6 +325,33 @@ async def get_stock_risk(ts_code: str):
         
     except Exception as e:
         logger.error(f"风险分析失败: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/stock/comprehensive/{ts_code}")
+@log_api_call("获取股票综合数据")
+async def get_stock_comprehensive(ts_code: str):
+    """
+    获取股票的所有综合数据
+    包括：实时行情、停复牌、ST状态、财务数据、审计意见、
+          业绩预告、分红送股、限售解禁、股权质押、
+          股东增减持、龙虎榜、新闻等
+    """
+    try:
+        logger.info(f"📊 开始获取 {ts_code} 的综合数据...")
+        
+        service = get_comprehensive_service()
+        result = service.get_all_stock_data(ts_code)
+        
+        return {
+            "success": True,
+            **result
+        }
+        
+    except Exception as e:
+        logger.error(f"综合数据获取失败: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 
