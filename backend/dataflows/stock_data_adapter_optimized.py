@@ -79,7 +79,22 @@ class StockDataAdapter:
                 quote = tdx.get_realtime_quote(symbol)
                 if quote:
                     result['success'] = True
-                    result['name'] = quote.get('name', f'股票{symbol}')
+                    # 获取股票名称，如果TDX返回空则尝试其他方式获取
+                    stock_name = quote.get('name', '') or ''
+                    if not stock_name or stock_name == symbol:
+                        # TDX返回的名称为空或就是代码本身，尝试从AKShare获取
+                        try:
+                            import akshare as ak
+                            info_df = ak.stock_individual_info_em(symbol=symbol)
+                            if info_df is not None and not info_df.empty:
+                                name_row = info_df[info_df['item'] == '股票简称']
+                                if not name_row.empty:
+                                    stock_name = str(name_row['value'].iloc[0])
+                                    logger.info(f"[StockDataAdapter] 从AKShare获取股票名称: {stock_name}")
+                        except Exception as name_err:
+                            logger.debug(f"[StockDataAdapter] 获取股票名称失败: {name_err}")
+
+                    result['name'] = stock_name if stock_name else f'股票{symbol}'
                     result['price'] = float(quote.get('price', 0))
                     result['change'] = float(quote.get('change_pct', 0))
                     result['change_amount'] = float(quote.get('change', 0))
@@ -91,7 +106,7 @@ class StockDataAdapter:
                     result['amount'] = float(quote.get('amount', 0))
                     result['data_source'] = 'tdx_native'
                     result['raw_text'] = self._format_as_text(result)
-                    logger.info(f"[StockDataAdapter] ✅ TDX Native 获取成功")
+                    logger.info(f"[StockDataAdapter] ✅ TDX Native 获取成功, 股票名称: {result['name']}")
                     return result
         except Exception as e:
             logger.debug(f"[StockDataAdapter] TDX Native 失败: {e}")

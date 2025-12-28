@@ -72,7 +72,7 @@
             </div>
             <div class="data-row">
               <span class="data-label">股票名称:</span>
-              <span class="data-value">{{ currentData.name }}</span>
+              <span class="data-value">{{ currentData.name || '获取中...' }}</span>
             </div>
             <div class="data-row">
               <span class="data-label">最新价格:</span>
