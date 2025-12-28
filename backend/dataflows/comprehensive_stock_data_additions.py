@@ -149,107 +149,191 @@ def get_category_data(ts_code: str, category: str) -> Dict:
 
 def generate_interface_status(data: Dict) -> Dict:
     """
-    生成接口状态报告
-    
+    生成接口状态报告（按分类组织，匹配前端期望格式）
+
     Args:
         data: 完整的股票数据字典
-        
+
     Returns:
-        接口状态字典，包含每个接口的状态和统计信息
+        按分类组织的接口状态字典，格式：
+        {
+            'market': {
+                'icon': '📈',
+                'name': '行情数据',
+                'success': 2,
+                'failed': 0,
+                'no_data': 1,
+                'interfaces': {
+                    'realtime': {'status': 'success', 'status_label': '成功', 'message': '...'},
+                    ...
+                }
+            },
+            ...
+        }
     """
-    interface_status = {
-        'total': 0,
-        'success': 0,
-        'failed': 0,
-        'deferred': 0,
-        'no_data': 0,
-        'details': {}
+    # 定义接口分类
+    categories = {
+        'market': {
+            'icon': '📈',
+            'name': '行情数据',
+            'interfaces': ['realtime', 'realtime_tick', 'realtime_list', 'suspend', 'st_status']
+        },
+        'financial': {
+            'icon': '💰',
+            'name': '财务数据',
+            'interfaces': ['financial', 'audit', 'forecast', 'dividend']
+        },
+        'risk': {
+            'icon': '⚠️',
+            'name': '风险数据',
+            'interfaces': ['restricted', 'pledge', 'pledge_detail', 'holder_trade']
+        },
+        'trading': {
+            'icon': '📊',
+            'name': '交易数据',
+            'interfaces': ['dragon_tiger', 'top_inst', 'block_trade', 'limit_list', 'limit_list_ths', 'margin', 'margin_detail']
+        },
+        'company': {
+            'icon': '🏢',
+            'name': '公司信息',
+            'interfaces': ['company_info', 'managers', 'manager_rewards', 'main_business']
+        },
+        'capital': {
+            'icon': '🌐',
+            'name': '资金流向',
+            'interfaces': ['hsgt_holding', 'ggt_top10', 'hk_hold', 'moneyflow_hsgt']
+        },
+        'news': {
+            'icon': '📰',
+            'name': '新闻资讯',
+            'interfaces': ['announcements', 'news_sina', 'news_em', 'market_news', 'industry_policy', 'news']
+        }
     }
-    
-    # 需要检查的接口列表
-    interfaces = [
-        'realtime', 'realtime_tick', 'realtime_list', 'suspend', 'st_status',
-        'financial', 'audit', 'forecast', 'dividend', 'restricted',
-        'pledge', 'pledge_detail', 'holder_trade', 'dragon_tiger', 'top_inst',
-        'block_trade', 'limit_list', 'limit_list_ths', 'margin', 'margin_detail',
-        'company_info', 'managers', 'manager_rewards', 'main_business',
-        'hsgt_holding', 'ggt_top10', 'hk_hold', 'moneyflow_hsgt',
-        'announcements', 'news_sina', 'news_em', 'market_news', 'industry_policy', 'news'
-    ]
-    
-    for interface in interfaces:
-        interface_status['total'] += 1
-        interface_data = data.get(interface, {})
-        
-        if isinstance(interface_data, dict):
-            status = interface_data.get('status', 'unknown')
-            if status == 'success':
-                interface_status['success'] += 1
-                interface_status['details'][interface] = {
-                    'status': 'success',
-                    'icon': '✅',
-                    'message': interface_data.get('message', '数据获取成功')
-                }
-            elif status == 'deferred':
-                interface_status['deferred'] += 1
-                interface_status['details'][interface] = {
-                    'status': 'deferred',
-                    'icon': '⏳',
-                    'message': '按需加载'
-                }
-            elif status == 'no_data':
-                interface_status['no_data'] += 1
-                interface_status['details'][interface] = {
-                    'status': 'no_data',
-                    'icon': '📭',
-                    'message': interface_data.get('message', '无数据')
-                }
-            elif status in ['normal', 'has_suspend', 'st_stock']:
-                interface_status['success'] += 1
-                interface_status['details'][interface] = {
-                    'status': 'success',
-                    'icon': '✅',
-                    'message': interface_data.get('message', '状态正常')
-                }
+
+    # 接口名称映射
+    interface_names = {
+        'realtime': '实时行情',
+        'realtime_tick': '实时成交',
+        'realtime_list': '行情列表',
+        'suspend': '停复牌',
+        'st_status': 'ST状态',
+        'financial': '财务数据',
+        'audit': '审计意见',
+        'forecast': '业绩预告',
+        'dividend': '分红送股',
+        'restricted': '限售解禁',
+        'pledge': '股权质押',
+        'pledge_detail': '质押明细',
+        'holder_trade': '股东增减持',
+        'dragon_tiger': '龙虎榜',
+        'top_inst': '机构明细',
+        'block_trade': '大宗交易',
+        'limit_list': '涨跌停',
+        'limit_list_ths': '同花顺涨跌停',
+        'margin': '融资融券',
+        'margin_detail': '融资融券明细',
+        'company_info': '公司信息',
+        'managers': '管理层',
+        'manager_rewards': '管理层薪酬',
+        'main_business': '主营业务',
+        'hsgt_holding': '沪深港通持股',
+        'ggt_top10': '港股通十大',
+        'hk_hold': '港资持股',
+        'moneyflow_hsgt': '北向资金',
+        'announcements': '公告',
+        'news_sina': '新浪新闻',
+        'news_em': '东方财富新闻',
+        'market_news': '市场快讯',
+        'industry_policy': '行业政策',
+        'news': '综合新闻'
+    }
+
+    result = {}
+
+    for cat_key, cat_info in categories.items():
+        cat_result = {
+            'icon': cat_info['icon'],
+            'name': cat_info['name'],
+            'success': 0,
+            'failed': 0,
+            'no_data': 0,
+            'interfaces': {}
+        }
+
+        for interface in cat_info['interfaces']:
+            interface_data = data.get(interface, {})
+
+            if isinstance(interface_data, dict):
+                status = interface_data.get('status', 'unknown')
+                if status == 'success':
+                    cat_result['success'] += 1
+                    cat_result['interfaces'][interface] = {
+                        'status': 'success',
+                        'status_label': '✅ 成功',
+                        'message': interface_data.get('message', '数据获取成功'),
+                        'count': len(interface_data.get('data', [])) if isinstance(interface_data.get('data'), list) else 0
+                    }
+                elif status == 'deferred':
+                    cat_result['no_data'] += 1
+                    cat_result['interfaces'][interface] = {
+                        'status': 'deferred',
+                        'status_label': '⏳ 按需加载',
+                        'message': '按需加载',
+                        'count': 0
+                    }
+                elif status == 'no_data':
+                    cat_result['no_data'] += 1
+                    cat_result['interfaces'][interface] = {
+                        'status': 'no_data',
+                        'status_label': '📭 无数据',
+                        'message': interface_data.get('message', '无数据'),
+                        'count': 0
+                    }
+                elif status in ['normal', 'has_suspend', 'st_stock']:
+                    cat_result['success'] += 1
+                    cat_result['interfaces'][interface] = {
+                        'status': 'success',
+                        'status_label': '✅ 正常',
+                        'message': interface_data.get('message', '状态正常'),
+                        'count': 0
+                    }
+                else:
+                    cat_result['failed'] += 1
+                    cat_result['interfaces'][interface] = {
+                        'status': 'failed',
+                        'status_label': '❌ 失败',
+                        'message': interface_data.get('message', str(interface_data.get('error', '获取失败'))),
+                        'count': 0
+                    }
+            elif isinstance(interface_data, list):
+                if interface_data:
+                    cat_result['success'] += 1
+                    cat_result['interfaces'][interface] = {
+                        'status': 'success',
+                        'status_label': '✅ 成功',
+                        'message': f'获取到 {len(interface_data)} 条数据',
+                        'count': len(interface_data)
+                    }
+                else:
+                    cat_result['no_data'] += 1
+                    cat_result['interfaces'][interface] = {
+                        'status': 'no_data',
+                        'status_label': '📭 无数据',
+                        'message': '无数据',
+                        'count': 0
+                    }
             else:
-                interface_status['failed'] += 1
-                interface_status['details'][interface] = {
-                    'status': 'failed',
-                    'icon': '❌',
-                    'message': interface_data.get('message', str(interface_data.get('error', '获取失败')))
+                cat_result['failed'] += 1
+                cat_result['interfaces'][interface] = {
+                    'status': 'unknown',
+                    'status_label': '❓ 未知',
+                    'message': '未知状态',
+                    'count': 0
                 }
-        elif isinstance(interface_data, list):
-            if interface_data:
-                interface_status['success'] += 1
-                interface_status['details'][interface] = {
-                    'status': 'success',
-                    'icon': '✅',
-                    'message': f'获取到 {len(interface_data)} 条数据'
-                }
-            else:
-                interface_status['no_data'] += 1
-                interface_status['details'][interface] = {
-                    'status': 'no_data',
-                    'icon': '📭',
-                    'message': '无数据'
-                }
-        else:
-            interface_status['failed'] += 1
-            interface_status['details'][interface] = {
-                'status': 'unknown',
-                'icon': '❓',
-                'message': '未知状态'
-            }
-    
-    # 计算成功率
-    if interface_status['total'] > 0:
-        interface_status['success_rate'] = round(
-            interface_status['success'] / interface_status['total'] * 100, 1
-        )
-    else:
-        interface_status['success_rate'] = 0
-        
-    return interface_status
+
+        result[cat_key] = cat_result
+
+    return result
 
 
 def generate_alerts(data: Dict) -> List[Dict]:

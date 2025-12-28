@@ -9,6 +9,7 @@ from typing import Dict, List, Optional
 import pandas as pd
 
 from backend.utils.logging_config import get_logger
+from backend.dataflows.comprehensive_stock_data_additions import generate_interface_status
 
 logger = get_logger("dataflows.comprehensive")
 
@@ -224,6 +225,9 @@ class ComprehensiveStockDataService:
 
         # 生成数据摘要
         result['data_summary'] = self._generate_summary(result)
+
+        # 生成接口状态报告
+        result['interface_status'] = generate_interface_status(result)
 
         logger.info(f"✅ 数据获取完成，共 {len(result['data_summary'])} 个类别")
 
