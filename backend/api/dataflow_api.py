@@ -12,6 +12,24 @@ import os
 
 from backend.utils.logging_config import get_logger
 from backend.utils.tool_logging import log_api_call
+import math
+
+
+def sanitize_float_values(obj):
+    """
+    递归清理数据中的非法float值（inf, -inf, nan）
+    将它们转换为None，以便JSON序列化
+    """
+    if isinstance(obj, dict):
+        return {k: sanitize_float_values(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [sanitize_float_values(item) for item in obj]
+    elif isinstance(obj, float):
+        if math.isnan(obj) or math.isinf(obj):
+            return None
+        return obj
+    else:
+        return obj
 
 # 导入风险监控模块
 from backend.dataflows.risk import (
@@ -208,10 +226,12 @@ async def get_stock_comprehensive_from_db(ts_code: str):
         if cache_key in data_cache:
             cached_data = data_cache[cache_key]
             logger.info(f"✅ 从缓存获取数据成功")
+            # 清理非法float值（inf, -inf, nan）
+            sanitized_data = sanitize_float_values(cached_data.get('data', {}))
             return {
                 "success": True,
                 "has_data": True,
-                "data": cached_data.get('data', {}),
+                "data": sanitized_data,
                 "loaded_at": cached_data.get('cached_at'),
                 "from_database": True
             }
@@ -607,16 +627,21 @@ async def get_stock_comprehensive(ts_code: str, force_update: bool = False):
             cache_time = datetime.fromisoformat(cached_data.get('cached_at', '1970-01-01'))
             if (current_time - cache_time).total_seconds() < 300:  # 5分钟缓存
                 logger.info(f"📦 使用缓存数据 ({(current_time - cache_time).total_seconds():.1f}s前)")
+                # 清理非法float值（inf, -inf, nan）
+                sanitized_data = sanitize_float_values(cached_data['data'])
                 return {
                     "success": True,
                     "cached": True,
-                    **cached_data['data']
+                    **sanitized_data
                 }
 
         # 获取新数据
         logger.info(f"🔄 获取新数据...")
         service = get_comprehensive_service()
         result = service.get_all_stock_data(ts_code)
+
+        # 清理非法float值（inf, -inf, nan）
+        result = sanitize_float_values(result)
 
         # 保存到缓存
         data_cache[cache_key] = {
@@ -668,6 +693,9 @@ async def get_stock_comprehensive_stream(ts_code: str):
             logger.info(f"📊 开始流式获取 {ts_code} 的综合数据...")
             result = service.get_all_stock_data(ts_code)
 
+            # 清理非法float值（inf, -inf, nan）
+            result = sanitize_float_values(result)
+
             # 按分类发送数据
             success_count = 0
             total_count = 0
@@ -687,13 +715,13 @@ async def get_stock_comprehensive_stream(ts_code: str):
                 total_count += category_total
                 success_count += category_success
 
-                # 发送分类数据
+                # 发送分类数据（数据已经被sanitize过）
                 yield f"data: {json.dumps({'type': 'category', 'category': category_key, 'data': {'name': category_info['name'], 'data': category_data, 'success_count': category_success, 'total_count': category_total}}, ensure_ascii=False)}\n\n"
 
                 # 短暂延迟，让前端有时间处理
                 await asyncio.sleep(0.1)
 
-            # 保存到缓存
+            # 保存到缓存（已清理的数据）
             cache_key = f"comprehensive_{ts_code}"
             data_cache[cache_key] = {
                 'cached_at': datetime.now().isoformat(),
