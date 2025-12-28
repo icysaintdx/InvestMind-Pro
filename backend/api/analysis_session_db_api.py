@@ -59,25 +59,38 @@ async def create_session(request: SessionCreateRequest, db: Session = Depends(ge
     """创建新的分析会话"""
     import uuid
     import time
-    
+
     session_id = f"session_{int(time.time())}_{uuid.uuid4().hex[:8]}"
-    
+
+    # 获取股票名称（如果未提供）
+    stock_name = request.stock_name
+    if not stock_name or stock_name == request.stock_code:
+        try:
+            from backend.dataflows.data_source_manager import get_data_source_manager
+            manager = get_data_source_manager()
+            stock_info = manager.get_stock_info(request.stock_code)
+            if stock_info and stock_info.get('name'):
+                stock_name = stock_info['name']
+        except Exception as e:
+            print(f"⚠️ 获取股票名称失败: {e}")
+            stock_name = request.stock_code
+
     try:
         # 创建会话
         session = SessionService.create_session(
             db=db,
             session_id=session_id,
             stock_code=request.stock_code,
-            stock_name=request.stock_name
+            stock_name=stock_name
         )
-        
+
         # 更新股票历史
         StockHistoryService.update_stock_history(
             db=db,
             stock_code=request.stock_code,
-            stock_name=request.stock_name
+            stock_name=stock_name
         )
-        
+
         return SessionResponse(
             session_id=session_id,
             stock_code=request.stock_code,

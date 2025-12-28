@@ -274,6 +274,20 @@ async def start_async_analysis(request: AsyncAnalysisRequest, background_tasks: 
     """
     session_id = generate_session_id()
 
+    # 获取股票名称（如果未提供）
+    stock_name = request.stock_name
+    if not stock_name or stock_name == request.stock_code:
+        try:
+            from backend.dataflows.data_source_manager import get_data_source_manager
+            manager = get_data_source_manager()
+            stock_info = manager.get_stock_info(request.stock_code)
+            if stock_info and stock_info.get('name'):
+                stock_name = stock_info['name']
+                logger.info(f"✅ 获取股票名称成功: {request.stock_code} -> {stock_name}")
+        except Exception as e:
+            logger.warning(f"⚠️ 获取股票名称失败: {e}")
+            stock_name = request.stock_code
+
     # 注册任务处理器（如果还没注册）
     if "analysis" not in task_manager._handlers:
         task_manager.register_handler("analysis", run_analysis_task)
@@ -282,7 +296,7 @@ async def start_async_analysis(request: AsyncAnalysisRequest, background_tasks: 
     task_id = await task_manager.submit_task("analysis", {
         "session_id": session_id,
         "stock_code": request.stock_code,
-        "stock_name": request.stock_name,
+        "stock_name": stock_name,
         "depth": request.depth,
         "agents": request.agents
     })
@@ -291,7 +305,7 @@ async def start_async_analysis(request: AsyncAnalysisRequest, background_tasks: 
     if not task_manager._running:
         background_tasks.add_task(task_manager.start_workers, 2)
 
-    logger.info(f"Started async analysis: task={task_id}, session={session_id}")
+    logger.info(f"Started async analysis: task={task_id}, session={session_id}, stock={stock_name}({request.stock_code})")
 
     return AsyncAnalysisResponse(
         success=True,

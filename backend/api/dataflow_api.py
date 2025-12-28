@@ -132,6 +132,169 @@ news_list = []
 
 # ==================== API接口 ====================
 
+@router.get("/daily-stats")
+@log_api_call("获取每日统计数据")
+async def get_daily_stats():
+    """
+    获取每日统计数据
+    包括：监控股票数、今日新闻数、风险预警数、分析任务数
+    """
+    try:
+        # 统计监控股票数
+        monitored_count = len(monitored_stocks)
+
+        # 统计今日新闻数
+        today = datetime.now().date()
+        today_news_count = 0
+        for news in news_list:
+            try:
+                news_time = news.get('publishTime') or news.get('pub_time', '')
+                if news_time:
+                    news_date = datetime.fromisoformat(news_time.replace('Z', '+00:00')).date()
+                    if news_date == today:
+                        today_news_count += 1
+            except:
+                pass
+
+        # 统计风险预警数（高风险股票数）
+        risk_alert_count = sum(
+            1 for stock in monitored_stocks.values()
+            if stock.get('riskLevel') in ['high', 'medium']
+        )
+
+        # 统计分析任务数（待处理任务）
+        analysis_task_count = sum(
+            stock.get('pendingTasks', 0)
+            for stock in monitored_stocks.values()
+        )
+
+        # API调用统计
+        api_calls = {}
+        for source_id, source_data in data_sources_status.items():
+            api_calls[source_id] = source_data.get('todayCalls', 0)
+
+        return {
+            "success": True,
+            "stats": {
+                "monitoredStocks": monitored_count,
+                "todayNews": today_news_count or len(news_list),  # 如果今日新闻为0，返回总新闻数
+                "riskAlerts": risk_alert_count,
+                "analysisTasks": analysis_task_count,
+                "apiCalls": api_calls
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"获取每日统计失败: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/stock/comprehensive/{ts_code}/from-db")
+@log_api_call("从数据库获取股票综合数据")
+async def get_stock_comprehensive_from_db(ts_code: str):
+    """
+    从数据库/缓存获取股票的综合数据（不触发新的API请求）
+    优先从缓存获取，如果没有则返回空数据
+
+    Args:
+        ts_code: 股票代码
+    """
+    try:
+        logger.info(f"📊 从数据库获取 {ts_code} 的综合数据...")
+
+        # 检查缓存
+        cache_key = f"comprehensive_{ts_code}"
+
+        if cache_key in data_cache:
+            cached_data = data_cache[cache_key]
+            logger.info(f"✅ 从缓存获取数据成功")
+            return {
+                "success": True,
+                "has_data": True,
+                "data": cached_data.get('data', {}),
+                "loaded_at": cached_data.get('cached_at'),
+                "from_database": True
+            }
+
+        # 检查监控股票中是否有数据
+        if ts_code in monitored_stocks:
+            stock_data = monitored_stocks[ts_code]
+            # 构建综合数据
+            comprehensive = {
+                "ts_code": ts_code,
+                "name": stock_data.get("name", ts_code.split('.')[0]),
+                "sentimentScore": stock_data.get("sentimentScore", 50),
+                "riskLevel": stock_data.get("riskLevel", "low"),
+                "riskScore": stock_data.get("riskScore", 0),
+                "news": [],
+                "risk": {
+                    "risk_level": stock_data.get("riskLevel", "low"),
+                    "risk_score": stock_data.get("riskScore", 0),
+                    "risk_factors": stock_data.get("riskFactors", {}),
+                    "warnings": stock_data.get("warnings", [])
+                },
+                "overall_score": stock_data.get("sentimentScore", 50),
+                "sentiment_summary": stock_data.get("sentimentDetail", {})
+            }
+
+            logger.info(f"✅ 从监控数据获取成功")
+            return {
+                "success": True,
+                "has_data": True,
+                "data": comprehensive,
+                "loaded_at": stock_data.get("lastUpdate"),
+                "from_database": False
+            }
+
+        # 没有数据
+        logger.info(f"ℹ️ 没有找到 {ts_code} 的缓存数据")
+        return {
+            "success": True,
+            "has_data": False,
+            "data": None,
+            "message": "暂无数据，请点击刷新按钮获取"
+        }
+
+    except Exception as e:
+        logger.error(f"从数据库获取综合数据失败: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/stock/cached/{ts_code}")
+@log_api_call("获取股票缓存数据")
+async def get_stock_cached(ts_code: str):
+    """
+    获取股票的缓存数据（用于前端快速加载）
+
+    Args:
+        ts_code: 股票代码
+    """
+    try:
+        cache_key = f"comprehensive_{ts_code}"
+
+        if cache_key in data_cache:
+            cached_data = data_cache[cache_key]
+            return {
+                "success": True,
+                "has_data": True,
+                "comprehensive": cached_data.get('data', {}),
+                "news": cached_data.get('data', {}).get('news', []),
+                "cached_at": cached_data.get('cached_at')
+            }
+
+        return {
+            "success": True,
+            "has_data": False,
+            "message": "无缓存数据"
+        }
+
+    except Exception as e:
+        logger.error(f"获取缓存数据失败: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/monitored-stocks")
 @log_api_call("获取监控股票列表")
 async def get_monitored_stocks():
@@ -482,14 +645,23 @@ async def add_monitor(request: MonitorStockRequest, background_tasks: Background
     """
     try:
         code = request.code
-        
+
         # 检查是否已存在
         if code in monitored_stocks:
             raise HTTPException(status_code=400, detail="该股票已在监控列表中")
-        
-        # 获取股票名称（简化处理，实际应该调用API获取）
-        stock_name = code.split('.')[0]
-        
+
+        # 获取股票名称（使用数据源管理器获取真实名称）
+        stock_name = code.split('.')[0]  # 默认使用代码
+        try:
+            from backend.dataflows.data_source_manager import get_data_source_manager
+            manager = get_data_source_manager()
+            stock_info = manager.get_stock_info(code)
+            if stock_info and stock_info.get('name'):
+                stock_name = stock_info['name']
+                logger.info(f"✅ 获取股票名称成功: {code} -> {stock_name}")
+        except Exception as e:
+            logger.warning(f"⚠️ 获取股票名称失败，使用代码作为名称: {e}")
+
         # 添加到监控列表
         monitored_stocks[code] = {
             "name": stock_name,
@@ -509,12 +681,13 @@ async def add_monitor(request: MonitorStockRequest, background_tasks: Background
         # 添加后台任务：立即执行一次数据更新
         background_tasks.add_task(update_stock_data, code)
 
-        logger.info(f"添加监控股票: {code}")
-        
+        logger.info(f"添加监控股票: {code} ({stock_name})")
+
         return {
             "success": True,
-            "message": f"已添加监控: {code}",
-            "code": code
+            "message": f"已添加监控: {stock_name}({code})",
+            "code": code,
+            "name": stock_name
         }
         
     except HTTPException:

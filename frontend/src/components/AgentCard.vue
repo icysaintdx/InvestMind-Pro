@@ -1038,7 +1038,7 @@ export default {
   padding: 0.75rem;
   overflow-y: auto;
   min-height: 200px;
-  max-height: 400px;
+  max-height: 600px;
   background: rgba(15, 23, 42, 0.5);
   border-radius: 0.5rem;
   margin: 0.5rem;
@@ -1047,7 +1047,7 @@ export default {
 
 .card-content.with-config {
   min-height: 120px;
-  max-height: 250px;
+  max-height: 400px;
 }
 
 .skeleton-loader {

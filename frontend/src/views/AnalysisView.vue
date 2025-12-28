@@ -4336,7 +4336,7 @@ export default {
 
   .stage-content-area {
     padding: 12px;
-    max-height: 500px;
+    max-height: 600px;
   }
 
   .stage-content-header {
