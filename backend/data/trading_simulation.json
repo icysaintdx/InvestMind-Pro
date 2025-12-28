@@ -1,11 +1,11 @@
 {
   "portfolio": {
     "initial_capital": 1000000,
-    "cash_balance": 557961.02,
-    "total_value": 999861.02,
-    "positions_value": 441900.0,
+    "cash_balance": 529624.02,
+    "total_value": 994048.02,
+    "positions_value": 464424.00000000006,
     "total_profit_loss": 0,
-    "total_profit_loss_rate": -0.013897999999998138
+    "total_profit_loss_rate": -0.5951979999999981
   },
   "positions": {
     "600085": {
@@ -58,6 +58,74 @@
           "market": "CN"
         }
       ]
+    },
+    "600132": {
+      "stock_code": "600132",
+      "stock_name": "600132",
+      "quantity": 300,
+      "avg_cost": 52.94,
+      "open_date": "2025-12-26T00:25:07.076415",
+      "last_update": "2025-12-26T00:25:07.076415",
+      "market": "CN",
+      "trades": [
+        {
+          "date": "2025-12-26T00:25:07.076415",
+          "quantity": 300,
+          "price": 52.94,
+          "market": "CN"
+        }
+      ]
+    },
+    "600585": {
+      "stock_code": "600585",
+      "stock_name": "海螺水泥",
+      "quantity": 300,
+      "avg_cost": 22.22,
+      "open_date": "2025-12-26T13:10:20.622796",
+      "last_update": "2025-12-26T13:10:20.622796",
+      "market": "CN",
+      "trades": [
+        {
+          "date": "2025-12-26T13:10:20.622796",
+          "quantity": 300,
+          "price": 22.22,
+          "market": "CN"
+        }
+      ]
+    },
+    "600125": {
+      "stock_code": "600125",
+      "stock_name": "铁龙物流",
+      "quantity": 300,
+      "avg_cost": 6.51,
+      "open_date": "2025-12-28T19:45:50.273933",
+      "last_update": "2025-12-28T19:45:50.273933",
+      "market": "CN",
+      "trades": [
+        {
+          "date": "2025-12-28T19:45:50.273028",
+          "quantity": 300,
+          "price": 6.51,
+          "market": "CN"
+        }
+      ]
+    },
+    "002174": {
+      "stock_code": "002174",
+      "stock_name": "游族网络",
+      "quantity": 300,
+      "avg_cost": 12.72,
+      "open_date": "2025-12-28T21:22:00.875608",
+      "last_update": "2025-12-28T21:22:00.875608",
+      "market": "CN",
+      "trades": [
+        {
+          "date": "2025-12-28T21:22:00.875608",
+          "quantity": 300,
+          "price": 12.72,
+          "market": "CN"
+        }
+      ]
     }
   },
   "trade_history": [
@@ -96,7 +164,55 @@
       "amount": 429930.0,
       "commission": 128.98,
       "status": "EXECUTED"
+    },
+    {
+      "trade_id": "T20251226002507",
+      "timestamp": "2025-12-26T00:25:07.076415",
+      "stock_code": "600132",
+      "stock_name": "600132",
+      "action": "BUY",
+      "quantity": 300,
+      "price": 52.94,
+      "amount": 15882.0,
+      "commission": 5.0,
+      "status": "EXECUTED"
+    },
+    {
+      "trade_id": "T20251226131020",
+      "timestamp": "2025-12-26T13:10:20.622796",
+      "stock_code": "600585",
+      "stock_name": "海螺水泥",
+      "action": "BUY",
+      "quantity": 300,
+      "price": 22.22,
+      "amount": 6666.0,
+      "commission": 5.0,
+      "status": "EXECUTED"
+    },
+    {
+      "trade_id": "T20251228194550",
+      "timestamp": "2025-12-28T19:45:50.273933",
+      "stock_code": "600125",
+      "stock_name": "铁龙物流",
+      "action": "BUY",
+      "quantity": 300,
+      "price": 6.51,
+      "amount": 1953.0,
+      "commission": 5.0,
+      "status": "EXECUTED"
+    },
+    {
+      "trade_id": "T20251228212200",
+      "timestamp": "2025-12-28T21:22:00.875608",
+      "stock_code": "002174",
+      "stock_name": "游族网络",
+      "action": "BUY",
+      "quantity": 300,
+      "price": 12.72,
+      "amount": 3816.0,
+      "commission": 5.0,
+      "status": "EXECUTED"
     }
   ],
-  "last_update": "2025-12-18T01:18:45.500361"
+  "last_update": "2025-12-28T22:17:10.172357"
 }

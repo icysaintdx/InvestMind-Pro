@@ -236,7 +236,8 @@ class BacktestEngine:
         position_size = self._calculate_position_size(
             price,
             signal,
-            market_type
+            market_type,
+            stock_code
         )
         
         if position_size <= 0:
@@ -258,6 +259,7 @@ class BacktestEngine:
             available_value = self.cash * 0.98  # 留2%缓冲
             position_size = int(available_value / price / 100) * 100
             if position_size <= 0:
+                logger.warning(f"资金不足，无法买入 {stock_code}: 需要 {total_cost:.2f}, 可用 {self.cash:.2f}")
                 return
             
             trade_value = price * position_size
@@ -381,34 +383,51 @@ class BacktestEngine:
         self,
         price: float,
         signal: StrategySignal,
-        market_type: MarketType
+        market_type: MarketType,
+        stock_code: str = None
     ) -> int:
-        """计算仓位大小"""
+        """计算仓位大小（考虑已有持仓）"""
         portfolio_value = self._calculate_portfolio_value(price)
-        
-        # 基于信号强度的仓位
+
+        # 计算当前已有持仓占比
+        current_position_value = 0
+        if stock_code and stock_code in self.positions:
+            current_position_value = self.positions[stock_code].quantity * price
+        current_position_pct = current_position_value / portfolio_value if portfolio_value > 0 else 0
+
+        # 基于信号强度的目标仓位
         if signal.signal_type == SignalType.STRONG_BUY:
-            position_pct = self.config.max_position_pct
+            target_position_pct = self.config.max_position_pct
         else:
-            position_pct = self.config.max_position_pct * 0.6
-        
+            target_position_pct = self.config.max_position_pct * 0.6
+
         # 考虑置信度
-        position_pct *= signal.confidence
-        
-        # 计算数量
-        position_value = portfolio_value * position_pct
-        quantity = int(position_value / price)
-        
+        target_position_pct *= signal.confidence
+
+        # 计算需要增加的仓位（目标仓位 - 当前仓位）
+        additional_pct = target_position_pct - current_position_pct
+
+        # 如果已经达到或超过目标仓位，不再买入
+        if additional_pct <= 0.05:  # 5%的容差
+            logger.info(f"仓位计算: 当前仓位={current_position_pct:.2%} 已达目标={target_position_pct:.2%}，不再加仓")
+            return 0
+
+        # 计算需要买入的数量
+        additional_value = portfolio_value * additional_pct
+        quantity = int(additional_value / price)
+
         # 调整为手数
         rule = self.market_rules.get_rule(market_type)
         quantity = (quantity // rule.lot_size) * rule.lot_size
-        
-        final_qty = max(quantity, rule.lot_size)
-        
-        logger.info(f"仓位计算: 组合价值={portfolio_value:.2f}, 信号={signal.signal_type.value}, "
-                   f"置信度={signal.confidence:.2f}, 仓位比={position_pct:.2%}, 数量={final_qty}")
-        
-        return final_qty
+
+        # 确保至少买入一手（如果有足够资金）
+        if quantity < rule.lot_size and additional_pct > 0.1:
+            quantity = rule.lot_size
+
+        logger.info(f"仓位计算: 组合价值={portfolio_value:.2f}, 当前仓位={current_position_pct:.2%}, "
+                   f"目标仓位={target_position_pct:.2%}, 需加仓={additional_pct:.2%}, 数量={quantity}")
+
+        return quantity
     
     def _update_positions(self, current_price: float):
         """更新持仓价值"""

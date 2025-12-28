@@ -71,11 +71,16 @@
           <label>策略参数</label>
           <div class="params-grid">
             <div v-for="(value, key) in selectedStrategy.parameters" :key="key" class="param-item">
-              <label>{{ getParamLabel(key) }}</label>
-              <input 
-                v-model.number="strategyParams[key]" 
+              <label :title="getParamDescription(key)">
+                {{ getParamLabel(key) }}
+                <span class="param-hint" v-if="getParamHint(key)">{{ getParamHint(key) }}</span>
+              </label>
+              <input
+                v-model.number="strategyParams[key]"
                 type="number"
+                :step="getParamStep(key)"
                 class="param-input"
+                :placeholder="String(value)"
               />
             </div>
           </div>
@@ -84,13 +89,13 @@
         <!-- 资金设置 -->
         <div class="config-section">
           <label>初始资金</label>
-          <input 
-            v-model.number="config.initialCapital" 
+          <input
+            v-model.number="config.initialCapital"
             type="number"
-            step="10000"
+            step="100000"
             class="input-field"
           />
-          <small>建议至少10万元模拟资金</small>
+          <small>建议至少50万元（高价股如茅台需要更多资金）</small>
         </div>
 
         <!-- 执行按钮 -->
@@ -166,8 +171,8 @@
         <!-- 净值曲线 -->
         <div v-if="backtestResult" class="chart-section">
           <h3>📈 净值曲线</h3>
-          <EquityCurve 
-            :data="backtestResult.equityCurve"
+          <EquityCurve
+            :data="backtestResult.equity_curve"
             :trades="backtestResult.trades"
           />
         </div>
@@ -247,6 +252,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import axios from 'axios'
 import EquityCurve from '../components/backtest/EquityCurve.vue'
 import StrategyComparison from '../components/backtest/StrategyComparison.vue'
+import API_BASE_URL from '@/config/api.js'
 
 export default {
   name: 'BacktestView',
@@ -261,7 +267,7 @@ export default {
       startDate: getDefaultStartDate(),
       endDate: getDefaultEndDate(),
       strategyId: null,
-      initialCapital: 100000
+      initialCapital: 500000  // 增加到50万，以支持高价股如茅台
     })
 
     // 策略列表
@@ -322,7 +328,7 @@ export default {
     const loadStrategies = async () => {
       try {
         console.log('🔍 开始加载策略列表...')
-        const response = await axios.get('http://localhost:8000/api/backtest/strategies')
+        const response = await axios.get(`${API_BASE_URL}/api/backtest/strategies`)
         console.log('📦 API响应:', response.data)
         
         if (response.data && response.data.success && response.data.strategies) {
@@ -375,7 +381,7 @@ export default {
         
         // 调用快速回测API
         loadingMessage.value = '运行策略...'
-        const response = await axios.post('http://localhost:8000/api/backtest/quick', {
+        const response = await axios.post(`${API_BASE_URL}/api/backtest/quick`, {
           stock_code: config.stockCode,
           strategy_id: config.strategyId,
           start_date: config.startDate,
@@ -405,9 +411,10 @@ export default {
               profitFactor: data.metrics?.profit_factor || 0
             },
             equity_curve: data.equity_curve || [],
-            trades: (data.trades || []).map(t => ({
-              timestamp: t.timestamp,
-              side: t.side,
+            trades: (data.trades || []).map((t, index) => ({
+              id: index,
+              date: t.timestamp,
+              type: t.side?.toUpperCase() || 'BUY',
               price: t.price,
               quantity: t.quantity,
               amount: t.price * t.quantity,
@@ -438,7 +445,7 @@ export default {
       config.startDate = getDefaultStartDate()
       config.endDate = getDefaultEndDate()
       config.strategyId = null
-      config.initialCapital = 100000
+      config.initialCapital = 500000  // 与默认值保持一致
       selectedStrategy.value = null
       backtestResult.value = null
     }
@@ -467,27 +474,116 @@ export default {
 
     const getParamLabel = (key) => {
       const labels = {
+        // 通用参数
+        'suitable_period': '适用周期',
+        'max_position': '最大仓位',
+        'stop_loss': '止损比例',
+        'take_profit': '止盈比例',
+        'news_sensitivity': '新闻敏感度',
+        'position_size': '仓位大小',
+        'initial_capital': '初始资金',
+        // EMA相关
         'ema_short': 'EMA短期',
         'ema_long': 'EMA长期',
+        'ema_period': 'EMA周期',
+        // ADX相关
         'adx_period': 'ADX周期',
         'adx_threshold': 'ADX阈值',
+        // Vegas相关
         'vegas_width': 'Vegas宽度',
-        'stop_loss_pct': '止损比例',
-        'take_profit_pct': '止盈比例',
-        'position_size': '仓位大小',
+        'vegas_period': 'Vegas周期',
+        // 止损止盈
+        'stop_loss_pct': '止损比例(%)',
+        'take_profit_pct': '止盈比例(%)',
+        // 成交量
         'volume_threshold': '成交量阈值',
+        'volume_ratio': '量比阈值',
+        // RSI相关
         'rsi_period': 'RSI周期',
-        'rsi_oversold': 'RSI超卖',
-        'rsi_overbought': 'RSI超买',
-        'rsi_exit': 'RSI出场',
-        'layer_step_pct': '加仓步长',
-        'max_layers': '最大层数',
-        'consolidation_min': '最小盘整日',
-        'consolidation_max': '最大盘整日',
-        'max_hold_bars': '最长持仓K数',
-        'suitable_period': '适用周期'
+        'rsi_oversold': 'RSI超卖线',
+        'rsi_overbought': 'RSI超买线',
+        'rsi_exit': 'RSI出场线',
+        // 马丁格尔
+        'layer_step_pct': '加仓步长(%)',
+        'max_layers': '最大加仓层数',
+        // 盘整突破
+        'consolidation_min': '最小盘整天数',
+        'consolidation_max': '最大盘整天数',
+        'consolidation_days': '盘整天数',
+        // 持仓
+        'max_hold_bars': '最长持仓K线数',
+        'max_hold_days': '最长持仓天数',
+        // MACD相关
+        'macd_fast': 'MACD快线',
+        'macd_slow': 'MACD慢线',
+        'macd_signal': 'MACD信号线',
+        // 布林带
+        'bb_period': '布林带周期',
+        'bb_std': '布林带标准差',
+        // 海龟交易
+        'entry_period': '入场周期',
+        'exit_period': '出场周期',
+        'atr_period': 'ATR周期',
+        'atr_multiplier': 'ATR倍数',
+        // 价值投资
+        'pe_threshold': 'PE阈值',
+        'pb_threshold': 'PB阈值',
+        'roe_threshold': 'ROE阈值',
+        'dividend_yield': '股息率阈值',
+        // 其他
+        'lookback_period': '回看周期',
+        'signal_threshold': '信号阈值',
+        'risk_factor': '风险系数',
+        'momentum_period': '动量周期'
       }
       return labels[key] || key
+    }
+
+    // 参数描述（用于tooltip）
+    const getParamDescription = (key) => {
+      const descriptions = {
+        'suitable_period': '策略适用的K线周期，如日线、周线等',
+        'max_position': '单只股票最大持仓比例，0.3表示30%',
+        'stop_loss': '止损触发比例，0.05表示亏损5%时止损',
+        'take_profit': '止盈触发比例，0.15表示盈利15%时止盈',
+        'news_sensitivity': '对新闻消息的敏感程度，越高越敏感',
+        'ema_short': '短期指数移动平均线周期',
+        'ema_long': '长期指数移动平均线周期',
+        'adx_period': 'ADX指标计算周期，用于判断趋势强度',
+        'adx_threshold': 'ADX阈值，超过此值认为趋势明显',
+        'rsi_period': 'RSI相对强弱指标计算周期',
+        'rsi_oversold': 'RSI超卖线，低于此值可能超卖',
+        'rsi_overbought': 'RSI超买线，高于此值可能超买',
+        'volume_threshold': '成交量放大倍数阈值',
+        'max_layers': '马丁格尔策略最大加仓次数',
+        'layer_step_pct': '每次加仓的价格下跌幅度'
+      }
+      return descriptions[key] || ''
+    }
+
+    // 参数提示（显示在标签旁）
+    const getParamHint = (key) => {
+      const hints = {
+        'max_position': '(0-1)',
+        'stop_loss': '(0-1)',
+        'take_profit': '(0-1)',
+        'news_sensitivity': '(0-1)',
+        'stop_loss_pct': '(%)',
+        'take_profit_pct': '(%)',
+        'layer_step_pct': '(%)'
+      }
+      return hints[key] || ''
+    }
+
+    // 参数步进值
+    const getParamStep = (key) => {
+      if (key.includes('pct') || key.includes('position') || key.includes('loss') || key.includes('profit') || key.includes('sensitivity')) {
+        return 0.01
+      }
+      if (key.includes('threshold') || key.includes('ratio')) {
+        return 0.1
+      }
+      return 1
     }
 
     function getDefaultStartDate() {
@@ -525,6 +621,9 @@ export default {
       formatDate,
       getColorClass,
       getParamLabel,
+      getParamDescription,
+      getParamHint,
+      getParamStep,
       formatCategory
     }
   }
@@ -545,11 +644,11 @@ export default {
 .page-header h1 {
   font-size: 28px;
   margin: 0 0 10px;
-  color: #333;
+  color: #f1f5f9;
 }
 
 .subtitle {
-  color: #666;
+  color: rgba(148, 163, 184, 0.9);
   font-size: 16px;
   margin: 0;
 }
@@ -562,17 +661,18 @@ export default {
 
 /* 配置面板样式 */
 .config-panel {
-  background: white;
-  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 16px;
   padding: 25px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 15px 35px rgba(15, 23, 42, 0.4);
   height: fit-content;
 }
 
 .config-panel h2 {
   margin: 0 0 20px;
   font-size: 20px;
-  color: #333;
+  color: #f1f5f9;
 }
 
 .config-section {
@@ -583,26 +683,33 @@ export default {
   display: block;
   margin-bottom: 8px;
   font-weight: 500;
-  color: #555;
+  color: rgba(226, 232, 240, 0.9);
 }
 
 .input-field {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 8px;
   font-size: 14px;
+  background: rgba(30, 41, 59, 0.6);
+  color: #e2e8f0;
 }
 
 .input-field:focus {
   outline: none;
-  border-color: #4CAF50;
+  border-color: rgba(59, 130, 246, 0.6);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.input-field::placeholder {
+  color: rgba(148, 163, 184, 0.6);
 }
 
 .config-section small {
   display: block;
   margin-top: 5px;
-  color: #999;
+  color: rgba(148, 163, 184, 0.7);
   font-size: 12px;
 }
 
@@ -615,8 +722,19 @@ export default {
 .date-input {
   flex: 1;
   padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 8px;
+  background: rgba(30, 41, 59, 0.6);
+  color: #e2e8f0;
+}
+
+.date-input:focus {
+  outline: none;
+  border-color: rgba(59, 130, 246, 0.6);
+}
+
+.date-separator {
+  color: rgba(148, 163, 184, 0.7);
 }
 
 .date-separator {
@@ -634,20 +752,23 @@ export default {
 
 .strategy-card {
   padding: 15px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
+  border: 2px solid rgba(148, 163, 184, 0.3);
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
+  background: rgba(30, 41, 59, 0.6);
 }
 
 .strategy-card:hover {
-  border-color: #4CAF50;
-  background: #f9fff9;
+  border-color: rgba(59, 130, 246, 0.6);
+  background: rgba(59, 130, 246, 0.1);
+  transform: translateY(-2px);
 }
 
 .strategy-card.active {
-  border-color: #4CAF50;
-  background: #e8f5e9;
+  border-color: rgba(59, 130, 246, 0.8);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.15));
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
 }
 
 .strategy-header {
@@ -664,12 +785,12 @@ export default {
 .strategy-header h4 {
   margin: 0;
   font-size: 16px;
-  color: #333;
+  color: #f1f5f9;
 }
 
 .strategy-desc {
   margin: 0 0 10px;
-  color: #666;
+  color: rgba(226, 232, 240, 0.8);
   font-size: 13px;
 }
 
@@ -680,17 +801,17 @@ export default {
 }
 
 .tag {
-  padding: 3px 8px;
-  background: #f0f0f0;
-  border-radius: 4px;
+  padding: 4px 10px;
+  background: rgba(99, 102, 241, 0.2);
+  border-radius: 6px;
   font-size: 12px;
-  color: #666;
+  color: #a5b4fc;
 }
 
 .win-rate {
-  color: #4CAF50;
+  color: #4ade80;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 /* 参数网格 */
@@ -705,14 +826,29 @@ export default {
   margin-bottom: 4px;
   font-size: 12px;
   color: #666;
+  cursor: help;
+}
+
+.param-hint {
+  color: rgba(148, 163, 184, 0.7);
+  font-size: 10px;
+  margin-left: 4px;
 }
 
 .param-input {
   width: 100%;
   padding: 6px 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 6px;
   font-size: 13px;
+  background: rgba(30, 41, 59, 0.6);
+  color: #e2e8f0;
+}
+
+.param-input:focus {
+  outline: none;
+  border-color: rgba(59, 130, 246, 0.6);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
 /* 按钮样式 */
@@ -727,48 +863,53 @@ export default {
   flex: 1;
   padding: 12px 20px;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .btn-primary {
-  background: #4CAF50;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
   color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .btn-primary:disabled {
-  background: #ccc;
+  background: rgba(148, 163, 184, 0.3);
+  color: rgba(148, 163, 184, 0.6);
   cursor: not-allowed;
 }
 
 .btn-secondary {
-  background: #f5f5f5;
-  color: #666;
+  background: rgba(148, 163, 184, 0.15);
+  color: #e2e8f0;
+  border: 1px solid rgba(148, 163, 184, 0.3);
 }
 
 .btn-secondary:hover {
-  background: #e8e8e8;
+  background: rgba(148, 163, 184, 0.25);
+  border-color: rgba(148, 163, 184, 0.5);
 }
 
 /* 结果面板样式 */
 .result-panel {
-  background: white;
-  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 16px;
   padding: 25px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 15px 35px rgba(15, 23, 42, 0.4);
 }
 
 .metrics-cards h2 {
   margin: 0 0 20px;
   font-size: 20px;
-  color: #333;
+  color: #f1f5f9;
 }
 
 .metrics-grid {
@@ -780,29 +921,30 @@ export default {
 
 .metric-card {
   padding: 15px;
-  background: #f8f9fa;
-  border-radius: 8px;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
   text-align: center;
 }
 
 .metric-label {
   font-size: 13px;
-  color: #666;
+  color: rgba(148, 163, 184, 0.9);
   margin-bottom: 8px;
 }
 
 .metric-value {
   font-size: 24px;
   font-weight: bold;
-  color: #333;
+  color: #f1f5f9;
 }
 
 .metric-value.positive {
-  color: #4CAF50;
+  color: #4ade80;
 }
 
 .metric-value.negative {
-  color: #f44336;
+  color: #f87171;
 }
 
 /* 图表区域 */
@@ -813,7 +955,7 @@ export default {
 .chart-section h3 {
   margin: 0 0 15px;
   font-size: 18px;
-  color: #333;
+  color: #f1f5f9;
 }
 
 /* 交易记录表格 */
@@ -824,7 +966,7 @@ export default {
 .trades-section h3 {
   margin: 0 0 15px;
   font-size: 18px;
-  color: #333;
+  color: #f1f5f9;
 }
 
 .trades-table {
@@ -838,43 +980,47 @@ export default {
 
 .trades-table th,
 .trades-table td {
-  padding: 10px;
+  padding: 12px;
   text-align: left;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .trades-table th {
-  background: #f8f9fa;
+  background: rgba(30, 41, 59, 0.6);
   font-weight: 500;
-  color: #666;
+  color: rgba(148, 163, 184, 0.9);
   font-size: 13px;
 }
 
 .trades-table td {
   font-size: 14px;
-  color: #333;
+  color: #e2e8f0;
+}
+
+.trades-table tr:hover {
+  background: rgba(59, 130, 246, 0.05);
 }
 
 .trade-type {
-  padding: 3px 8px;
-  border-radius: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .trade-type.buy {
-  background: #e8f5e9;
-  color: #4CAF50;
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
 }
 
 .trade-type.sell {
-  background: #ffebee;
-  color: #f44336;
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
 }
 
 .trade-reason {
   font-size: 12px;
-  color: #666;
+  color: rgba(148, 163, 184, 0.8);
 }
 
 /* 分页 */
@@ -887,16 +1033,19 @@ export default {
 }
 
 .pagination button {
-  padding: 6px 12px;
-  border: 1px solid #ddd;
-  background: white;
-  border-radius: 4px;
+  padding: 8px 14px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: rgba(30, 41, 59, 0.6);
+  border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
+  color: #e2e8f0;
+  transition: all 0.2s;
 }
 
 .pagination button:hover:not(:disabled) {
-  background: #f5f5f5;
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.5);
 }
 
 .pagination button:disabled {
@@ -904,10 +1053,16 @@ export default {
   cursor: not-allowed;
 }
 
+.pagination span {
+  color: rgba(148, 163, 184, 0.9);
+}
+
 /* 空状态 */
 .empty-state {
   text-align: center;
   padding: 60px 20px;
+  border: 1px dashed rgba(148, 163, 184, 0.3);
+  border-radius: 16px;
 }
 
 .empty-icon {
@@ -917,11 +1072,11 @@ export default {
 
 .empty-state h3 {
   margin: 0 0 10px;
-  color: #333;
+  color: #f1f5f9;
 }
 
 .empty-state p {
-  color: #666;
+  color: rgba(148, 163, 184, 0.8);
   margin: 0;
 }
 
@@ -929,13 +1084,15 @@ export default {
 .loading-state {
   text-align: center;
   padding: 60px 20px;
+  border: 1px dashed rgba(148, 163, 184, 0.3);
+  border-radius: 16px;
 }
 
 .spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #4CAF50;
+  border: 4px solid rgba(148, 163, 184, 0.3);
+  border-top: 4px solid #60a5fa;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 20px;
@@ -948,11 +1105,11 @@ export default {
 
 .loading-state h3 {
   margin: 0 0 10px;
-  color: #333;
+  color: #f1f5f9;
 }
 
 .loading-state p {
-  color: #666;
+  color: rgba(148, 163, 184, 0.8);
   margin: 0;
 }
 
@@ -961,23 +1118,349 @@ export default {
   .content-wrapper {
     grid-template-columns: 1fr;
   }
-  
+
   .config-panel {
     margin-bottom: 20px;
   }
-  
+
   .metrics-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 768px) {
-  .metrics-grid {
-    grid-template-columns: 1fr;
+  /* 主容器 */
+  .backtest-container {
+    padding: 12px;
   }
-  
+
+  /* 页面标题 */
+  .page-header {
+    margin-bottom: 20px;
+  }
+
+  .page-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .subtitle {
+    font-size: 13px;
+  }
+
+  /* 配置面板 */
+  .config-panel {
+    padding: 16px;
+    border-radius: 10px;
+  }
+
+  .config-panel h2 {
+    font-size: 1.1rem;
+    margin-bottom: 16px;
+  }
+
+  .config-section {
+    margin-bottom: 20px;
+  }
+
+  .config-section label {
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+
+  .input-field {
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+
+  .config-section small {
+    font-size: 11px;
+  }
+
+  /* 日期选择 */
+  .date-range {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .date-input {
+    width: 100%;
+    padding: 8px 10px;
+  }
+
+  .date-separator {
+    display: none;
+  }
+
+  /* 策略列表 */
+  .strategy-list {
+    max-height: 250px;
+    gap: 10px;
+  }
+
+  .strategy-card {
+    padding: 12px;
+  }
+
+  .strategy-icon {
+    font-size: 20px;
+  }
+
+  .strategy-header h4 {
+    font-size: 14px;
+  }
+
+  .strategy-desc {
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+
+  .strategy-meta {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .tag {
+    font-size: 11px;
+    padding: 2px 6px;
+  }
+
+  .win-rate {
+    font-size: 11px;
+  }
+
+  /* 参数网格 */
   .params-grid {
     grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .param-item label {
+    font-size: 11px;
+  }
+
+  .param-input {
+    padding: 6px 8px;
+    font-size: 13px;
+  }
+
+  /* 按钮 */
+  .action-buttons {
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+
+  /* 结果面板 */
+  .result-panel {
+    padding: 16px;
+    border-radius: 10px;
+  }
+
+  .metrics-cards h2 {
+    font-size: 1.1rem;
+    margin-bottom: 16px;
+  }
+
+  /* 指标网格 */
+  .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .metric-card {
+    padding: 12px;
+    border-radius: 6px;
+  }
+
+  .metric-label {
+    font-size: 11px;
+    margin-bottom: 4px;
+  }
+
+  .metric-value {
+    font-size: 1.25rem;
+  }
+
+  /* 图表区域 */
+  .chart-section {
+    margin: 20px 0;
+  }
+
+  .chart-section h3 {
+    font-size: 1rem;
+    margin-bottom: 12px;
+  }
+
+  /* 交易记录 */
+  .trades-section {
+    margin-top: 20px;
+  }
+
+  .trades-section h3 {
+    font-size: 1rem;
+    margin-bottom: 12px;
+  }
+
+  .trades-table {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .trades-table table {
+    min-width: 600px;
+  }
+
+  .trades-table th,
+  .trades-table td {
+    padding: 8px 6px;
+    font-size: 12px;
+  }
+
+  .trade-type {
+    font-size: 11px;
+    padding: 2px 6px;
+  }
+
+  .trade-reason {
+    font-size: 11px;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* 分页 */
+  .pagination {
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .pagination button {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .pagination span {
+    font-size: 12px;
+  }
+
+  /* 空状态 */
+  .empty-state {
+    padding: 40px 16px;
+  }
+
+  .empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+  }
+
+  .empty-state h3 {
+    font-size: 1rem;
+  }
+
+  .empty-state p {
+    font-size: 13px;
+  }
+
+  /* 加载状态 */
+  .loading-state {
+    padding: 40px 16px;
+  }
+
+  .spinner {
+    width: 32px;
+    height: 32px;
+    margin-bottom: 16px;
+  }
+
+  .loading-state h3 {
+    font-size: 1rem;
+  }
+
+  .loading-state p {
+    font-size: 13px;
+  }
+}
+
+/* 超小屏幕适配 */
+@media (max-width: 480px) {
+  .backtest-container {
+    padding: 8px;
+  }
+
+  .page-header h1 {
+    font-size: 1.25rem;
+  }
+
+  .config-panel,
+  .result-panel {
+    padding: 12px;
+  }
+
+  .config-panel h2,
+  .metrics-cards h2 {
+    font-size: 1rem;
+  }
+
+  /* 指标网格改为2列 */
+  .metrics-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .metric-card {
+    padding: 10px;
+  }
+
+  .metric-label {
+    font-size: 10px;
+  }
+
+  .metric-value {
+    font-size: 1.1rem;
+  }
+
+  /* 策略卡片 */
+  .strategy-card {
+    padding: 10px;
+  }
+
+  .strategy-header {
+    gap: 8px;
+  }
+
+  .strategy-icon {
+    font-size: 18px;
+  }
+
+  .strategy-header h4 {
+    font-size: 13px;
+  }
+
+  .strategy-desc {
+    font-size: 11px;
+  }
+
+  /* 表格进一步简化 */
+  .trades-table th,
+  .trades-table td {
+    padding: 6px 4px;
+    font-size: 11px;
+  }
+
+  /* 隐藏部分列 */
+  .trades-table th:nth-child(5),
+  .trades-table td:nth-child(5),
+  .trades-table th:nth-child(7),
+  .trades-table td:nth-child(7) {
+    display: none;
   }
 }
 </style>

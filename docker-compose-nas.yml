@@ -1,60 +1,48 @@
+# InvestMind Pro - 飞牛NAS Docker Compose 配置
+# 使用方法:
+# 1. 将镜像文件上传到NAS并导入
+# 2. 创建 .env 文件配置API密钥
+# 3. 运行: docker-compose -f docker-compose-nas.yml up -d
+
 version: '3.8'
 
 services:
-  # 后端服务
-  backend:
-    image: InvestMindPro-backend:latest  # 使用本地加载的镜像
-    container_name: InvestMindPro-backend
+  investmindpro:
+    image: investmindpro:latest
+    container_name: investmindpro
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "8080:80"  # 映射到8080端口，避免与NAS其他服务冲突
     environment:
-      - PYTHONUNBUFFERED=1
-      # API Keys (从 .env 文件读取或直接设置)
+      - TZ=Asia/Shanghai
+      # API Keys (从 .env 文件读取或在飞牛NAS界面中设置)
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
       - DASHSCOPE_API_KEY=${DASHSCOPE_API_KEY:-}
       - QWEN_API_KEY=${QWEN_API_KEY:-}
       - SILICONFLOW_API_KEY=${SILICONFLOW_API_KEY:-}
       - JUHE_API_KEY=${JUHE_API_KEY:-}
-      # 数据库配置
-      - DATABASE_URL=sqlite:///./data/InvestMindPro.db
+      - TUSHARE_TOKEN=${TUSHARE_TOKEN:-}
     volumes:
-      # 持久化数据库（映射到 NAS 存储）
+      # 持久化数据目录（映射到NAS存储）
       - ./data:/app/data
-      # 持久化配置文件
-      - ./backend/agent_configs.json:/app/agent_configs.json
-    networks:
-      - InvestMindPro-network
+      # 可选：持久化配置文件
+      # - ./agent_configs.json:/app/backend/agent_configs.json
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 60s
       timeout: 10s
       retries: 3
-      start_period: 40s
-
-  # 前端服务
-  frontend:
-    image: InvestMindPro-frontend:latest  # 使用本地加载的镜像
-    container_name: InvestMindPro-frontend
-    restart: unless-stopped
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
-    networks:
-      - InvestMindPro-network
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
-      start_period: 5s
-
-networks:
-  InvestMindPro-network:
-    driver: bridge
-
-volumes:
-  data:
-    driver: local
+      start_period: 120s
+    # 资源限制（根据NAS配置调整）
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

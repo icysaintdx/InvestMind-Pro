@@ -89,11 +89,60 @@ try:
 except ImportError:
     FinnhubProvider = None
 
-# TDXProvider 已移除
-# try:
-#     from .tdx_provider import TDXProvider
-# except ImportError:
-#     TDXProvider = None
+# 问财 Provider
+WENCAI_AVAILABLE = False
+try:
+    from .wencai_provider import WencaiProvider, get_wencai_provider, PYWENCAI_AVAILABLE
+    WENCAI_AVAILABLE = PYWENCAI_AVAILABLE
+except ImportError:
+    WencaiProvider = None
+    get_wencai_provider = None
+
+# TDX Provider - 优先使用 Native Provider（纯Python），降级到 HTTP Provider
+TDX_NATIVE_AVAILABLE = False
+TDX_HTTP_AVAILABLE = False
+
+try:
+    from .tdx_native_provider import TDXNativeProvider, get_tdx_native_provider
+    TDX_NATIVE_AVAILABLE = True
+except ImportError:
+    TDXNativeProvider = None
+    get_tdx_native_provider = None
+
+try:
+    from .tdx_provider import get_tdx_provider as get_tdx_http_provider
+    TDX_HTTP_AVAILABLE = True
+except ImportError:
+    get_tdx_http_provider = None
+
+
+def get_best_tdx_provider():
+    """
+    获取最佳可用的 TDX Provider
+    优先级: TDX Native (纯Python) > TDX HTTP (需要Docker服务)
+
+    Returns:
+        TDX Provider 实例，如果都不可用则返回 None
+    """
+    # 1. 优先使用 Native Provider
+    if TDX_NATIVE_AVAILABLE and get_tdx_native_provider:
+        try:
+            provider = get_tdx_native_provider()
+            if provider.is_available():
+                return provider
+        except Exception:
+            pass
+
+    # 2. 降级到 HTTP Provider
+    if TDX_HTTP_AVAILABLE and get_tdx_http_provider:
+        try:
+            provider = get_tdx_http_provider()
+            if provider.is_available():
+                return provider
+        except Exception:
+            pass
+
+    return None
 
 __all__ = [
     # 基类
@@ -106,6 +155,18 @@ __all__ = [
     'AKSHARE_AVAILABLE',
     'TUSHARE_AVAILABLE',
     'BAOSTOCK_AVAILABLE',
+
+    # TDX Provider
+    'TDXNativeProvider',
+    'get_tdx_native_provider',
+    'get_best_tdx_provider',
+    'TDX_NATIVE_AVAILABLE',
+    'TDX_HTTP_AVAILABLE',
+
+    # 问财 Provider
+    'WencaiProvider',
+    'get_wencai_provider',
+    'WENCAI_AVAILABLE',
 
     # 港股
     'ImprovedHKStockProvider',
@@ -123,5 +184,4 @@ __all__ = [
     # 其他（预留）
     'YahooProvider',
     'FinnhubProvider',
-    # 'TDXProvider'  # 已移除
 ]

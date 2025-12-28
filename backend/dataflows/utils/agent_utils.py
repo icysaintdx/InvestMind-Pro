@@ -11,8 +11,7 @@ import os
 from dateutil.relativedelta import relativedelta
 from langchain_openai import ChatOpenAI
 import backend.dataflows.interface as interface
-# from tradingagents.default_config import DEFAULT_CONFIG  # 已移除
-DEFAULT_CONFIG = {}
+from tradingagents.default_config import DEFAULT_CONFIG
 from langchain_core.messages import HumanMessage
 
 # 导入统一日志系统和工具日志装饰器

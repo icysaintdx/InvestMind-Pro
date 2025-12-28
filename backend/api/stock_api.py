@@ -119,40 +119,84 @@ def get_stock_data(stock_code: str, start_date: str = None, end_date: str = None
     service = get_stock_data_service()
     return service.get_stock_data_with_fallback(stock_code, start_date, end_date)
 
-def search_stocks(keyword: str) -> List[Dict[str, Any]]:
+def search_stocks(keyword: str, source: str = "auto") -> List[Dict[str, Any]]:
     """
-    根据关键词搜索股票
-    
+    根据关键词搜索股票（支持多数据源自动降级）
+
     Args:
         keyword: 搜索关键词（股票代码或名称的一部分）
-    
+        source: 数据源 (auto/tdx/akshare)，auto模式按优先级自动选择
+
     Returns:
         List[Dict]: 匹配的股票信息列表
-    
+
     Example:
         >>> results = search_stocks('平安')
         >>> for stock in results:
         logger.info(f"{stock["code']}: {stock['name']}")
     """
+    # 1. 优先尝试TDX Native Provider搜索
+    if source == "auto" or source == "tdx":
+        try:
+            from backend.dataflows.providers.tdx_native_provider import get_tdx_native_provider
+            provider = get_tdx_native_provider()
+            if provider.is_available():
+                results = provider.search_stock(keyword, limit=50)
+                if results:
+                    logger.info(f"✅ TDX Native搜索成功: {keyword}, 找到{len(results)}条结果")
+                    return [
+                        {
+                            'code': r.get('code', ''),
+                            'name': r.get('name', ''),
+                            'market': r.get('market', ''),
+                            'source': 'tdx_native'
+                        }
+                        for r in results
+                    ]
+        except Exception as e:
+            logger.debug(f"TDX Native搜索失败: {e}，降级到TDX HTTP")
+
+    # 2. 降级到TDX HTTP Provider
+    if source == "auto" or source == "tdx":
+        try:
+            from backend.dataflows.providers.tdx_provider import get_tdx_provider
+            provider = get_tdx_provider()
+            if provider.is_available():
+                results = provider.search_stock(keyword, limit=50)
+                if results:
+                    logger.info(f"✅ TDX HTTP搜索成功: {keyword}, 找到{len(results)}条结果")
+                    return [
+                        {
+                            'code': r.get('code', ''),
+                            'name': r.get('name', ''),
+                            'market': r.get('market', ''),
+                            'source': 'tdx_http'
+                        }
+                        for r in results
+                    ]
+        except Exception as e:
+            logger.warning(f"⚠️ TDX HTTP搜索失败: {e}，降级到其他数据源")
+
+    # 3. TDX失败或不可用，使用原有逻辑
     all_stocks = get_all_stocks()
-    
+
     if not all_stocks or (len(all_stocks) == 1 and 'error' in all_stocks[0]):
         return all_stocks
-    
+
     # 搜索匹配的股票
     matches = []
     keyword_lower = keyword.lower()
-    
+
     for stock in all_stocks:
         if 'error' in stock:
             continue
-            
+
         code = stock.get('code', '').lower()
         name = stock.get('name', '').lower()
-        
+
         if keyword_lower in code or keyword_lower in name:
             matches.append(stock)
-    
+
     return matches
 
 def get_market_summary() -> Dict[str, Any]:

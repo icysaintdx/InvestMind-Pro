@@ -169,5 +169,269 @@
         "status": "EXECUTED"
       }
     }
+  },
+  {
+    "record_id": "DR20251221014142",
+    "task_id": "AT20251221013944",
+    "timestamp": "2025-12-21T01:41:42.875607",
+    "market_data": {
+      "stock_code": "600519",
+      "current_price": 1410.0,
+      "change_rate": 0.21,
+      "volume": 26509.0,
+      "news_summary": "今日153只个股跨越牛熊分界线; 【盘中播报】143只个股跨越牛熊分界线; 今日171只个股跨越牛熊分界线"
+    },
+    "decision": {
+      "action": "hold",
+      "quantity": 0,
+      "reason": "已有持仓，继续持有（规则决策，LLM服务暂时不可用）",
+      "confidence": 0.5,
+      "risk_level": "medium",
+      "stop_loss": null,
+      "take_profit": null
+    },
+    "executed": true,
+    "execution_result": {
+      "success": true,
+      "action": "hold",
+      "message": "持有观望"
+    }
+  },
+  {
+    "record_id": "DR20251222021312",
+    "task_id": "AT20251222021112",
+    "timestamp": "2025-12-22T02:13:12.121292",
+    "market_data": {
+      "stock_code": "600132",
+      "current_price": 53.63,
+      "change_rate": 1.3,
+      "volume": 30964.0,
+      "news_summary": "今日153只个股跨越牛熊分界线; 【盘中播报】143只个股跨越牛熊分界线; 今日171只个股跨越牛熊分界线"
+    },
+    "decision": {
+      "action": "hold",
+      "quantity": 0,
+      "reason": "市场波动正常，建议继续观望（规则决策，LLM服务暂时不可用）",
+      "confidence": 0.5,
+      "risk_level": "medium",
+      "stop_loss": null,
+      "take_profit": null
+    },
+    "executed": true,
+    "execution_result": {
+      "success": true,
+      "action": "hold",
+      "message": "持有观望"
+    }
+  },
+  {
+    "record_id": "DR20251226002507",
+    "task_id": "AT20251226002459",
+    "timestamp": "2025-12-26T00:25:07.181064",
+    "market_data": {
+      "stock_code": "600132",
+      "current_price": 52.94,
+      "change_rate": 0.11,
+      "volume": 15857.0,
+      "news_summary": "无最新新闻"
+    },
+    "decision": {
+      "action": "buy",
+      "quantity": 300,
+      "reason": "当前重庆啤酒（600132）处于啤酒行业复苏初期，受益于消费回暖与季节性因素，且无持仓状态为建仓机会。虽然技术面未提供明确信号，但基本面和市场情绪显示积极迹象，适合小仓位试探性买入。",
+      "confidence": 0.75,
+      "risk_level": "medium",
+      "stop_loss": 50.0,
+      "take_profit": 65.0
+    },
+    "executed": true,
+    "execution_result": {
+      "success": true,
+      "trade_id": "T20251226002507",
+      "message": "交易成功: BUY 300股 @ 52.94",
+      "trade": {
+        "trade_id": "T20251226002507",
+        "timestamp": "2025-12-26T00:25:07.076415",
+        "stock_code": "600132",
+        "stock_name": "600132",
+        "action": "BUY",
+        "quantity": 300,
+        "price": 52.94,
+        "amount": 15882.0,
+        "commission": 5.0,
+        "status": "EXECUTED"
+      }
+    }
+  },
+  {
+    "record_id": "DR20251226004425",
+    "task_id": "AT20251226004415",
+    "timestamp": "2025-12-26T00:44:25.127871",
+    "market_data": {
+      "stock_code": "600132",
+      "current_price": 52.94,
+      "change_rate": 0.11,
+      "volume": 15857.0,
+      "news_summary": "无最新新闻"
+    },
+    "decision": {
+      "action": "hold",
+      "quantity": 0,
+      "reason": "当前持仓数量为300股，成本价与当前价格一致，盈亏为0.00%，表明市场处于横盘状态。结合历史分析，重庆啤酒处于啤酒行业复苏初期，但市场情绪较为克制，成交清淡，未有明确的上涨或下跌信号。因此，维持现有持仓，观察后续市场动向。",
+      "confidence": 0.75,
+      "risk_level": "medium",
+      "stop_loss": 50.0,
+      "take_profit": 60.0
+    },
+    "executed": true,
+    "execution_result": {
+      "success": true,
+      "action": "hold",
+      "message": "持有观望"
+    }
+  },
+  {
+    "record_id": "DR20251226131020",
+    "task_id": "AT20251226131008",
+    "timestamp": "2025-12-26T13:10:20.625255",
+    "market_data": {
+      "stock_code": "600585",
+      "current_price": 22.22,
+      "change_rate": -0.85,
+      "volume": 12529000.0,
+      "news_summary": "解密主力资金出逃股 连续5日净流出466股; 杠杆资金持续回流 两融余额五连升; 【数据揭秘】融资客看好个股一览"
+    },
+    "decision": {
+      "action": "buy",
+      "quantity": 300,
+      "reason": "当前海螺水泥（600585）处于下行末期，但未进入复苏阶段，市场情绪偏谨慎，资金观望情绪浓厚。虽然今日价格下跌0.85%，但成交量未出现明显异常波动，且融资客持续回流，两融余额五连升，显示市场对个股的潜在信心。结合当前无持仓的状况，这是一个建仓机会，建议小仓位试探买入。",
+      "confidence": 0.75,
+      "risk_level": "medium",
+      "stop_loss": 21.0,
+      "take_profit": 24.5
+    },
+    "executed": true,
+    "execution_result": {
+      "success": true,
+      "trade_id": "T20251226131020",
+      "message": "交易成功: BUY 300股 @ 22.22",
+      "trade": {
+        "trade_id": "T20251226131020",
+        "timestamp": "2025-12-26T13:10:20.622796",
+        "stock_code": "600585",
+        "stock_name": "海螺水泥",
+        "action": "BUY",
+        "quantity": 300,
+        "price": 22.22,
+        "amount": 6666.0,
+        "commission": 5.0,
+        "status": "EXECUTED"
+      }
+    }
+  },
+  {
+    "record_id": "DR20251228194550",
+    "task_id": "AT20251228194541",
+    "timestamp": "2025-12-28T19:45:50.688488",
+    "market_data": {
+      "stock_code": "600125",
+      "current_price": 6.51,
+      "change_rate": 0.31,
+      "volume": 13141776.0,
+      "news_summary": "解密主力资金出逃股 连续5日净流出466股; 杠杆资金持续回流 两融余额五连升; 【数据揭秘】融资客看好个股一览"
+    },
+    "decision": {
+      "action": "buy",
+      "quantity": 300,
+      "reason": "当前无持仓，且市场情绪中性偏谨慎，但行业处于复苏初期，具备一定潜在上涨动力。结合最新新闻中融资客持续回流和杠杆资金增加的迹象，表明市场对个股有一定信心。建议小仓位试探性买入，以观察后续走势。",
+      "confidence": 0.75,
+      "risk_level": "medium",
+      "stop_loss": 6.15,
+      "take_profit": 7.16
+    },
+    "executed": true,
+    "execution_result": {
+      "success": true,
+      "trade_id": "T20251228194550",
+      "message": "交易成功: BUY 300股 @ 6.51",
+      "trade": {
+        "trade_id": "T20251228194550",
+        "timestamp": "2025-12-28T19:45:50.273933",
+        "stock_code": "600125",
+        "stock_name": "铁龙物流",
+        "action": "BUY",
+        "quantity": 300,
+        "price": 6.51,
+        "amount": 1953.0,
+        "commission": 5.0,
+        "status": "EXECUTED"
+      }
+    }
+  },
+  {
+    "record_id": "DR20251228194650",
+    "task_id": "AT20251228194642",
+    "timestamp": "2025-12-28T19:46:50.085781",
+    "market_data": {
+      "stock_code": "600125",
+      "current_price": 6.51,
+      "change_rate": 0.31,
+      "volume": 13141776.0,
+      "news_summary": "解密主力资金出逃股 连续5日净流出466股; 杠杆资金持续回流 两融余额五连升; 【数据揭秘】融资客看好个股一览"
+    },
+    "decision": {
+      "action": "hold",
+      "quantity": 0,
+      "reason": "当前持仓处于盈亏平衡状态，且市场整体呈现震荡格局，缺乏明确方向性突破。舆情分析显示情绪偏中性，短期情绪谨慎，技术面和基本面未提供明确交易信号。因此，建议保持观望，避免过度交易。",
+      "confidence": 0.75,
+      "risk_level": "medium",
+      "stop_loss": 6.21,
+      "take_profit": 6.86
+    },
+    "executed": true,
+    "execution_result": {
+      "success": true,
+      "action": "hold",
+      "message": "持有观望"
+    }
+  },
+  {
+    "record_id": "DR20251228212201",
+    "task_id": "AT20251228212151",
+    "timestamp": "2025-12-28T21:22:01.302424",
+    "market_data": {
+      "stock_code": "002174",
+      "current_price": 12.72,
+      "change_rate": 0.32,
+      "volume": 31545006.0,
+      "news_summary": "解密主力资金出逃股 连续5日净流出466股; 杠杆资金持续回流 两融余额五连升; 【数据揭秘】融资客看好个股一览"
+    },
+    "decision": {
+      "action": "buy",
+      "quantity": 300,
+      "reason": "当前无持仓，是一个建仓机会。股票价格微涨0.32%，成交量处于平稳状态，表明市场情绪较为理性。从行业轮动分析师的分析看，医药生物板块虽短期受集采政策影响，但创新药与医疗器械子行业已进入复苏初期，具备长期增长潜力。此外，融资客持续回流，两融余额五连升，显示市场对个股的看好情绪。综合来看，当前是合适的买入时机，建议小仓位试探。",
+      "confidence": 0.75,
+      "risk_level": "medium",
+      "stop_loss": 12.05,
+      "take_profit": 13.99
+    },
+    "executed": true,
+    "execution_result": {
+      "success": true,
+      "trade_id": "T20251228212200",
+      "message": "交易成功: BUY 300股 @ 12.72",
+      "trade": {
+        "trade_id": "T20251228212200",
+        "timestamp": "2025-12-28T21:22:00.875608",
+        "stock_code": "002174",
+        "stock_name": "游族网络",
+        "action": "BUY",
+        "quantity": 300,
+        "price": 12.72,
+        "amount": 3816.0,
+        "commission": 5.0,
+        "status": "EXECUTED"
+      }
+    }
   }
 ]

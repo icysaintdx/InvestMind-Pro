@@ -3,10 +3,97 @@
  * 统一管理所有版本信息，避免硬编码
  */
 
-export const CURRENT_VERSION = '2.4.0'
-export const CURRENT_CODENAME = '数据流监控增强版'
+export const CURRENT_VERSION = '2.5.0'
+export const CURRENT_CODENAME = '多渠道通知与可视化版'
 
 export const CHANGELOG_DATA = [
+  {
+    version: '2.5.0',
+    codename: '多渠道通知与可视化版',
+    date: '2025-12-20T12:00:00',
+    features: [
+      {
+        icon: '📧',
+        title: '多渠道通知系统',
+        star: true,
+        description: '支持5种通知渠道，预警信息实时推送到手机/邮箱。',
+        details: [
+          '📧 邮件通知 - SMTP协议，支持QQ/163/企业邮箱',
+          '💬 企业微信 - Webhook机器人，Markdown格式',
+          '🔔 钉钉 - 机器人通知，支持签名验证',
+          '📱 Server酱 - 微信推送，免费易用',
+          '🍎 Bark - iOS推送，支持自建服务器'
+        ],
+        files: ['notification_service.py', 'notification_api.py']
+      },
+      {
+        icon: '🔔',
+        title: '预警通知集成',
+        star: true,
+        description: '风险预警自动触发通知，支持多级别筛选。',
+        details: [
+          '🚨 自动触发 - 检测到预警自动发送通知',
+          '📊 级别筛选 - critical/high/medium/low',
+          '📝 格式化 - HTML邮件 + Markdown消息',
+          '🔗 多渠道 - 同时推送到多个渠道'
+        ],
+        files: ['alert_notification_integration.py', 'dataflow_api.py']
+      },
+      {
+        icon: '📈',
+        title: 'ECharts数据可视化',
+        star: true,
+        description: '数据流页面新增3个专业图表，数据一目了然。',
+        details: [
+          '📊 融资融券趋势图 - 融资余额/融券余额双轴折线图',
+          '🎯 风险雷达图 - 6维度风险评估雷达图',
+          '💰 沪深港通持股图 - 北向资金持股趋势柱状图'
+        ],
+        files: ['DataFlowView.vue']
+      },
+      {
+        icon: '⏰',
+        title: 'API刷新间隔优化',
+        star: false,
+        description: '根据Tushare文档优化数据刷新策略，避免无效请求。',
+        details: [
+          '📊 实时数据 - 交易时段30秒，非交易5分钟',
+          '📰 新闻舆情 - 5分钟刷新',
+          '💰 资金流向 - 30分钟（19:00更新）',
+          '📈 龙虎榜 - 1小时（20:00更新）',
+          '📋 财务数据 - 2小时（随财报更新）'
+        ],
+        files: ['dataflow_api.py']
+      },
+      {
+        icon: '🛠️',
+        title: '通知配置指南',
+        star: false,
+        description: '完整的通知渠道配置文档和API。',
+        details: [
+          '📖 配置指南API - 返回各渠道配置说明',
+          '🔧 环境变量 - SMTP/Webhook/Key配置',
+          '✅ 测试接口 - 一键测试各渠道连通性',
+          '📊 状态查询 - 查看各渠道配置状态'
+        ],
+        files: ['notification_api.py']
+      }
+    ],
+    improvements: [
+      '🔥 通知系统 - 5种渠道全覆盖，预警不遗漏',
+      '🔥 数据可视化 - ECharts专业图表，数据更直观',
+      '📊 刷新策略 - 根据数据更新时间优化，减少无效请求',
+      '🛡️ 预警集成 - 自动触发通知，无需手动操作'
+    ],
+    bugfixes: [],
+    technical: [
+      '🏛️ 新增模块：notification_service.py (600+行)',
+      '🏛️ 新增API：notification_api.py (430+行)',
+      '🏛️ 集成模块：alert_notification_integration.py',
+      '🏛️ 图表集成：DataFlowView.vue (+200行 ECharts)',
+      '🏛️ 新增API：/api/notification/* (8个端点)'
+    ]
+  },
   {
     version: '2.4.0',
     codename: '数据流监控增强版',

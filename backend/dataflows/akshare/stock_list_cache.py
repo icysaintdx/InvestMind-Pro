@@ -15,15 +15,20 @@ logger = get_logger("StockListCache")
 
 class StockListCache:
     """股票列表缓存类"""
-    
+
     def __init__(self, db_path: str = None):
         """初始化"""
         if db_path is None:
-            # 默认保存到 backend/data/stock_list.db
-            data_dir = Path(__file__).parent.parent.parent / "data"
+            # Docker 环境使用 /app/data 目录
+            import os
+            if os.path.exists('/app/data'):
+                data_dir = Path('/app/data')
+            else:
+                # 本地开发使用 backend/data 目录
+                data_dir = Path(__file__).parent.parent.parent / "data"
             data_dir.mkdir(exist_ok=True)
             db_path = str(data_dir / "stock_list.db")
-        
+
         self.db_path = db_path
         self.logger = logger
         self._init_database()

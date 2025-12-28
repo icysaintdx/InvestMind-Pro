@@ -11,11 +11,11 @@ from datetime import datetime, timedelta
 import logging
 
 # 导入日志模块
-from backend.utils.logging_config import get_logger
+from tradingagents.utils.logging_manager import get_logger
 logger = get_logger('agents')
 
 try:
-    # from tradingagents.config.database_manager import get_database_manager  # 已移除
+    from tradingagents.config.database_manager import get_database_manager
     DATABASE_MANAGER_AVAILABLE = True
 except ImportError:
     DATABASE_MANAGER_AVAILABLE = False

@@ -270,11 +270,12 @@
 <script>
 import { ref, reactive, onMounted } from 'vue'
 import axios from 'axios'
+import API_BASE_URL from '@/config/api.js'
 
 export default {
   name: 'PaperTradingNew',
   setup() {
-    const API_BASE = 'http://localhost:8000/api/trading'
+    const API_BASE = `${API_BASE_URL}/api/trading`
     
     // 状态
     const accounts = ref([])

@@ -3,7 +3,8 @@
 """
 
 import os
-from sqlalchemy import create_engine, text
+import threading
+from sqlalchemy import create_engine, text, event
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.pool import StaticPool
 from contextlib import contextmanager
@@ -11,20 +12,40 @@ from contextlib import contextmanager
 from backend.database.models import Base
 
 # 数据库配置
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "sqlite:///./InvestMindPro.db"  # 默认使用 SQLite
-)
+# 优先使用环境变量，否则使用 /app/data 目录（Docker）或当前目录（本地开发）
+def get_default_db_path():
+    # Docker 环境使用 /app/data 目录
+    if os.path.exists('/app/data'):
+        return "sqlite:////app/data/InvestMindPro.db"
+    # 本地开发使用当前目录
+    return "sqlite:///./InvestMindPro.db"
+
+DATABASE_URL = os.getenv("DATABASE_URL", get_default_db_path())
+
+# SQLite 写入锁（防止并发写入冲突）
+_sqlite_write_lock = threading.Lock()
 
 # 创建引擎
 # SQLite 需要特殊配置以支持多线程
 if DATABASE_URL.startswith("sqlite"):
     engine = create_engine(
         DATABASE_URL,
-        connect_args={"check_same_thread": False},
+        connect_args={
+            "check_same_thread": False,
+            "timeout": 30  # 增加超时时间
+        },
         poolclass=StaticPool,
         echo=False  # 设置为 True 可以看到 SQL 语句
     )
+
+    # 启用 WAL 模式以提高并发性能
+    @event.listens_for(engine, "connect")
+    def set_sqlite_pragma(dbapi_connection, connection_record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA synchronous=NORMAL")
+        cursor.execute("PRAGMA busy_timeout=30000")  # 30秒超时
+        cursor.close()
 else:
     # PostgreSQL/MySQL 配置
     engine = create_engine(
@@ -34,6 +55,7 @@ else:
         max_overflow=20,
         echo=False
     )
+    _sqlite_write_lock = None  # 非 SQLite 不需要锁
 
 # 创建会话工厂
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -46,7 +68,39 @@ def init_database():
     """初始化数据库，创建所有表"""
     print("[数据库] 初始化数据库...")
     Base.metadata.create_all(bind=engine)
+
+    # 自动迁移：添加新列（如果不存在）
+    migrate_database()
+
     print("[数据库] 数据库初始化完成")
+
+
+def migrate_database():
+    """
+    数据库迁移：添加新列（如果不存在）
+    这是一个简单的迁移方案，适用于 SQLite
+    """
+    try:
+        with engine.connect() as conn:
+            # 检查并添加 actual_elapsed_seconds 列
+            try:
+                conn.execute(text("SELECT actual_elapsed_seconds FROM analysis_sessions LIMIT 1"))
+            except Exception:
+                print("[数据库迁移] 添加 actual_elapsed_seconds 列...")
+                conn.execute(text("ALTER TABLE analysis_sessions ADD COLUMN actual_elapsed_seconds INTEGER DEFAULT 0"))
+                conn.commit()
+
+            # 检查并添加 last_activity_time 列
+            try:
+                conn.execute(text("SELECT last_activity_time FROM analysis_sessions LIMIT 1"))
+            except Exception:
+                print("[数据库迁移] 添加 last_activity_time 列...")
+                conn.execute(text("ALTER TABLE analysis_sessions ADD COLUMN last_activity_time DATETIME"))
+                conn.commit()
+
+            print("[数据库迁移] 迁移检查完成")
+    except Exception as e:
+        print(f"[数据库迁移] 迁移失败: {e}")
 
 
 def drop_all_tables():

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 股票数据适配器 - 修复版
-数据源优先级：AKShare > 新浪财经 > 聚合数据 > Tushare > BaoStock
+数据源优先级：TDX Native > AKShare > 新浪财经 > 聚合数据 > Tushare > BaoStock
 """
 
 import re
@@ -17,7 +17,20 @@ logger = get_logger("dataflow")
 
 class StockDataAdapter:
     """股票数据适配器 - 统一不同数据源的格式"""
-    
+
+    def __init__(self):
+        self._tdx_provider = None
+
+    def _get_tdx_provider(self):
+        """获取TDX Native Provider（懒加载）"""
+        if self._tdx_provider is None:
+            try:
+                from backend.dataflows.providers.tdx_native_provider import get_tdx_native_provider
+                self._tdx_provider = get_tdx_native_provider()
+            except Exception as e:
+                logger.debug(f"TDX Native Provider初始化失败: {e}")
+        return self._tdx_provider
+
     def get_stock_data(self, symbol: str) -> Dict:
         """同步版本 - 兼容现有代码"""
         return asyncio.run(self.get_stock_data_async(symbol))
@@ -50,34 +63,121 @@ class StockDataAdapter:
         }
         
         logger.info(f"[StockDataAdapter] 开始获取股票 {symbol} 的数据")
-        
-        # 第一优先级：AKShare（可能有网络问题）
+
+        # 最高优先级：TDX Native Provider（最快，直接获取单只股票）
+        try:
+            tdx = self._get_tdx_provider()
+            if tdx and tdx.is_available():
+                quote = tdx.get_realtime_quote(symbol)
+                if quote:
+                    result['success'] = True
+                    result['name'] = quote.get('name', f'股票{symbol}')
+                    result['price'] = float(quote.get('price', 0))
+                    result['change'] = float(quote.get('change_pct', 0))
+                    result['change_amount'] = float(quote.get('change', 0))
+                    result['open'] = float(quote.get('open', 0))
+                    result['close'] = float(quote.get('pre_close', 0))
+                    result['high'] = float(quote.get('high', 0))
+                    result['low'] = float(quote.get('low', 0))
+                    result['volume'] = float(quote.get('volume', 0))
+                    result['amount'] = float(quote.get('amount', 0))
+                    result['data_source'] = 'tdx_native'
+                    result['raw_text'] = self._format_as_text(result)
+                    logger.info(f"[StockDataAdapter] ✅ TDX Native 获取成功")
+                    return result
+        except Exception as e:
+            logger.debug(f"[StockDataAdapter] TDX Native 失败: {e}")
+
+        # 第一优先级：AKShare（使用更高效的接口，避免获取全市场数据）
         try:
             logger.info(f"[StockDataAdapter] 尝试使用 AKShare...")
             import akshare as ak
-            df = ak.stock_zh_a_spot_em()
-            
-            if df is not None and not df.empty:
-                stock = df[df['代码'] == symbol]
-                if not stock.empty:
-                    row = stock.iloc[0]
+
+            # 方法1：使用stock_bid_ask_em获取实时行情（只获取单只股票）
+            try:
+                bid_ask_df = ak.stock_bid_ask_em(symbol=symbol)
+                if bid_ask_df is not None and not bid_ask_df.empty:
+                    data_dict = dict(zip(bid_ask_df['item'], bid_ask_df['value']))
+
+                    # 获取股票名称
+                    stock_name = f'股票{symbol}'
+                    try:
+                        info_df = ak.stock_individual_info_em(symbol=symbol)
+                        if info_df is not None and not info_df.empty:
+                            name_row = info_df[info_df['item'] == '股票简称']
+                            if not name_row.empty:
+                                stock_name = str(name_row['value'].iloc[0])
+                    except:
+                        pass
+
                     result['success'] = True
-                    result['name'] = str(row.get('名称', 'N/A'))
-                    result['price'] = float(row.get('最新价', 0))
-                    result['change'] = float(row.get('涨跌幅', 0))
-                    result['change_amount'] = float(row.get('涨跌额', 0))
-                    result['open'] = float(row.get('今开', 0))
-                    result['close'] = float(row.get('昨收', 0))
-                    result['high'] = float(row.get('最高', 0))
-                    result['low'] = float(row.get('最低', 0))
-                    result['volume'] = float(row.get('成交量', 0))
-                    result['amount'] = float(row.get('成交额', 0))
+                    result['name'] = stock_name
+                    result['price'] = float(data_dict.get('最新', 0))
+                    result['change'] = float(data_dict.get('涨幅', 0))
+                    result['change_amount'] = float(data_dict.get('涨跌', 0))
+                    result['open'] = float(data_dict.get('今开', 0))
+                    result['close'] = float(data_dict.get('昨收', 0))
+                    result['high'] = float(data_dict.get('最高', 0))
+                    result['low'] = float(data_dict.get('最低', 0))
+                    result['volume'] = int(data_dict.get('总手', 0)) * 100  # 手转股
+                    result['amount'] = float(data_dict.get('金额', 0))
                     result['data_source'] = 'akshare'
                     result['raw_text'] = self._format_as_text(result)
-                    logger.info(f"[StockDataAdapter] ✅ AKShare 成功")
+                    logger.info(f"[StockDataAdapter] ✅ AKShare stock_bid_ask_em 成功")
                     return result
+            except Exception as e:
+                logger.debug(f"[StockDataAdapter] stock_bid_ask_em 失败: {e}")
+
+            # 方法2：使用历史数据接口（包含最新数据）
+            try:
+                hist_df = ak.stock_zh_a_hist(symbol=symbol, period="daily", adjust="")
+                if hist_df is not None and not hist_df.empty:
+                    latest = hist_df.iloc[-1]
+                    result['success'] = True
+                    result['name'] = f'股票{symbol}'
+                    result['price'] = float(latest.get('收盘', 0))
+                    result['change'] = float(latest.get('涨跌幅', 0))
+                    result['change_amount'] = float(latest.get('涨跌额', 0))
+                    result['open'] = float(latest.get('开盘', 0))
+                    result['close'] = result['price']
+                    result['high'] = float(latest.get('最高', 0))
+                    result['low'] = float(latest.get('最低', 0))
+                    result['volume'] = float(latest.get('成交量', 0))
+                    result['amount'] = float(latest.get('成交额', 0))
+                    result['data_source'] = 'akshare'
+                    result['raw_text'] = self._format_as_text(result)
+                    logger.info(f"[StockDataAdapter] ✅ AKShare stock_zh_a_hist 成功")
+                    return result
+            except:
+                pass
+
+            # 方法3：如果前两个方法都失败，才使用全市场数据（最后手段）
+            try:
+                df = ak.stock_zh_a_spot_em()
+                if df is not None and not df.empty:
+                    stock = df[df['代码'] == symbol]
+                    if not stock.empty:
+                        row = stock.iloc[0]
+                        result['success'] = True
+                        result['name'] = str(row.get('名称', 'N/A'))
+                        result['price'] = float(row.get('最新价', 0))
+                        result['change'] = float(row.get('涨跌幅', 0))
+                        result['change_amount'] = float(row.get('涨跌额', 0))
+                        result['open'] = float(row.get('今开', 0))
+                        result['close'] = float(row.get('昨收', 0))
+                        result['high'] = float(row.get('最高', 0))
+                        result['low'] = float(row.get('最低', 0))
+                        result['volume'] = float(row.get('成交量', 0))
+                        result['amount'] = float(row.get('成交额', 0))
+                        result['data_source'] = 'akshare'
+                        result['raw_text'] = self._format_as_text(result)
+                        logger.info(f"[StockDataAdapter] ✅ AKShare stock_zh_a_spot_em 成功")
+                        return result
+            except:
+                pass
+
         except Exception as e:
-            logger.warning(f"[StockDataAdapter] AKShare 失败: {str(e)}")
+            logger.warning(f"[StockDataAdapter] AKShare 所有方法失败: {str(e)}")
         
         # 第二优先级：新浪财经（稳定性好）
         try:
@@ -208,8 +308,12 @@ class StockDataAdapter:
         }
         
         # 识别数据源
-        if "AKSHARE" in text.upper():
+        if "TDX_NATIVE" in text.upper() or "TDX NATIVE" in text.upper():
+            result["data_source"] = "tdx_native"
+        elif "AKSHARE" in text.upper():
             result["data_source"] = "akshare"
+        elif "SINA" in text.upper() or "新浪" in text:
+            result["data_source"] = "sina"
         elif "TUSHARE" in text.upper():
             result["data_source"] = "tushare"
         elif "MOCK" in text.upper():

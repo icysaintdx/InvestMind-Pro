@@ -219,6 +219,7 @@ import { computed } from 'vue'
 import TypeWriter from './TypeWriter.vue'
 
 import FallbackIndicator from './FallbackIndicator.vue'
+import API_BASE_URL from '@/config/api.js'
 
 export default {
   name: 'AgentCard',
@@ -459,7 +460,7 @@ export default {
     async loadSelectedModels() {
       try {
         // 从后端加载配置（包含selectedModels和agent配置）
-        const response = await fetch('http://localhost:8000/api/config/agents')
+        const response = await fetch(`${API_BASE_URL}/api/config/agents`)
         if (response.ok) {
           const data = await response.json()
           if (data.data) {
@@ -533,16 +534,16 @@ export default {
     async saveAgentConfig() {
       try {
         // 先加载现有配置
-        const loadResponse = await fetch('http://localhost:8000/api/config/agents')
+        const loadResponse = await fetch(`${API_BASE_URL}/api/config/agents`)
         let configData = { agents: [], selectedModels: [] }
-        
+
         if (loadResponse.ok) {
           const data = await loadResponse.json()
           if (data.data) {
             configData = data.data
           }
         }
-        
+
         // 更新当前智能体的配置
         const agentIndex = configData.agents.findIndex(a => a.id === this.agent.id)
         if (agentIndex >= 0) {
@@ -557,9 +558,9 @@ export default {
             temperature: this.temperature
           })
         }
-        
+
         // 保存到后端
-        const saveResponse = await fetch('http://localhost:8000/api/config/agents', {
+        const saveResponse = await fetch(`${API_BASE_URL}/api/config/agents`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(configData)

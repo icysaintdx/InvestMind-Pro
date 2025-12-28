@@ -183,11 +183,12 @@
 <script>
 import { ref, reactive, onMounted } from 'vue'
 import axios from 'axios'
+import API_BASE_URL from '@/config/api.js'
 
 export default {
   name: 'LLMConfigView',
   setup() {
-    const API_BASE = 'http://localhost:8000/api/trading-llm-config'
+    const API_BASE = `${API_BASE_URL}/api/trading-llm-config`
     
     // 状态
     const loading = ref(true)

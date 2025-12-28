@@ -271,7 +271,7 @@ class DebateWeightedStrategy(BaseStrategy):
     def generate_signal(self, data: pd.DataFrame, current_position: int = 0) -> StrategySignal:
         """生成交易信号（新接口）"""
         df = self.calculate_indicators(data)
-        
+
         if len(df) < 20:
             return StrategySignal(
                 signal_type=SignalType.HOLD,
@@ -281,25 +281,71 @@ class DebateWeightedStrategy(BaseStrategy):
                 strategy_id="debate_weighted",
                 strategy_name=self.name
             )
-        
+
         row = df.iloc[-1]
+        prev_row = df.iloc[-2] if len(df) > 1 else row
         price = row['close']
-        
-        # 简化版本：基于技术分析
+
         signal_type = SignalType.HOLD
         confidence = 0.5
-        reasons = ["AI多空辩论策略"]
-        
-        # 默认观望
+        reasons = []
+
+        # 基于技术分析的多空判断
+        sma_20 = row.get('sma_20', price)
+        sma_50 = row.get('sma_50', price)
+        price_position = row.get('price_position', 0)
+
+        # 多方信号：价格在均线上方且趋势向上
+        bull_signals = 0
+        bear_signals = 0
+
+        # 1. 价格位置
+        if price > sma_20:
+            bull_signals += 1
+            reasons.append("价格高于MA20")
+        else:
+            bear_signals += 1
+
+        # 2. 均线排列
+        if sma_20 > sma_50:
+            bull_signals += 1
+            reasons.append("MA20 > MA50 多头排列")
+        else:
+            bear_signals += 1
+
+        # 3. 价格动量
+        if price > prev_row['close']:
+            bull_signals += 1
+            reasons.append("价格上涨")
+        else:
+            bear_signals += 1
+
+        # 4. 相对位置
+        if price_position > 0.02:
+            bull_signals += 1
+            reasons.append(f"价格偏离MA20: {price_position:.1%}")
+        elif price_position < -0.02:
+            bear_signals += 1
+
+        # 生成信号
+        if bull_signals >= 3 and current_position == 0:
+            signal_type = SignalType.BUY
+            confidence = 0.6 + bull_signals * 0.05
+            reasons.insert(0, "多空辩论：多方占优")
+        elif bear_signals >= 3 and current_position > 0:
+            signal_type = SignalType.SELL
+            confidence = 0.6 + bear_signals * 0.05
+            reasons = ["多空辩论：空方占优"]
+
         return StrategySignal(
             signal_type=signal_type,
-            confidence=confidence,
-            strength=0.5,
+            confidence=min(confidence, 0.85),
+            strength=0.6,
             price=price,
-            stop_loss=None,
-            target_price=None,
-            position_size=0,
-            reasons=reasons,
+            stop_loss=price * 0.95 if signal_type == SignalType.BUY else None,
+            target_price=price * 1.10 if signal_type == SignalType.BUY else None,
+            position_size=0.3 if signal_type == SignalType.BUY else 0,
+            reasons=reasons[:5],
             strategy_id="debate_weighted",
             strategy_name=self.name
         )

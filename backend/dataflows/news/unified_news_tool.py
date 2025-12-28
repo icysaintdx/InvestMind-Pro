@@ -92,7 +92,100 @@ class UnifiedNewsAnalyzer:
 
     def _get_news_from_database(self, stock_code: str, max_news: int = 10) -> str:
         """
-        从数据库获取新闻
+        从数据库获取新闻（优先SQLite，回退MongoDB）
+
+        Args:
+            stock_code: 股票代码
+            max_news: 最大新闻数量
+
+        Returns:
+            str: 格式化的新闻内容，如果没有新闻则返回空字符串
+        """
+        # 🔧 确保 max_news 是整数（防止传入浮点数）
+        max_news = int(max_news)
+
+        # 标准化股票代码
+        clean_code = stock_code.replace('.SH', '').replace('.SZ', '').replace('.SS', '')\
+                               .replace('.XSHE', '').replace('.XSHG', '').replace('.HK', '')
+
+        # 优先尝试从SQLite数据库获取（使用news_data_service）
+        try:
+            from backend.services.news_data_service import get_news_data_service
+            from backend.database.database import SessionLocal
+
+            logger.info(f"[统一新闻工具] 🔍 尝试从SQLite数据库获取 {clean_code} 的新闻...")
+
+            news_service = get_news_data_service()
+            db = SessionLocal()
+
+            try:
+                # 获取最新新闻（24小时内）
+                news_list = news_service.get_latest_news(
+                    db=db,
+                    ts_code=clean_code,
+                    limit=max_news,
+                    hours_back=168  # 7天内的新闻
+                )
+
+                if news_list:
+                    logger.info(f"[统一新闻工具] ✅ SQLite数据库找到 {len(news_list)} 条新闻")
+                    return self._format_news_from_sqlite(news_list, stock_code)
+                else:
+                    logger.info(f"[统一新闻工具] ⚠️ SQLite数据库中没有 {clean_code} 的新闻")
+            finally:
+                db.close()
+
+        except Exception as e:
+            logger.warning(f"[统一新闻工具] SQLite数据库查询失败: {e}")
+
+        # 回退到MongoDB
+        return self._get_news_from_mongodb(stock_code, max_news)
+
+    def _format_news_from_sqlite(self, news_list: list, stock_code: str) -> str:
+        """格式化SQLite数据库中的新闻"""
+        report = f"# {stock_code} 最新新闻 (SQLite数据库)\n\n"
+        report += f"📅 查询时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+        report += f"📊 新闻数量: {len(news_list)} 条\n\n"
+
+        for i, news in enumerate(news_list, 1):
+            title = news.get('title', '无标题')
+            content = news.get('content', '') or news.get('summary', '')
+            source = news.get('source', '未知来源')
+            pub_time = news.get('pub_time', '')
+            sentiment = news.get('sentiment', 'neutral')
+            sentiment_score = news.get('sentiment_score', 50)
+            urgency = news.get('urgency', 'medium')
+
+            # 情绪图标
+            sentiment_icon = {
+                'positive': '📈',
+                'negative': '📉',
+                'neutral': '➖'
+            }.get(sentiment, '➖')
+
+            # 紧急程度图标
+            urgency_icon = {
+                'critical': '🔴',
+                'high': '🟠',
+                'medium': '🟡',
+                'low': '🟢'
+            }.get(urgency, '🟡')
+
+            report += f"## {i}. {sentiment_icon} {title}\n\n"
+            report += f"**来源**: {source} | **时间**: {pub_time}\n"
+            report += f"**情绪**: {sentiment} ({sentiment_score}分) | **紧急程度**: {urgency_icon} {urgency}\n\n"
+
+            if content:
+                content_preview = content[:500] + '...' if len(content) > 500 else content
+                report += f"{content_preview}\n\n"
+
+            report += "---\n\n"
+
+        return report
+
+    def _get_news_from_mongodb(self, stock_code: str, max_news: int = 10) -> str:
+        """
+        从MongoDB获取新闻（回退方案）
 
         Args:
             stock_code: 股票代码
@@ -105,8 +198,7 @@ class UnifiedNewsAnalyzer:
             from backend.dataflows.cache.app_adapter import get_mongodb_client
             from datetime import timedelta
 
-            # 🔧 确保 max_news 是整数（防止传入浮点数）
-            max_news = int(max_news)
+            logger.info(f"[统一新闻工具] 🔍 尝试从MongoDB获取 {stock_code} 的新闻...")
 
             client = get_mongodb_client()
             if not client:
@@ -138,15 +230,15 @@ class UnifiedNewsAnalyzer:
                 cursor = collection.find(query).sort('publish_time', -1).limit(max_news)
                 news_items = list(cursor)
                 if news_items:
-                    logger.info(f"[统一新闻工具] 📊 使用查询 {query} 找到 {len(news_items)} 条新闻")
+                    logger.info(f"[统一新闻工具] 📊 MongoDB使用查询 {query} 找到 {len(news_items)} 条新闻")
                     break
 
             if not news_items:
-                logger.info(f"[统一新闻工具] 数据库中没有找到 {stock_code} 的新闻")
+                logger.info(f"[统一新闻工具] MongoDB中没有找到 {stock_code} 的新闻")
                 return ""
 
             # 格式化新闻
-            report = f"# {stock_code} 最新新闻 (数据库缓存)\n\n"
+            report = f"# {stock_code} 最新新闻 (MongoDB缓存)\n\n"
             report += f"📅 查询时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
             report += f"📊 新闻数量: {len(news_items)} 条\n\n"
 
@@ -175,11 +267,11 @@ class UnifiedNewsAnalyzer:
 
                 report += "---\n\n"
 
-            logger.info(f"[统一新闻工具] ✅ 成功从数据库获取并格式化 {len(news_items)} 条新闻")
+            logger.info(f"[统一新闻工具] ✅ 成功从MongoDB获取并格式化 {len(news_items)} 条新闻")
             return report
 
         except Exception as e:
-            logger.error(f"[统一新闻工具] 从数据库获取新闻失败: {e}")
+            logger.error(f"[统一新闻工具] 从MongoDB获取新闻失败: {e}")
             import traceback
             logger.error(traceback.format_exc())
             return ""
@@ -246,15 +338,35 @@ class UnifiedNewsAnalyzer:
 
                     logger.info(f"[统一新闻工具] 📥 获取到 {len(news_data)} 条新闻")
 
-                    # 🔥 使用同步方法保存到数据库（不依赖事件循环）
-                    from app.services.news_data_service import NewsDataService
+                    # 🔥 使用同步方法保存到数据库（使用SQLite news_data_service）
+                    from backend.services.news_data_service import get_news_data_service
+                    from backend.database.database import SessionLocal
 
-                    news_service = NewsDataService()
-                    saved_count = news_service.save_news_data_sync(
-                        news_data=news_data,
-                        data_source="akshare",
-                        market="CN"
-                    )
+                    news_service = get_news_data_service()
+                    db = SessionLocal()
+                    try:
+                        # 转换新闻数据格式
+                        formatted_news = []
+                        for news in news_data:
+                            formatted_news.append({
+                                'title': news.get('title', news.get('新闻标题', '')),
+                                'content': news.get('content', news.get('新闻内容', '')),
+                                'summary': news.get('summary', news.get('摘要', '')),
+                                'source': news.get('source', news.get('来源', 'AKShare')),
+                                'url': news.get('url', news.get('链接', '')),
+                                'pub_time': news.get('pub_time', news.get('发布时间'))
+                            })
+
+                        save_result = news_service.save_news(
+                            db=db,
+                            ts_code=clean_code,
+                            news_list=formatted_news,
+                            apply_filter=True,
+                            min_relevance_score=30
+                        )
+                        saved_count = save_result.get('saved', 0)
+                    finally:
+                        db.close()
 
                     logger.info(f"[统一新闻工具] ✅ 同步成功: {saved_count} 条新闻")
                     return saved_count > 0

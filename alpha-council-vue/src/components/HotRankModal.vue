@@ -174,6 +174,7 @@
 <script>
 import { ref, watch } from 'vue'
 import axios from 'axios'
+import API_BASE_URL from '@/config/api.js'
 
 export default {
   name: 'HotRankModal',
@@ -223,7 +224,7 @@ export default {
 
       try {
         // 先加载快速数据
-        const response = await axios.get('http://localhost:8000/api/akshare/hot-rank/all')
+        const response = await axios.get(`${API_BASE_URL}/api/akshare/hot-rank/all`)
         const data = response.data.data
 
         weiboStockHot.value = data.weibo_stock_hot || []
@@ -251,7 +252,7 @@ export default {
     // 异步加载雪球数据（静默加载）
     const loadXueqiuData = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/api/akshare/hot-rank/xueqiu')
+        const response = await axios.get(`${API_BASE_URL}/api/akshare/hot-rank/xueqiu`)
         if (response.data.success) {
           xueqiuHot.value = response.data.data || []
           console.log('✅ 雪球热度加载完成:', xueqiuHot.value.length, '条')

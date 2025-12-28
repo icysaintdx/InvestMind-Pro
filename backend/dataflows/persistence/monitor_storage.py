@@ -1,11 +1,12 @@
 """
 监控数据持久化存储
-使用JSON文件存储监控配置和历史数据
+使用SQLite数据库存储监控配置和历史数据
 """
 
 import json
 import os
-from datetime import datetime
+import sqlite3
+from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 from pathlib import Path
 
@@ -16,22 +17,31 @@ logger = get_logger("persistence.monitor")
 
 class MonitorStorage:
     """监控数据存储"""
-    
-    def __init__(self, storage_dir: str = "data/monitor"):
+
+    def __init__(self, storage_dir: str = None):
         """
         初始化存储
-        
+
         Args:
-            storage_dir: 存储目录
+            storage_dir: 存储目录（默认为项目根目录下的 data/monitor）
         """
+        if storage_dir is None:
+            # Docker 环境使用 /app/data 目录
+            if os.path.exists('/app/data'):
+                storage_dir = Path('/app/data/monitor')
+            else:
+                # 本地开发使用项目根目录的绝对路径
+                project_root = Path(__file__).parent.parent.parent.parent  # backend/dataflows/persistence -> 项目根目录
+                storage_dir = project_root / "data" / "monitor"
+
         self.storage_dir = Path(storage_dir)
         self.storage_dir.mkdir(parents=True, exist_ok=True)
-        
+
         self.config_file = self.storage_dir / "monitor_config.json"
         self.history_dir = self.storage_dir / "history"
         self.history_dir.mkdir(exist_ok=True)
-        
-        logger.info(f"✅ 监控存储初始化完成: {self.storage_dir}")
+
+        logger.info(f"✅ 监控存储初始化完成: {self.storage_dir.absolute()}")
     
     def save_monitor_config(self, config: Dict):
         """
@@ -217,31 +227,152 @@ class MonitorStorage:
     def cleanup_old_history(self, days: int = 30):
         """
         清理旧的历史数据
-        
+
         Args:
             days: 保留天数
         """
         try:
+            from datetime import timedelta
             cutoff_date = datetime.now() - timedelta(days=days)
             deleted_count = 0
-            
+
             for history_file in self.history_dir.glob("*.json"):
                 # 从文件名提取日期
                 try:
                     date_str = history_file.stem.split('_')[-1]
                     file_date = datetime.strptime(date_str, '%Y-%m-%d')
-                    
+
                     if file_date < cutoff_date:
                         history_file.unlink()
                         deleted_count += 1
-                        
+
                 except Exception:
                     continue
-            
+
             logger.info(f"🗑️ 清理历史数据: 删除{deleted_count}个文件")
-            
+
         except Exception as e:
             logger.error(f"❌ 清理历史数据失败: {e}")
+
+    # ==================== 每日统计数据 ====================
+
+    def get_daily_stats_file(self, date: str = None) -> Path:
+        """获取每日统计文件路径"""
+        if date is None:
+            date = datetime.now().strftime('%Y-%m-%d')
+        return self.storage_dir / f"daily_stats_{date}.json"
+
+    def load_daily_stats(self, date: str = None) -> Dict:
+        """
+        加载每日统计数据
+
+        Returns:
+            {
+                'date': '2024-12-19',
+                'news_count': 0,
+                'risk_alerts': 0,
+                'analysis_tasks': 0,
+                'api_calls': {
+                    'tushare': 0,
+                    'akshare': 0,
+                    'eastmoney': 0,
+                    'juhe': 0
+                },
+                'last_updated': '...'
+            }
+        """
+        try:
+            stats_file = self.get_daily_stats_file(date)
+
+            if not stats_file.exists():
+                # 返回默认统计
+                today = date or datetime.now().strftime('%Y-%m-%d')
+                return {
+                    'date': today,
+                    'news_count': 0,
+                    'risk_alerts': 0,
+                    'analysis_tasks': 0,
+                    'api_calls': {
+                        'tushare': 0,
+                        'akshare': 0,
+                        'eastmoney': 0,
+                        'juhe': 0
+                    },
+                    'last_updated': datetime.now().isoformat()
+                }
+
+            with open(stats_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+
+        except Exception as e:
+            logger.error(f"❌ 加载每日统计失败: {e}")
+            return {
+                'date': date or datetime.now().strftime('%Y-%m-%d'),
+                'news_count': 0,
+                'risk_alerts': 0,
+                'analysis_tasks': 0,
+                'api_calls': {'tushare': 0, 'akshare': 0, 'eastmoney': 0, 'juhe': 0},
+                'last_updated': datetime.now().isoformat()
+            }
+
+    def save_daily_stats(self, stats: Dict):
+        """保存每日统计数据"""
+        try:
+            date = stats.get('date', datetime.now().strftime('%Y-%m-%d'))
+            stats_file = self.get_daily_stats_file(date)
+            stats['last_updated'] = datetime.now().isoformat()
+
+            with open(stats_file, 'w', encoding='utf-8') as f:
+                json.dump(stats, f, ensure_ascii=False, indent=2)
+
+            logger.debug(f"✅ 保存每日统计成功")
+
+        except Exception as e:
+            logger.error(f"❌ 保存每日统计失败: {e}")
+
+    def increment_stat(self, stat_name: str, increment: int = 1):
+        """增加统计计数"""
+        stats = self.load_daily_stats()
+        if stat_name in stats:
+            stats[stat_name] = stats.get(stat_name, 0) + increment
+        self.save_daily_stats(stats)
+
+    def increment_api_call(self, source: str, increment: int = 1):
+        """增加API调用计数"""
+        stats = self.load_daily_stats()
+        if 'api_calls' not in stats:
+            stats['api_calls'] = {'tushare': 0, 'akshare': 0, 'eastmoney': 0, 'juhe': 0}
+        stats['api_calls'][source] = stats['api_calls'].get(source, 0) + increment
+        self.save_daily_stats(stats)
+
+    # ==================== 新闻列表持久化 ====================
+
+    def save_news_list(self, news_list: List[Dict]):
+        """保存新闻列表"""
+        try:
+            news_file = self.storage_dir / "news_cache.json"
+            data = {
+                'news': news_list[-100:],  # 只保留最近100条
+                'last_updated': datetime.now().isoformat()
+            }
+            with open(news_file, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            logger.debug(f"✅ 保存新闻列表: {len(news_list)}条")
+        except Exception as e:
+            logger.error(f"❌ 保存新闻列表失败: {e}")
+
+    def load_news_list(self) -> List[Dict]:
+        """加载新闻列表"""
+        try:
+            news_file = self.storage_dir / "news_cache.json"
+            if not news_file.exists():
+                return []
+            with open(news_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            return data.get('news', [])
+        except Exception as e:
+            logger.error(f"❌ 加载新闻列表失败: {e}")
+            return []
 
 
 # 全局存储实例

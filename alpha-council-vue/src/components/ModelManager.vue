@@ -237,6 +237,7 @@
 
 <script>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import API_BASE_URL from '@/config/api.js'
 
 export default {
   name: 'ModelManager',
@@ -293,7 +294,7 @@ export default {
       
       loading.value = true
       try {
-        const response = await fetch('http://localhost:8000/api/models')
+        const response = await fetch(`${API_BASE_URL}/api/models`)
         if (response.ok) {
           const data = await response.json()
           if (data.success && data.models) {
@@ -437,7 +438,7 @@ export default {
     const loadModelConfigs = async () => {
       try {
         // 从后端加载智能体配置（包括selectedModels）
-        const response = await fetch('http://localhost:8000/api/config/agents')
+        const response = await fetch(`${API_BASE_URL}/api/config/agents`)
         if (response.ok) {
           const data = await response.json()
           console.log('从后端加载配置:', data)
@@ -914,7 +915,7 @@ export default {
 
     const saveSelection = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/config/agents')
+        const response = await fetch(`${API_BASE_URL}/api/config/agents`)
         const result = await response.json()
         const config = result.success ? result.data : result
         const agents = config.agents || []
@@ -927,25 +928,25 @@ export default {
           summarizerTemperature: config.summarizerTemperature || 0.2,
           calibrationSettings
         }
-        
+
         console.log('[ModelManager] 保存配置:', {
           agents: updated.agents.length,
           selectedModels: updated.selectedModels.length,
           summarizerModel: updated.summarizerModel
         })
-        
-        const saveResponse = await fetch('http://localhost:8000/api/config/agents', {
+
+        const saveResponse = await fetch(`${API_BASE_URL}/api/config/agents`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(updated)
         })
-        
+
         if (!saveResponse.ok) {
           throw new Error(`HTTP ${saveResponse.status}`)
         }
-        
+
         // 验证保存结果
-        const verifyResponse = await fetch('http://localhost:8000/api/config/agents')
+        const verifyResponse = await fetch(`${API_BASE_URL}/api/config/agents`)
         const verifyData = await verifyResponse.json()
         
         if (verifyData.success && verifyData.data) {
@@ -981,7 +982,7 @@ export default {
 
     const refreshCalibrationStatus = async () => {
       try {
-        const res = await fetch('http://localhost:8000/api/models/calibration/status')
+        const res = await fetch(`${API_BASE_URL}/api/models/calibration/status`)
         if (!res.ok) {
           return
         }
@@ -1005,7 +1006,7 @@ export default {
           models: Array.from(selectedModels.value),
           calibrationSettings: buildCalibrationSettings()
         }
-        const res = await fetch('http://localhost:8000/api/models/calibration/run', {
+        const res = await fetch(`${API_BASE_URL}/api/models/calibration/run`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body)

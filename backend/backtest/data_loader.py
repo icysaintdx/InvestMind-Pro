@@ -386,7 +386,112 @@ class DataLoader:
         low_close = abs(df['low'] - df['close'].shift())
         tr = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1)
         df['atr'] = tr.rolling(window=14).mean()
-        
+
+        # ADX (Average Directional Index)
+        df['adx'] = self._calculate_adx(df)
+
+        # 添加模拟财务指标（用于价值投资策略）
+        df = self._add_simulated_financial_indicators(df)
+
+        return df
+
+    def _calculate_adx(self, df: pd.DataFrame, period: int = 14) -> pd.Series:
+        """计算ADX指标"""
+        high = df['high']
+        low = df['low']
+        close = df['close']
+
+        # 计算+DM和-DM
+        plus_dm = high.diff()
+        minus_dm = low.diff().abs() * -1
+
+        plus_dm = plus_dm.where((plus_dm > minus_dm.abs()) & (plus_dm > 0), 0)
+        minus_dm = minus_dm.abs().where((minus_dm.abs() > plus_dm) & (minus_dm < 0), 0)
+
+        # 计算TR
+        tr1 = high - low
+        tr2 = (high - close.shift()).abs()
+        tr3 = (low - close.shift()).abs()
+        tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+
+        # 平滑
+        atr = tr.rolling(window=period).mean()
+        plus_di = 100 * (plus_dm.rolling(window=period).mean() / atr)
+        minus_di = 100 * (minus_dm.rolling(window=period).mean() / atr)
+
+        # 计算DX和ADX
+        dx = 100 * ((plus_di - minus_di).abs() / (plus_di + minus_di + 0.0001))
+        adx = dx.rolling(window=period).mean()
+
+        return adx.fillna(25)  # 默认值25表示中性趋势
+
+    def _add_simulated_financial_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        添加模拟财务指标（基于价格和成交量数据推算）
+
+        这些指标是基于技术数据模拟的，用于在没有真实财务数据时进行回测
+        """
+        # 模拟ROE（基于价格趋势和波动性）
+        # 假设：价格稳定上涨的股票通常有较好的ROE
+        returns = df['close'].pct_change()
+        rolling_return = returns.rolling(window=60).mean() * 252  # 年化收益
+        rolling_vol = returns.rolling(window=60).std() * np.sqrt(252)  # 年化波动率
+        # ROE模拟：收益/波动率的比值，映射到0.05-0.30范围
+        sharpe_like = (rolling_return / (rolling_vol + 0.01)).clip(-2, 2)
+        df['simulated_roe'] = 0.15 + sharpe_like * 0.05  # 基准ROE 15%，根据表现调整
+
+        # 模拟毛利率（基于价格稳定性）
+        # 假设：价格波动小的股票通常有稳定的毛利率
+        price_volatility = df['close'].rolling(window=60).std() / df['close'].rolling(window=60).mean()
+        df['simulated_gross_margin'] = 0.40 - price_volatility.clip(0, 0.3)  # 基准毛利率40%
+
+        # 模拟负债率（基于成交量变化）
+        # 假设：成交量稳定的股票通常财务更健康
+        volume_volatility = df['volume'].rolling(window=60).std() / (df['volume'].rolling(window=60).mean() + 1)
+        df['simulated_debt_ratio'] = 0.40 + volume_volatility.clip(0, 0.4) * 0.5  # 基准负债率40%
+
+        # 模拟PE（基于价格相对位置）
+        price_percentile = df['close'].rolling(window=250).apply(
+            lambda x: (x.iloc[-1] - x.min()) / (x.max() - x.min() + 0.01) if len(x) > 1 else 0.5,
+            raw=False
+        )
+        df['simulated_pe'] = 15 + price_percentile * 20  # PE范围15-35
+
+        # 模拟PB（基于价格和成交量）
+        df['simulated_pb'] = 1.5 + price_percentile * 3  # PB范围1.5-4.5
+
+        # 模拟股息率（基于价格稳定性和波动率）
+        # 假设：价格稳定、波动小的股票通常有较高股息率
+        price_stability = 1 - (df['close'].rolling(window=60).std() / df['close'].rolling(window=60).mean()).clip(0, 0.5)
+        df['simulated_dividend_yield'] = 0.01 + price_stability * 0.03  # 股息率范围1%-4%
+
+        # 价格统计指标（用于护城河分析）
+        df['price_mean'] = df['close'].rolling(window=60).mean()
+        df['price_std'] = df['close'].rolling(window=60).std()
+        df['volume_mean'] = df['volume'].rolling(window=60).mean()
+        df['volume_std'] = df['volume'].rolling(window=60).std()
+
+        # 填充NaN值
+        financial_cols = ['simulated_roe', 'simulated_gross_margin', 'simulated_debt_ratio',
+                         'simulated_pe', 'simulated_pb', 'simulated_dividend_yield',
+                         'price_mean', 'price_std', 'volume_mean', 'volume_std']
+        for col in financial_cols:
+            if col in df.columns:
+                df[col] = df[col].bfill().ffill()
+                # 设置默认值
+                if col == 'simulated_roe':
+                    df[col] = df[col].fillna(0.15)
+                elif col == 'simulated_gross_margin':
+                    df[col] = df[col].fillna(0.35)
+                elif col == 'simulated_debt_ratio':
+                    df[col] = df[col].fillna(0.45)
+                elif col == 'simulated_pe':
+                    df[col] = df[col].fillna(20)
+                elif col == 'simulated_pb':
+                    df[col] = df[col].fillna(2.5)
+                elif col == 'simulated_dividend_yield':
+                    df[col] = df[col].fillna(0.02)
+
         return df
     
     def validate_data(self, df: pd.DataFrame) -> bool:

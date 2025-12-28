@@ -2695,17 +2695,31 @@ export default {
         console.log('[轮询] 已在运行，跳过')
         return
       }
-      
+
       pollingEnabled.value = true
       console.log('[轮询] 启动轮询机制，间隔 5 秒')
-      
+
+      // 启动本地计时器作为备份（每秒更新）
+      if (!analysisTimer.value && analysisStartTime.value) {
+        analysisTimer.value = setInterval(() => {
+          if (isAnalyzing.value && analysisStartTime.value) {
+            const elapsed = Math.floor((Date.now() - analysisStartTime.value) / 1000)
+            // 只有当本地时间大于后端时间时才更新（确保时间不会倒退）
+            if (elapsed > analysisElapsedTime.value) {
+              analysisElapsedTime.value = elapsed
+            }
+          }
+        }, 1000)
+        console.log('[计时器] 启动本地计时器')
+      }
+
       pollingInterval.value = setInterval(async () => {
         if (!isAnalyzing.value) {
           console.log('[轮询] 分析已结束，停止轮询')
           stopPolling()
           return
         }
-        
+
         try {
           await pollBackendStatus()
         } catch (error) {
@@ -2713,7 +2727,7 @@ export default {
         }
       }, 5000)  // 每 5 秒轮询一次
     }
-    
+
     /**
      * 停止轮询
      */
@@ -2723,6 +2737,12 @@ export default {
         pollingInterval.value = null
         pollingEnabled.value = false
         console.log('[轮询] 已停止')
+      }
+      // 同时停止本地计时器
+      if (analysisTimer.value) {
+        clearInterval(analysisTimer.value)
+        analysisTimer.value = null
+        console.log('[计时器] 已停止')
       }
     }
     
@@ -3099,44 +3119,125 @@ export default {
       
       if (sessionId) {
         console.log('[页面加载] 发现会话 ID:', sessionId)
-        
+
         try {
           // 查询后端会话状态（数据库版本）
           const response = await fetch(
             `/api/analysis/db/session/${sessionId}/status`
           )
-          
+
           if (response.ok) {
             const status = await response.json()
             console.log('[页面加载] 后端会话状态:', status.status, `${status.progress}%`)
-            
+
             if (status.status === 'running') {
-              // 恢复会话
+              // 检查是否真的在运行（通过 last_activity_time 判断）
+              const lastActivity = status.last_activity_time ? status.last_activity_time * 1000 : 0
+              const now = Date.now()
+              const inactiveSeconds = lastActivity ? (now - lastActivity) / 1000 : 999
+
+              // 如果超过30秒无活动，说明实际上已经中断了
+              if (inactiveSeconds > 30) {
+                console.log('[页面加载] 会话状态为running但已无活动，视为中断')
+                // 按中断处理
+                const completedCount = status.completed_agents?.length || 0
+                const elapsedSeconds = status.elapsed_time || status.actual_elapsed_seconds || 0
+                const message = `检测到上次分析被中断\n` +
+                  `股票: ${status.stock_code}\n` +
+                  `进度: ${status.progress}% (${completedCount}/21 智能体完成)\n` +
+                  `运行时间: ${Math.floor(elapsedSeconds / 60)}分${elapsedSeconds % 60}秒\n\n` +
+                  `是否要查看已完成的分析结果？\n` +
+                  `（点击"取消"将清除此会话）`
+
+                if (window.confirm(message)) {
+                  currentSessionId.value = sessionId
+                  stockCode.value = status.stock_code
+                  cardsExpanded.value = true
+                  isAnalyzing.value = false
+
+                  for (const agentId of status.completed_agents) {
+                    await fetchAgentResult(agentId)
+                  }
+
+                  analysisElapsedTime.value = elapsedSeconds
+                  window.$toast && window.$toast.info(`已加载 ${completedCount} 个智能体的分析结果`)
+                } else {
+                  clearSessionId()
+                  clearAnalysisState()
+                  window.$toast && window.$toast.info('已清除中断的会话')
+                }
+                return
+              }
+
+              // 真正在运行中，恢复会话
               currentSessionId.value = sessionId
               stockCode.value = status.stock_code
               isAnalyzing.value = true
               cardsExpanded.value = true
-              
+
               // 恢复已完成的智能体
               for (const agentId of status.completed_agents) {
                 await fetchAgentResult(agentId)
               }
-              
+
               // 启动轮询
               startPolling()
-              
-              // 设置时间（不再启动前端计时器）
+
+              // 设置时间（使用实际运行时间）
               analysisStartTime.value = status.start_time * 1000
               analysisElapsedTime.value = Math.floor(status.elapsed_time)
               // 注意：不再启动前端计时器，时间将由后端轮询更新
-              
+
               console.log('[页面加载] 从后端恢复会话成功，当前时间:', analysisElapsedTime.value, '秒')
               window.$toast && window.$toast.success('已从后端恢复分析状态')
+              return
+            } else if (status.status === 'interrupted') {
+              // 会话被中断（服务重启等原因）
+              console.log('[页面加载] 会话已中断，进度:', status.progress, '%')
+
+              // 显示中断提示，让用户选择
+              const completedCount = status.completed_agents?.length || 0
+              // 优先使用 elapsed_time（基于 start_time 计算），其次使用 actual_elapsed_seconds
+              const elapsedSeconds = status.elapsed_time || status.actual_elapsed_seconds || 0
+              const message = `检测到上次分析被中断\n` +
+                `股票: ${status.stock_code}\n` +
+                `进度: ${status.progress}% (${completedCount}/21 智能体完成)\n` +
+                `运行时间: ${Math.floor(elapsedSeconds / 60)}分${elapsedSeconds % 60}秒\n\n` +
+                `是否要查看已完成的分析结果？\n` +
+                `（点击"取消"将清除此会话）`
+
+              if (window.confirm(message)) {
+                // 用户选择查看已完成的结果
+                currentSessionId.value = sessionId
+                stockCode.value = status.stock_code
+                cardsExpanded.value = true
+                isAnalyzing.value = false  // 不再分析中
+
+                // 恢复已完成的智能体结果
+                for (const agentId of status.completed_agents) {
+                  await fetchAgentResult(agentId)
+                }
+
+                // 设置时间（优先使用 elapsed_time）
+                analysisElapsedTime.value = elapsedSeconds
+
+                window.$toast && window.$toast.info(`已加载 ${completedCount} 个智能体的分析结果`)
+              } else {
+                // 用户选择清除会话
+                clearSessionId()
+                clearAnalysisState()
+                window.$toast && window.$toast.info('已清除中断的会话')
+              }
               return
             } else if (status.status === 'completed') {
               console.log('[页面加载] 分析已完成，清除会话')
               clearSessionId()
               clearAnalysisState()
+            } else if (status.status === 'error') {
+              console.log('[页面加载] 分析出错，清除会话')
+              clearSessionId()
+              clearAnalysisState()
+              window.$toast && window.$toast.error(`上次分析出错: ${status.error_message || '未知错误'}`)
             }
           }
         } catch (error) {

@@ -48,47 +48,55 @@ class PerformanceMetrics:
     
     def to_dict(self) -> Dict:
         """转换为字典 - 返回原始数值，前端负责格式化显示"""
+        import math
+
+        def safe_float(val, default=0):
+            """处理inf和nan值"""
+            if val is None or (isinstance(val, float) and (math.isnan(val) or math.isinf(val))):
+                return default
+            return val
+
         return {
             # 收益指标 - 返回小数形式（如0.1234表示12.34%）
-            "total_return": round(self.total_return, 4),
-            "annual_return": round(self.annual_return, 4),
-            "monthly_return": round(self.monthly_return, 4),
+            "total_return": round(safe_float(self.total_return), 4),
+            "annual_return": round(safe_float(self.annual_return), 4),
+            "monthly_return": round(safe_float(self.monthly_return), 4),
 
             # 风险指标
-            "max_drawdown": round(self.max_drawdown, 4),
+            "max_drawdown": round(safe_float(self.max_drawdown), 4),
             "max_drawdown_duration": self.max_drawdown_duration,
-            "volatility": round(self.volatility, 4),
-            "downside_deviation": round(self.downside_deviation, 4),
+            "volatility": round(safe_float(self.volatility), 4),
+            "downside_deviation": round(safe_float(self.downside_deviation), 4),
 
             # 风险调整收益
-            "sharpe_ratio": round(self.sharpe_ratio, 2),
-            "sortino_ratio": round(self.sortino_ratio, 2),
-            "calmar_ratio": round(self.calmar_ratio, 2),
-            "information_ratio": round(self.information_ratio, 2),
+            "sharpe_ratio": round(safe_float(self.sharpe_ratio), 2),
+            "sortino_ratio": round(safe_float(self.sortino_ratio), 2),
+            "calmar_ratio": round(safe_float(self.calmar_ratio), 2),
+            "information_ratio": round(safe_float(self.information_ratio), 2),
 
             # 交易统计
             "total_trades": self.total_trades,
             "winning_trades": self.winning_trades,
             "losing_trades": self.losing_trades,
-            "win_rate": round(self.win_rate, 4),
-            "profit_factor": round(self.profit_factor, 2),
-            "avg_win": round(self.avg_win, 2),
-            "avg_loss": round(self.avg_loss, 2),
-            "largest_win": round(self.largest_win, 2),
-            "largest_loss": round(self.largest_loss, 2),
-            "avg_holding_days": round(self.avg_holding_days, 1),
+            "win_rate": round(safe_float(self.win_rate), 4),
+            "profit_factor": round(safe_float(self.profit_factor, 999.99), 2),  # inf时返回999.99
+            "avg_win": round(safe_float(self.avg_win), 2),
+            "avg_loss": round(safe_float(self.avg_loss), 2),
+            "largest_win": round(safe_float(self.largest_win), 2),
+            "largest_loss": round(safe_float(self.largest_loss), 2),
+            "avg_holding_days": round(safe_float(self.avg_holding_days), 1),
 
             # 相对指标
-            "benchmark_return": round(self.benchmark_return, 4),
-            "alpha": round(self.alpha, 4),
-            "beta": round(self.beta, 2),
-            "correlation": round(self.correlation, 2),
+            "benchmark_return": round(safe_float(self.benchmark_return), 4),
+            "alpha": round(safe_float(self.alpha), 4),
+            "beta": round(safe_float(self.beta), 2),
+            "correlation": round(safe_float(self.correlation), 2),
 
             # 同时提供格式化版本供直接显示
-            "total_return_formatted": f"{self.total_return:.2%}",
-            "annual_return_formatted": f"{self.annual_return:.2%}",
-            "max_drawdown_formatted": f"{self.max_drawdown:.2%}",
-            "win_rate_formatted": f"{self.win_rate:.2%}"
+            "total_return_formatted": f"{safe_float(self.total_return):.2%}",
+            "annual_return_formatted": f"{safe_float(self.annual_return):.2%}",
+            "max_drawdown_formatted": f"{safe_float(self.max_drawdown):.2%}",
+            "win_rate_formatted": f"{safe_float(self.win_rate):.2%}"
         }
 
 

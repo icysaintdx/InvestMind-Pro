@@ -366,6 +366,7 @@ export default {
     }
 
     // 更新影响预览（从后端获取）
+    // eslint-disable-next-line no-unused-vars
     const updateImpact = async () => {
       try {
         const res = await axios.get('/api/agents/config/impact')

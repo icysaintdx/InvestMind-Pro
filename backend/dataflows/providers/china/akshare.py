@@ -554,9 +554,9 @@ class AKShareProvider(BaseStockDataProvider):
     
     async def get_batch_stock_quotes(self, codes: List[str]) -> Dict[str, Dict[str, Any]]:
         """
-        批量获取股票实时行情（优化版：一次获取全市场快照）
+        批量获取股票实时行情（优化版：优先使用TDX Native Provider）
 
-        优先使用新浪财经接口（更稳定），失败时回退到东方财富接口
+        优先级：TDX Native > 新浪财经 > 东方财富
 
         Args:
             codes: 股票代码列表
@@ -567,6 +567,56 @@ class AKShareProvider(BaseStockDataProvider):
         if not self.connected:
             return {}
 
+        # 1. 优先使用TDX Native Provider（最快，直接获取指定股票）
+        try:
+            from backend.dataflows.providers.tdx_native_provider import get_tdx_native_provider
+            tdx = get_tdx_native_provider()
+            if tdx and tdx.is_available():
+                quotes_map = {}
+                quotes = tdx.get_realtime_quotes(codes)
+                if quotes:
+                    for quote in quotes:
+                        code = quote.get('code', '')
+                        if code:
+                            # 获取当前时间（中国时区）
+                            now_cn = datetime.now(timezone(timedelta(hours=8)))
+                            trade_date = now_cn.strftime('%Y-%m-%d')
+
+                            quotes_map[code] = {
+                                "code": code,
+                                "symbol": code,
+                                "name": quote.get("name", f"股票{code}"),
+                                "price": float(quote.get("price", 0)),
+                                "change": float(quote.get("change", 0)),
+                                "change_percent": float(quote.get("change_pct", 0)),
+                                "volume": int(quote.get("volume", 0)),
+                                "amount": float(quote.get("amount", 0)),
+                                "open_price": float(quote.get("open", 0)),
+                                "high_price": float(quote.get("high", 0)),
+                                "low_price": float(quote.get("low", 0)),
+                                "pre_close": float(quote.get("pre_close", 0)),
+                                "turnover_rate": None,
+                                "volume_ratio": None,
+                                "pe": None,
+                                "pe_ttm": None,
+                                "pb": None,
+                                "total_mv": None,
+                                "circ_mv": None,
+                                "trade_date": trade_date,
+                                "updated_at": now_cn.isoformat(),
+                                "full_symbol": self._get_full_symbol(code),
+                                "market_info": self._get_market_info(code),
+                                "data_source": "tdx_native",
+                                "last_sync": datetime.now(timezone.utc),
+                                "sync_status": "success"
+                            }
+                    if quotes_map:
+                        logger.debug(f"✅ TDX Native批量获取{len(quotes_map)}只股票行情成功")
+                        return quotes_map
+        except Exception as e:
+            logger.debug(f"TDX Native批量获取行情失败: {e}，降级到AKShare")
+
+        # 2. 降级到AKShare（新浪财经 > 东方财富）
         # 重试逻辑
         max_retries = 2
         retry_delay = 1  # 秒
@@ -797,9 +847,38 @@ class AKShareProvider(BaseStockDataProvider):
             return None
     
     async def _get_realtime_quotes_data(self, code: str) -> Dict[str, Any]:
-        """获取实时行情数据"""
+        """获取实时行情数据（优先使用TDX Native Provider）"""
         try:
-            # 方法1: 获取A股实时行情
+            # 方法0: 优先使用TDX Native Provider（最快）
+            try:
+                from backend.dataflows.providers.tdx_native_provider import get_tdx_native_provider
+                tdx = get_tdx_native_provider()
+                if tdx and tdx.is_available():
+                    quote = tdx.get_realtime_quote(code)
+                    if quote:
+                        logger.debug(f"✅ TDX Native获取{code}实时行情成功")
+                        return {
+                            "name": quote.get("name", f"股票{code}"),
+                            "price": self._safe_float(quote.get("price", 0)),
+                            "change": self._safe_float(quote.get("change", 0)),
+                            "change_percent": self._safe_float(quote.get("change_pct", 0)),
+                            "volume": self._safe_int(quote.get("volume", 0)),
+                            "amount": self._safe_float(quote.get("amount", 0)),
+                            "open": self._safe_float(quote.get("open", 0)),
+                            "high": self._safe_float(quote.get("high", 0)),
+                            "low": self._safe_float(quote.get("low", 0)),
+                            "pre_close": self._safe_float(quote.get("pre_close", 0)),
+                            "turnover_rate": None,
+                            "volume_ratio": None,
+                            "pe": None,
+                            "pb": None,
+                            "total_mv": None,
+                            "circ_mv": None,
+                        }
+            except Exception as e:
+                logger.debug(f"TDX Native获取{code}行情失败: {e}，降级到AKShare")
+
+            # 方法1: 获取A股实时行情（AKShare降级方案）
             def fetch_spot_data():
                 return self.ak.stock_zh_a_spot_em()
 

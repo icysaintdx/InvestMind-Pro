@@ -43,6 +43,7 @@
 <script>
 import { ref, watch, onUnmounted } from 'vue'
 import axios from 'axios'
+import API_BASE_URL from '@/config/api.js'
 
 export default {
   name: 'StockSearchInput',
@@ -144,37 +145,20 @@ export default {
         searchResults.value = []
         return
       }
-      
+
       loading.value = true
-      
+
       try {
-        // 智能 URL 构建：适配多种部署场景
-        let apiUrl
-        
-        if (process.env.NODE_ENV === 'development') {
-          // 开发环境：使用当前主机名，支持局域网访问
-          const hostname = window.location.hostname
-          apiUrl = `http://${hostname}:8000/api/akshare/stock/search`
-        } else if (window.location.port === '8080' || window.location.port === '80' || window.location.port === '443') {
-          // 生产环境
-          const protocol = window.location.protocol
-          const hostname = window.location.hostname
-          const port = window.location.port === '8080' ? ':8000' : ''
-          apiUrl = `${protocol}//${hostname}${port}/api/akshare/stock/search`
-        } else {
-          // 默认
-          const protocol = window.location.protocol
-          const hostname = window.location.hostname
-          apiUrl = `${protocol}//${hostname}:8000/api/akshare/stock/search`
-        }
-        
+        // 使用统一的 API 配置
+        const apiUrl = `${API_BASE_URL}/api/akshare/stock/search`
+
         const response = await axios.get(apiUrl, {
           params: {
             keyword: searchQuery.value,
             limit: 10
           }
         })
-        
+
         if (response.data.success) {
           searchResults.value = response.data.data
           showDropdown.value = true

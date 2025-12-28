@@ -229,7 +229,7 @@ class VolumePriceSurgeStrategy(BaseStrategy):
     def generate_signal(self, data: pd.DataFrame, current_position: int = 0) -> StrategySignal:
         """生成交易信号（新接口）"""
         df = self.calculate_indicators(data)
-        
+
         if len(df) < 20:
             return StrategySignal(
                 signal_type=SignalType.HOLD,
@@ -239,43 +239,64 @@ class VolumePriceSurgeStrategy(BaseStrategy):
                 strategy_id="volume_price_surge",
                 strategy_name=self.name
             )
-        
+
         row = df.iloc[-1]
+        prev_row = df.iloc[-2] if len(df) > 1 else row
         price = row['close']
-        
+
         signal_type = SignalType.HOLD
         confidence = 0.5
         reasons = []
-        
+
         # 量价齐升检测
-        price_surge = row.get('price_surge', False)
+        price_up = row.get('price_up', False)
         volume_surge = row.get('volume_surge', False)
-        vp_sync = row.get('vp_sync', 0)
-        
-        if price_surge and volume_surge and vp_sync >= 0.8:
-            signal_type = SignalType.BUY
-            confidence = 0.75
-            reasons = [
-                "量价齐升信号",
-                f"量价配合度: {vp_sync:.2f}",
-                f"量比: {row.get('volume_ratio', 0):.2f}"
-            ]
+        volume_ratio = row.get('volume_ratio', 1.0)
+        vp_correlation = row.get('vp_correlation', 0)
+        consecutive_up = row.get('consecutive_up', 0)
+        consecutive_surge = row.get('consecutive_surge', 0)
+
+        # 量价齐升条件
+        if price_up and volume_surge and vp_correlation >= 0.5:
+            # 连续上涨且放量
+            if consecutive_up >= 2 and consecutive_surge >= 2:
+                signal_type = SignalType.STRONG_BUY
+                confidence = 0.8
+                reasons = [
+                    "量价齐升强信号",
+                    f"连续上涨{int(consecutive_up)}天",
+                    f"连续放量{int(consecutive_surge)}天",
+                    f"量比: {volume_ratio:.2f}"
+                ]
+            elif consecutive_up >= 1 or consecutive_surge >= 1:
+                signal_type = SignalType.BUY
+                confidence = 0.65
+                reasons = [
+                    "量价齐升信号",
+                    f"量价配合度: {vp_correlation:.2f}",
+                    f"量比: {volume_ratio:.2f}"
+                ]
         elif current_position > 0:
-            # 量价背离检测
-            vp_divergence = row.get('vp_divergence', False)
-            if vp_divergence:
+            # 量价背离检测：价涨量缩
+            price_change = (price - prev_row['close']) / prev_row['close']
+            if price_change > 0 and volume_ratio < 0.8:
                 signal_type = SignalType.SELL
                 confidence = 0.7
                 reasons = ["量价背离，价涨量缩"]
-        
+            # 止损
+            elif price_change < -0.04:
+                signal_type = SignalType.SELL
+                confidence = 0.85
+                reasons = [f"触发止损: {price_change:.1%}"]
+
         return StrategySignal(
             signal_type=signal_type,
             confidence=confidence,
-            strength=min(vp_sync, 1.0) if vp_sync else 0.5,
+            strength=max(vp_correlation, 0.5) if vp_correlation else 0.5,
             price=price,
-            stop_loss=price * 0.95 if signal_type == SignalType.BUY else None,
-            target_price=price * 1.08 if signal_type == SignalType.BUY else None,
-            position_size=0.3 if signal_type == SignalType.BUY else 0,
+            stop_loss=price * 0.96 if signal_type in [SignalType.BUY, SignalType.STRONG_BUY] else None,
+            target_price=price * 1.08 if signal_type in [SignalType.BUY, SignalType.STRONG_BUY] else None,
+            position_size=0.3 if signal_type in [SignalType.BUY, SignalType.STRONG_BUY] else 0,
             reasons=reasons[:5],
             strategy_id="volume_price_surge",
             strategy_name=self.name

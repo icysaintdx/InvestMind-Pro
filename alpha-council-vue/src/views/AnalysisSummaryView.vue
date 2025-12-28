@@ -97,7 +97,7 @@
       <section v-if="strategyRecommendations.length || loadingStrategy" class="card strategy-card">
         <div class="section-header">
           <h3>🎯 策略推荐</h3>
-          <span class="badge" v-if="strategyRecommendations.length">{{ strategyRecommendations.length }}</span>
+          <span class="badge" v-if="strategyRecommendations.length">{{ strategyRecommendations.length }} 个策略</span>
         </div>
         <p class="card-desc" v-if="strategyReasoning">{{ strategyReasoning }}</p>
         <div v-if="loadingStrategy && !strategyRecommendations.length" class="loading-inline">
@@ -106,18 +106,42 @@
         </div>
         <div v-else-if="strategyRecommendations.length" class="strategy-grid">
           <div
-            v-for="strategy in strategyRecommendations"
+            v-for="(strategy, index) in strategyRecommendations"
             :key="strategy.strategy_id"
             class="strategy-chip"
-            :class="{ primary: strategy.strategy_id === primaryStrategy?.strategy_id }"
+            :class="getMedalClass(index)"
           >
-            <div class="chip-head">
-              <strong>{{ strategy.strategy_name }}</strong>
-              <span class="confidence">置信度 {{ (strategy.confidence * 100).toFixed(1) }}%</span>
+            <!-- 奖牌标签 -->
+            <div class="medal-badge" :class="getMedalClass(index)">
+              <span class="medal-icon">{{ getMedalIcon(index) }}</span>
+              <span class="medal-text">{{ getMedalText(index) }}</span>
             </div>
-            <p class="chip-reason">{{ strategy.reason }}</p>
+            <!-- 策略头部 -->
+            <div class="chip-header">
+              <h4 class="strategy-name">{{ strategy.strategy_name }}</h4>
+              <div class="confidence-badge">
+                <span class="confidence-label">置信度</span>
+                <span class="confidence-value">{{ (strategy.confidence * 100).toFixed(1) }}%</span>
+              </div>
+            </div>
+            <!-- 置信度进度条 -->
+            <div class="confidence-bar-wrapper">
+              <div class="confidence-bar" :style="{ width: (strategy.confidence * 100) + '%' }"></div>
+            </div>
+            <!-- 推荐理由 -->
+            <div class="chip-reason">
+              <span class="reason-label">推荐理由</span>
+              <p class="reason-text">{{ strategy.reason }}</p>
+            </div>
+            <!-- 参数配置 -->
             <div v-if="strategy.parameters && Object.keys(strategy.parameters).length" class="chip-params">
-              <span v-for="(value, key) in strategy.parameters" :key="key">{{ key }}: {{ value }}</span>
+              <span class="params-label">参数配置</span>
+              <div class="params-grid">
+                <div v-for="(value, key) in strategy.parameters" :key="key" class="param-item">
+                  <span class="param-key">{{ formatParamKey(key) }}</span>
+                  <span class="param-value">{{ value }}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -127,44 +151,198 @@
       <section v-if="hasExecutionDigest" class="card execution-card">
         <div class="section-header">
           <h3>🔧 执行摘要</h3>
-          <p class="card-desc">查看已触发的回测 / 模拟交易 / 跟踪任务</p>
+          <span class="badge" v-if="backtestDigest">回测完成</span>
         </div>
-        <div class="execution-grid">
-          <div class="execution-item" v-if="backtestDigest">
-            <div class="execution-head">
-              <strong>最新回测</strong>
-              <span>{{ formatDateTime(backtestDigest.generatedAt) }}</span>
+
+        <!-- 回测结果详情 -->
+        <div v-if="backtestDigest" class="backtest-detail">
+          <!-- 策略信息头部 -->
+          <div class="backtest-header">
+            <div class="strategy-info">
+              <h4>{{ backtestDigest.strategyId }}</h4>
+              <span class="backtest-time">{{ formatDateTime(backtestDigest.generatedAt) }}</span>
             </div>
-            <ul class="execution-metrics">
-              <li>策略：{{ backtestDigest.strategyId }}</li>
-              <li>总收益率：{{ formatPercent(backtestDigest.metrics.totalReturn) }}</li>
-              <li>最大回撤：{{ formatPercent(backtestDigest.metrics.maxDrawdown) }}</li>
-              <li>夏普比率：{{ (backtestDigest.metrics.sharpeRatio || 0).toFixed(2) }}</li>
-            </ul>
+            <div class="confidence-display" v-if="primaryStrategy">
+              <span class="conf-label">置信度</span>
+              <span class="conf-value">{{ (primaryStrategy.confidence * 100).toFixed(1) }}%</span>
+            </div>
           </div>
-          <div class="execution-item" v-if="autoTradingTask">
-            <div class="execution-head">
+
+          <!-- 四个区块网格 -->
+          <div class="backtest-grid">
+            <!-- 核心指标 -->
+            <div class="backtest-block metrics-block">
+              <div class="block-header">
+                <span class="block-icon">📊</span>
+                <span class="block-title">核心指标</span>
+              </div>
+              <div class="block-content">
+                <div class="metric-row">
+                  <span class="metric-label">总收益率</span>
+                  <span class="metric-value" :class="getValueClass(backtestDigest.metrics.totalReturn)">
+                    {{ formatPercent(backtestDigest.metrics.totalReturn) }}
+                  </span>
+                </div>
+                <div class="metric-row">
+                  <span class="metric-label">年化收益</span>
+                  <span class="metric-value" :class="getValueClass(backtestDigest.metrics.annualReturn)">
+                    {{ formatPercent(backtestDigest.metrics.annualReturn) }}
+                  </span>
+                </div>
+                <div class="metric-row">
+                  <span class="metric-label">夏普比率</span>
+                  <span class="metric-value">{{ (backtestDigest.metrics.sharpeRatio || 0).toFixed(2) }}</span>
+                </div>
+                <div class="metric-row">
+                  <span class="metric-label">最大回撤</span>
+                  <span class="metric-value negative">{{ formatPercent(backtestDigest.metrics.maxDrawdown) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 交易统计 -->
+            <div class="backtest-block trades-block">
+              <div class="block-header">
+                <span class="block-icon">📈</span>
+                <span class="block-title">交易统计</span>
+              </div>
+              <div class="block-content">
+                <div class="metric-row">
+                  <span class="metric-label">总交易次数</span>
+                  <span class="metric-value">{{ backtestDigest.metrics.totalTrades || backtestDigest.metrics.total_trades || 0 }}</span>
+                </div>
+                <div class="metric-row">
+                  <span class="metric-label">胜率</span>
+                  <span class="metric-value">{{ formatPercent(backtestDigest.metrics.winRate || backtestDigest.metrics.win_rate) }}</span>
+                </div>
+                <div class="metric-row">
+                  <span class="metric-label">盈亏比</span>
+                  <span class="metric-value">{{ (backtestDigest.metrics.profitFactor || backtestDigest.metrics.profit_factor || 0).toFixed(2) }}</span>
+                </div>
+                <div class="metric-row">
+                  <span class="metric-label">平均持仓</span>
+                  <span class="metric-value">{{ backtestDigest.metrics.avgHoldingDays || backtestDigest.metrics.avg_holding_days || '-' }} 天</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 回测参数 -->
+            <div class="backtest-block params-block">
+              <div class="block-header">
+                <span class="block-icon">⚙️</span>
+                <span class="block-title">回测参数</span>
+              </div>
+              <div class="block-content">
+                <div class="metric-row">
+                  <span class="metric-label">初始资金</span>
+                  <span class="metric-value">¥{{ formatAmount(100000) }}</span>
+                </div>
+                <div class="metric-row">
+                  <span class="metric-label">回测周期</span>
+                  <span class="metric-value">1年</span>
+                </div>
+                <div class="metric-row">
+                  <span class="metric-label">手续费率</span>
+                  <span class="metric-value">0.03%</span>
+                </div>
+                <div class="metric-row">
+                  <span class="metric-label">滑点设置</span>
+                  <span class="metric-value">0.1%</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 风险评估 -->
+            <div class="backtest-block risk-block">
+              <div class="block-header">
+                <span class="block-icon">⚠️</span>
+                <span class="block-title">风险评估</span>
+              </div>
+              <div class="block-content">
+                <div class="metric-row">
+                  <span class="metric-label">波动率</span>
+                  <span class="metric-value">{{ formatPercent(backtestDigest.metrics.volatility) }}</span>
+                </div>
+                <div class="metric-row">
+                  <span class="metric-label">最大连亏</span>
+                  <span class="metric-value">{{ backtestDigest.metrics.maxConsecutiveLosses || backtestDigest.metrics.max_consecutive_losses || 0 }} 次</span>
+                </div>
+                <div class="metric-row">
+                  <span class="metric-label">风险等级</span>
+                  <span class="metric-value" :class="getRiskClass(backtestDigest.metrics)">{{ getRiskLevel(backtestDigest.metrics) }}</span>
+                </div>
+                <div class="metric-row">
+                  <span class="metric-label">建议仓位</span>
+                  <span class="metric-value">{{ getSuggestedPosition(backtestDigest.metrics) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 快速评价 -->
+          <div class="quick-evaluation">
+            <div class="eval-header">
+              <span class="eval-icon">💡</span>
+              <span class="eval-title">快速评价</span>
+            </div>
+            <!-- 风险等级渐变条 -->
+            <div class="risk-bar-container">
+              <div class="risk-bar-gradient"></div>
+              <div class="risk-bar-indicator" :style="{ left: getRiskBarPosition(backtestDigest.metrics) + '%' }">
+                <span class="risk-indicator-dot"></span>
+              </div>
+              <div class="risk-bar-labels">
+                <span>低风险</span>
+                <span>中风险</span>
+                <span>高风险</span>
+              </div>
+            </div>
+            <div class="eval-content">
+              <div class="eval-item" :class="getEvalClass('return', backtestDigest.metrics)">
+                <span class="eval-label">收益表现</span>
+                <span class="eval-value">{{ getReturnEval(backtestDigest.metrics) }}</span>
+              </div>
+              <div class="eval-item" :class="getEvalClass('risk', backtestDigest.metrics)">
+                <span class="eval-label">风险控制</span>
+                <span class="eval-value">{{ getRiskEval(backtestDigest.metrics) }}</span>
+              </div>
+              <div class="eval-item" :class="getEvalClass('stability', backtestDigest.metrics)">
+                <span class="eval-label">稳定性</span>
+                <span class="eval-value">{{ getStabilityEval(backtestDigest.metrics) }}</span>
+              </div>
+              <div class="eval-item" :class="getEvalClass('overall', backtestDigest.metrics)">
+                <span class="eval-label">综合评分</span>
+                <span class="eval-value">{{ getOverallEval(backtestDigest.metrics) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 模拟交易和跟踪任务 -->
+        <div v-if="autoTradingTask || trackingTask" class="other-tasks">
+          <div class="task-item" v-if="autoTradingTask">
+            <div class="task-header">
+              <span class="task-icon">🤖</span>
               <strong>自动模拟交易</strong>
-              <span>{{ formatDateTime(autoTradingTask.created_at) }}</span>
+              <span class="task-time">{{ formatDateTime(autoTradingTask.created_at) }}</span>
             </div>
-            <ul class="execution-metrics">
-              <li>任务ID：{{ autoTradingTask.task_id }}</li>
-              <li>初始资金：¥{{ formatAmount(autoTradingTask.initial_capital) }}</li>
-              <li>状态：{{ autoTradingTask.status }}</li>
-              <li>策略：{{ autoTradingTask.strategy_id || '自动选择' }}</li>
-            </ul>
+            <div class="task-details">
+              <span>任务ID: {{ autoTradingTask.task_id }}</span>
+              <span>初始资金: ¥{{ formatAmount(autoTradingTask.initial_capital) }}</span>
+              <span>状态: {{ autoTradingTask.status }}</span>
+            </div>
           </div>
-          <div class="execution-item" v-if="trackingTask">
-            <div class="execution-head">
+          <div class="task-item" v-if="trackingTask">
+            <div class="task-header">
+              <span class="task-icon">👁️</span>
               <strong>跟踪任务</strong>
-              <span>{{ formatDateTime(trackingTask.created_at) }}</span>
+              <span class="task-time">{{ formatDateTime(trackingTask.created_at) }}</span>
             </div>
-            <ul class="execution-metrics">
-              <li>任务ID：{{ trackingTask.task_id }}</li>
-              <li>状态：{{ getTaskStatusText(trackingTask.status) }}</li>
-              <li>触发条件：价格±{{ trackingTask.trigger_condition?.price_change_threshold }}%</li>
-              <li>周期：{{ trackingTask.duration_days }} 天</li>
-            </ul>
+            <div class="task-details">
+              <span>任务ID: {{ trackingTask.task_id }}</span>
+              <span>状态: {{ getTaskStatusText(trackingTask.status) }}</span>
+              <span>周期: {{ trackingTask.duration_days }} 天</span>
+            </div>
           </div>
         </div>
       </section>
@@ -533,6 +711,144 @@ export default {
       }
     }
 
+    // ==================== 策略推荐辅助方法 ====================
+    const getMedalClass = (index) => {
+      const classes = ['gold', 'silver', 'bronze']
+      return classes[index] || 'bronze'
+    }
+
+    const getMedalIcon = (index) => {
+      const icons = ['🥇', '🥈', '🥉']
+      return icons[index] || '🏅'
+    }
+
+    const getMedalText = (index) => {
+      const texts = ['首选策略', '备选策略', '第三策略']
+      return texts[index] || `第${index + 1}策略`
+    }
+
+    const formatParamKey = (key) => {
+      const keyMap = {
+        'trend_period': '趋势周期',
+        'momentum_period': '动量周期',
+        'volatility_threshold': '波动率阈值',
+        'macd_fast': 'MACD快线',
+        'macd_slow': 'MACD慢线',
+        'macd_signal': '信号线周期',
+        'volume_threshold': '成交量阈值',
+        'bollinger_period': '布林带周期',
+        'bollinger_std': '标准差倍数',
+        'breakout_threshold': '突破阈值',
+        'rsi_period': 'RSI周期',
+        'rsi_overbought': 'RSI超买',
+        'rsi_oversold': 'RSI超卖',
+        'atr_period': 'ATR周期',
+        'atr_multiplier': 'ATR倍数',
+        'stop_loss': '止损比例',
+        'take_profit': '止盈比例',
+        'position_size': '仓位大小'
+      }
+      return keyMap[key] || key
+    }
+
+    // ==================== 回测评估辅助方法 ====================
+    const getValueClass = (value) => {
+      if (value === null || value === undefined) return ''
+      const num = normalizePercentValue(value)
+      if (num === null) return ''
+      return num >= 0 ? 'positive' : 'negative'
+    }
+
+    const getRiskLevel = (metrics) => {
+      const maxDrawdown = Math.abs(normalizePercentValue(metrics.maxDrawdown) || 0)
+      if (maxDrawdown < 10) return '低风险'
+      if (maxDrawdown < 20) return '中等风险'
+      if (maxDrawdown < 30) return '较高风险'
+      return '高风险'
+    }
+
+    const getRiskClass = (metrics) => {
+      const maxDrawdown = Math.abs(normalizePercentValue(metrics.maxDrawdown) || 0)
+      if (maxDrawdown < 10) return 'low-risk'
+      if (maxDrawdown < 20) return 'medium-risk'
+      return 'high-risk'
+    }
+
+    const getRiskBarPosition = (metrics) => {
+      const maxDrawdown = Math.abs(normalizePercentValue(metrics.maxDrawdown) || 0)
+      // 将回撤映射到0-100的位置，0%回撤=0位置(绿色)，40%+回撤=100位置(红色)
+      return Math.min(100, Math.max(0, (maxDrawdown / 40) * 100))
+    }
+
+    const getSuggestedPosition = (metrics) => {
+      const maxDrawdown = Math.abs(normalizePercentValue(metrics.maxDrawdown) || 0)
+      const sharpe = metrics.sharpeRatio || 0
+      if (sharpe > 1.5 && maxDrawdown < 15) return '60-80%'
+      if (sharpe > 1 && maxDrawdown < 20) return '40-60%'
+      if (sharpe > 0.5 && maxDrawdown < 30) return '20-40%'
+      return '10-20%'
+    }
+
+    const getReturnEval = (metrics) => {
+      const totalReturn = normalizePercentValue(metrics.totalReturn) || 0
+      if (totalReturn > 30) return '优秀'
+      if (totalReturn > 15) return '良好'
+      if (totalReturn > 0) return '一般'
+      return '较差'
+    }
+
+    const getRiskEval = (metrics) => {
+      const maxDrawdown = Math.abs(normalizePercentValue(metrics.maxDrawdown) || 0)
+      if (maxDrawdown < 10) return '优秀'
+      if (maxDrawdown < 20) return '良好'
+      if (maxDrawdown < 30) return '一般'
+      return '较差'
+    }
+
+    const getStabilityEval = (metrics) => {
+      const sharpe = metrics.sharpeRatio || 0
+      if (sharpe > 1.5) return '优秀'
+      if (sharpe > 1) return '良好'
+      if (sharpe > 0.5) return '一般'
+      return '较差'
+    }
+
+    const getOverallEval = (metrics) => {
+      const totalReturn = normalizePercentValue(metrics.totalReturn) || 0
+      const maxDrawdown = Math.abs(normalizePercentValue(metrics.maxDrawdown) || 0)
+      const sharpe = metrics.sharpeRatio || 0
+
+      let score = 0
+      if (totalReturn > 20) score += 2
+      else if (totalReturn > 10) score += 1
+
+      if (maxDrawdown < 15) score += 2
+      else if (maxDrawdown < 25) score += 1
+
+      if (sharpe > 1) score += 2
+      else if (sharpe > 0.5) score += 1
+
+      if (score >= 5) return 'A级'
+      if (score >= 4) return 'B级'
+      if (score >= 2) return 'C级'
+      return 'D级'
+    }
+
+    const getEvalClass = (type, metrics) => {
+      let eval_result
+      switch (type) {
+        case 'return': eval_result = getReturnEval(metrics); break
+        case 'risk': eval_result = getRiskEval(metrics); break
+        case 'stability': eval_result = getStabilityEval(metrics); break
+        case 'overall': eval_result = getOverallEval(metrics); break
+        default: return ''
+      }
+      if (eval_result === '优秀' || eval_result === 'A级') return 'eval-excellent'
+      if (eval_result === '良好' || eval_result === 'B级') return 'eval-good'
+      if (eval_result === '一般' || eval_result === 'C级') return 'eval-average'
+      return 'eval-poor'
+    }
+
     onMounted(() => {
       loadLatestAnalysis()
     })
@@ -565,7 +881,22 @@ export default {
       formatPercent,
       formatAmount,
       formatDateTime,
-      getTaskStatusText
+      getTaskStatusText,
+      // 新增方法
+      getMedalClass,
+      getMedalIcon,
+      getMedalText,
+      formatParamKey,
+      getValueClass,
+      getRiskLevel,
+      getRiskClass,
+      getRiskBarPosition,
+      getSuggestedPosition,
+      getReturnEval,
+      getRiskEval,
+      getStabilityEval,
+      getOverallEval,
+      getEvalClass
     }
   }
 }
@@ -845,5 +1176,573 @@ export default {
   .content-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* ==================== 策略推荐样式 ==================== */
+.strategy-card {
+  grid-column: 1 / -1;
+  display: block !important;
+}
+
+.strategy-card .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.strategy-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 1200px) {
+  .strategy-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .strategy-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.strategy-chip {
+  border-radius: 14px;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.6);
+  display: block;
+  position: relative;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.strategy-chip:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* 金牌 - 首选策略 */
+.strategy-chip.gold {
+  border: 2px solid #fbbf24;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(15, 23, 42, 0.6) 100%);
+  box-shadow: 0 4px 16px rgba(251, 191, 36, 0.2);
+}
+
+/* 银牌 - 备选策略 */
+.strategy-chip.silver {
+  border: 2px solid #94a3b8;
+  background: linear-gradient(135deg, rgba(148, 163, 184, 0.15) 0%, rgba(15, 23, 42, 0.6) 100%);
+  box-shadow: 0 4px 16px rgba(148, 163, 184, 0.15);
+}
+
+/* 铜牌 - 第三策略 */
+.strategy-chip.bronze {
+  border: 2px solid #cd7f32;
+  background: linear-gradient(135deg, rgba(205, 127, 50, 0.15) 0%, rgba(15, 23, 42, 0.6) 100%);
+  box-shadow: 0 4px 16px rgba(205, 127, 50, 0.15);
+}
+
+/* 奖牌标签 */
+.medal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 16px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 0.6rem;
+}
+
+.medal-badge.gold {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: #1e1b4b;
+}
+
+.medal-badge.silver {
+  background: linear-gradient(135deg, #e2e8f0, #94a3b8);
+  color: #1e293b;
+}
+
+.medal-badge.bronze {
+  background: linear-gradient(135deg, #cd7f32, #b8860b);
+  color: #1e1b4b;
+}
+
+.medal-icon {
+  font-size: 0.85rem;
+}
+
+.medal-text {
+  letter-spacing: 0.02em;
+}
+
+/* 策略头部 */
+.chip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.6rem;
+}
+
+.strategy-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0;
+}
+
+.confidence-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.1rem;
+}
+
+.confidence-label {
+  font-size: 0.65rem;
+  color: rgba(148, 163, 184, 0.8);
+}
+
+.confidence-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #60a5fa;
+}
+
+/* 置信度进度条 */
+.confidence-bar-wrapper {
+  height: 5px;
+  background: rgba(30, 41, 59, 0.8);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 0.6rem;
+}
+
+.confidence-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* 推荐理由 */
+.chip-reason {
+  margin-bottom: 0.6rem;
+}
+
+.reason-label {
+  display: block;
+  font-size: 0.7rem;
+  color: rgba(148, 163, 184, 0.8);
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.reason-text {
+  font-size: 0.8rem;
+  color: rgba(226, 232, 240, 0.9);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* 参数配置 */
+.chip-params {
+  border-top: 1px solid rgba(148, 163, 184, 0.15);
+  padding-top: 0.6rem;
+}
+
+.params-label {
+  display: block;
+  font-size: 0.7rem;
+  color: rgba(148, 163, 184, 0.8);
+  margin-bottom: 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.params-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.35rem;
+}
+
+.param-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(30, 41, 59, 0.6);
+  padding: 0.3rem 0.5rem;
+  border-radius: 5px;
+  font-size: 0.75rem;
+}
+
+.param-key {
+  color: rgba(148, 163, 184, 0.9);
+}
+
+.param-value {
+  color: #f1f5f9;
+  font-weight: 600;
+}
+
+/* ==================== 执行摘要样式 ==================== */
+.execution-card {
+  grid-column: 1 / -1;
+}
+
+.backtest-detail {
+  margin-top: 1rem;
+}
+
+.backtest-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  background: rgba(30, 41, 59, 0.6);
+  border-radius: 12px;
+  margin-bottom: 1.25rem;
+}
+
+.strategy-info h4 {
+  font-size: 1.1rem;
+  color: #f1f5f9;
+  margin: 0 0 0.25rem 0;
+}
+
+.backtest-time {
+  font-size: 0.8rem;
+  color: rgba(148, 163, 184, 0.8);
+}
+
+.confidence-display {
+  text-align: right;
+}
+
+.conf-label {
+  display: block;
+  font-size: 0.7rem;
+  color: rgba(148, 163, 184, 0.8);
+}
+
+.conf-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #60a5fa;
+}
+
+/* 四个区块网格 */
+.backtest-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+@media (max-width: 1200px) {
+  .backtest-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .backtest-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.backtest-block {
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 12px;
+  padding: 0.85rem;
+  border: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+/* 核心指标块 - 蓝色主题 */
+.backtest-block.metrics-block {
+  border-left: 3px solid #3b82f6;
+}
+
+/* 交易统计块 - 绿色主题 */
+.backtest-block.trades-block {
+  border-left: 3px solid #4ade80;
+}
+
+/* 回测参数块 - 紫色主题 */
+.backtest-block.params-block {
+  border-left: 3px solid #8b5cf6;
+}
+
+/* 风险评估块 - 橙色主题 */
+.backtest-block.risk-block {
+  border-left: 3px solid #f59e0b;
+}
+
+.block-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.block-icon {
+  font-size: 0.9rem;
+}
+
+.block-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.block-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.metric-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.metric-label {
+  font-size: 0.75rem;
+  color: rgba(148, 163, 184, 0.9);
+}
+
+.metric-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.metric-value.positive {
+  color: #4ade80;
+}
+
+.metric-value.negative {
+  color: #f87171;
+}
+
+.metric-value.low-risk {
+  color: #4ade80;
+}
+
+.metric-value.medium-risk {
+  color: #fbbf24;
+}
+
+.metric-value.high-risk {
+  color: #f87171;
+}
+
+/* 风险等级渐变条 */
+.risk-bar-container {
+  position: relative;
+  margin-bottom: 0.6rem;
+  padding-bottom: 1rem;
+}
+
+.risk-bar-gradient {
+  height: 6px;
+  background: linear-gradient(90deg, #4ade80 0%, #fbbf24 50%, #f87171 100%);
+  border-radius: 3px;
+}
+
+.risk-bar-indicator {
+  position: absolute;
+  top: -3px;
+  transform: translateX(-50%);
+  transition: left 0.3s ease;
+}
+
+.risk-indicator-dot {
+  display: block;
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border: 2px solid #1e293b;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.risk-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.2rem;
+  font-size: 0.65rem;
+  color: rgba(148, 163, 184, 0.8);
+}
+
+/* 快速评价 */
+.quick-evaluation {
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 12px;
+  padding: 0.85rem;
+  border: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.eval-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.eval-icon {
+  font-size: 0.9rem;
+}
+
+.eval-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.eval-content {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .eval-content {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.eval-item {
+  text-align: center;
+  padding: 0.6rem 0.5rem;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.4);
+  transition: transform 0.2s;
+}
+
+.eval-item:hover {
+  transform: scale(1.02);
+}
+
+.eval-label {
+  display: block;
+  font-size: 0.7rem;
+  color: rgba(148, 163, 184, 0.8);
+  margin-bottom: 0.2rem;
+}
+
+.eval-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.eval-item.eval-excellent {
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+.eval-item.eval-excellent .eval-value {
+  color: #4ade80;
+}
+
+.eval-item.eval-good {
+  background: rgba(96, 165, 250, 0.1);
+  border: 1px solid rgba(96, 165, 250, 0.3);
+}
+
+.eval-item.eval-good .eval-value {
+  color: #60a5fa;
+}
+
+.eval-item.eval-average {
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.eval-item.eval-average .eval-value {
+  color: #fbbf24;
+}
+
+.eval-item.eval-poor {
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+
+.eval-item.eval-poor .eval-value {
+  color: #f87171;
+}
+
+/* 其他任务 */
+.other-tasks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.task-item {
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 12px;
+  padding: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.task-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.task-icon {
+  font-size: 1rem;
+}
+
+.task-header strong {
+  color: #f1f5f9;
+  flex: 1;
+}
+
+.task-time {
+  font-size: 0.75rem;
+  color: rgba(148, 163, 184, 0.8);
+}
+
+.task-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.task-details span {
+  font-size: 0.8rem;
+  color: rgba(226, 232, 240, 0.85);
+  background: rgba(15, 23, 42, 0.4);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.loading-inline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  color: rgba(226, 232, 240, 0.8);
+}
+
+.loading-inline .spinner {
+  width: 32px;
+  height: 32px;
+  margin-bottom: 0.75rem;
 }
 </style>

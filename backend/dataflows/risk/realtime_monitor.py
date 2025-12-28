@@ -49,36 +49,36 @@ class RealtimeMonitor:
             logger.warning("⚠️ Tushare Token未配置")
             return None
         
-        # 优先使用AKShare获取实时行情（更稳定）
+        # 解析股票代码
+        codes = [c.strip().split('.')[0] for c in ts_codes.split(',')]
+
+        # 优先使用TDX Native Provider获取实时行情（最快）
         try:
-            import akshare as ak
-
-            # 解析股票代码
-            codes = [c.strip().split('.')[0] for c in ts_codes.split(',')]
-
-            df = ak.stock_zh_a_spot_em()
-            if df is not None and not df.empty:
-                # 筛选目标股票
-                result_df = df[df['代码'].isin(codes)]
-                if not result_df.empty:
+            from backend.dataflows.providers.tdx_native_provider import get_tdx_native_provider
+            tdx = get_tdx_native_provider()
+            if tdx.is_available():
+                quotes = tdx.get_realtime_quotes(codes)
+                if quotes:
+                    import pandas as pd
+                    result_df = pd.DataFrame(quotes)
                     # 转换列名以兼容原有格式
                     result_df = result_df.rename(columns={
-                        '代码': 'TS_CODE',
-                        '名称': 'NAME',
-                        '最新价': 'PRICE',
-                        '涨跌幅': 'PCT_CHANGE',
-                        '涨跌额': 'CHANGE',
-                        '成交量': 'VOLUME',
-                        '成交额': 'AMOUNT',
-                        '最高': 'HIGH',
-                        '最低': 'LOW',
-                        '今开': 'OPEN',
-                        '昨收': 'PRE_CLOSE'
+                        'code': 'TS_CODE',
+                        'name': 'NAME',
+                        'price': 'PRICE',
+                        'change_pct': 'PCT_CHANGE',
+                        'change': 'CHANGE',
+                        'volume': 'VOLUME',
+                        'amount': 'AMOUNT',
+                        'high': 'HIGH',
+                        'low': 'LOW',
+                        'open': 'OPEN',
+                        'pre_close': 'PRE_CLOSE'
                     })
-                    logger.info(f"✅ 获取实时行情(AKShare): {len(result_df)}只股票")
+                    logger.info(f"✅ 获取实时行情(TDX Native): {len(result_df)}只股票")
                     return result_df
         except Exception as e:
-            logger.debug(f"AKShare实时行情获取失败: {e}")
+            logger.debug(f"TDX Native实时行情获取失败: {e}")
 
         # 备选：使用Tushare
         try:

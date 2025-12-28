@@ -100,8 +100,8 @@ class ScalpingBladeStrategy(BaseStrategy):
         entering = current_position == 0
 
         if entering:
-            # 做空：价格远高于VWAP + 上轨，且放量
-            if price >= upper and deviation > 1.5 and vol_ratio >= self.volume_spike:
+            # 做空：价格远高于VWAP + 上轨，且放量（放宽条件）
+            if price >= upper and deviation > 1.0 and vol_ratio >= self.volume_spike * 0.8:
                 self.state.position_side = "short"
                 self.state.entry_price = price
                 self.state.bars_held = 0
@@ -117,8 +117,8 @@ class ScalpingBladeStrategy(BaseStrategy):
                 )
                 return signal
 
-            # 做多：价格跌破下轨且放量
-            if price <= lower and deviation < -1.5 and vol_ratio >= self.volume_spike:
+            # 做多：价格跌破下轨且放量（放宽条件）
+            if price <= lower and deviation < -1.0 and vol_ratio >= self.volume_spike * 0.8:
                 self.state.position_side = "long"
                 self.state.entry_price = price
                 self.state.bars_held = 0
@@ -131,6 +131,23 @@ class ScalpingBladeStrategy(BaseStrategy):
                     stop_loss=round(price * (1 - self.stop_loss_pct), 2),
                     position_size=size,
                     reason="下轨放量恐慌，抢反弹至VWAP"
+                )
+                return signal
+
+            # 额外入场条件：价格接近下轨且有反弹迹象
+            if price <= lower * 1.01 and vol_ratio >= 1.2:
+                self.state.position_side = "long"
+                self.state.entry_price = price
+                self.state.bars_held = 0
+                size = min(self.risk_params.get("max_position_pct", 0.3), 0.08)
+                signal = StrategySignal(
+                    signal_type=SignalType.BUY,
+                    confidence=0.6,
+                    price=price,
+                    target_price=round(price * (1 + self.take_profit_pct), 2),
+                    stop_loss=round(price * (1 - self.stop_loss_pct), 2),
+                    position_size=size,
+                    reason="接近下轨，尝试抢反弹"
                 )
                 return signal
 

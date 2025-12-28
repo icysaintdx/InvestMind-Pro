@@ -329,6 +329,257 @@ async def test_news_api():
     }
 
 
+# ==================== 新闻数据服务API ====================
+
+@router.get("/data/latest")
+async def get_latest_news_data(
+    ts_code: Optional[str] = Query(None, description="股票代码"),
+    limit: int = Query(20, description="返回数量", ge=1, le=100),
+    hours_back: int = Query(24, description="时间范围（小时）", ge=1, le=168)
+):
+    """
+    获取最新新闻数据（从数据库）
+
+    支持按股票代码筛选，返回持久化存储的新闻数据
+    """
+    try:
+        from backend.services.news_data_service import get_news_data_service
+        from backend.database.database import SessionLocal
+
+        news_service = get_news_data_service()
+        db = SessionLocal()
+
+        try:
+            news_list = news_service.get_latest_news(
+                db=db,
+                ts_code=ts_code,
+                limit=limit,
+                hours_back=hours_back
+            )
+
+            return {
+                "success": True,
+                "ts_code": ts_code,
+                "count": len(news_list),
+                "news": news_list
+            }
+        finally:
+            db.close()
+
+    except Exception as e:
+        logger.error(f"获取最新新闻失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/data/search")
+async def search_news_data(
+    query: str = Query(..., description="搜索关键词"),
+    ts_code: Optional[str] = Query(None, description="股票代码"),
+    limit: int = Query(50, description="返回数量", ge=1, le=100)
+):
+    """
+    全文搜索新闻
+
+    在标题、内容、摘要中搜索关键词
+    """
+    try:
+        from backend.services.news_data_service import get_news_data_service
+        from backend.database.database import SessionLocal
+
+        news_service = get_news_data_service()
+        db = SessionLocal()
+
+        try:
+            results = news_service.search_news(
+                db=db,
+                query_text=query,
+                ts_code=ts_code,
+                limit=limit
+            )
+
+            return {
+                "success": True,
+                "query": query,
+                "ts_code": ts_code,
+                "count": len(results),
+                "results": results
+            }
+        finally:
+            db.close()
+
+    except Exception as e:
+        logger.error(f"搜索新闻失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/data/statistics")
+async def get_news_statistics(
+    ts_code: Optional[str] = Query(None, description="股票代码"),
+    days: int = Query(7, description="统计天数", ge=1, le=90)
+):
+    """
+    获取新闻统计信息
+
+    包括情绪分布、来源分布、紧急程度分布等
+    """
+    try:
+        from backend.services.news_data_service import get_news_data_service
+        from backend.database.database import SessionLocal
+
+        news_service = get_news_data_service()
+        db = SessionLocal()
+
+        try:
+            start_time = datetime.utcnow() - timedelta(days=days)
+
+            stats = news_service.get_news_statistics(
+                db=db,
+                ts_code=ts_code,
+                start_time=start_time
+            )
+
+            return {
+                "success": True,
+                "ts_code": ts_code,
+                "days": days,
+                "statistics": {
+                    "total_count": stats.total_count,
+                    "sentiment": {
+                        "positive": stats.positive_count,
+                        "negative": stats.negative_count,
+                        "neutral": stats.neutral_count,
+                        "trend": stats.sentiment_trend,
+                        "avg_score": round(stats.avg_sentiment_score, 2)
+                    },
+                    "urgency": {
+                        "critical": stats.critical_count,
+                        "high": stats.high_count,
+                        "medium": stats.medium_count,
+                        "low": stats.low_count
+                    },
+                    "sources": stats.sources,
+                    "report_types": stats.report_types
+                }
+            }
+        finally:
+            db.close()
+
+    except Exception as e:
+        logger.error(f"获取新闻统计失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/data/sentiment-trend")
+async def get_news_sentiment_trend(
+    ts_code: str = Query(..., description="股票代码"),
+    days: int = Query(7, description="天数", ge=1, le=30)
+):
+    """
+    获取新闻情绪趋势（按天统计）
+    """
+    try:
+        from backend.services.news_data_service import get_news_data_service
+        from backend.database.database import SessionLocal
+
+        news_service = get_news_data_service()
+        db = SessionLocal()
+
+        try:
+            trend = news_service.get_sentiment_trend(
+                db=db,
+                ts_code=ts_code,
+                days=days
+            )
+
+            return {
+                "success": True,
+                "ts_code": ts_code,
+                "days": days,
+                "trend": trend
+            }
+        finally:
+            db.close()
+
+    except Exception as e:
+        logger.error(f"获取情绪趋势失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==================== 新闻同步服务API ====================
+
+@router.post("/sync/start")
+async def start_news_sync(
+    stock_codes: Optional[List[str]] = Query(None, description="股票代码列表"),
+    sync_all: bool = Query(False, description="是否同步所有监控股票")
+):
+    """
+    启动新闻同步任务
+
+    可以指定股票代码列表，或同步所有监控股票
+    """
+    try:
+        from backend.services.news_sync_service import get_news_sync_service
+
+        sync_service = get_news_sync_service()
+
+        sync_id = sync_service.start_sync(
+            stock_codes=stock_codes,
+            sync_all_monitored=sync_all
+        )
+
+        return {
+            "success": True,
+            "sync_id": sync_id,
+            "message": "同步任务已启动"
+        }
+
+    except Exception as e:
+        logger.error(f"启动同步失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/sync/status")
+async def get_sync_status():
+    """
+    获取同步任务状态
+    """
+    try:
+        from backend.services.news_sync_service import get_news_sync_service
+
+        sync_service = get_news_sync_service()
+        status = sync_service.get_sync_status()
+
+        return {
+            "success": True,
+            **status
+        }
+
+    except Exception as e:
+        logger.error(f"获取同步状态失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/sync/stop")
+async def stop_news_sync():
+    """
+    停止同步任务
+    """
+    try:
+        from backend.services.news_sync_service import get_news_sync_service
+
+        sync_service = get_news_sync_service()
+        sync_service.stop_sync()
+
+        return {
+            "success": True,
+            "message": "同步任务已停止"
+        }
+
+    except Exception as e:
+        logger.error(f"停止同步失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # 实时新闻API端点
 class RealtimeNewsRequest(BaseModel):
     """实时新闻请求模型"""

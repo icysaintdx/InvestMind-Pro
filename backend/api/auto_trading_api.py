@@ -252,20 +252,20 @@ async def execute_trade(
 async def start_auto_trading(request: StartTaskRequest, background_tasks: BackgroundTasks):
     """
     启动自动交易任务
-    
+
     Args:
         request: 启动请求
         background_tasks: 后台任务
-        
+
     Returns:
         任务信息
     """
     try:
         load_tasks()
-        
+
         # 创建任务
         task_id = f"AT{datetime.now().strftime('%Y%m%d%H%M%S')}"
-        
+
         task = {
             "task_id": task_id,
             "stock_code": request.stock_code,
@@ -281,30 +281,33 @@ async def start_auto_trading(request: StartTaskRequest, background_tasks: Backgr
             "risk_preference": request.risk_preference,
             "analysis_result": request.analysis_result
         }
-        
+
         active_tasks[task_id] = task
         save_tasks()
 
         logger.info(f"自动交易任务已启动: {task_id}")
 
-        # 立即执行第一次决策
-        first_decision = None
-        try:
-            first_decision = await make_decision(task_id)
-            # decision 是 TradingDecision 对象，需要用 .action 而不是 .get()
-            decision_obj = first_decision.get('decision')
-            action = decision_obj.action if hasattr(decision_obj, 'action') else decision_obj.get('action', 'unknown') if isinstance(decision_obj, dict) else 'unknown'
-            logger.info(f"首次决策完成: {task_id} - {action}")
-        except Exception as e:
-            logger.warning(f"首次决策失败: {e}")
+        # 在后台执行第一次决策，不阻塞响应
+        async def execute_first_decision():
+            try:
+                first_decision = await make_decision(task_id)
+                decision_obj = first_decision.get('decision')
+                action = decision_obj.action if hasattr(decision_obj, 'action') else decision_obj.get('action', 'unknown') if isinstance(decision_obj, dict) else 'unknown'
+                logger.info(f"首次决策完成: {task_id} - {action}")
+            except Exception as e:
+                logger.warning(f"首次决策失败: {e}")
+
+        # 使用 asyncio.create_task 在后台执行
+        import asyncio
+        asyncio.create_task(execute_first_decision())
 
         return {
             "success": True,
-            "task": active_tasks.get(task_id, task),  # 返回更新后的任务
-            "first_decision": first_decision,
-            "message": "自动交易任务已启动并执行首次决策"
+            "task": active_tasks.get(task_id, task),
+            "first_decision": None,  # 决策在后台执行，不等待
+            "message": "自动交易任务已启动，首次决策正在后台执行"
         }
-        
+
     except Exception as e:
         logger.error(f"启动任务失败: {e}")
         raise HTTPException(status_code=500, detail=str(e))

@@ -19,6 +19,7 @@ sqlalchemy
 # Stock Data
 akshare
 tushare
+pytdx
 beautifulsoup4
 lxml
 yfinance
@@ -31,3 +32,20 @@ requests
 python-dateutil
 tenacity
 retrying
+
+# Async & Task Queue
+redis>=4.5.0
+aioredis>=2.0.0
+sse-starlette>=1.6.0
+aiosqlite>=0.19.0
+aiohttp>=3.8.0
+
+# Scheduler
+apscheduler>=3.10.0
+schedule>=1.2.0
+
+# PDF Report Generation
+reportlab>=4.0.0
+
+# Wencai Stock Selection
+pywencai>=0.10.0

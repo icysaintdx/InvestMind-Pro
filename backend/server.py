@@ -28,7 +28,8 @@ from asyncio import Semaphore
 from backend.utils.llm_fallback_handler import get_fallback_handler
 
 # 全局并发控制器 - 限制同时发送到SiliconFlow的请求数
-siliconflow_semaphore = Semaphore(10)  # 最多10个并发请求
+# 增加到20个并发，避免分析时阻塞其他功能
+siliconflow_semaphore = Semaphore(20)  # 最多20个并发请求
 
 # 模型能力画像与静默压测的全局状态与结果文件
 CALIBRATION_RESULTS_FILE = os.path.join(os.path.dirname(__file__), "model_calibration.json")
@@ -101,6 +102,17 @@ from backend.api.kline_api import router as kline_router  # K线API
 from backend.api.scheduler_api import router as scheduler_router  # 调度器API
 from backend.api.data_source_health_api import router as data_source_health_router  # 数据源健康检查API
 from backend.api.dataflow_api import router as dataflow_router  # 数据流监控API
+from backend.api.notification_api import router as notification_router  # 通知服务API
+from backend.api.sse_api import router as sse_router  # SSE实时推送API
+from backend.api.async_analysis_api import router as async_analysis_router  # 异步分析API
+from backend.api.websocket_api import router as websocket_router  # WebSocket实时通知API
+from backend.api.providers_api import router as providers_router  # 数据源Provider API (TDX/Wencai/TA-Lib)
+from backend.api.report_api import router as report_router  # PDF报告生成API
+from backend.api.longhubang_api import router as longhubang_router  # 龙虎榜分析API
+from backend.api.wencai_api import router as wencai_router  # 问财智能选股API
+from backend.api.sector_rotation_api import router as sector_rotation_router  # 板块轮动分析API
+from backend.api.sentiment_api import router as sentiment_router  # 市场情绪分析API
+from backend.api.realtime_monitor_api import router as realtime_monitor_router  # 实时盯盘监控API
 
 # ==================== 配置 ====================
 
@@ -200,6 +212,17 @@ async def lifespan(app: FastAPI):
     
     print("✅ HTTP连接池初始化成功")
 
+    # 初始化 Redis 连接（用于异步任务和SSE）
+    try:
+        from backend.services.async_task.redis_client import redis_client
+        await redis_client.connect()
+        if redis_client.is_redis_available:
+            print("✅ Redis 连接成功")
+        else:
+            print("⚠️ Redis 不可用，使用内存降级模式")
+    except Exception as e:
+        print(f"⚠️ Redis 初始化失败: {e}，使用内存降级模式")
+
     # 启动交易调度器（可选，根据环境变量控制）
     import os
     if os.getenv("ENABLE_SCHEDULER", "false").lower() == "true":
@@ -209,15 +232,104 @@ async def lifespan(app: FastAPI):
             print("✅ 交易调度器已启动")
         except Exception as e:
             print(f"⚠️ 交易调度器启动失败: {e}")
+    
+    # 启动数据清理调度器（默认启动）
+    if os.getenv("ENABLE_DATA_CLEANUP", "true").lower() == "true":
+        try:
+            from backend.dataflows.data_cleanup_scheduler import start_cleanup_scheduler
+            start_cleanup_scheduler()
+            print("✅ 数据清理调度器已启动")
+        except Exception as e:
+            print(f"⚠️ 数据清理调度器启动失败: {e}")
+
+    # 启动后台新闻服务（默认启动）
+    # 该服务使用独立进程池处理新闻请求，完全不阻塞FastAPI主事件循环
+    if os.getenv("ENABLE_BACKGROUND_NEWS", "true").lower() == "true":
+        try:
+            from backend.services.background_news_service import background_news_service
+            await background_news_service.start()
+            print("✅ 后台新闻服务已启动（独立进程池模式）")
+        except Exception as e:
+            print(f"⚠️ 后台新闻服务启动失败: {e}")
+
+    # 启动统一后台数据更新服务（默认禁用）
+    # 该服务会自动为所有监控股票调用48个接口，非常耗时
+    # 如需启用，请设置环境变量 ENABLE_DATA_UPDATE_SERVICE=true
+    if os.getenv("ENABLE_DATA_UPDATE_SERVICE", "false").lower() == "true":
+        try:
+            from backend.services.unified_data_update_service import start_background_update_service
+            start_background_update_service()
+            print("✅ 统一后台数据更新服务已启动")
+        except Exception as e:
+            print(f"⚠️ 统一后台数据更新服务启动失败: {e}")
+
+    # 启动实时盯盘监控服务（默认禁用）
+    # 该服务提供实时股票监控和AI决策功能
+    # 如需启用，请设置环境变量 ENABLE_REALTIME_MONITOR=true
+    if os.getenv("ENABLE_REALTIME_MONITOR", "false").lower() == "true":
+        try:
+            from backend.services.realtime_monitor_service import get_realtime_monitor_service
+            realtime_monitor = get_realtime_monitor_service()
+            # 尝试加载保存的配置并自动启动
+            realtime_monitor.load_config()
+            if realtime_monitor.config.get("auto_start", False):
+                realtime_monitor.start_monitoring()
+                print("✅ 实时盯盘监控服务已启动（自动启动模式）")
+            else:
+                print("✅ 实时盯盘监控服务已初始化（等待手动启动）")
+        except Exception as e:
+            print(f"⚠️ 实时盯盘监控服务启动失败: {e}")
 
     # yield 控制权给应用
     yield
-    
+
     # 停止调度器
     try:
         from backend.services.scheduler_service import stop_scheduler
         stop_scheduler()
         print("✅ 交易调度器已停止")
+    except:
+        pass
+
+    # 停止数据清理调度器
+    try:
+        from backend.dataflows.data_cleanup_scheduler import stop_cleanup_scheduler
+        stop_cleanup_scheduler()
+        print("✅ 数据清理调度器已停止")
+    except:
+        pass
+
+    # 停止后台新闻服务
+    try:
+        from backend.services.background_news_service import background_news_service
+        await background_news_service.stop()
+        print("✅ 后台新闻服务已停止")
+    except:
+        pass
+
+    # 停止统一后台数据更新服务
+    try:
+        from backend.services.unified_data_update_service import stop_background_update_service
+        stop_background_update_service()
+        print("✅ 统一后台数据更新服务已停止")
+    except:
+        pass
+
+    # 停止实时盯盘监控服务
+    try:
+        from backend.services.realtime_monitor_service import get_realtime_monitor_service
+        realtime_monitor = get_realtime_monitor_service()
+        if realtime_monitor.is_running:
+            realtime_monitor.stop_monitoring()
+            print("✅ 实时盯盘监控服务已停止")
+    except:
+        pass
+
+    # 关闭 Redis 连接
+    try:
+        from backend.services.async_task.redis_client import redis_client
+        await redis_client.disconnect()
+        print("✅ Redis 连接已关闭")
     except:
         pass
 
@@ -234,6 +346,15 @@ app = FastAPI(
     title="IcySaint AI Backend",
     version="1.0.0",
     lifespan=lifespan
+)
+
+# 配置 CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 允许所有源，包括Vue开发服务器
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # 注册API路由
@@ -261,15 +382,17 @@ app.include_router(kline_router)  # K线API
 app.include_router(scheduler_router)  # 调度器API
 app.include_router(data_source_health_router)  # 数据源健康检查API
 app.include_router(dataflow_router)  # 数据流监控API
-
-# 配置 CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # 允许所有源，包括Vue开发服务器
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app.include_router(notification_router)  # 通知服务API
+app.include_router(sse_router)  # SSE实时推送API
+app.include_router(async_analysis_router)  # 异步分析API
+app.include_router(websocket_router)  # WebSocket实时通知API
+app.include_router(providers_router)  # 数据源Provider API (TDX/Wencai/TA-Lib)
+app.include_router(report_router)  # PDF报告生成API
+app.include_router(longhubang_router)  # 龙虎榜分析API
+app.include_router(wencai_router)  # 问财智能选股API
+app.include_router(sector_rotation_router)  # 板块轮动分析API
+app.include_router(sentiment_router)  # 市场情绪分析API
+app.include_router(realtime_monitor_router)  # 实时盯盘监控API
 
 
 # ==================== 数据模型 ====================
@@ -667,8 +790,8 @@ async def siliconflow_api(request: SiliconFlowRequest):
             # 原有重试逻辑（作为后备）
             if not agent_role:
                 # 从请求中尝试推断角色（analyze请求可能传递了agent_id）
-                agent_role = "UNKNOWN"
-                print(f"[SiliconFlow] 警告: 未提供agent_role，使用默认值 UNKNOWN")
+                agent_role = "GENERAL"  # 通用请求
+                print(f"[SiliconFlow] 通用请求（未指定角色）")
             
             print(f"[SiliconFlow] 使用原有重试逻辑（agent_role={agent_role}）")
             max_retries = 2
@@ -1275,6 +1398,7 @@ async def _run_single_calibration_test(model: Dict[str, Any], prompt_length: int
                     temperature=0.5,
                     maxTokens=max_tokens,
                     enableThinking=enable_thinking,
+                    agentRole="BENCHMARK"  # 压测角色
                 )
                 result = await asyncio.wait_for(siliconflow_api(req), timeout=timeout_seconds)
 
@@ -1561,7 +1685,8 @@ async def summarize_previous_outputs(agent_id: str, previous_outputs: Optional[D
                 model=model_name,
                 systemPrompt=system_prompt,
                 prompt=user_prompt,
-                temperature=temperature
+                temperature=temperature,
+                agentRole="SUMMARIZER"  # 摘要器角色
             )
             result = await siliconflow_api(req)
     except Exception:
@@ -2217,6 +2342,7 @@ async def root():
         }
 
 @app.get("/health")
+@app.get("/api/health")
 async def health_check():
     """健康检查端点"""
     return {"status": "healthy"}

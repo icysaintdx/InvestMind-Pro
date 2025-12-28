@@ -60,6 +60,7 @@
 
 <script>
 import axios from 'axios'
+import API_BASE_URL from '@/config/api.js'
 
 export default {
   name: 'SocialMediaPanel',
@@ -90,7 +91,7 @@ export default {
       this.error = null
       
       try {
-        const response = await axios.get('http://localhost:8000/api/akshare/social-media/all')
+        const response = await axios.get(`${API_BASE_URL}/api/akshare/social-media/all`)
         const data = response.data.data
         
         this.weiboStockHot = data.weibo_stock_hot || []

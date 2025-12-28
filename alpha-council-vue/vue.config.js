@@ -17,10 +17,10 @@ module.exports = defineConfig({
         ws: true,
         secure: false,
         logLevel: 'debug',
-        onError(err, req, res) {
+        onError(err) {
           console.error('Proxy error:', err);
         },
-        onProxyReq(proxyReq, req, res) {
+        onProxyReq(proxyReq, req) {
           console.log('Proxying:', req.method, req.url);
         }
       }

@@ -67,6 +67,7 @@
 
 <script>
 import { ref, computed, watch, nextTick, onBeforeUnmount } from 'vue'
+import API_BASE_URL from '@/config/api.js'
 
 export default {
   name: 'GlobalLogWindow',
@@ -187,7 +188,7 @@ export default {
         return
       }
 
-      const url = `http://localhost:8000/api/agent-logs/stream/${agentId}`
+      const url = `${API_BASE_URL}/api/agent-logs/stream/${agentId}`
       console.log(`[GlobalLogWindow] 连接到: ${url}`)
 
       const eventSource = new EventSource(url)

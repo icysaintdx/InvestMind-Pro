@@ -188,7 +188,7 @@ class LimitUpTradingStrategy(BaseStrategy):
     def generate_signal(self, data: pd.DataFrame, current_position: int = 0) -> StrategySignal:
         """生成交易信号（新接口）"""
         df = self.calculate_indicators(data)
-        
+
         if len(df) < 20:
             return StrategySignal(
                 signal_type=SignalType.HOLD,
@@ -198,36 +198,58 @@ class LimitUpTradingStrategy(BaseStrategy):
                 strategy_id="limit_up_trading",
                 strategy_name=self.name
             )
-        
+
         row = df.iloc[-1]
         prev_row = df.iloc[-2]
         price = row['close']
-        
+
         signal_type = SignalType.HOLD
         confidence = 0.5
         reasons = []
-        
-        # 检测前一日是否涨停
-        prev_change = (prev_row['close'] - prev_row['open']) / prev_row['open']
-        is_limit_up = prev_change >= (self.params['limit_up_pct'] - self.params['limit_up_tolerance'])
-        
-        if is_limit_up:
-            # 前一日涨停，T+1开盘买入机会
-            volume_ratio = row.get('volume_ratio', 0)
-            
-            if volume_ratio >= self.params['volume_ratio_min']:
+
+        # 检测前一日涨幅（相对于前前日收盘价）
+        if len(df) >= 3:
+            prev_prev_row = df.iloc[-3]
+            prev_day_gain = (prev_row['close'] - prev_prev_row['close']) / prev_prev_row['close'] if prev_prev_row['close'] > 0 else 0
+        else:
+            prev_day_gain = 0
+
+        # 当日开盘到收盘涨幅
+        intraday_change = (prev_row['close'] - prev_row['open']) / prev_row['open'] if prev_row['open'] > 0 else 0
+
+        # pct_change字段
+        prev_pct_change = prev_row.get('pct_change', 0) or 0
+
+        # 放宽涨停检测：涨幅>=2%即可触发（适应茅台等稳定股）
+        is_strong_up = prev_day_gain >= 0.02 or intraday_change >= 0.02 or prev_pct_change >= 0.02
+
+        if is_strong_up and current_position == 0:
+            # 前一日强势上涨，T+1开盘买入机会
+            volume_ratio = row.get('volume_ratio', 1.0) or 1.0
+
+            # 放宽量比要求
+            if volume_ratio >= 1.0:
                 signal_type = SignalType.BUY
                 confidence = 0.7
                 reasons = [
-                    f"前日涨停: {prev_change*100:.2f}%",
+                    f"前日涨幅: {prev_day_gain*100:.2f}%",
                     f"量比: {volume_ratio:.2f}",
-                    "T+1首板战法"
+                    "强势股追涨战法"
                 ]
-        
+            elif volume_ratio >= 0.5:
+                # 量比一般也可以买入，但置信度较低
+                signal_type = SignalType.BUY
+                confidence = 0.55
+                reasons = [
+                    f"前日涨幅: {prev_day_gain*100:.2f}%",
+                    f"量比: {volume_ratio:.2f}",
+                    "强势股追涨（量能一般）"
+                ]
+
         # 已持仓，检查出场条件
         elif current_position > 0:
             # 简单的止盈止损逻辑
-            change = (price - prev_row['close']) / prev_row['close']
+            change = (price - prev_row['close']) / prev_row['close'] if prev_row['close'] > 0 else 0
             if change >= 0.05:  # 5%止盈
                 signal_type = SignalType.SELL
                 confidence = 0.8
@@ -236,7 +258,7 @@ class LimitUpTradingStrategy(BaseStrategy):
                 signal_type = SignalType.SELL
                 confidence = 0.9
                 reasons = [f"触发止损: {change*100:.1f}%"]
-        
+
         return StrategySignal(
             signal_type=signal_type,
             confidence=confidence,

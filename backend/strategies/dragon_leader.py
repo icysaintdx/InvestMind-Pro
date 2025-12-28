@@ -68,7 +68,8 @@ class DragonLeaderStrategy(BaseStrategy):
         df["ema_20"] = df["close"].ewm(span=20).mean()
         df["ema_60"] = df["close"].ewm(span=60).mean()
         df["ema_120"] = df["close"].ewm(span=120).mean()
-        df["trend_strength"] = (df["ema_20"] > df["ema_60"] > df["ema_120"]).astype(int)
+        # 修复：pandas Series不能使用链式比较，需要分开比较
+        df["trend_strength"] = ((df["ema_20"] > df["ema_60"]) & (df["ema_60"] > df["ema_120"])).astype(int)
         df["momentum_rank"] = _rolling_rank(df["close"], self.rank_window)
         df["turnover"] = (df["volume"] * df["close"]) / (df["volume"].rolling(self.volume_window).mean() * df["close"].rolling(self.volume_window).mean())
         df["turnover_ratio"] = df["turnover"].rolling(self.volume_window).mean()
@@ -103,8 +104,8 @@ class DragonLeaderStrategy(BaseStrategy):
         )
 
         trend_ok = latest.get("trend_strength", 0) == 1
-        momentum_rank = latest.get("momentum_rank", 0.5)
-        turnover_ratio = latest.get("turnover_ratio", 1.0)
+        momentum_rank = latest.get("momentum_rank", 0.5) or 0.5
+        turnover_ratio = latest.get("turnover_ratio", 1.0) or 1.0
 
         if self.active_box is None:
             box = self._detect_consolidation(data)
@@ -116,6 +117,8 @@ class DragonLeaderStrategy(BaseStrategy):
             breakout_price = self.active_box.high * (1 + self.breakout_buffer)
             breakout = price > breakout_price and prev["close"] <= breakout_price
 
+        # 放宽入场条件：不再要求所有条件同时满足
+        # 条件1：严格突破（需要盘整突破+趋势+动量）
         if current_position == 0 and trend_ok and momentum_rank >= 0.7 and turnover_ratio >= 1.2 and breakout:
             atr = latest.get("atr20", 0.02) or 0.02
             position_size = min(self.risk_params.get("max_position_pct", 0.3), 0.1 + momentum_rank * 0.2)
@@ -130,6 +133,38 @@ class DragonLeaderStrategy(BaseStrategy):
             )
             self.active_box = None
             return signal
+
+        # 条件2：放宽的入场条件（趋势向上+动量较强）
+        elif current_position == 0 and trend_ok and momentum_rank >= 0.5:
+            # 价格创近期新高
+            recent_high = data['high'].tail(20).max()
+            if price >= recent_high * 0.98:
+                signal = StrategySignal(
+                    signal_type=SignalType.BUY,
+                    confidence=0.65,
+                    price=price,
+                    target_price=round(price * (1 + self.take_profit_pct * 0.7), 2),
+                    stop_loss=round(price * (1 - self.stop_loss_pct), 2),
+                    position_size=0.15,
+                    reason=f"龙头趋势：多头排列+动量{momentum_rank:.2f}+接近新高"
+                )
+                return signal
+
+        # 条件3：更宽松的入场（仅趋势向上）
+        elif current_position == 0 and trend_ok and turnover_ratio >= 1.0:
+            ema20 = latest.get("ema_20", price)
+            # 价格站上EMA20
+            if price > ema20 and prev["close"] <= ema20:
+                signal = StrategySignal(
+                    signal_type=SignalType.BUY,
+                    confidence=0.55,
+                    price=price,
+                    target_price=round(price * 1.08, 2),
+                    stop_loss=round(ema20 * 0.98, 2),
+                    position_size=0.1,
+                    reason="龙头信号：站上EMA20，趋势向上"
+                )
+                return signal
 
         if current_position > 0:
             take_profit_hit = price >= current_position * 0 and price >= latest.get("target_price", price * (1 + self.take_profit_pct))

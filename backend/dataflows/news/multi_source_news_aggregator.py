@@ -1,9 +1,11 @@
 """
 多源新闻聚合器
 整合Tushare、AKShare、东方财富等多个数据源的新闻
+支持智能内容截取和关键词高亮
 """
 
 import os
+import re
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
 import pandas as pd
@@ -11,6 +13,55 @@ import pandas as pd
 from backend.utils.logging_config import get_logger
 
 logger = get_logger("news.multi_source")
+
+
+def extract_relevant_content(content: str, stock_code: str, stock_name: str = '', max_length: int = 300) -> str:
+    """
+    智能提取与股票相关的内容片段
+
+    Args:
+        content: 原始新闻内容
+        stock_code: 股票代码 (如 600519)
+        stock_name: 股票名称 (如 贵州茅台)
+        max_length: 最大返回长度
+
+    Returns:
+        与股票相关的内容片段
+    """
+    if not content:
+        return ''
+
+    # 构建关键词列表
+    keywords = [stock_code]
+    if stock_name:
+        keywords.append(stock_name)
+        # 添加简称 (如 "茅台")
+        if len(stock_name) >= 4:
+            keywords.append(stock_name[2:])
+
+    # 按句子分割
+    sentences = re.split(r'[。！？\n]', content)
+
+    # 查找包含关键词的句子
+    relevant_sentences = []
+    for sentence in sentences:
+        sentence = sentence.strip()
+        if not sentence or len(sentence) < 5:
+            continue
+        if any(kw in sentence for kw in keywords):
+            relevant_sentences.append(sentence)
+
+    # 如果找到相关句子，返回这些句子
+    if relevant_sentences:
+        result = '。'.join(relevant_sentences[:3])
+        if len(result) > max_length:
+            result = result[:max_length] + '...'
+        return result + '。'
+
+    # 如果没有找到相关句子，返回开头内容
+    if len(content) > max_length:
+        return content[:max_length] + '...'
+    return content
 
 
 class MultiSourceNewsAggregator:
@@ -104,15 +155,21 @@ class MultiSourceNewsAggregator:
     def get_stock_news_akshare(
         self,
         symbol: str,
+        stock_name: str = '',
         limit: int = 20
     ) -> List[Dict]:
         """
-        从AKShare获取股票新闻(东方财富)
+        从AKShare获取股票新闻(多接口降级策略)
 
-        接口: stock_news_em
+        接口优先级:
+        1. stock_news_em - 东方财富个股新闻
+        2. stock_info_global_em - 东方财富全球资讯(关键词过滤)
+        3. stock_info_global_cls - 财联社全球资讯(关键词过滤)
+        4. news_economic_baidu - 百度财经新闻(关键词过滤)
 
         Args:
             symbol: 股票代码(6位数字)，如603777
+            stock_name: 股票名称，用于关键词过滤
             limit: 返回数量限制
         """
         try:
@@ -123,41 +180,114 @@ class MultiSourceNewsAggregator:
                 symbol = symbol.split('.')[0]
 
             logger.info(f"📰 获取{symbol}的AKShare新闻...")
+            news_list = []
 
-            # 方法1: 调用stock_news_em接口
+            # 方法1: 调用stock_news_em接口 (东方财富个股新闻)
             try:
                 df = ak.stock_news_em(symbol=symbol)
                 if df is not None and not df.empty:
-                    news_list = self._parse_news_dataframe(df, limit, 'AKShare-东方财富')
+                    news_list = self._parse_news_dataframe(df, limit, 'AKShare-东方财富', symbol, stock_name)
                     if news_list:
                         logger.info(f"✅ stock_news_em获取新闻: {len(news_list)}条")
                         return news_list
             except Exception as e:
                 logger.debug(f"stock_news_em接口调用失败: {e}")
 
-            # 方法2: 使用财联社电报
+            # 方法2: 使用东方财富全球资讯 (关键词过滤)
             try:
-                df = ak.stock_telegraph_cls()
+                df = ak.stock_info_global_em()
                 if df is not None and not df.empty:
-                    news_list = []
-                    for _, row in df.head(limit).iterrows():
-                        title = str(row.get('标题', '') or '')
-                        if not title:
-                            continue
-                        news_list.append({
-                            'title': title,
-                            'content': str(row.get('内容', '') or '')[:200],
-                            'pub_time': str(row.get('发布时间', '') or ''),
-                            'source': 'AKShare-财联社',
-                            'url': ''
-                        })
-                    if news_list:
-                        logger.info(f"✅ 财联社电报获取新闻: {len(news_list)}条")
-                        return news_list
-            except Exception as e:
-                logger.debug(f"财联社电报获取失败: {e}")
+                    # 过滤包含股票代码或名称的新闻
+                    keywords = [symbol]
+                    if stock_name:
+                        keywords.append(stock_name)
+                        if len(stock_name) >= 4:
+                            keywords.append(stock_name[2:])
 
-            # 方法3: 使用已有的realtime_news作为备选
+                    filtered_news = []
+                    for _, row in df.iterrows():
+                        title = str(row.get('标题', ''))
+                        summary = str(row.get('摘要', ''))
+                        if any(kw in title or kw in summary for kw in keywords):
+                            filtered_news.append({
+                                'title': title,
+                                'content': extract_relevant_content(summary, symbol, stock_name),
+                                'pub_time': str(row.get('发布时间', '')),
+                                'source': 'AKShare-东方财富全球',
+                                'url': str(row.get('链接', ''))
+                            })
+                        if len(filtered_news) >= limit:
+                            break
+
+                    if filtered_news:
+                        logger.info(f"✅ stock_info_global_em过滤获取: {len(filtered_news)}条")
+                        return filtered_news
+            except Exception as e:
+                logger.debug(f"stock_info_global_em失败: {e}")
+
+            # 方法3: 使用财联社全球资讯 (关键词过滤)
+            try:
+                df = ak.stock_info_global_cls()
+                if df is not None and not df.empty:
+                    keywords = [symbol]
+                    if stock_name:
+                        keywords.append(stock_name)
+                        if len(stock_name) >= 4:
+                            keywords.append(stock_name[2:])
+
+                    filtered_news = []
+                    for _, row in df.iterrows():
+                        title = str(row.get('标题', ''))
+                        content = str(row.get('内容', ''))
+                        if any(kw in title or kw in content for kw in keywords):
+                            filtered_news.append({
+                                'title': title,
+                                'content': extract_relevant_content(content, symbol, stock_name),
+                                'pub_time': str(row.get('发布日期', '')) + ' ' + str(row.get('发布时间', '')),
+                                'source': 'AKShare-财联社',
+                                'url': ''
+                            })
+                        if len(filtered_news) >= limit:
+                            break
+
+                    if filtered_news:
+                        logger.info(f"✅ stock_info_global_cls过滤获取: {len(filtered_news)}条")
+                        return filtered_news
+            except Exception as e:
+                logger.debug(f"stock_info_global_cls失败: {e}")
+
+            # 方法4: 使用百度财经新闻 (关键词过滤)
+            try:
+                df = ak.news_economic_baidu()
+                if df is not None and not df.empty:
+                    keywords = [symbol]
+                    if stock_name:
+                        keywords.append(stock_name)
+                        if len(stock_name) >= 4:
+                            keywords.append(stock_name[2:])
+
+                    filtered_news = []
+                    for _, row in df.iterrows():
+                        title = str(row.get('标题', ''))
+                        content = str(row.get('内容', ''))
+                        if any(kw in title or kw in content for kw in keywords):
+                            filtered_news.append({
+                                'title': title,
+                                'content': extract_relevant_content(content, symbol, stock_name),
+                                'pub_time': str(row.get('发布时间', '')),
+                                'source': 'AKShare-百度财经',
+                                'url': str(row.get('链接', ''))
+                            })
+                        if len(filtered_news) >= limit:
+                            break
+
+                    if filtered_news:
+                        logger.info(f"✅ news_economic_baidu过滤获取: {len(filtered_news)}条")
+                        return filtered_news
+            except Exception as e:
+                logger.debug(f"news_economic_baidu失败: {e}")
+
+            # 方法5: 使用已有的realtime_news作为备选
             logger.info("尝试使用备用新闻源...")
             return self._get_news_from_realtime(symbol, limit)
 
@@ -170,8 +300,8 @@ class MultiSourceNewsAggregator:
             logger.debug(traceback.format_exc())
             return []
 
-    def _parse_news_dataframe(self, df, limit: int, source: str) -> List[Dict]:
-        """解析新闻DataFrame为列表"""
+    def _parse_news_dataframe(self, df, limit: int, source: str, stock_code: str = '', stock_name: str = '') -> List[Dict]:
+        """解析新闻DataFrame为列表，支持智能内容截取"""
         news_list = []
         for _, row in df.head(limit).iterrows():
             try:
@@ -184,9 +314,15 @@ class MultiSourceNewsAggregator:
                 if not title:  # 跳过空标题
                     continue
 
+                # 使用智能内容截取
+                if stock_code or stock_name:
+                    processed_content = extract_relevant_content(content, stock_code, stock_name)
+                else:
+                    processed_content = content[:300] + '...' if len(content) > 300 else content
+
                 news_list.append({
                     'title': title,
-                    'content': content[:200] if content else '',
+                    'content': processed_content,
                     'pub_time': pub_time,
                     'source': source,
                     'url': url
@@ -199,35 +335,86 @@ class MultiSourceNewsAggregator:
     def _get_news_from_realtime(self, symbol: str, limit: int = 10) -> List[Dict]:
         """
         使用已有的realtime_news作为备用新闻源
+        尝试解析出独立的新闻条目
         """
         try:
             from backend.dataflows.news.realtime_news import get_realtime_stock_news
             from datetime import datetime
-            
+            import re
+
             logger.info("🔄 使用备用新闻源(realtime_news)")
-            
+
             # 调用已有的realtime_news接口
             news_report = get_realtime_stock_news(
                 ticker=symbol,
                 curr_date=datetime.now().strftime('%Y-%m-%d'),
                 hours_back=24
             )
-            
-            # 解析文本报告为结构化数据(简化处理)
-            if news_report and isinstance(news_report, str):
-                # 如果有数据，返回一个摘要
+
+            if not news_report or not isinstance(news_report, str):
+                return []
+
+            news_list = []
+
+            # 尝试解析新闻报告中的独立条目
+            # 通常格式为: 时间 - 标题 或 数字. 标题
+            lines = news_report.split('\n')
+            for line in lines:
+                line = line.strip()
+                if not line or len(line) < 10:
+                    continue
+
+                # 跳过标题行和分隔线
+                if line.startswith('#') or line.startswith('=') or line.startswith('-'):
+                    continue
+
+                # 尝试提取新闻标题
+                # 格式1: "1. 标题内容"
+                match1 = re.match(r'^\d+\.\s*(.+)$', line)
+                # 格式2: "时间 - 标题"
+                match2 = re.match(r'^[\d\-:\s]+[-–]\s*(.+)$', line)
+                # 格式3: "【标题】内容"
+                match3 = re.match(r'^【(.+?)】(.*)$', line)
+
+                title = None
+                content = ''
+
+                if match1:
+                    title = match1.group(1).strip()
+                elif match2:
+                    title = match2.group(1).strip()
+                elif match3:
+                    title = match3.group(1).strip()
+                    content = match3.group(2).strip()
+                elif len(line) > 15 and not line.startswith('http'):
+                    # 如果是较长的文本行，可能是新闻标题
+                    title = line[:100] if len(line) > 100 else line
+
+                if title and len(title) > 5:
+                    news_list.append({
+                        'title': title,
+                        'content': content or title,
+                        'pub_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                        'source': 'RealTime-东方财富',
+                        'url': f'https://so.eastmoney.com/news/s?keyword={symbol}'
+                    })
+
+                if len(news_list) >= limit:
+                    break
+
+            # 如果没有解析出独立条目，返回整体摘要
+            if not news_list and news_report:
                 news_list = [{
-                    'title': f'{symbol}新闻汇总',
+                    'title': f'{symbol} 今日新闻动态',
                     'content': news_report[:500],
                     'pub_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                     'source': 'RealTime-东方财富',
-                    'url': ''
+                    'url': f'https://so.eastmoney.com/news/s?keyword={symbol}'
                 }]
-                logger.info(f"✅ 备用源获取成功: 1条汇总")
-                return news_list
-            
-            return []
-            
+
+            logger.info(f"✅ 备用源获取成功: {len(news_list)}条")
+            return news_list
+
         except Exception as e:
             logger.debug(f"备用源也失败: {e}")
             return []
@@ -235,33 +422,108 @@ class MultiSourceNewsAggregator:
     def get_market_news_akshare(self, limit: int = 20) -> List[Dict]:
         """
         从AKShare获取市场要闻
-        
-        接口: stock_news_main_cx
+        使用多个接口作为备选，确保至少有一个可用
+
+        接口优先级:
+        1. stock_info_global_em - 东方财富全球资讯 (最稳定)
+        2. stock_info_global_cls - 财联社全球资讯
+        3. news_cctv - 央视新闻
+        4. news_economic_baidu - 百度财经新闻
         """
         try:
             import akshare as ak
-            
+            from datetime import datetime
+
             logger.info("📰 获取市场要闻...")
-            
-            df = ak.stock_news_main_cx()
-            
-            if df is None or df.empty:
-                logger.info("ℹ️ 未获取到市场要闻")
-                return []
-            
             news_list = []
-            for _, row in df.head(limit).iterrows():
-                news_list.append({
-                    'title': row.get('标题', ''),
-                    'content': '',
-                    'pub_time': str(row.get('时间', '')),
-                    'source': 'AKShare-市场要闻',
-                    'url': row.get('链接', '')
-                })
-            
-            logger.info(f"✅ 获取市场要闻: {len(news_list)}条")
+
+            # 方法1: 东方财富全球资讯 (最稳定)
+            try:
+                df = ak.stock_info_global_em()
+                if df is not None and not df.empty:
+                    for _, row in df.head(limit).iterrows():
+                        title = str(row.get('标题', ''))
+                        if title:
+                            news_list.append({
+                                'title': title,
+                                'content': str(row.get('摘要', ''))[:300],
+                                'pub_time': str(row.get('发布时间', '')),
+                                'source': 'AKShare-东方财富',
+                                'url': str(row.get('链接', ''))
+                            })
+                    if news_list:
+                        logger.info(f"✅ stock_info_global_em获取: {len(news_list)}条")
+                        return news_list
+            except Exception as e:
+                logger.debug(f"stock_info_global_em失败: {e}")
+
+            # 方法2: 财联社全球资讯
+            try:
+                df = ak.stock_info_global_cls()
+                if df is not None and not df.empty:
+                    for _, row in df.head(limit).iterrows():
+                        title = str(row.get('标题', ''))
+                        if title:
+                            news_list.append({
+                                'title': title,
+                                'content': str(row.get('内容', ''))[:300],
+                                'pub_time': str(row.get('发布日期', '')) + ' ' + str(row.get('发布时间', '')),
+                                'source': 'AKShare-财联社',
+                                'url': ''
+                            })
+                    if news_list:
+                        logger.info(f"✅ stock_info_global_cls获取: {len(news_list)}条")
+                        return news_list
+            except Exception as e:
+                logger.debug(f"stock_info_global_cls失败: {e}")
+
+            # 方法3: news_cctv (央视新闻)
+            try:
+                today = datetime.now().strftime('%Y%m%d')
+                df = ak.news_cctv(date=today)
+                if df is not None and not df.empty:
+                    for _, row in df.head(limit).iterrows():
+                        title = str(row.get('title', ''))
+                        if title:
+                            news_list.append({
+                                'title': title,
+                                'content': str(row.get('content', ''))[:300],
+                                'pub_time': str(row.get('date', today)),
+                                'source': 'AKShare-央视新闻',
+                                'url': ''
+                            })
+                    if news_list:
+                        logger.info(f"✅ news_cctv获取: {len(news_list)}条")
+                        return news_list
+            except Exception as e:
+                logger.debug(f"news_cctv失败: {e}")
+
+            # 方法4: 百度财经新闻
+            try:
+                df = ak.news_economic_baidu()
+                if df is not None and not df.empty:
+                    for _, row in df.head(limit).iterrows():
+                        title = str(row.get('标题', ''))
+                        if title:
+                            news_list.append({
+                                'title': title,
+                                'content': str(row.get('内容', ''))[:300],
+                                'pub_time': str(row.get('发布时间', '')),
+                                'source': 'AKShare-百度财经',
+                                'url': str(row.get('链接', ''))
+                            })
+                    if news_list:
+                        logger.info(f"✅ news_economic_baidu获取: {len(news_list)}条")
+                        return news_list
+            except Exception as e:
+                logger.debug(f"news_economic_baidu失败: {e}")
+
+            # 如果所有接口都失败，返回空列表
+            if not news_list:
+                logger.warning("⚠️ 所有市场新闻接口暂不可用")
+
             return news_list
-            
+
         except Exception as e:
             logger.error(f"❌ 获取市场要闻失败: {e}")
             return []

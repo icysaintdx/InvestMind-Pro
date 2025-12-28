@@ -2,12 +2,18 @@
 """
 统一新闻API端点
 供前端调用
+
+功能说明：
+1. /stock - 智能分析使用，调用 unified_news_api 获取个股新闻
+2. /list, /statistics, /sources - 新闻中心使用，并行获取多数据源新闻
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from datetime import datetime
+import concurrent.futures
+import threading
 
 from backend.dataflows.news.unified_news_api import get_unified_news_api
 from backend.dataflows.news.hot_search_api import get_hot_search_api
@@ -19,11 +25,19 @@ logger = get_logger("unified_news_endpoint")
 
 router = APIRouter(prefix="/api/unified-news", tags=["Unified News"])
 
+# ==================== 新闻中心缓存 ====================
+_news_center_cache: List[Dict[str, Any]] = []
+_news_center_last_sync: Optional[datetime] = None
+_news_center_cache_duration = 300  # 5分钟缓存
+_news_center_lock = threading.Lock()
+_news_center_source_stats: Dict[str, int] = {}
+
 
 class StockNewsRequest(BaseModel):
     """股票新闻请求"""
     ticker: str
     agent_id: Optional[str] = "news_analyst"  # 智能体ID，用于日志流
+    use_cache: Optional[bool] = True  # 是否使用缓存，默认True
     
 
 class StockNewsResponse(BaseModel):
@@ -33,12 +47,13 @@ class StockNewsResponse(BaseModel):
     timestamp: str
     data: dict
     message: Optional[str] = None
+    from_cache: Optional[bool] = False  # 是否来自缓存
 
 
 @router.post("/stock", response_model=StockNewsResponse)
 async def get_stock_comprehensive_news(request: StockNewsRequest):
     """
-    获取股票综合新闻（带实时日志流）
+    获取股票综合新闻（带实时日志流和缓存）
     
     整合多个数据源：
     - 实时新闻聚合器
@@ -47,9 +62,15 @@ async def get_stock_comprehensive_news(request: StockNewsRequest):
     - 微博热议
     - 情绪分析
     
+    缓存机制：
+    - 默认启用5分钟缓存
+    - 同一股票在5分钟内的重复请求会直接返回缓存数据
+    - 可通过 use_cache=false 强制刷新
+    
     日志会实时推送到前端，显示在智能体卡片中
     """
     agent_id = request.agent_id
+    use_cache = request.use_cache if request.use_cache is not None else True
     
     # 附加日志流处理器到多个 logger
     handler1 = attach_log_stream("unified_news_endpoint", agent_id)
@@ -59,12 +80,16 @@ async def get_stock_comprehensive_news(request: StockNewsRequest):
     
     try:
         logger.info(f"收到股票新闻请求: {request.ticker}")
-        logger.info(f"开始获取{request.ticker}的综合新闻数据...")
+        logger.info(f"开始获取{request.ticker}的综合新闻数据... (缓存: {'启用' if use_cache else '禁用'})")
         
         api = get_unified_news_api()
-        result = api.get_stock_news_comprehensive(request.ticker)
+        result = api.get_stock_news_comprehensive(request.ticker, use_cache=use_cache)
         
-        logger.info("✅ 综合新闻数据获取完成")
+        from_cache = result.get('from_cache', False)
+        if from_cache:
+            logger.info("✅ 从缓存返回数据")
+        else:
+            logger.info("✅ 综合新闻数据获取完成")
         
         # 结束日志流
         end_agent_log_stream(agent_id)
@@ -73,7 +98,8 @@ async def get_stock_comprehensive_news(request: StockNewsRequest):
             success=True,
             ticker=request.ticker,
             timestamp=datetime.now().isoformat(),
-            data=result
+            data=result,
+            from_cache=from_cache
         )
         
     except Exception as e:
@@ -141,15 +167,532 @@ async def get_hot_search():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/cache/stats")
+async def get_cache_stats():
+    """
+    获取新闻缓存统计信息
+    
+    返回：
+    - total_entries: 缓存条目总数
+    - valid_entries: 有效缓存数
+    - expired_entries: 已过期缓存数
+    - ttl_seconds: 缓存有效期（秒）
+    """
+    try:
+        api = get_unified_news_api()
+        stats = api.get_cache_stats()
+        
+        return {
+            "success": True,
+            "timestamp": datetime.now().isoformat(),
+            "data": stats
+        }
+        
+    except Exception as e:
+        logger.error(f"获取缓存统计失败: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/cache/{ticker}")
+async def clear_ticker_cache(ticker: str):
+    """
+    清除指定股票的新闻缓存
+    
+    Args:
+        ticker: 股票代码
+    """
+    try:
+        logger.info(f"清除缓存请求: {ticker}")
+        
+        api = get_unified_news_api()
+        result = api.clear_cache(ticker)
+        
+        return {
+            "success": True,
+            "timestamp": datetime.now().isoformat(),
+            "message": result.get('message')
+        }
+        
+    except Exception as e:
+        logger.error(f"清除缓存失败: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/cache")
+async def clear_all_cache():
+    """
+    清除所有新闻缓存
+    """
+    try:
+        logger.info("清除所有缓存请求")
+        
+        api = get_unified_news_api()
+        result = api.clear_cache()
+        
+        return {
+            "success": True,
+            "timestamp": datetime.now().isoformat(),
+            "message": result.get('message')
+        }
+        
+    except Exception as e:
+        logger.error(f"清除所有缓存失败: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/health")
 async def health_check():
     """健康检查"""
+    api = get_unified_news_api()
+    cache_stats = api.get_cache_stats()
+
     return {
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
+        "cache": cache_stats,
         "endpoints": [
             "/api/unified-news/stock",
             "/api/unified-news/market",
-            "/api/unified-news/hot-search"
+            "/api/unified-news/hot-search",
+            "/api/unified-news/list",
+            "/api/unified-news/statistics",
+            "/api/unified-news/sources",
+            "/api/unified-news/cache/stats",
+            "/api/unified-news/cache/{ticker}",
+            "/api/unified-news/cache"
         ]
     }
+
+
+# ==================== 新闻中心专用端点 ====================
+
+def _analyze_sentiment(text: str) -> str:
+    """简单的情绪分析"""
+    positive_words = ["涨", "上涨", "增长", "利好", "突破", "新高", "反弹", "上升", "盈利", "增加", "提升", "扩大", "超预期", "强势", "大涨", "暴涨", "飙升"]
+    negative_words = ["跌", "下跌", "下降", "利空", "跌破", "新低", "回落", "下滑", "亏损", "减少", "下调", "收缩", "不及预期", "弱势", "风险", "大跌", "暴跌", "崩盘"]
+
+    positive_count = sum(1 for word in positive_words if word in text)
+    negative_count = sum(1 for word in negative_words if word in text)
+
+    if positive_count > negative_count:
+        return "positive"
+    elif negative_count > positive_count:
+        return "negative"
+    else:
+        return "neutral"
+
+
+def _fetch_global_em() -> List[Dict[str, Any]]:
+    """获取东方财富全球资讯"""
+    news_list = []
+    try:
+        import akshare as ak
+        df = ak.stock_info_global_em()
+        if df is not None and not df.empty:
+            for idx, row in df.head(50).iterrows():
+                title = str(row.get("标题", row.get("title", "")))
+                if title:
+                    news_list.append({
+                        "id": f"em_global_{idx}_{datetime.now().timestamp()}",
+                        "title": title,
+                        "summary": str(row.get("内容", row.get("content", "")))[:300],
+                        "source": "akshare_eastmoney",
+                        "source_name": "东方财富",
+                        "publish_time": str(row.get("发布时间", row.get("datetime", datetime.now().isoformat()))),
+                        "market": "全球",
+                        "news_type": "全球财经",
+                        "sentiment": _analyze_sentiment(title),
+                        "sentiment_score": 0.5,
+                        "related_stocks": [],
+                        "url": str(row.get("链接", row.get("url", "")))
+                    })
+    except Exception as e:
+        logger.warning(f"[数据源] 东方财富全球资讯获取失败: {e}")
+    return news_list
+
+
+def _fetch_futu_global() -> List[Dict[str, Any]]:
+    """获取富途全球资讯"""
+    news_list = []
+    try:
+        import akshare as ak
+        df = ak.stock_info_global_futu()
+        if df is not None and not df.empty:
+            for idx, row in df.head(50).iterrows():
+                title = str(row.get("标题", ""))
+                if title:
+                    news_list.append({
+                        "id": f"futu_{idx}_{datetime.now().timestamp()}",
+                        "title": title,
+                        "summary": str(row.get("内容", ""))[:300],
+                        "source": "akshare_futu",
+                        "source_name": "富途",
+                        "publish_time": str(row.get("发布时间", datetime.now().isoformat())),
+                        "market": "全球",
+                        "news_type": "全球财经",
+                        "sentiment": _analyze_sentiment(title),
+                        "sentiment_score": 0.5,
+                        "related_stocks": [],
+                        "url": str(row.get("链接", ""))
+                    })
+    except Exception as e:
+        logger.warning(f"[数据源] 富途全球资讯获取失败: {e}")
+    return news_list
+
+
+def _fetch_sina_global() -> List[Dict[str, Any]]:
+    """获取新浪全球资讯"""
+    news_list = []
+    try:
+        import akshare as ak
+        df = ak.stock_info_global_sina()
+        if df is not None and not df.empty:
+            for idx, row in df.head(30).iterrows():
+                content = str(row.get("内容", ""))
+                title = content
+                if "【" in content and "】" in content:
+                    title = content[content.find("【")+1:content.find("】")]
+                news_list.append({
+                    "id": f"sina_{idx}_{datetime.now().timestamp()}",
+                    "title": title[:100],
+                    "summary": content[:300],
+                    "source": "akshare_sina",
+                    "source_name": "新浪财经",
+                    "publish_time": str(row.get("时间", datetime.now().isoformat())),
+                    "market": "A股",
+                    "news_type": "财经快讯",
+                    "sentiment": _analyze_sentiment(content),
+                    "sentiment_score": 0.5,
+                    "related_stocks": [],
+                    "url": ""
+                })
+    except Exception as e:
+        logger.warning(f"[数据源] 新浪全球资讯获取失败: {e}")
+    return news_list
+
+
+def _fetch_ths_global() -> List[Dict[str, Any]]:
+    """获取同花顺全球资讯"""
+    news_list = []
+    try:
+        import akshare as ak
+        df = ak.stock_info_global_ths()
+        if df is not None and not df.empty:
+            for idx, row in df.head(30).iterrows():
+                title = str(row.get("标题", ""))
+                if title:
+                    news_list.append({
+                        "id": f"ths_{idx}_{datetime.now().timestamp()}",
+                        "title": title,
+                        "summary": str(row.get("内容", ""))[:300],
+                        "source": "akshare_ths",
+                        "source_name": "同花顺",
+                        "publish_time": str(row.get("发布时间", datetime.now().isoformat())),
+                        "market": "全球",
+                        "news_type": "全球财经",
+                        "sentiment": _analyze_sentiment(title),
+                        "sentiment_score": 0.5,
+                        "related_stocks": [],
+                        "url": str(row.get("链接", ""))
+                    })
+    except Exception as e:
+        logger.warning(f"[数据源] 同花顺全球资讯获取失败: {e}")
+    return news_list
+
+
+def _fetch_cls_global() -> List[Dict[str, Any]]:
+    """获取财联社全球资讯"""
+    news_list = []
+    try:
+        import akshare as ak
+        import socket
+        original_timeout = socket.getdefaulttimeout()
+        socket.setdefaulttimeout(15)
+        try:
+            df = ak.stock_info_global_cls()
+            if df is not None and not df.empty:
+                for idx, row in df.head(30).iterrows():
+                    title = str(row.get("标题", row.get("title", "")))
+                    if title:
+                        news_list.append({
+                            "id": f"cls_global_{idx}_{datetime.now().timestamp()}",
+                            "title": title,
+                            "summary": str(row.get("内容", row.get("content", "")))[:300],
+                            "source": "akshare_cls",
+                            "source_name": "财联社",
+                            "publish_time": str(row.get("发布日期", "")) + " " + str(row.get("发布时间", "")),
+                            "market": "全球",
+                            "news_type": "快讯",
+                            "sentiment": _analyze_sentiment(title),
+                            "sentiment_score": 0.5,
+                            "related_stocks": [],
+                            "url": ""
+                        })
+        finally:
+            socket.setdefaulttimeout(original_timeout)
+    except Exception as e:
+        logger.warning(f"[数据源] 财联社全球资讯获取失败: {e}")
+    return news_list
+
+
+def _fetch_all_news_center_parallel() -> List[Dict[str, Any]]:
+    """并行获取新闻中心所有数据源"""
+    global _news_center_source_stats
+    all_news = []
+    source_stats = {}
+
+    logger.info("=" * 60)
+    logger.info("开始并行获取新闻中心数据...")
+    logger.info("=" * 60)
+
+    start_time = datetime.now()
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
+        futures = {
+            executor.submit(_fetch_global_em): "东方财富",
+            executor.submit(_fetch_futu_global): "富途",
+            executor.submit(_fetch_sina_global): "新浪财经",
+            executor.submit(_fetch_ths_global): "同花顺",
+            executor.submit(_fetch_cls_global): "财联社",
+        }
+
+        for future in concurrent.futures.as_completed(futures, timeout=30):
+            source_name = futures[future]
+            try:
+                news = future.result(timeout=20)
+                all_news.extend(news)
+                source_stats[source_name] = len(news)
+                logger.info(f"[数据源] {source_name}获取成功: {len(news)} 条")
+            except Exception as e:
+                logger.warning(f"[数据源] {source_name}获取失败: {e}")
+                source_stats[source_name] = 0
+
+    elapsed = (datetime.now() - start_time).total_seconds()
+
+    # 去重
+    seen_titles = set()
+    unique_news = []
+    for news in all_news:
+        title = news.get("title", "")
+        if title and title not in seen_titles:
+            seen_titles.add(title)
+            unique_news.append(news)
+
+    _news_center_source_stats = source_stats
+
+    logger.info("=" * 60)
+    logger.info(f"新闻中心数据获取完成: 耗时 {elapsed:.2f}秒, 共 {len(unique_news)} 条")
+    logger.info("=" * 60)
+
+    unique_news.sort(key=lambda x: x.get("publish_time", ""), reverse=True)
+    return unique_news
+
+
+def _get_news_center_cached() -> List[Dict[str, Any]]:
+    """获取新闻中心缓存数据"""
+    global _news_center_cache, _news_center_last_sync
+
+    with _news_center_lock:
+        now = datetime.now()
+        if _news_center_last_sync is None or (now - _news_center_last_sync).total_seconds() > _news_center_cache_duration:
+            logger.info("新闻中心缓存已过期，正在刷新...")
+            _news_center_cache = _fetch_all_news_center_parallel()
+            _news_center_last_sync = now
+
+        return _news_center_cache
+
+
+def _calculate_news_statistics(news_list: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """计算新闻统计数据"""
+    total = len(news_list)
+    positive = sum(1 for n in news_list if n.get("sentiment") == "positive")
+    negative = sum(1 for n in news_list if n.get("sentiment") == "negative")
+    neutral = total - positive - negative
+
+    source_counts = {}
+    for n in news_list:
+        source = n.get("source_name", n.get("source", "unknown"))
+        source_counts[source] = source_counts.get(source, 0) + 1
+
+    market_counts = {}
+    for n in news_list:
+        market = n.get("market", "未知")
+        market_counts[market] = market_counts.get(market, 0) + 1
+
+    type_counts = {}
+    for n in news_list:
+        news_type = n.get("news_type", "未知")
+        type_counts[news_type] = type_counts.get(news_type, 0) + 1
+
+    return {
+        "total_count": total,
+        "positive_count": positive,
+        "negative_count": negative,
+        "neutral_count": neutral,
+        "source_counts": source_counts,
+        "market_counts": market_counts,
+        "type_counts": type_counts,
+        "last_update": datetime.now().isoformat()
+    }
+
+
+@router.get("/list")
+async def get_news_list(
+    market: Optional[str] = Query(None, description="市场筛选"),
+    news_type: Optional[str] = Query(None, description="新闻类型"),
+    sentiment: Optional[str] = Query(None, description="情绪筛选"),
+    source: Optional[str] = Query(None, description="数据源筛选"),
+    limit: int = Query(200, description="返回数量限制")
+):
+    """获取新闻列表（新闻中心使用）"""
+    try:
+        news_data = _get_news_center_cached()
+        result = news_data.copy()
+
+        if market:
+            result = [n for n in result if n.get("market") == market]
+        if news_type:
+            result = [n for n in result if n.get("news_type") == news_type]
+        if sentiment:
+            result = [n for n in result if n.get("sentiment") == sentiment]
+        if source:
+            result = [n for n in result if n.get("source") == source or n.get("source_name") == source]
+
+        result = result[:limit]
+        statistics = _calculate_news_statistics(result)
+
+        return {
+            "success": True,
+            "data": result,
+            "statistics": statistics,
+            "total": len(result),
+            "timestamp": datetime.now().isoformat()
+        }
+
+    except Exception as e:
+        logger.error(f"获取新闻列表失败: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/statistics")
+async def get_news_statistics():
+    """获取新闻统计数据（新闻中心使用）"""
+    try:
+        news_data = _get_news_center_cached()
+        statistics = _calculate_news_statistics(news_data)
+
+        return {
+            "success": True,
+            "data": statistics,
+            "timestamp": datetime.now().isoformat()
+        }
+
+    except Exception as e:
+        logger.error(f"获取统计数据失败: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/sources")
+async def get_news_sources():
+    """获取数据源状态（新闻中心使用）"""
+    try:
+        global _news_center_source_stats
+
+        # 确保有数据
+        _get_news_center_cached()
+
+        source_configs = [
+            {"id": "akshare_eastmoney", "name": "东方财富", "description": "东方财富全球资讯", "priority": 1},
+            {"id": "akshare_futu", "name": "富途", "description": "富途全球资讯", "priority": 2},
+            {"id": "akshare_ths", "name": "同花顺", "description": "同花顺全球资讯", "priority": 3},
+            {"id": "akshare_sina", "name": "新浪财经", "description": "新浪财经快讯", "priority": 4},
+            {"id": "akshare_cls", "name": "财联社", "description": "财联社全球资讯", "priority": 5},
+        ]
+
+        sources = {}
+        for config in source_configs:
+            source_name = config["name"]
+            news_count = _news_center_source_stats.get(source_name, 0)
+
+            sources[config["id"]] = {
+                "id": config["id"],
+                "name": source_name,
+                "status": "healthy" if news_count > 0 else "offline",
+                "priority": config["priority"],
+                "description": config["description"],
+                "news_count": news_count,
+                "last_check": datetime.now().isoformat()
+            }
+
+        return {
+            "success": True,
+            "data": sources,
+            "timestamp": datetime.now().isoformat()
+        }
+
+    except Exception as e:
+        logger.error(f"获取数据源状态失败: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/refresh")
+async def refresh_news_center():
+    """强制刷新新闻中心缓存"""
+    global _news_center_cache, _news_center_last_sync
+
+    try:
+        logger.info("强制刷新新闻中心缓存...")
+
+        with _news_center_lock:
+            _news_center_cache = []
+            _news_center_last_sync = None
+
+        news_data = _get_news_center_cached()
+        statistics = _calculate_news_statistics(news_data)
+
+        return {
+            "success": True,
+            "message": "新闻中心缓存已刷新",
+            "total": len(news_data),
+            "statistics": statistics,
+            "timestamp": datetime.now().isoformat()
+        }
+
+    except Exception as e:
+        logger.error(f"刷新新闻中心缓存失败: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/sync")
+async def sync_news_center():
+    """同步新闻中心（与refresh相同）"""
+    return await refresh_news_center()
+
+
+@router.get("/search")
+async def search_news(keyword: str = Query(..., description="搜索关键词"), limit: int = Query(100, description="返回数量限制")):
+    """搜索新闻"""
+    try:
+        news_data = _get_news_center_cached()
+        keyword_lower = keyword.lower()
+
+        result = []
+        for news in news_data:
+            title = news.get("title", "").lower()
+            summary = news.get("summary", "").lower()
+            if keyword_lower in title or keyword_lower in summary:
+                result.append(news)
+
+        result.sort(key=lambda x: x.get("publish_time", ""), reverse=True)
+
+        return {
+            "success": True,
+            "keyword": keyword,
+            "total": len(result),
+            "data": result[:limit],
+            "timestamp": datetime.now().isoformat()
+        }
+
+    except Exception as e:
+        logger.error(f"搜索新闻失败: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

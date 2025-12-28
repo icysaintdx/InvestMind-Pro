@@ -188,5 +188,98 @@
     "decisions": [],
     "duration_days": 30,
     "end_date": "2026-01-16T17:34:08.808922"
+  },
+  "TK20251221014142": {
+    "task_id": "TK20251221014142",
+    "stock_code": "600519",
+    "analysis_id": null,
+    "strategy_id": "trident",
+    "auto_trading_task_id": null,
+    "initial_analysis": {
+      "stock_code": "600519",
+      "stock_name": "贵州茅台",
+      "analysis_summary": "新闻舆情分析师：【贵州茅台（600519）投资价值分析】   当前价格1433.1元，微涨0.78%，成交量313.82万手，维持高位震荡态势。结合近期市场动态与舆情分析，以下...\n社交媒体分析师：当前贵州茅台（600519）价格1433.1元，微涨0.78%，成交额3138.2万元。结合平台情绪数据，初步判断市场情绪呈现**温和乐观**态势，但缺乏明确方...\n中国市场专家：1. **A股大盘当前趋势**：当前A股处于震荡格局，但结构性行情特征明显。上证指数在3000点附近反复横跳，市场情绪偏谨慎，资金更倾向于防御性板块，如消费、医...\n行业轮动分析师：**贵州茅台（600519）投资价值分析**   当前价格1433.1元，微涨0.78%，成交量313.82万手，维持高位震荡态势。结合近期市场动态与舆情分析，...",
+      "technical_score": null,
+      "fundamental_score": null,
+      "sentiment_score": null,
+      "risk_level": "未评估",
+      "investment_advice": ""
+    },
+    "trigger_condition": {
+      "price_change_threshold": 5.0,
+      "volume_change_threshold": 50.0,
+      "check_news": true,
+      "check_interval_hours": 24
+    },
+    "status": "active",
+    "created_at": "2025-12-21T01:41:42.867595",
+    "last_check_at": null,
+    "check_count": 0,
+    "trigger_count": 0,
+    "decisions": [],
+    "duration_days": 30,
+    "end_date": "2026-01-20T01:41:42.867595"
+  },
+  "TK20251222021320": {
+    "task_id": "TK20251222021320",
+    "stock_code": "600132",
+    "analysis_id": null,
+    "strategy_id": "vegas_adx",
+    "auto_trading_task_id": null,
+    "initial_analysis": {
+      "stock_code": "600132",
+      "stock_name": "重庆啤酒",
+      "analysis_summary": "新闻舆情分析师：【重庆啤酒(600132)投资价值分析】  **1. 新闻与公告梳理（24-48小时）**   - **行业动态**：近期啤酒行业整体呈现复苏迹象，尤其在夏季消...\n社交媒体分析师：当前重庆啤酒（600132）的成交额为309.64万，较前一交易日略有放大，但整体仍处于相对清淡的交投水平，显示市场参与者情绪较为克制。结合近期市场环境及板块表...\n中国市场专家：1. **A股大盘当前趋势**：当前A股处于震荡格局，但结构性行情特征明显。上证指数与沪深300在60日均线附近反复拉锯，市场情绪偏谨慎，资金更倾向于防御性板块...\n行业轮动分析师：**重庆啤酒（600132）投资价值分析**  **1. 行业周期判断：复苏阶段，但存在结构性分化**   啤酒行业当前处于**复苏初期**，受益于消费回暖与季...",
+      "technical_score": null,
+      "fundamental_score": null,
+      "sentiment_score": null,
+      "risk_level": "未评估",
+      "investment_advice": ""
+    },
+    "trigger_condition": {
+      "price_change_threshold": 5.0,
+      "volume_change_threshold": 50.0,
+      "check_news": true,
+      "check_interval_hours": 24
+    },
+    "status": "active",
+    "created_at": "2025-12-22T02:13:20.654909",
+    "last_check_at": null,
+    "check_count": 0,
+    "trigger_count": 0,
+    "decisions": [],
+    "duration_days": 30,
+    "end_date": "2026-01-21T02:13:20.654909"
+  },
+  "TK20251228212200": {
+    "task_id": "TK20251228212200",
+    "stock_code": "002174",
+    "analysis_id": null,
+    "strategy_id": "vegas_adx",
+    "auto_trading_task_id": "AT20251228212151",
+    "initial_analysis": {
+      "stock_code": "002174",
+      "stock_name": "002174",
+      "analysis_summary": "新闻舆情分析师：【InvestMindPro深度分析】   当前股价12.72元，微涨0.32%，成交量31.5万手，处于相对平稳状态。基于过去24-48小时的市场动态，我们梳...\n中国市场专家：1. **A股大盘当前趋势**：当前A股处于震荡格局，主要指数如沪深300、上证50等呈现窄幅波动，缺乏明确方向性突破。市场情绪偏谨慎，资金观望情绪浓厚，短期难...\n社交媒体分析师：当前价格12.72元，微涨0.32%，成交量31.5万手。从社交情绪维度切入：  1. **平台讨论热度**：雪球与股吧近期出现明显分歧。雪球论坛中，机构投资者...\n行业轮动分析师：**行业周期判断**：医药生物板块整体仍处于**结构性调整期**，短期受集采政策拖累，行业增速放缓，但长期看，创新药与医疗器械子行业已进入**复苏初期**，尤其...",
+      "technical_score": null,
+      "fundamental_score": null,
+      "sentiment_score": null,
+      "risk_level": "未评估",
+      "investment_advice": ""
+    },
+    "trigger_condition": {
+      "price_change_threshold": 5.0,
+      "volume_change_threshold": 50.0,
+      "check_news": true,
+      "check_interval_hours": 24
+    },
+    "status": "active",
+    "created_at": "2025-12-28T21:22:00.869022",
+    "last_check_at": null,
+    "check_count": 0,
+    "trigger_count": 0,
+    "decisions": [],
+    "duration_days": 30,
+    "end_date": "2026-01-27T21:22:00.869022"
   }
 }

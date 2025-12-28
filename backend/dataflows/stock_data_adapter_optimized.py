@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 股票数据适配器 - 优化版
-使用更高效的AKShare接口，避免下载全市场数据
-数据源优先级：AKShare > 新浪财经 > 聚合数据 > Tushare > BaoStock
+使用更高效的接口，避免下载全市场数据
+数据源优先级：TDX Native > AKShare > 新浪财经 > 聚合数据 > Tushare > BaoStock
 """
 
 import re
@@ -18,7 +18,20 @@ logger = get_logger("dataflow")
 
 class StockDataAdapter:
     """股票数据适配器 - 统一不同数据源的格式"""
-    
+
+    def __init__(self):
+        self._tdx_provider = None
+
+    def _get_tdx_provider(self):
+        """获取TDX Native Provider（懒加载）"""
+        if self._tdx_provider is None:
+            try:
+                from backend.dataflows.providers.tdx_native_provider import get_tdx_native_provider
+                self._tdx_provider = get_tdx_native_provider()
+            except Exception as e:
+                logger.debug(f"TDX Native Provider初始化失败: {e}")
+        return self._tdx_provider
+
     def get_stock_data(self, symbol: str) -> Dict:
         """同步版本 - 兼容现有代码"""
         # 创建新的事件循环来运行异步方法
@@ -28,14 +41,15 @@ class StockDataAdapter:
             return loop.run_until_complete(self.get_stock_data_async(symbol))
         finally:
             loop.close()
-    
+
     async def get_stock_data_async(self, symbol: str) -> Dict:
         """
-        获取股票实时数据 - 优化的AKShare方法
-        
+        获取股票实时数据 - 优化版
+        优先级：TDX Native > AKShare > 新浪财经
+
         Args:
             symbol: 股票代码（如 '000001'）
-            
+
         Returns:
             统一格式的数据字典
         """
@@ -55,14 +69,38 @@ class StockDataAdapter:
             'data_source': 'unknown',
             'raw_text': ''
         }
-        
+
         logger.info(f"[StockDataAdapter] 开始获取股票 {symbol} 的数据")
-        
+
+        # 最高优先级：TDX Native Provider（最快，直接获取单只股票）
+        try:
+            tdx = self._get_tdx_provider()
+            if tdx and tdx.is_available():
+                quote = tdx.get_realtime_quote(symbol)
+                if quote:
+                    result['success'] = True
+                    result['name'] = quote.get('name', f'股票{symbol}')
+                    result['price'] = float(quote.get('price', 0))
+                    result['change'] = float(quote.get('change_pct', 0))
+                    result['change_amount'] = float(quote.get('change', 0))
+                    result['open'] = float(quote.get('open', 0))
+                    result['close'] = float(quote.get('pre_close', 0))
+                    result['high'] = float(quote.get('high', 0))
+                    result['low'] = float(quote.get('low', 0))
+                    result['volume'] = float(quote.get('volume', 0))
+                    result['amount'] = float(quote.get('amount', 0))
+                    result['data_source'] = 'tdx_native'
+                    result['raw_text'] = self._format_as_text(result)
+                    logger.info(f"[StockDataAdapter] ✅ TDX Native 获取成功")
+                    return result
+        except Exception as e:
+            logger.debug(f"[StockDataAdapter] TDX Native 失败: {e}")
+
         # 第一优先级：AKShare（使用更高效的接口）
         try:
             logger.info(f"[StockDataAdapter] 尝试使用 AKShare (优化版)...")
             import akshare as ak
-            
+
             # 方法1：使用stock_bid_ask_em获取实时行情
             try:
                 bid_ask_df = ak.stock_bid_ask_em(symbol=symbol)
@@ -70,7 +108,7 @@ class StockDataAdapter:
                     # 解析数据
                     data_dict = dict(zip(bid_ask_df['item'], bid_ask_df['value']))
                     logger.info(f"[StockDataAdapter] 获取到的数据: {data_dict}")
-                    
+
                     # 获取股票名称（从 stock_individual_info_em 获取）
                     stock_name = 'N/A'
                     try:

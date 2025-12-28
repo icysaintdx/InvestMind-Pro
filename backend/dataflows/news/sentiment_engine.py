@@ -569,6 +569,10 @@ def analyze_news_sentiment(news_list: List[Dict]) -> Dict:
     return engine.analyze_news_list(news_list)
 
 
+# 为 SentimentEngine 添加 analyze 方法（兼容 news_data_service 调用）
+SentimentEngine.analyze = lambda self, title, content="": self.analyze_text(f"{title} {content}" if content else title, weight_title=True)
+
+
 def get_sentiment_score(news_list: List[Dict]) -> float:
     """获取情绪得分"""
     engine = get_sentiment_engine()

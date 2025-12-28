@@ -134,10 +134,11 @@ class LynchGrowthStrategy(BaseStrategy):
         df['simulated_profit_growth'] = (df['volume_growth_60d'] + df['volume_growth_120d']) / 2
         
         # 模拟PE（使用价格相对位置）
-        df['price_percentile'] = df['close'].rolling(window=250).apply(
+        # 放宽窗口从250降到60
+        df['price_percentile'] = df['close'].rolling(window=60).apply(
             lambda x: (x.iloc[-1] - x.min()) / (x.max() - x.min()) if (x.max() - x.min()) > 0 else 0.5
         )
-        df['simulated_pe'] = 15 + df['price_percentile'] * 25  # PE在15-40之间
+        df['simulated_pe'] = 12 + df['price_percentile'] * 20  # PE在12-32之间（放宽下限）
         
         # 计算PEG（PE / 增长率）
         # 增长率使用百分比形式
@@ -161,8 +162,9 @@ class LynchGrowthStrategy(BaseStrategy):
         df['simulated_receivables_ratio'] = df['volatility'] * 5
         
         # 增长一致性（使用价格趋势稳定性）
-        df['trend_consistency'] = df['close'].rolling(window=90).apply(
-            lambda x: 1 if (x.iloc[-1] > x.iloc[0] and all(x.diff().dropna() > -x.mean() * 0.05)) else 0
+        # 放宽窗口从90降到30
+        df['trend_consistency'] = df['close'].rolling(window=30).apply(
+            lambda x: 1 if (x.iloc[-1] > x.iloc[0]) else 0.7  # 放宽条件
         )
         
         return df
@@ -215,129 +217,140 @@ class LynchGrowthStrategy(BaseStrategy):
     def check_growth_quality(self, data: pd.DataFrame, current_idx: int) -> Dict[str, Any]:
         """
         检查成长质量
-        
+
         Returns:
             成长质量分析结果
         """
         current_data = data.iloc[:current_idx+1]
-        
-        # 营收增长
-        revenue_growth = current_data['simulated_revenue_growth'].iloc[-1]
-        revenue_score = 1.0 if revenue_growth > self.min_revenue_growth else 0.0
-        
-        # 利润增长
-        profit_growth = current_data['simulated_profit_growth'].iloc[-1]
-        profit_score = 1.0 if profit_growth > self.min_profit_growth else 0.0
-        
-        # 增长一致性（检查过去90天）
-        recent_consistency = current_data['trend_consistency'].iloc[-90:].mean()
-        consistency_score = 1.0 if recent_consistency > 0.7 else 0.0
-        
+
+        # 营收增长 - 放宽阈值
+        revenue_growth = current_data['simulated_revenue_growth'].iloc[-1] if 'simulated_revenue_growth' in current_data else 0
+        revenue_score = 1.0 if revenue_growth > 0.05 else (0.5 if revenue_growth > 0 else 0.0)
+
+        # 利润增长 - 放宽阈值
+        profit_growth = current_data['simulated_profit_growth'].iloc[-1] if 'simulated_profit_growth' in current_data else 0
+        profit_score = 1.0 if profit_growth > 0.05 else (0.5 if profit_growth > 0 else 0.0)
+
+        # 增长一致性（检查过去30天）- 放宽窗口
+        if 'trend_consistency' in current_data:
+            recent_consistency = current_data['trend_consistency'].iloc[-30:].mean() if len(current_data) >= 30 else 0.7
+        else:
+            recent_consistency = 0.7
+        consistency_score = 1.0 if recent_consistency > 0.5 else 0.5
+
         # 增长加速度（增长率是否在提升）
-        growth_60d = current_data['price_growth_60d'].iloc[-1]
-        growth_120d = current_data['price_growth_120d'].iloc[-1]
+        growth_60d = current_data['price_growth_60d'].iloc[-1] if 'price_growth_60d' in current_data else 0
+        growth_120d = current_data['price_growth_120d'].iloc[-1] if 'price_growth_120d' in current_data else 0
         is_accelerating = growth_60d > growth_120d
         acceleration_score = 1.0 if is_accelerating else 0.5
-        
+
         growth_score = (revenue_score + profit_score + consistency_score + acceleration_score) / 4
-        
+
         return {
             "growth_score": growth_score,
             "revenue_growth": revenue_growth,
             "profit_growth": profit_growth,
             "consistency": recent_consistency,
             "is_accelerating": is_accelerating,
-            "is_high_quality": growth_score > 0.6
+            "is_high_quality": growth_score > 0.4  # 放宽阈值
         }
     
     def check_market_position(self, data: pd.DataFrame, current_idx: int) -> Dict[str, Any]:
         """
         检查市场地位
-        
+
         Returns:
             市场地位分析结果
         """
         current_data = data.iloc[:current_idx+1]
-        
-        # 市场份额增长
-        market_share_growth = current_data['simulated_market_share_growth'].iloc[-1]
-        share_score = 1.0 if market_share_growth > self.min_market_share_growth else 0.0
-        
-        # 相对强度（vs市场）
-        relative_strength = current_data['relative_strength'].iloc[-1]
-        strength_score = 1.0 if relative_strength > 1.1 else 0.5
-        
-        # 趋势强度
-        is_uptrend = (current_data['close'].iloc[-1] > current_data['sma_20'].iloc[-1] and
-                      current_data['sma_20'].iloc[-1] > current_data['sma_60'].iloc[-1] and
-                      current_data['sma_60'].iloc[-1] > current_data['sma_120'].iloc[-1])
-        trend_score = 1.0 if is_uptrend else 0.0
-        
+
+        # 市场份额增长 - 放宽阈值
+        market_share_growth = current_data['simulated_market_share_growth'].iloc[-1] if 'simulated_market_share_growth' in current_data else 0
+        share_score = 1.0 if market_share_growth > 0 else 0.5
+
+        # 相对强度（vs市场）- 放宽阈值
+        relative_strength = current_data['relative_strength'].iloc[-1] if 'relative_strength' in current_data else 1.0
+        strength_score = 1.0 if relative_strength > 1.0 else 0.5
+
+        # 趋势强度 - 放宽条件
+        close_price = current_data['close'].iloc[-1]
+        sma_20 = current_data['sma_20'].iloc[-1] if 'sma_20' in current_data else close_price
+        sma_60 = current_data['sma_60'].iloc[-1] if 'sma_60' in current_data else close_price
+        sma_120 = current_data['sma_120'].iloc[-1] if 'sma_120' in current_data else close_price
+
+        # 放宽趋势判断：只需要价格在SMA20上方即可
+        is_uptrend = close_price > sma_20
+        trend_score = 1.0 if is_uptrend else 0.3
+
         position_score = (share_score + strength_score + trend_score) / 3
-        
+
         return {
             "position_score": position_score,
             "market_share_growth": market_share_growth,
             "relative_strength": relative_strength,
             "is_uptrend": is_uptrend,
-            "is_leader": position_score > 0.6
+            "is_leader": position_score > 0.4  # 放宽阈值
         }
     
     def check_financial_quality(self, data: pd.DataFrame, current_idx: int) -> Dict[str, Any]:
         """
         检查财务质量
-        
+
         Returns:
             财务质量分析结果
         """
         current_data = data.iloc[:current_idx+1]
-        
-        # 现金流
-        cash_flow_ratio = current_data['simulated_cash_flow_ratio'].iloc[-1]
-        cash_score = 1.0 if cash_flow_ratio > self.min_cash_flow_ratio else 0.0
-        
-        # 应收账款
-        receivables_ratio = current_data['simulated_receivables_ratio'].iloc[-1]
-        receivables_score = 1.0 if receivables_ratio < self.max_receivables_ratio else 0.0
-        
-        # 波动率（财务稳定性）
-        volatility = current_data['volatility'].iloc[-1]
-        stability_score = 1.0 if volatility < 0.03 else 0.5
-        
+
+        # 现金流 - 放宽阈值
+        cash_flow_ratio = current_data['simulated_cash_flow_ratio'].iloc[-1] if 'simulated_cash_flow_ratio' in current_data else 0.1
+        cash_score = 1.0 if cash_flow_ratio > 0.05 else 0.5
+
+        # 应收账款 - 放宽阈值
+        receivables_ratio = current_data['simulated_receivables_ratio'].iloc[-1] if 'simulated_receivables_ratio' in current_data else 0.2
+        receivables_score = 1.0 if receivables_ratio < 0.5 else 0.5
+
+        # 波动率（财务稳定性）- 放宽阈值
+        volatility = current_data['volatility'].iloc[-1] if 'volatility' in current_data else 0.02
+        stability_score = 1.0 if volatility < 0.05 else 0.5
+
         quality_score = (cash_score + receivables_score + stability_score) / 3
-        
+
         return {
             "quality_score": quality_score,
             "cash_flow_ratio": cash_flow_ratio,
             "receivables_ratio": receivables_ratio,
             "volatility": volatility,
-            "is_high_quality": quality_score > 0.6
+            "is_high_quality": quality_score > 0.4  # 放宽阈值
         }
     
     def generate_signal(self, data: pd.DataFrame, current_position: int = 0) -> Optional[StrategySignal]:
         """
         生成交易信号
-        
+
         买入条件：
         1. PEG<1.5
         2. 成长质量高
         3. 市场地位领先
         4. 财务质量优秀
         5. 当前无持仓
-        
+
         卖出条件：
         1. 持有时间>最短持有期 且 (PEG>2 或 增长放缓 或 市场地位下降)
         2. 持有时间>最长持有期
         3. 达到止损/止盈
         """
+        # 计算指标
+        data = self.calculate_indicators(data)
+
         # 使用数据长度作为索引
         current_idx = len(data) - 1
-        
-        if current_idx < 250:  # 需要足够的历史数据
+
+        # 放宽数据要求，从250降到60
+        if current_idx < 60:
             return StrategySignal(
                 signal_type=SignalType.HOLD,
                 confidence=0.0,
-                reason="数据不足，需要至少250个交易日"
+                reason="数据不足，需要至少60个交易日"
             )
         
         current_data = data.iloc[:current_idx+1]
@@ -352,11 +365,15 @@ class LynchGrowthStrategy(BaseStrategy):
         
         # 买入逻辑
         if self.holding_position is None:
-            # 检查是否满足买入条件
-            if (peg_analysis['is_attractive'] and
-                growth_analysis['is_high_quality'] and
-                position_analysis['is_leader'] and
-                quality_analysis['is_high_quality']):
+            # 放宽买入条件：只需要满足2个条件即可
+            conditions_met = sum([
+                peg_analysis['is_attractive'],
+                growth_analysis['is_high_quality'],
+                position_analysis['is_leader'],
+                quality_analysis['is_high_quality']
+            ])
+
+            if conditions_met >= 2:
                 
                 # 计算综合得分
                 total_score = (

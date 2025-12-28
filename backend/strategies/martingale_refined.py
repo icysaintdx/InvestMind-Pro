@@ -115,8 +115,9 @@ class MartingaleRefinedStrategy(BaseStrategy):
         if current_position == 0 and self.state.cycle_active:
             self._reset_cycle()
 
-        # 进入循环
-        if not self.state.cycle_active and trend_up and rsi_value <= self.rsi_oversold:
+        # 进入循环 - 放宽条件：趋势向上且RSI相对较低
+        rsi_entry_threshold = self.rsi_oversold + 10  # 放宽RSI阈值
+        if not self.state.cycle_active and trend_up and rsi_value <= rsi_entry_threshold:
             self.state.cycle_active = True
             self.state.layers_filled = 0
             self.state.entry_price = price

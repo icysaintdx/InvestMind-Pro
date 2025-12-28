@@ -11,6 +11,48 @@
       },
       "created_at": "2025-12-17T21:59:39.343020",
       "updated_at": "2025-12-17T21:59:39.343020"
+    },
+    "000001.SZ": {
+      "name": "平安银行",
+      "code": "000001.SZ",
+      "frequency": "1h",
+      "retention_days": 7,
+      "items": {
+        "news": true,
+        "risk": true,
+        "sentiment": true,
+        "suspend": true,
+        "realtime": true,
+        "financial": true,
+        "capital": true
+      },
+      "sentimentScore": 55.0,
+      "riskLevel": "low",
+      "latestNews": "",
+      "lastUpdate": "2025-12-21T01:28:28.698153",
+      "pendingTasks": 0,
+      "newsCount": 10,
+      "riskScore": 15
+    },
+    "600025.SH": {
+      "name": "华能水电",
+      "code": "600025.SH",
+      "frequency": "1h",
+      "retention_days": 7,
+      "items": {
+        "news": true,
+        "risk": true,
+        "sentiment": true,
+        "suspend": true,
+        "realtime": true,
+        "financial": true,
+        "capital": true
+      },
+      "sentimentScore": 50,
+      "riskLevel": "low",
+      "latestNews": "",
+      "lastUpdate": "2025-12-21T02:26:07.348812",
+      "pendingTasks": 0
     }
   }
 }

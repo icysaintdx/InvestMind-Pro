@@ -170,7 +170,7 @@ class TurtleTradingStrategy(BaseStrategy):
     def generate_signal(self, data: pd.DataFrame, current_position: int = 0) -> StrategySignal:
         """生成交易信号（新接口）"""
         df = self.calculate_indicators(data)
-        
+
         min_period = max(self.params['entry_period'], self.params['atr_period'])
         if len(df) < min_period:
             return StrategySignal(
@@ -181,35 +181,58 @@ class TurtleTradingStrategy(BaseStrategy):
                 strategy_id="turtle_trading",
                 strategy_name=self.name
             )
-        
+
         row = df.iloc[-1]
+        prev_row = df.iloc[-2] if len(df) > 1 else row
         price = row['close']
-        atr = row.get('atr', price * 0.02)
-        
+        atr = row.get('atr', price * 0.02) or price * 0.02
+
         signal_type = SignalType.HOLD
         confidence = 0.5
         reasons = []
-        
-        # 唐奇安通道突破
-        if price >= row.get('donchian_high', price):
-            signal_type = SignalType.BUY
-            confidence = 0.75
-            reasons = [
-                f"价格突破{self.params['entry_period']}日高点",
-                f"唐奇安通道上轨: {row.get('donchian_high', 0):.2f}",
-                f"ATR: {atr:.2f}"
-            ]
-        elif price <= row.get('donchian_low', price) and current_position > 0:
-            signal_type = SignalType.SELL
-            confidence = 0.75
-            reasons = [
-                f"价格跌破{self.params['exit_period']}日低点",
-                f"唐奇安通道下轨: {row.get('donchian_low', 0):.2f}"
-            ]
-        
+
+        # 获取唐奇安通道值
+        donchian_high = row.get('donchian_high', 0) or 0
+        donchian_low = row.get('donchian_low', float('inf')) or float('inf')
+        exit_low = row.get('exit_low', 0) or 0
+
+        # 放宽突破检测：价格接近通道上轨（95%以上）即可触发
+        if donchian_high > 0:
+            price_to_high_ratio = price / donchian_high
+            # 价格突破或接近上轨
+            if price_to_high_ratio >= 0.98 and current_position == 0:
+                signal_type = SignalType.BUY
+                confidence = 0.70 + (price_to_high_ratio - 0.98) * 5  # 越接近越高置信度
+                confidence = min(confidence, 0.85)
+                reasons = [
+                    f"价格接近{self.params['entry_period']}日高点",
+                    f"唐奇安通道上轨: {donchian_high:.2f}",
+                    f"当前价格: {price:.2f}",
+                    f"ATR: {atr:.2f}"
+                ]
+            # 严格突破
+            elif price > donchian_high and current_position == 0:
+                signal_type = SignalType.STRONG_BUY
+                confidence = 0.80
+                reasons = [
+                    f"价格突破{self.params['entry_period']}日高点",
+                    f"唐奇安通道上轨: {donchian_high:.2f}",
+                    f"ATR: {atr:.2f}"
+                ]
+
+        # 卖出信号：跌破出场通道下轨
+        if current_position > 0 and exit_low > 0:
+            if price <= exit_low:
+                signal_type = SignalType.SELL
+                confidence = 0.75
+                reasons = [
+                    f"价格跌破{self.params['exit_period']}日低点",
+                    f"唐奇安通道下轨: {exit_low:.2f}"
+                ]
+
         # ATR动态止损
-        stop_loss = price - (atr * self.params['stop_loss_atr']) if signal_type == SignalType.BUY else None
-        
+        stop_loss = price - (atr * self.params['stop_loss_atr']) if signal_type in [SignalType.BUY, SignalType.STRONG_BUY] else None
+
         return StrategySignal(
             signal_type=signal_type,
             confidence=confidence,
@@ -217,7 +240,7 @@ class TurtleTradingStrategy(BaseStrategy):
             price=price,
             stop_loss=stop_loss,
             target_price=None,  # 海龟策略不设目标价
-            position_size=0.25 if signal_type == SignalType.BUY else 0,
+            position_size=0.25 if signal_type in [SignalType.BUY, SignalType.STRONG_BUY] else 0,
             reasons=reasons[:5],
             strategy_id="turtle_trading",
             strategy_name=self.name

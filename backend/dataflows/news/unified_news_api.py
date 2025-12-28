@@ -6,6 +6,8 @@
 
 from typing import List, Dict, Any
 from datetime import datetime
+import time
+import threading
 
 from backend.dataflows.news.realtime_news import get_realtime_stock_news
 from backend.dataflows.news.akshare_news_api import get_akshare_news_api
@@ -15,6 +17,126 @@ from backend.utils.logging_config import get_logger
 logger = get_logger("unified_news")
 
 
+# ==================== 新闻缓存系统 ====================
+
+class NewsCache:
+    """
+    新闻缓存类
+    用于避免短时间内重复请求同一股票的新闻数据
+    """
+    
+    def __init__(self, ttl_seconds: int = 300):
+        """
+        初始化缓存
+        
+        Args:
+            ttl_seconds: 缓存有效期（秒），默认5分钟
+        """
+        self._cache: Dict[str, Dict[str, Any]] = {}
+        self._ttl = ttl_seconds
+        self._lock = threading.Lock()
+        logger.info(f"📦 新闻缓存初始化完成，TTL={ttl_seconds}秒")
+    
+    def _get_cache_key(self, ticker: str) -> str:
+        """生成缓存键"""
+        return f"news_{ticker}"
+    
+    def get(self, ticker: str) -> Dict[str, Any] | None:
+        """
+        获取缓存数据
+        
+        Args:
+            ticker: 股票代码
+            
+        Returns:
+            缓存的数据，如果不存在或已过期则返回None
+        """
+        cache_key = self._get_cache_key(ticker)
+        
+        with self._lock:
+            if cache_key not in self._cache:
+                return None
+            
+            cache_entry = self._cache[cache_key]
+            cached_time = cache_entry.get('timestamp', 0)
+            current_time = time.time()
+            
+            # 检查是否过期
+            if (current_time - cached_time) > self._ttl:
+                # 缓存已过期，删除并返回None
+                del self._cache[cache_key]
+                logger.info(f"⏰ 缓存已过期: {ticker}")
+                return None
+            
+            # 缓存有效
+            remaining_ttl = self._ttl - (current_time - cached_time)
+            logger.info(f"✅ 命中缓存: {ticker} (剩余{remaining_ttl:.1f}秒)")
+            return cache_entry.get('data')
+    
+    def set(self, ticker: str, data: Dict[str, Any]) -> None:
+        """
+        设置缓存数据
+        
+        Args:
+            ticker: 股票代码
+            data: 要缓存的数据
+        """
+        cache_key = self._get_cache_key(ticker)
+        
+        with self._lock:
+            self._cache[cache_key] = {
+                'data': data,
+                'timestamp': time.time()
+            }
+            logger.info(f"💾 已缓存: {ticker} (TTL={self._ttl}秒)")
+    
+    def clear(self, ticker: str = None) -> None:
+        """
+        清除缓存
+        
+        Args:
+            ticker: 股票代码，如果为None则清除所有缓存
+        """
+        with self._lock:
+            if ticker:
+                cache_key = self._get_cache_key(ticker)
+                if cache_key in self._cache:
+                    del self._cache[cache_key]
+                    logger.info(f"🗑️ 已清除缓存: {ticker}")
+            else:
+                self._cache.clear()
+                logger.info(f"🗑️ 已清除所有缓存")
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """
+        获取缓存统计信息
+        
+        Returns:
+            缓存统计信息
+        """
+        with self._lock:
+            current_time = time.time()
+            valid_count = 0
+            expired_count = 0
+            
+            for cache_key, entry in list(self._cache.items()):
+                if (current_time - entry.get('timestamp', 0)) <= self._ttl:
+                    valid_count += 1
+                else:
+                    expired_count += 1
+            
+            return {
+                'total_entries': len(self._cache),
+                'valid_entries': valid_count,
+                'expired_entries': expired_count,
+                'ttl_seconds': self._ttl
+            }
+
+
+# 全局缓存实例
+_news_cache = NewsCache(ttl_seconds=300)  # 5分钟缓存
+
+
 class UnifiedNewsAPI:
     """统一新闻API"""
     
@@ -22,26 +144,39 @@ class UnifiedNewsAPI:
         """初始化"""
         self.akshare_api = get_akshare_news_api()
         self.sentiment_analyzer = get_sentiment_analyzer()
+        self.cache = _news_cache  # 使用全局缓存
         logger.info("统一新闻API初始化完成")
     
-    def get_stock_news_comprehensive(self, ticker: str) -> Dict[str, Any]:
+    def get_stock_news_comprehensive(self, ticker: str, use_cache: bool = True) -> Dict[str, Any]:
         """
         获取股票的综合新闻数据
         整合多个数据源
         
         Args:
             ticker: 股票代码
+            use_cache: 是否使用缓存，默认True
             
         Returns:
             综合新闻数据
         """
+        # ==================== 缓存检查 ====================
+        if use_cache:
+            cached_data = self.cache.get(ticker)
+            if cached_data:
+                # 更新时间戳为当前时间（表示这是缓存数据）
+                cached_data['from_cache'] = True
+                cached_data['cache_timestamp'] = cached_data.get('timestamp')
+                cached_data['timestamp'] = datetime.now().isoformat()
+                return cached_data
+        
         logger.info(f"开始获取{ticker}的综合新闻数据...")
         
         result = {
             'ticker': ticker,
             'timestamp': datetime.now().isoformat(),
             'sources': {},
-            'summary': {}
+            'summary': {},
+            'from_cache': False
         }
         
         # 数据源1: 实时新闻聚合器（已验证可用）
@@ -322,6 +457,10 @@ class UnifiedNewsAPI:
         
         logger.info(f"✅ 综合新闻数据获取完成: {success_count}/{total_count} 个数据源成功")
         
+        # ==================== 存入缓存 ====================
+        if use_cache:
+            self.cache.set(ticker, result)
+        
         return result
     
     def _filter_news_by_sentiment(self, news_list: List[Dict]) -> Dict:
@@ -444,6 +583,31 @@ class UnifiedNewsAPI:
             result['sources']['global_news'] = {'status': 'error', 'message': str(e)}
         
         return result
+    
+    def clear_cache(self, ticker: str = None) -> Dict[str, Any]:
+        """
+        清除缓存
+        
+        Args:
+            ticker: 股票代码，如果为None则清除所有缓存
+            
+        Returns:
+            操作结果
+        """
+        self.cache.clear(ticker)
+        return {
+            'success': True,
+            'message': f'已清除缓存: {ticker if ticker else "全部"}'
+        }
+    
+    def get_cache_stats(self) -> Dict[str, Any]:
+        """
+        获取缓存统计信息
+        
+        Returns:
+            缓存统计信息
+        """
+        return self.cache.get_stats()
 
 
 # 全局实例

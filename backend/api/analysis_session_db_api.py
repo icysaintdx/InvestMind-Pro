@@ -91,15 +91,20 @@ async def create_session(request: SessionCreateRequest, db: Session = Depends(ge
 @router.post("/session/{session_id}/start")
 async def start_session(session_id: str, db: Session = Depends(get_db)):
     """开始分析"""
+    from backend.database.analysis_helper import init_session_timer
+
     session = SessionService.update_session_status(
         db=db,
         session_id=session_id,
         status="running"
     )
-    
+
     if not session:
         raise HTTPException(status_code=404, detail="会话不存在")
-    
+
+    # 初始化会话计时器
+    init_session_timer(session_id)
+
     return {"message": "分析已开始", "session_id": session_id}
 
 
@@ -107,22 +112,50 @@ async def start_session(session_id: str, db: Session = Depends(get_db)):
 async def get_session_status(session_id: str, db: Session = Depends(get_db)):
     """查询会话状态"""
     session = SessionService.get_session(db, session_id)
-    
+
     if not session:
         raise HTTPException(status_code=404, detail="会话不存在")
-    
+
+    # 检查是否需要标记为中断（如果状态是 running 但长时间无活动）
+    if session.status == 'running':
+        if session.last_activity_time:
+            inactive_seconds = (datetime.utcnow() - session.last_activity_time).total_seconds()
+            # 如果超过30秒无活动，标记为中断（缩短超时时间，更快检测到中断）
+            if inactive_seconds > 30:
+                session = SessionService.update_session_status(
+                    db=db,
+                    session_id=session_id,
+                    status="interrupted",
+                    error_message=f"会话中断：服务重启或长时间无响应（无活动时间: {int(inactive_seconds)}秒）"
+                )
+        else:
+            # 没有 last_activity_time 说明从未开始，也标记为中断
+            session = SessionService.update_session_status(
+                db=db,
+                session_id=session_id,
+                status="interrupted",
+                error_message="会话中断：分析未正常启动"
+            )
+
     # 获取已完成的智能体列表
     completed_agents = AgentResultService.get_completed_agents(db, session_id)
-    
+
     # 计算运行时间
-    if session.start_time:
-        if session.end_time:
-            elapsed_time = (session.end_time - session.start_time).total_seconds()
-        else:
-            elapsed_time = (datetime.utcnow() - session.start_time).total_seconds()
-    else:
-        elapsed_time = 0
-    
+    elapsed_time = session.actual_elapsed_seconds or 0
+
+    # 如果 actual_elapsed_seconds 为 0 但有 start_time，使用 start_time 计算
+    if elapsed_time == 0 and session.start_time:
+        # 对于中断的会话，使用 last_activity_time 或 end_time 作为结束点
+        end_point = session.end_time or session.last_activity_time or datetime.utcnow()
+        elapsed_time = int((end_point - session.start_time).total_seconds())
+
+    # 如果会话正在运行，加上自上次活动以来的时间
+    if session.status == 'running' and session.last_activity_time:
+        additional_time = (datetime.utcnow() - session.last_activity_time).total_seconds()
+        # 加上额外时间（最多300秒，超过说明可能中断了）
+        if additional_time < 300:
+            elapsed_time += additional_time
+
     return {
         "session_id": session.session_id,
         "stock_code": session.stock_code,
@@ -133,8 +166,11 @@ async def get_session_status(session_id: str, db: Session = Depends(get_db)):
         "completed_agents": completed_agents,
         "total_agents": 21,
         "start_time": session.start_time.timestamp() if session.start_time else None,
-        "elapsed_time": elapsed_time,
-        "error_message": session.error_message
+        "elapsed_time": int(elapsed_time),
+        "actual_elapsed_seconds": session.actual_elapsed_seconds or 0,
+        "last_activity_time": session.last_activity_time.timestamp() if session.last_activity_time else None,
+        "error_message": session.error_message,
+        "can_resume": session.status == 'interrupted' and session.progress < 100  # 是否可以继续
     }
 
 

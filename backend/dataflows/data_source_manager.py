@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """
 数据源管理器
-统一管理中国股票数据源的选择和切换，支持Tushare、AKShare、BaoStock等
+统一管理中国股票数据源的选择和切换
+支持TDX(通达信)、AKShare、Tushare、聚合数据等
+
+优先级: TDX > AKShare > Tushare > 聚合数据
+（新闻类数据TDX不支持，优先级为: AKShare > Tushare）
 """
 
 import os
@@ -31,6 +35,7 @@ warnings.filterwarnings('ignore')
 
 class ChinaDataSource(Enum):
     """中国股票数据源枚举"""
+    TDX = "tdx"           # 通达信 - 最高优先级
     AKSHARE = "akshare"
     JUHE = "juhe"
     SINA = "sina"
@@ -62,6 +67,7 @@ class DataSourceManager:
         try:
             from backend.dataflows.utils.circuit_breaker import get_data_source_breaker
             self._breakers = {
+                ChinaDataSource.TDX: get_data_source_breaker("tdx"),
                 ChinaDataSource.AKSHARE: get_data_source_breaker("akshare"),
                 ChinaDataSource.TUSHARE: get_data_source_breaker("tushare"),
                 ChinaDataSource.SINA: get_data_source_breaker("sina"),
@@ -98,11 +104,12 @@ class DataSourceManager:
 
     def _get_default_source(self) -> ChinaDataSource:
         """获取默认数据源"""
-        # 从环境变量获取，默认使用AKShare作为第一优先级数据源
-        env_source = os.getenv('DEFAULT_CHINA_DATA_SOURCE', 'akshare').lower()
+        # 从环境变量获取，默认使用TDX作为第一优先级数据源
+        env_source = os.getenv('DEFAULT_CHINA_DATA_SOURCE', 'tdx').lower()
 
         # 映射到枚举
         source_mapping = {
+            'tdx': ChinaDataSource.TDX,
             'akshare': ChinaDataSource.AKSHARE,
             'juhe': ChinaDataSource.JUHE,
             'sina': ChinaDataSource.SINA,
@@ -110,7 +117,7 @@ class DataSourceManager:
             'baostock': ChinaDataSource.BAOSTOCK
         }
 
-        return source_mapping.get(env_source, ChinaDataSource.AKSHARE)
+        return source_mapping.get(env_source, ChinaDataSource.TDX)
 
     # ==================== Tushare数据接口 ====================
 
@@ -243,7 +250,36 @@ class DataSourceManager:
     def _check_available_sources(self) -> List[ChinaDataSource]:
         """检查可用的数据源"""
         available = []
-        
+
+        # 检查TDX（通达信）- 最高优先级
+        # 优先检查 TDX Native Provider（纯Python，无需Docker）
+        tdx_available = False
+        try:
+            from .providers.tdx_native_provider import get_tdx_native_provider
+            native_provider = get_tdx_native_provider()
+            if native_provider.is_available():
+                tdx_available = True
+                available.append(ChinaDataSource.TDX)
+                logger.info("✅ TDX Native(通达信纯Python)数据源可用 - 最高优先级")
+        except ImportError as e:
+            logger.debug(f"TDX Native Provider不可用: {e}")
+        except Exception as e:
+            logger.debug(f"TDX Native Provider检查失败: {e}")
+
+        # 如果Native不可用，降级到HTTP Provider
+        if not tdx_available:
+            try:
+                from .providers.tdx_provider import get_tdx_provider, is_tdx_available
+                if is_tdx_available():
+                    available.append(ChinaDataSource.TDX)
+                    logger.info("✅ TDX HTTP(通达信Docker服务)数据源可用 - 最高优先级")
+                else:
+                    logger.warning("⚠️ TDX(通达信)数据源不可用: 服务未启动或无法连接")
+            except ImportError as e:
+                logger.warning(f"⚠️ TDX(通达信)数据源不可用: 模块导入失败 - {e}")
+            except Exception as e:
+                logger.warning(f"⚠️ TDX(通达信)数据源不可用: {e}")
+
         # 检查Tushare
         try:
             import tushare as ts
@@ -255,7 +291,7 @@ class DataSourceManager:
                 logger.warning("⚠️ Tushare数据源不可用: 未设置TUSHARE_TOKEN")
         except ImportError:
             logger.warning("⚠️ Tushare数据源不可用: 库未安装")
-        
+
         # 检查AKShare
         try:
             import akshare as ak
@@ -263,7 +299,7 @@ class DataSourceManager:
             logger.info("✅ AKShare数据源可用")
         except ImportError:
             logger.warning("⚠️ AKShare数据源不可用: 库未安装")
-        
+
         # 检查聚合数据
         juhe_key = os.getenv('JUHE_API_KEY', '')
         if juhe_key:
@@ -271,7 +307,7 @@ class DataSourceManager:
             logger.info("✅ 聚合数据源可用（免费版每天50次）")
         else:
             logger.warning("⚠️ 聚合数据源不可用: 未设置JUHE_API_KEY")
-        
+
         # 检查新浪财经
         try:
             # 新浪财经不需要 API Key，直接可用
@@ -279,7 +315,7 @@ class DataSourceManager:
             logger.info("✅ 新浪财经数据源可用（免费、无限制）")
         except Exception as e:
             logger.warning(f"⚠️ 新浪财经数据源不可用: {e}")
-        
+
         # 检查BaoStock
         try:
             import baostock as bs
@@ -287,7 +323,7 @@ class DataSourceManager:
             logger.info(f"✅ BaoStock数据源可用")
         except ImportError:
             logger.warning(f"⚠️ BaoStock数据源不可用: 库未安装")
-        
+
         return available
     
     def get_current_source(self) -> ChinaDataSource:
@@ -306,7 +342,9 @@ class DataSourceManager:
     
     def get_data_adapter(self):
         """获取当前数据源的适配器"""
-        if self.current_source == ChinaDataSource.TUSHARE:
+        if self.current_source == ChinaDataSource.TDX:
+            return self._get_tdx_adapter()
+        elif self.current_source == ChinaDataSource.TUSHARE:
             return self._get_tushare_adapter()
         elif self.current_source == ChinaDataSource.AKSHARE:
             return self._get_akshare_adapter()
@@ -314,6 +352,27 @@ class DataSourceManager:
             return self._get_baostock_adapter()
         else:
             raise ValueError(f"不支持的数据源: {self.current_source}")
+
+    def _get_tdx_adapter(self):
+        """获取TDX适配器 - 优先使用Native Provider"""
+        # 优先尝试 Native Provider
+        try:
+            from .providers.tdx_native_provider import get_tdx_native_provider
+            provider = get_tdx_native_provider()
+            if provider.is_available():
+                return provider
+        except ImportError:
+            pass
+        except Exception as e:
+            logger.debug(f"TDX Native Provider获取失败: {e}")
+
+        # 降级到 HTTP Provider
+        try:
+            from .providers.tdx_provider import get_tdx_provider
+            return get_tdx_provider()
+        except ImportError as e:
+            logger.error(f"❌ TDX适配器导入失败: {e}")
+            return None
     
     def _get_tushare_adapter(self):
         """获取Tushare适配器"""
@@ -374,7 +433,10 @@ class DataSourceManager:
 
         try:
             # 根据数据源调用相应的获取方法
-            if self.current_source == ChinaDataSource.AKSHARE:
+            if self.current_source == ChinaDataSource.TDX:
+                logger.info(f"🔍 [股票代码追踪] 调用 TDX 数据源，传入参数: symbol='{symbol}'")
+                result = self._get_tdx_data(symbol, start_date, end_date)
+            elif self.current_source == ChinaDataSource.AKSHARE:
                 result = self._get_akshare_data(symbol, start_date, end_date)
             elif self.current_source == ChinaDataSource.JUHE:
                 result = self._get_juhe_data(symbol, start_date, end_date)
@@ -441,7 +503,125 @@ class DataSourceManager:
                             'event_type': 'data_fetch_exception'
                         }, exc_info=True)
             return self._try_fallback_sources(symbol, start_date, end_date)
-    
+
+    def _get_tdx_data(self, symbol: str, start_date: str, end_date: str) -> str:
+        """使用TDX(通达信)获取数据 - 最高优先级数据源，优先使用Native Provider"""
+        logger.debug(f"📊 [TDX] 调用参数: symbol={symbol}, start_date={start_date}, end_date={end_date}")
+
+        start_time = time.time()
+
+        # 优先尝试 Native Provider
+        try:
+            from .providers.tdx_native_provider import get_tdx_native_provider
+            native_provider = get_tdx_native_provider()
+
+            if native_provider.is_available():
+                logger.debug("📊 [TDX] 使用 Native Provider")
+
+                # 获取K线数据
+                kline_data = native_provider.get_kline_by_date(symbol, start_date, end_date, kline_type=9)
+
+                if kline_data:
+                    import pandas as pd
+                    df = pd.DataFrame(kline_data)
+
+                    # 获取股票名称
+                    search_results = native_provider.search_stock(symbol, limit=1)
+                    stock_name = search_results[0].get('name', f'股票{symbol}') if search_results else f'股票{symbol}'
+
+                    # 计算最新价格和涨跌幅
+                    latest_data = df.iloc[-1]
+                    latest_price = latest_data.get('close', 0)
+                    prev_close = df.iloc[-2].get('close', latest_price) if len(df) > 1 else latest_price
+                    change = latest_price - prev_close
+                    change_pct = (change / prev_close * 100) if prev_close != 0 else 0
+
+                    # 格式化数据报告
+                    result = f"📊 {stock_name}({symbol}) - TDX Native数据\n"
+                    result += f"数据期间: {start_date} 至 {end_date}\n"
+                    result += f"数据条数: {len(df)}条\n\n"
+
+                    result += f"💰 最新价格: ¥{latest_price:.2f}\n"
+                    result += f"📈 涨跌额: {change:+.2f} ({change_pct:+.2f}%)\n\n"
+
+                    # 添加统计信息
+                    result += f"📊 价格统计:\n"
+                    result += f"   最高价: ¥{df['high'].max():.2f}\n"
+                    result += f"   最低价: ¥{df['low'].min():.2f}\n"
+                    result += f"   平均价: ¥{df['close'].mean():.2f}\n"
+
+                    # 安全获取成交量
+                    if 'volume' in df.columns:
+                        result += f"   成交量: {df['volume'].sum():,.0f}股\n"
+
+                    duration = time.time() - start_time
+                    logger.info(f"✅ [TDX Native] 获取成功: 耗时={duration:.2f}s, 数据条数={len(df)}")
+                    return result
+                else:
+                    logger.debug("📊 [TDX Native] 数据为空，降级到HTTP Provider")
+
+        except ImportError:
+            logger.debug("📊 [TDX Native] 模块不可用，降级到HTTP Provider")
+        except Exception as e:
+            logger.debug(f"📊 [TDX Native] 获取失败: {e}，降级到HTTP Provider")
+
+        # 降级到 HTTP Provider
+        try:
+            from .providers.tdx_provider import get_tdx_provider
+
+            provider = get_tdx_provider()
+
+            if not provider.is_available():
+                logger.warning("⚠️ [TDX] 服务不可用，将降级到其他数据源")
+                return f"❌ TDX服务不可用"
+
+            # 获取K线数据
+            df = provider.get_kline_by_date_range(symbol, start_date, end_date, 'day')
+
+            if df is not None and not df.empty:
+                # 获取股票名称
+                search_results = provider.search_stock(symbol, limit=1)
+                stock_name = search_results[0].get('name', f'股票{symbol}') if search_results else f'股票{symbol}'
+
+                # 计算最新价格和涨跌幅
+                latest_data = df.iloc[-1]
+                latest_price = latest_data.get('close', 0)
+                prev_close = df.iloc[-2].get('close', latest_price) if len(df) > 1 else latest_price
+                change = latest_price - prev_close
+                change_pct = (change / prev_close * 100) if prev_close != 0 else 0
+
+                # 格式化数据报告
+                result = f"📊 {stock_name}({symbol}) - TDX HTTP数据\n"
+                result += f"数据期间: {start_date} 至 {end_date}\n"
+                result += f"数据条数: {len(df)}条\n\n"
+
+                result += f"💰 最新价格: ¥{latest_price:.2f}\n"
+                result += f"📈 涨跌额: {change:+.2f} ({change_pct:+.2f}%)\n\n"
+
+                # 添加统计信息
+                result += f"📊 价格统计:\n"
+                result += f"   最高价: ¥{df['high'].max():.2f}\n"
+                result += f"   最低价: ¥{df['low'].min():.2f}\n"
+                result += f"   平均价: ¥{df['close'].mean():.2f}\n"
+
+                # 安全获取成交量
+                if 'volume' in df.columns:
+                    result += f"   成交量: {df['volume'].sum():,.0f}股\n"
+
+                duration = time.time() - start_time
+                logger.info(f"✅ [TDX HTTP] 获取成功: 耗时={duration:.2f}s, 数据条数={len(df)}")
+                return result
+            else:
+                result = f"❌ 未获取到{symbol}的有效数据"
+                duration = time.time() - start_time
+                logger.warning(f"⚠️ [TDX] 数据为空: 耗时={duration:.2f}s")
+                return result
+
+        except Exception as e:
+            duration = time.time() - start_time
+            logger.error(f"❌ [TDX] 调用失败: {e}, 耗时={duration:.2f}s", exc_info=True)
+            return f"❌ TDX获取{symbol}数据失败: {e}"
+
     def _get_tushare_data(self, symbol: str, start_date: str, end_date: str) -> str:
         """使用Tushare获取数据 - 直接调用适配器，避免循环调用"""
         logger.debug(f"📊 [Tushare] 调用参数: symbol={symbol}, start_date={start_date}, end_date={end_date}")
@@ -830,12 +1010,13 @@ class DataSourceManager:
         self._record_source_failure(self.current_source)
         logger.warning(f"🔄 {self.current_source.value}失败，尝试备用数据源...")
 
-        # 备用数据源优先级: AKShare > 聚合数据 > 新浪财经 > Tushare > BaoStock
+        # 备用数据源优先级: TDX > AKShare > Tushare > 聚合数据 > 新浪财经 > BaoStock
         fallback_order = [
+            ChinaDataSource.TDX,
             ChinaDataSource.AKSHARE,
+            ChinaDataSource.TUSHARE,
             ChinaDataSource.JUHE,
             ChinaDataSource.SINA,
-            ChinaDataSource.TUSHARE,
             ChinaDataSource.BAOSTOCK
         ]
 
@@ -850,7 +1031,9 @@ class DataSourceManager:
                     logger.info(f"🔄 尝试备用数据源: {source.value}")
 
                     # 直接调用具体的数据源方法，避免递归
-                    if source == ChinaDataSource.AKSHARE:
+                    if source == ChinaDataSource.TDX:
+                        result = self._get_tdx_data(symbol, start_date, end_date)
+                    elif source == ChinaDataSource.AKSHARE:
                         result = self._get_akshare_data(symbol, start_date, end_date)
                     elif source == ChinaDataSource.JUHE:
                         result = self._get_juhe_data(symbol, start_date, end_date)

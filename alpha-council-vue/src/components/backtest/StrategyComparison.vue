@@ -135,7 +135,7 @@
 </template>
 
 <script>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import axios from 'axios'
 
 export default {
@@ -155,7 +155,7 @@ export default {
     }
   },
   emits: ['close'],
-  setup(props, { emit }) {
+  setup(props) {
     const availableStrategies = ref([])
     const selectedStrategyIds = ref([])
     const comparisonResults = ref([])
@@ -276,7 +276,7 @@ export default {
       ctx.stroke()
       
       // 绘制每个策略的曲线
-      comparisonResults.value.forEach((result, index) => {
+      comparisonResults.value.forEach((result) => {
         if (!result.equityCurve) return
         
         ctx.strokeStyle = result.color
@@ -371,7 +371,7 @@ export default {
       })
       
       // 绘制数据
-      comparisonResults.value.forEach((result, index) => {
+      comparisonResults.value.forEach((result) => {
         const values = dimensions.map(dim => {
           const value = result.metrics[dim.key]
           if (dim.key === 'stability') {

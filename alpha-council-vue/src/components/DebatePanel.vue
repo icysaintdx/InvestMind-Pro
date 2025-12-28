@@ -119,6 +119,8 @@
 </template>
 
 <script>
+import API_BASE_URL from '@/config/api.js'
+
 export default {
   name: 'DebatePanel',
   props: {
@@ -192,7 +194,7 @@ export default {
     },
     async loadConfig() {
       try {
-        const response = await fetch('http://localhost:8000/api/config/agents')
+        const response = await fetch(`${API_BASE_URL}/api/config/agents`)
         if (response.ok) {
           const data = await response.json()
           if (data.data) {
@@ -229,7 +231,7 @@ export default {
     },
     async applyConfigToAll() {
       try {
-        const loadResponse = await fetch('http://localhost:8000/api/config/agents')
+        const loadResponse = await fetch(`${API_BASE_URL}/api/config/agents`)
         let configData = { agents: [], selectedModels: [] }
         
         if (loadResponse.ok) {
@@ -254,7 +256,7 @@ export default {
           }
         })
         
-        const saveResponse = await fetch('http://localhost:8000/api/config/agents', {
+        const saveResponse = await fetch(`${API_BASE_URL}/api/config/agents`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(configData)

@@ -421,26 +421,62 @@ async def execute_trade(order: TradeOrder):
 async def get_portfolio():
     """
     获取投资组合信息
-    
+
     Returns:
         组合详情
     """
     try:
-        # 更新组合价值
-        await simulator._update_portfolio_value()
-        
-        # 构建持仓列表
+        # 批量获取所有持仓的当前价格（避免重复调用）
+        price_cache = {}
+        stock_codes = list(simulator.positions.keys())
+
+        if stock_codes:
+            # 尝试批量获取行情
+            try:
+                from backend.services.market_data_service import get_realtime_quotes_batch
+                quotes = get_realtime_quotes_batch(stock_codes)
+                if quotes:
+                    for q in quotes:
+                        code = q.get("code", "")
+                        price = q.get("price", 0) or q.get("current_price", 0)
+                        if code and price > 0:
+                            price_cache[code] = price
+            except Exception as e:
+                logger.debug(f"批量获取行情失败，降级到单个获取: {e}")
+
+            # 对于未获取到的，单个获取
+            for code in stock_codes:
+                if code not in price_cache:
+                    price_cache[code] = await simulator._get_current_price(code)
+
+        # 更新组合价值（使用缓存的价格）
+        positions_value = 0
+        for code, pos in simulator.positions.items():
+            current_price = price_cache.get(code, pos.get("avg_cost", 100))
+            market_value = pos["quantity"] * current_price
+            positions_value += market_value
+
+        simulator.portfolio["positions_value"] = positions_value
+        simulator.portfolio["total_value"] = simulator.portfolio["cash_balance"] + positions_value
+
+        # 计算总收益率
+        initial = simulator.portfolio["initial_capital"]
+        simulator.portfolio["total_profit_loss_rate"] = (
+            (simulator.portfolio["total_value"] - initial) / initial * 100
+        )
+
+        # 构建持仓列表（使用缓存的价格）
         positions_list = []
         for code, pos in simulator.positions.items():
-            current_price = await simulator._get_current_price(code)
+            current_price = price_cache.get(code, pos.get("avg_cost", 100))
             market_value = pos["quantity"] * current_price
             profit_loss = (current_price - pos["avg_cost"]) * pos["quantity"]
             profit_loss_rate = (current_price - pos["avg_cost"]) / pos["avg_cost"] * 100
-            
+
             # 计算持有天数
             open_date = datetime.fromisoformat(pos["open_date"])
             holding_days = (datetime.now() - open_date).days
-            
+
             positions_list.append({
                 "stock_code": code,
                 "stock_name": pos["stock_name"],
@@ -452,12 +488,15 @@ async def get_portfolio():
                 "profit_loss_rate": round(profit_loss_rate, 2),
                 "holding_days": holding_days
             })
-            
+
+        # 保存更新后的数据
+        simulator.save_data()
+
         # 计算统计指标
         win_rate = _calculate_win_rate(simulator.trade_history)
         max_drawdown = _calculate_max_drawdown(simulator.trade_history)
         sharpe_ratio = _calculate_sharpe_ratio(simulator.trade_history)
-        
+
         return {
             "success": True,
             "portfolio": {
@@ -469,7 +508,7 @@ async def get_portfolio():
                 "sharpe_ratio": sharpe_ratio
             }
         }
-        
+
     except Exception as e:
         logger.error(f"查询组合失败: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))

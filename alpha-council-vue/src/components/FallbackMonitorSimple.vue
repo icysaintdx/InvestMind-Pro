@@ -356,6 +356,28 @@ onMounted(() => {
   padding: 1.5rem;
   overflow-y: auto;
   flex: 1;
+  /* 美化滚动条 */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.5) transparent;
+}
+
+/* Webkit 浏览器滚动条样式 */
+.fallback-monitor-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.fallback-monitor-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.fallback-monitor-content::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.5);
+  border-radius: 4px;
+}
+
+.fallback-monitor-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.7);
 }
 
 .stats-row {

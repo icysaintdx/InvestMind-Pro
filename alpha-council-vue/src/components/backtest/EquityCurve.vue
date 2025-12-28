@@ -66,13 +66,14 @@ export default {
   setup(props) {
     const chartCanvas = ref(null)
     let animationId = null
+    // eslint-disable-next-line no-unused-vars
     let chart = null
 
     // 计算统计信息
     const statistics = computed(() => {
       if (!props.data || props.data.length === 0) return null
-      
-      const values = props.data.map(d => d.value || d.equity || 0)
+
+      const values = props.data.map(d => d.value || d.equity || d.portfolio_value || 0)
       const initialValue = values[0]
       const finalValue = values[values.length - 1]
       const maxValue = Math.max(...values)
@@ -126,7 +127,7 @@ export default {
       const chartHeight = rect.height - padding.top - padding.bottom
       
       // 数据范围
-      const values = props.data.map(d => d.value || d.equity || 0)
+      const values = props.data.map(d => d.value || d.equity || d.portfolio_value || 0)
       const minValue = Math.min(...values) * 0.95
       const maxValue = Math.max(...values) * 1.05
       const valueRange = maxValue - minValue
@@ -228,11 +229,11 @@ export default {
       ctx.strokeStyle = '#4CAF50'
       ctx.lineWidth = 2
       ctx.lineJoin = 'round'
-      
+
       ctx.beginPath()
       data.forEach((point, index) => {
         const x = padding.left + (width / (data.length - 1)) * index
-        const value = point.value || point.equity || 0
+        const value = point.value || point.equity || point.portfolio_value || 0
         const y = padding.top + height - ((value - minValue) / valueRange) * height
         
         if (index === 0) {
@@ -252,7 +253,7 @@ export default {
       ctx.beginPath()
       data.forEach((point, index) => {
         const x = padding.left + (width / (data.length - 1)) * index
-        const value = point.value || point.equity || 0
+        const value = point.value || point.equity || point.portfolio_value || 0
         const y = padding.top + height - ((value - minValue) / valueRange) * height
         
         if (index === 0) {
@@ -302,7 +303,7 @@ export default {
         
         if (dataIndex >= 0) {
           const x = padding.left + (width / (data.length - 1)) * dataIndex
-          const value = data[dataIndex].value || data[dataIndex].equity || 0
+          const value = data[dataIndex].value || data[dataIndex].equity || data[dataIndex].portfolio_value || 0
           const y = padding.top + height - ((value - minValue) / valueRange) * height
           
           // 绘制三角形标记

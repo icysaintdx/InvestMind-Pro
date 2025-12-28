@@ -4,12 +4,16 @@
 """
 
 from typing import Optional, List, Dict, Any
+from datetime import datetime
 from backend.database.database import get_db_context
 from backend.database.services import (
     SessionService,
     AgentResultService,
     StockHistoryService
 )
+
+# 用于跟踪每个会话的上次更新时间，计算增量时间
+_session_last_update: Dict[str, datetime] = {}
 
 
 def save_agent_result(
@@ -25,9 +29,9 @@ def save_agent_result(
 ):
     """
     保存智能体结果到数据库
-    
+
     在每个智能体完成时调用此函数
-    
+
     Args:
         session_id: 会话ID
         agent_id: 智能体ID（如 'news_analyst'）
@@ -40,6 +44,14 @@ def save_agent_result(
         error_message: 错误信息
     """
     try:
+        now = datetime.utcnow()
+
+        # 计算自上次更新以来的时间增量
+        elapsed_increment = 0
+        if session_id in _session_last_update:
+            elapsed_increment = int((now - _session_last_update[session_id]).total_seconds())
+        _session_last_update[session_id] = now
+
         with get_db_context() as db:
             # 保存智能体结果
             AgentResultService.create_or_update_result(
@@ -54,12 +66,12 @@ def save_agent_result(
                 data_sources=data_sources,
                 error_message=error_message
             )
-            
+
             # 如果完成，更新会话进度
             if status == 'completed':
                 completed_agents = AgentResultService.get_completed_agents(db, session_id)
                 progress = int(len(completed_agents) / 21 * 100)
-                
+
                 # 计算当前阶段（简单估算）
                 if len(completed_agents) <= 8:
                     current_stage = 1
@@ -69,17 +81,21 @@ def save_agent_result(
                     current_stage = 3
                 else:
                     current_stage = 4
-                
+
                 SessionService.update_session_status(
                     db=db,
                     session_id=session_id,
                     status="running",
                     progress=progress,
-                    current_stage=current_stage
+                    current_stage=current_stage,
+                    increment_elapsed=elapsed_increment
                 )
-                
-                print(f"[数据库] 保存进度: {agent_id} 完成, 总进度 {progress}%")
-    
+
+                print(f"[数据库] 保存进度: {agent_id} 完成, 总进度 {progress}%, 增量时间 {elapsed_increment}秒")
+            else:
+                # 即使不是完成状态，也更新活动时间
+                SessionService.update_activity_time(db, session_id, elapsed_increment)
+
     except Exception as e:
         print(f"[数据库] 保存智能体结果失败: {e}")
 
@@ -91,28 +107,49 @@ def complete_analysis(
 ):
     """
     标记分析完成
-    
+
     在整个分析流程结束时调用
-    
+
     Args:
         session_id: 会话ID
         success: 是否成功
         error_message: 错误信息（如果失败）
     """
     try:
+        # 计算最后一段时间增量
+        now = datetime.utcnow()
+        elapsed_increment = 0
+        if session_id in _session_last_update:
+            elapsed_increment = int((now - _session_last_update[session_id]).total_seconds())
+            del _session_last_update[session_id]  # 清理
+
         with get_db_context() as db:
             SessionService.update_session_status(
                 db=db,
                 session_id=session_id,
                 status="completed" if success else "error",
                 progress=100 if success else None,
-                error_message=error_message
+                error_message=error_message,
+                increment_elapsed=elapsed_increment
             )
-            
+
             print(f"[数据库] 分析{'成功' if success else '失败'}: {session_id}")
-    
+
     except Exception as e:
         print(f"[数据库] 标记完成失败: {e}")
+
+
+def init_session_timer(session_id: str):
+    """
+    初始化会话计时器
+
+    在分析开始时调用，用于跟踪实际运行时间
+
+    Args:
+        session_id: 会话ID
+    """
+    _session_last_update[session_id] = datetime.utcnow()
+    print(f"[数据库] 初始化会话计时器: {session_id}")
 
 
 def get_agent_name_map():

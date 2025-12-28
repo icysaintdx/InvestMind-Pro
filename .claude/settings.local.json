@@ -6,7 +6,13 @@
       "Bash(python -c:*)",
       "Bash(python:*)",
       "Bash(set PYTHONIOENCODING=utf-8)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(findstr:*)",
+      "Bash(cat:*)",
+      "Bash(chcp:*)",
+      "Bash(rm:*)",
+      "Bash(pip show:*)",
+      "Bash(pip install:*)"
     ],
     "deny": [],
     "ask": []

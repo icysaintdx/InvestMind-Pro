@@ -207,11 +207,11 @@
 
     <el-dialog v-model="orderDialog" title="下市场单" width="480px">
       <!-- 分析上下文提示 -->
-      <div v-if="(order as any).analysis_id" class="analysis-context" style="margin-bottom:12px">
+      <div v-if="order.analysis_id" class="analysis-context" style="margin-bottom:12px">
         <el-alert :closable="false" type="info" show-icon>
           <template #title>
-            来自分析报告：<span style="font-family:monospace">{{ (order as any).analysis_id }}</span>
-            <el-button link size="small" type="primary" style="margin-left:8px" @click="viewReport((order as any).analysis_id)">查看报告</el-button>
+            来自分析报告：<span style="font-family:monospace">{{ order.analysis_id }}</span>
+            <el-button link size="small" type="primary" style="margin-left:8px" @click="viewReport(order.analysis_id)">查看报告</el-button>
           </template>
           <div v-if="analysisLoading" style="color:#666">正在加载分析摘要…</div>
           <div v-else-if="analysisContext">
@@ -255,10 +255,11 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+// eslint-disable-next-line no-unused-vars
 import { CreditCard, Refresh, Plus, Delete } from '@element-plus/icons-vue'
 import { paperApi } from '@/api/paper'
 import { analysisApi } from '@/api/analysis'
@@ -270,15 +271,15 @@ const route = useRoute()
 const router = useRouter()
 
 // 数据
-const account = ref<any | null>(null)
-const positions = ref<any[]>([])
-const orders = ref<any[]>([])
+const account = ref(null)
+const positions = ref([])
+const orders = ref([])
 const loading = ref({ account: false, positions: false, orders: false })
 
 const orderDialog = ref(false)
 const order = ref({ side: 'buy', code: '', qty: 100 })
-const detectedMarket = ref<string>('')
-const activeMarketTab = ref<string>('CN')
+const detectedMarket = ref('')
+const activeMarketTab = ref('CN')
 
 // 计算属性：根据当前市场标签页过滤持仓
 const filteredPositions = computed(() => {
@@ -299,21 +300,21 @@ const filteredOrders = computed(() => {
 })
 
 // 分析上下文
-const analysisContext = ref<any | null>(null)
+const analysisContext = ref(null)
 const analysisLoading = ref(false)
 
 // 方法
-function fmtPrice(n: number | null | undefined) {
-  if (n == null || Number.isNaN(n as any)) return '-'
+function fmtPrice(n) {
+  if (n == null || Number.isNaN(n)) return '-'
   return Number(n).toFixed(2)
 }
-function fmtAmount(n: number | null | undefined) {
-  if (n == null || Number.isNaN(n as any)) return '-'
+function fmtAmount(n) {
+  if (n == null || Number.isNaN(n)) return '-'
   return Number(n).toFixed(2)
 }
 
 // 获取货币符号
-function getCurrencySymbol(currency: string | undefined) {
+function getCurrencySymbol(currency) {
   if (!currency) return '¥'
   if (currency === 'CNY') return '¥'
   if (currency === 'HKD') return 'HK$'
@@ -360,7 +361,7 @@ async function fetchAccount() {
       // 可选：也可从account接口带回的positions中填充
       // positions.value = res.data.positions || positions.value
     }
-  } catch (e: any) {
+  } catch (e) {
     ElMessage.error(e?.message || '获取账户失败')
   } finally {
     loading.value.account = false
@@ -376,7 +377,7 @@ async function fetchPositions() {
       // 批量获取股票名称
       await fetchStockNames(positions.value)
     }
-  } catch (e: any) {
+  } catch (e) {
     ElMessage.error(e?.message || '获取持仓失败')
   } finally {
     loading.value.positions = false
@@ -392,7 +393,7 @@ async function fetchOrders() {
       // 批量获取股票名称
       await fetchStockNames(orders.value)
     }
-  } catch (e: any) {
+  } catch (e) {
     ElMessage.error(e?.message || '获取订单失败')
   } finally {
     loading.value.orders = false
@@ -400,7 +401,7 @@ async function fetchOrders() {
 }
 
 // 批量获取股票名称
-async function fetchStockNames(items: any[]) {
+async function fetchStockNames(items) {
   if (!items || items.length === 0) return
 
   // 获取所有唯一的股票代码
@@ -426,14 +427,15 @@ async function fetchStockNames(items: any[]) {
   )
 }
 
+// eslint-disable-next-line no-unused-vars
 function openOrderDialog() {
   orderDialog.value = true
 }
 
 async function submitOrder() {
   try {
-    const payload: any = { side: order.value.side as 'buy' | 'sell', code: order.value.code, quantity: Number(order.value.qty) }
-    if ((order.value as any).analysis_id) payload.analysis_id = (order.value as any).analysis_id
+    const payload = { side: order.value.side, code: order.value.code, quantity: Number(order.value.qty) }
+    if (order.value.analysis_id) payload.analysis_id = order.value.analysis_id
     const res = await paperApi.placeOrder(payload)
     if (res.success) {
       ElMessage.success('下单成功')
@@ -442,11 +444,12 @@ async function submitOrder() {
     } else {
       ElMessage.error(res.message || '下单失败')
     }
-  } catch (e: any) {
+  } catch (e) {
     ElMessage.error(e?.message || '下单失败')
   }
 }
 
+// eslint-disable-next-line no-unused-vars
 async function confirmReset() {
   try {
     await ElMessageBox.confirm('将清空所有订单与持仓，并重置账户为初始现金，确认重置？', '重置账户', { type: 'warning' })
@@ -465,14 +468,14 @@ async function refreshAll() {
 }
 
 // 查看报告详情（跳转到报告详情页）
-function viewReport(analysisId: string) {
+function viewReport(analysisId) {
   if (!analysisId) return
   // 跳转到报告详情页
   router.push({ name: 'ReportDetail', params: { id: analysisId } })
 }
 
 // 跳转到分析页面（带股票代码和市场）
-function goAnalysisWithCode(stockCode: string) {
+function goAnalysisWithCode(stockCode) {
   if (!stockCode) return
   // 根据股票代码判断市场
   const market = getMarketByCode(stockCode)
@@ -480,7 +483,7 @@ function goAnalysisWithCode(stockCode: string) {
 }
 
 // 根据股票代码判断市场
-function getMarketByCode(code: string): string {
+function getMarketByCode(code) {
   if (!code) return 'A股'
 
   // 6位数字 = A股
@@ -498,14 +501,14 @@ function getMarketByCode(code: string): string {
 }
 
 // 查看股票详情（跳转到股票详情页）
-function viewStockDetail(stockCode: string) {
+function viewStockDetail(stockCode) {
   if (!stockCode) return
   // 跳转到股票详情页
   router.push({ name: 'StockDetail', params: { code: stockCode } })
 }
 
 // 卖出持仓
-async function sellPosition(position: any) {
+async function sellPosition(position) {
   if (!position || !position.code) return
 
   try {
@@ -522,7 +525,7 @@ async function sellPosition(position: any) {
 
     // 提交卖出订单
     const payload = {
-      side: 'sell' as const,
+      side: 'sell',
       code: position.code,
       quantity: position.quantity
     }
@@ -534,7 +537,7 @@ async function sellPosition(position: any) {
     } else {
       ElMessage.error(res.message || '卖出失败')
     }
-  } catch (error: any) {
+  } catch (error) {
     if (error !== 'cancel') {
       console.error('卖出失败:', error)
       ElMessage.error(error?.message || '卖出失败')
@@ -542,18 +545,40 @@ async function sellPosition(position: any) {
   }
 }
 
-async function fetchAnalysisContext(analysisId: string) {
+async function fetchAnalysisContext(analysisId) {
   try {
     analysisLoading.value = true
     analysisContext.value = null
     const res = await analysisApi.getResult(analysisId)
-    analysisContext.value = res as any
+    analysisContext.value = res
   } catch (e) {
     // 忽略错误，仅用于展示
   } finally {
     analysisLoading.value = false
   }
 }
+
+// 重置账户
+async function resetAccount() {
+  try {
+    await ElMessageBox.confirm('将清空所有订单与持仓，并重置账户为初始现金，确认重置？', '重置账户', { type: 'warning' })
+    const res = await paperApi.resetAccount()
+    if (res.success) {
+      ElMessage.success('账户已重置')
+      await refreshAll()
+    }
+  } catch (e) {
+    // 取消或失败
+  }
+}
+
+// 加载投资组合
+async function loadPortfolio() {
+  await refreshAll()
+}
+
+// eslint-disable-next-line no-unused-vars
+const showTradeDialog = ref(false)
 
 onMounted(() => {
   let hasPrefill = false
@@ -564,7 +589,7 @@ onMounted(() => {
   }
   const qSide = String(route.query.side || '').trim().toLowerCase()
   if (qSide === 'buy' || qSide === 'sell') {
-    order.value.side = qSide as 'buy' | 'sell'
+    order.value.side = qSide
     hasPrefill = true
   }
   const qQty = Number(route.query.qty || route.query.quantity || 0)
@@ -576,7 +601,7 @@ onMounted(() => {
   const qAnalysisId = String(route.query.analysis_id || '').trim()
   if (qAnalysisId) {
     // 暂存于本地，等待提交订单时附带
-    ;(order as any).analysis_id = qAnalysisId
+    order.value.analysis_id = qAnalysisId
     fetchAnalysisContext(qAnalysisId)
     hasPrefill = true
   }
@@ -592,4 +617,368 @@ onMounted(() => {
 .header { display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px; }
 .title { display:flex; align-items:center; font-weight: 600; font-size: 16px; }
 .card-hd { font-weight: 600; }
+
+/* 页面容器 */
+.paper-trading-container {
+  padding: 16px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* 页面标题 */
+.page-header {
+  margin-bottom: 20px;
+}
+
+.page-header h1 {
+  font-size: 1.75rem;
+  margin: 0 0 8px 0;
+}
+
+.page-header .subtitle {
+  color: #909399;
+  font-size: 14px;
+  margin: 0 0 16px 0;
+}
+
+.page-header .action-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* 按钮样式 */
+.btn-primary {
+  background: linear-gradient(135deg, #409EFF, #337ecc);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.4);
+}
+
+.btn-secondary {
+  background: #f5f7fa;
+  color: #606266;
+  border: 1px solid #dcdfe6;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.btn-secondary:hover {
+  background: #e6e8eb;
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #F56C6C, #c45656);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.btn-danger:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 108, 108, 0.4);
+}
+
+/* 卡片样式 */
+.account-card,
+.positions-card,
+.orders-card {
+  margin-bottom: 16px;
+}
+
+/* ========== 移动端适配 ========== */
+@media (max-width: 992px) {
+  /* 主体布局改为单列 */
+  .body .el-col {
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+  }
+
+  .account-card {
+    margin-bottom: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .paper-trading-container {
+    padding: 12px;
+  }
+
+  /* 页面标题 */
+  .page-header {
+    margin-bottom: 16px;
+  }
+
+  .page-header h1 {
+    font-size: 1.4rem;
+  }
+
+  .page-header .subtitle {
+    font-size: 13px;
+  }
+
+  .page-header .action-buttons,
+  .action-buttons {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .page-header .action-buttons button,
+  .action-buttons button,
+  .btn-secondary,
+  .btn-primary,
+  .btn-danger {
+    flex: 1;
+    min-width: 80px;
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  /* 风险提示横幅 */
+  :deep(.el-alert) {
+    padding: 12px;
+  }
+
+  :deep(.el-alert__content) {
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  :deep(.el-alert__content p) {
+    margin-bottom: 6px !important;
+  }
+
+  /* 账户信息卡片 */
+  :deep(.el-tabs--border-card) {
+    border-radius: 8px;
+  }
+
+  :deep(.el-tabs__header) {
+    background: #f5f7fa;
+  }
+
+  :deep(.el-tabs__item) {
+    padding: 0 10px;
+    font-size: 12px;
+  }
+
+  :deep(.el-descriptions__label),
+  :deep(.el-descriptions__content) {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  /* 表格适配 - 横向滚动 */
+  :deep(.el-table) {
+    font-size: 12px;
+    overflow-x: auto;
+  }
+
+  :deep(.el-table__body-wrapper) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  :deep(.el-table th),
+  :deep(.el-table td) {
+    padding: 6px 4px;
+  }
+
+  :deep(.el-table .cell) {
+    padding: 0 4px;
+    white-space: nowrap;
+  }
+
+  /* 表格列宽调整 */
+  :deep(.el-table-column--selection) {
+    width: 40px !important;
+  }
+
+  /* 卡片内边距 */
+  :deep(.el-card__body) {
+    padding: 10px;
+    overflow-x: auto;
+  }
+
+  :deep(.el-card__header) {
+    padding: 10px 14px;
+  }
+
+  .card-hd {
+    font-size: 14px;
+  }
+
+  /* 弹窗适配 */
+  :deep(.el-dialog) {
+    width: 95% !important;
+    max-width: 95% !important;
+    margin: 10px auto !important;
+  }
+
+  :deep(.el-dialog__header) {
+    padding: 16px;
+  }
+
+  :deep(.el-dialog__body) {
+    padding: 16px;
+  }
+
+  :deep(.el-dialog__footer) {
+    padding: 12px 16px;
+  }
+
+  /* 表单适配 */
+  :deep(.el-form-item__label) {
+    font-size: 13px;
+    padding-right: 8px;
+  }
+
+  :deep(.el-input__inner) {
+    font-size: 14px;
+  }
+
+  :deep(.el-radio-button__inner) {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
+  /* 标签适配 */
+  :deep(.el-tag) {
+    font-size: 11px;
+    padding: 0 6px;
+  }
+
+  /* 按钮组适配 */
+  :deep(.el-button--small) {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .paper-trading-container {
+    padding: 8px;
+  }
+
+  .page-header h1 {
+    font-size: 1.2rem;
+  }
+
+  .page-header .action-buttons,
+  .action-buttons {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .page-header .action-buttons button,
+  .action-buttons button,
+  .btn-secondary,
+  .btn-primary,
+  .btn-danger {
+    width: 100%;
+    padding: 10px;
+    font-size: 13px;
+  }
+
+  /* 账户标签页 */
+  :deep(.el-tabs__item) {
+    padding: 0 6px;
+    font-size: 11px;
+  }
+
+  /* 表格进一步简化 */
+  :deep(.el-table th),
+  :deep(.el-table td) {
+    padding: 4px 2px;
+  }
+
+  :deep(.el-table) {
+    font-size: 11px;
+  }
+
+  :deep(.el-table .cell) {
+    padding: 0 2px;
+  }
+
+  /* 描述列表 */
+  :deep(.el-descriptions__label),
+  :deep(.el-descriptions__content) {
+    font-size: 11px;
+    padding: 4px 6px;
+  }
+
+  /* 弹窗表单 */
+  :deep(.el-form-item) {
+    margin-bottom: 14px;
+  }
+
+  :deep(.el-form-item__label) {
+    width: 60px !important;
+    font-size: 11px;
+  }
+
+  /* 分析上下文提示 */
+  .analysis-context :deep(.el-alert) {
+    padding: 8px;
+  }
+
+  .analysis-context :deep(.el-alert__content) {
+    font-size: 11px;
+  }
+
+  /* 卡片 */
+  :deep(.el-card__body) {
+    padding: 8px;
+  }
+
+  :deep(.el-card__header) {
+    padding: 8px 10px;
+  }
+
+  .card-hd {
+    font-size: 13px;
+  }
+}
+
+/* 表格横向滚动 */
+@media (max-width: 768px) {
+  .positions-card,
+  .orders-card {
+    overflow: hidden;
+  }
+
+  .positions-card :deep(.el-card__body),
+  .orders-card :deep(.el-card__body) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .positions-card :deep(.el-table),
+  .orders-card :deep(.el-table) {
+    min-width: 600px;
+  }
+
+  .positions-card :deep(.el-table__body-wrapper),
+  .orders-card :deep(.el-table__body-wrapper) {
+    overflow-x: auto;
+  }
+}
 </style>

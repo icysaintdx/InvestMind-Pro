@@ -221,12 +221,13 @@
 <script>
 import { ref, reactive, computed, onMounted } from 'vue'
 import axios from 'axios'
+import API_BASE_URL from '@/config/api.js'
 
 export default {
   name: 'TradingLLMConfig',
   setup() {
-    const API_BASE = 'http://localhost:8000/api/trading-llm-config'
-    const AGENT_CONFIG_API = 'http://localhost:8000/api/config/agents'
+    const API_BASE = `${API_BASE_URL}/api/trading-llm-config`
+    const AGENT_CONFIG_API = `${API_BASE_URL}/api/config/agents`
 
     const DEFAULT_MODEL_OPTIONS = [
       { name: 'deepseek-chat', label: 'DeepSeek Chat' },
@@ -468,7 +469,7 @@ export default {
     }
 
     const loadStrategiesFromTrading = async () => {
-      const response = await axios.get('http://localhost:8000/api/strategy/list')
+      const response = await axios.get(`${API_BASE_URL}/api/strategy/list`)
       if (response.data?.success && response.data.total) {
         const rawStrategies = response.data.strategies || {}
         const list = Object.entries(rawStrategies).map(([id, info]) => ({
@@ -485,7 +486,7 @@ export default {
     }
 
     const loadStrategiesFromBacktest = async () => {
-      const response = await axios.get('http://localhost:8000/api/backtest/strategies')
+      const response = await axios.get(`${API_BASE_URL}/api/backtest/strategies`)
       if (response.data?.success && Array.isArray(response.data.strategies)) {
         applyStrategyData(response.data.strategies, {
           total: response.data.strategies.length,

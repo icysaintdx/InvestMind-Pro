@@ -129,15 +129,18 @@ class GrahamMarginStrategy(BaseStrategy):
         # 模拟估值指标（实际应从财报数据获取）
         
         # 模拟PE（使用价格相对位置，低位=低PE）
-        df['price_percentile'] = df['close'].rolling(window=250).apply(
+        # 放宽窗口从250降到60
+        df['price_percentile'] = df['close'].rolling(window=60).apply(
             lambda x: (x.iloc[-1] - x.min()) / (x.max() - x.min()) if (x.max() - x.min()) > 0 else 0.5
         )
-        df['simulated_pe'] = 5 + df['price_percentile'] * 20  # PE在5-25之间
+        df['simulated_pe'] = 5 + df['price_percentile'] * 15  # PE在5-20之间（放宽范围）
         
         # 模拟PB（使用价格趋势）
-        df['price_trend'] = (df['close'] - df['sma_200']) / df['sma_200']
-        df['simulated_pb'] = 0.8 + df['price_trend'] * 1.5  # PB在0.3-2.3之间
-        df['simulated_pb'] = df['simulated_pb'].clip(0.3, 3.0)
+        # 使用sma_50代替sma_200以减少数据要求
+        df['sma_50_temp'] = df['close'].rolling(window=50).mean()
+        df['price_trend'] = (df['close'] - df['sma_50_temp']) / df['sma_50_temp']
+        df['simulated_pb'] = 0.8 + df['price_trend'] * 1.2  # PB在0.3-2.0之间
+        df['simulated_pb'] = df['simulated_pb'].clip(0.3, 2.5)
         
         # 模拟净资产（假设为当前价格的某个倍数）
         df['simulated_net_asset'] = df['close'] / df['simulated_pb']
@@ -156,18 +159,20 @@ class GrahamMarginStrategy(BaseStrategy):
         df['simulated_debt_ratio'] = df['simulated_debt_ratio'].clip(0, 0.8)
         
         # 模拟ROE（使用价格稳定性）
-        df['price_std'] = df['close'].rolling(window=250).std()
-        df['price_mean'] = df['close'].rolling(window=250).mean()
+        # 放宽窗口从250降到60
+        df['price_std'] = df['close'].rolling(window=60).std()
+        df['price_mean'] = df['close'].rolling(window=60).mean()
         df['price_stability'] = 1 - (df['price_std'] / df['price_mean']).clip(0, 1)
-        df['simulated_roe'] = 0.05 + df['price_stability'] * 0.20  # 5%-25%
+        df['simulated_roe'] = 0.08 + df['price_stability'] * 0.15  # 8%-23%（放宽下限）
         
         # 模拟股息率（使用低波动率）
         df['simulated_dividend_yield'] = 0.05 * (1 - df['volatility'] * 10)
         df['simulated_dividend_yield'] = df['simulated_dividend_yield'].clip(0, 0.08)
         
         # 模拟盈利持续性（使用趋势稳定性）
-        df['profit_consistency'] = df['close'].rolling(window=250).apply(
-            lambda x: 1 if len(x[x > 0]) == len(x) else 0
+        # 放宽窗口从250降到60
+        df['profit_consistency'] = df['close'].rolling(window=60).apply(
+            lambda x: 1 if len(x[x > 0]) == len(x) else 0.8  # 放宽条件
         )
         
         # 计算内在价值（格雷厄姆公式简化版）
@@ -309,28 +314,32 @@ class GrahamMarginStrategy(BaseStrategy):
     def generate_signal(self, data: pd.DataFrame, current_position: int = 0) -> Optional[StrategySignal]:
         """
         生成交易信号
-        
+
         买入条件：
         1. 极低估值
         2. 充足安全边际
         3. 财务稳健
         4. 持续盈利
         5. 当前无持仓
-        
+
         卖出条件：
         1. 价格接近或超过内在价值
         2. 基本面恶化
         3. 持有时间过长
         4. 达到止损/止盈
         """
+        # 计算指标
+        data = self.calculate_indicators(data)
+
         # 使用数据长度作为索引
         current_idx = len(data) - 1
-        
-        if current_idx < 250:  # 需要足够的历史数据
+
+        # 放宽数据要求，从250降到60
+        if current_idx < 60:
             return StrategySignal(
                 signal_type=SignalType.HOLD,
                 confidence=0.0,
-                reason="数据不足，需要至少250个交易日"
+                reason="数据不足，需要至少60个交易日"
             )
         
         current_data = data.iloc[:current_idx+1]
@@ -345,11 +354,15 @@ class GrahamMarginStrategy(BaseStrategy):
         
         # 买入逻辑
         if self.holding_position is None:
-            # 检查是否满足买入条件（格雷厄姆标准非常严格）
-            if (valuation['is_undervalued'] and
-                safety['has_safety_margin'] and
-                strength['is_strong'] and
-                profitability['is_profitable']):
+            # 放宽买入条件：只需要满足2个条件即可
+            conditions_met = sum([
+                valuation['is_undervalued'],
+                safety['has_safety_margin'],
+                strength['is_strong'],
+                profitability['is_profitable']
+            ])
+
+            if conditions_met >= 2:
                 
                 # 计算综合得分
                 total_score = (

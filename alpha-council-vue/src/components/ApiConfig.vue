@@ -168,6 +168,7 @@
 
 <script>
 import { ref, watch } from 'vue'
+import API_BASE_URL from '@/config/api.js'
 
 export default {
   name: 'ApiConfig',
@@ -249,7 +250,7 @@ export default {
       
       try {
         // 调用后端测试接口
-        const response = await fetch(`http://localhost:8000/api/test/${provider}`, {
+        const response = await fetch(`${API_BASE_URL}/api/test/${provider}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ api_key: localKeys.value[provider] })
@@ -287,7 +288,7 @@ export default {
 
     const loadFromEnv = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/config')
+        const response = await fetch(`${API_BASE_URL}/api/config`)
         if (response.ok) {
           const data = await response.json()
           console.log('ApiConfig 加载配置:', data)

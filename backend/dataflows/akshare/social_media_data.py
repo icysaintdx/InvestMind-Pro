@@ -69,26 +69,44 @@ class AKShareSocialMediaData(AKShareBase):
     
     def get_baidu_hot_search(self) -> List[Dict[str, Any]]:
         """
-        获取百度热搜股票
-        
+        获取百度热搜股票（使用东财热门作为备选）
+
         Returns:
             百度热搜股票列表
-            
+
         应用场景：
             - 发现热门股票
             - 分析关注趋势
         """
         self.logger.info("获取百度热搜股票...")
-        
-        df = self.safe_call(ak.stock_hot_search_baidu)
-        
-        if df is None:
-            return []
-        
-        hot_list = self.df_to_dict(df)
-        self.logger.info(f"✅ 获取到{len(hot_list)}条百度热搜股票")
-        
-        return hot_list
+
+        # 方法1: 尝试百度热搜接口（可能有bug）
+        try:
+            from datetime import datetime
+            date = datetime.now().strftime('%Y%m%d')
+            df = ak.stock_hot_search_baidu(symbol='A股', date=date, time='今日')
+            if df is not None and not df.empty:
+                hot_list = self.df_to_dict(df)
+                self.logger.info(f"✅ 获取到{len(hot_list)}条百度热搜股票")
+                return hot_list
+        except TypeError as e:
+            # AKShare库的bug: list indices must be integers or slices, not str
+            self.logger.warning(f"⚠️ 百度热搜接口暂不可用(AKShare bug): {e}")
+        except Exception as e:
+            self.logger.warning(f"⚠️ 百度热搜接口失败: {e}")
+
+        # 方法2: 使用东财热门作为备选
+        self.logger.info("使用东财热门股票作为百度热搜备选...")
+        try:
+            df = ak.stock_hot_rank_em()
+            if df is not None and not df.empty:
+                hot_list = self.df_to_dict(df)
+                self.logger.info(f"✅ 获取到{len(hot_list)}条东财热门股票(备选)")
+                return hot_list
+        except Exception as e:
+            self.logger.warning(f"⚠️ 东财热门接口也失败: {e}")
+
+        return []
     
     def get_comprehensive_social_media(self) -> Dict[str, Any]:
         """

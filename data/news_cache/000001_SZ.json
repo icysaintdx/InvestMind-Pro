@@ -1,0 +1,16 @@
+{
+  "stock_code": "000001.SZ",
+  "data": {
+    "success": true,
+    "stock_code": "000001.SZ",
+    "news": [],
+    "sources": {
+      "eastmoney": "error: Extra data: line 1 column 17 (char 16)",
+      "sina": "error: module 'akshare' has no attribute 'stock_news_sina"
+    },
+    "error": null,
+    "elapsed": 0.5
+  },
+  "cached_at": "2025-12-25T19:44:57.110567",
+  "expires_at": "2025-12-25T20:14:57.110567"
+}

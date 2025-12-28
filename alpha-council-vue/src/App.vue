@@ -163,12 +163,47 @@
         <span class="tab-icon">🔄</span>
         <span class="tab-text">跟踪验证</span>
       </button>
-      <button 
-        @click="currentView = 'llm-config'" 
+      <button
+        @click="currentView = 'llm-config'"
         :class="['tab-btn', { active: currentView === 'llm-config' }]"
       >
         <span class="tab-icon">⚙️</span>
         <span class="tab-text">LLM配置</span>
+      </button>
+      <button
+        @click="currentView = 'longhubang'"
+        :class="['tab-btn', { active: currentView === 'longhubang' }]"
+      >
+        <span class="tab-icon">🐉</span>
+        <span class="tab-text">龙虎榜</span>
+      </button>
+      <button
+        @click="currentView = 'wencai'"
+        :class="['tab-btn', { active: currentView === 'wencai' }]"
+      >
+        <span class="tab-icon">🔍</span>
+        <span class="tab-text">问财选股</span>
+      </button>
+      <button
+        @click="currentView = 'sector-rotation'"
+        :class="['tab-btn', { active: currentView === 'sector-rotation' }]"
+      >
+        <span class="tab-icon">🔄</span>
+        <span class="tab-text">板块轮动</span>
+      </button>
+      <button
+        @click="currentView = 'sentiment'"
+        :class="['tab-btn', { active: currentView === 'sentiment' }]"
+      >
+        <span class="tab-icon">💹</span>
+        <span class="tab-text">市场情绪</span>
+      </button>
+      <button
+        @click="currentView = 'unified-news'"
+        :class="['tab-btn', { active: currentView === 'unified-news' }]"
+      >
+        <span class="tab-icon">📰</span>
+        <span class="tab-text">新闻中心</span>
       </button>
     </div>
     
@@ -196,6 +231,11 @@
         :integrationContext="integrationContext"
       />
       <LLMConfigView v-if="currentView === 'llm-config'" />
+      <LonghubangView v-if="currentView === 'longhubang'" />
+      <WencaiSelectorView v-if="currentView === 'wencai'" />
+      <SectorRotationView v-if="currentView === 'sector-rotation'" />
+      <MarketSentimentView v-if="currentView === 'sentiment'" />
+      <UnifiedNewsView v-if="currentView === 'unified-news'" />
     </main>
     
     <!-- 更新日志模态框 -->
@@ -255,6 +295,11 @@ import ChangelogView from './views/ChangelogView.vue'
 import ProjectInfoView from './views/ProjectInfoView.vue'
 import DocumentView from './views/DocumentView.vue'
 import HistoryView from './views/HistoryView.vue'
+import LonghubangView from './views/LonghubangView.vue'
+import WencaiSelectorView from './views/WencaiSelectorView.vue'
+import SectorRotationView from './views/SectorRotationView.vue'
+import MarketSentimentView from './views/MarketSentimentView.vue'
+import UnifiedNewsView from './views/UnifiedNewsView.vue'
 import ParticleBackground from './components/ParticleBackground.vue'
 import StockDataPanel from './components/StockDataPanel.vue'
 import NewsDataPanel from './components/NewsDataPanel.vue'
@@ -276,6 +321,11 @@ export default defineComponent({
     ProjectInfoView,
     DocumentView,
     HistoryView,
+    LonghubangView,
+    WencaiSelectorView,
+    SectorRotationView,
+    MarketSentimentView,
+    UnifiedNewsView,
     ParticleBackground,
     StockDataPanel,
     NewsDataPanel,

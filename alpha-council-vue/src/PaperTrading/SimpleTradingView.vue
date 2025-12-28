@@ -8,8 +8,14 @@
         <button @click="loadPortfolio" class="btn-secondary">🔄 刷新</button>
         <button @click="showTradeDialog = true" class="btn-primary">📈 买入/卖出</button>
         <button @click="resetAccount" class="btn-danger">♻️ 重置账户</button>
+        <button @click="showMonitorPanel = !showMonitorPanel" :class="['btn-monitor', { active: showMonitorPanel }]">
+          🎯 {{ showMonitorPanel ? '隐藏盯盘' : '实时盯盘' }}
+        </button>
       </div>
     </div>
+
+    <!-- 实时盯盘监控面板 -->
+    <RealtimeMonitorPanel v-if="showMonitorPanel" />
 
     <!-- 风险提示 -->
     <div class="risk-alert">
@@ -53,15 +59,15 @@
       <div class="kline-header">
         <h3>📈 K线图</h3>
         <div class="kline-controls">
-          <input 
-            v-model="klineStock" 
+          <input
+            v-model="klineStock"
             placeholder="输入股票代码"
             class="kline-input"
             @keyup.enter="loadKlineData"
           />
           <div class="period-buttons">
-            <button 
-              v-for="period in periods" 
+            <button
+              v-for="period in periods"
               :key="period.value"
               @click="selectPeriod(period.value)"
               :class="['period-btn', { active: klinePeriod === period.value }]"
@@ -70,6 +76,27 @@
             </button>
           </div>
         </div>
+      </div>
+      
+      <!-- 技术指标开关 -->
+      <div class="indicator-toggles">
+        <span class="toggle-label">技术指标：</span>
+        <label class="toggle-item">
+          <input type="checkbox" v-model="indicators.ma5" @change="renderKlineChart" />
+          <span class="toggle-text ma5">MA5</span>
+        </label>
+        <label class="toggle-item">
+          <input type="checkbox" v-model="indicators.ma20" @change="renderKlineChart" />
+          <span class="toggle-text ma20">MA20</span>
+        </label>
+        <label class="toggle-item">
+          <input type="checkbox" v-model="indicators.ma60" @change="renderKlineChart" />
+          <span class="toggle-text ma60">MA60</span>
+        </label>
+        <label class="toggle-item">
+          <input type="checkbox" v-model="indicators.boll" @change="renderKlineChart" />
+          <span class="toggle-text boll">布林带</span>
+        </label>
       </div>
       <div class="kline-chart-wrapper">
         <div class="kline-chart" ref="klineChart"></div>
@@ -92,29 +119,30 @@
       <div v-if="!portfolio || portfolio.positions.length === 0" class="empty-state">
         <p>暂无持仓</p>
       </div>
-      <table v-else class="data-table">
-        <thead>
-          <tr>
-            <th>股票代码</th>
-            <th>股票名称</th>
-            <th>持仓数量</th>
-            <th>成本价</th>
-            <th>现价</th>
-            <th>市值</th>
-            <th>盈亏</th>
-            <th>收益率</th>
-            <th>持有天数</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="position in portfolio.positions"
-            :key="position.stock_code"
-            @click="loadStockKline(position.stock_code)"
-            class="clickable-row"
-            :title="`点击查看 ${position.stock_code} K线图`"
-          >
+      <div v-else class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>股票代码</th>
+              <th>股票名称</th>
+              <th>持仓数量</th>
+              <th>成本价</th>
+              <th>现价</th>
+              <th>市值</th>
+              <th>盈亏</th>
+              <th>收益率</th>
+              <th>持有天数</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="position in portfolio.positions"
+              :key="position.stock_code"
+              @click="loadStockKline(position.stock_code)"
+              class="clickable-row"
+              :title="`点击查看 ${position.stock_code} K线图`"
+            >
             <td>{{ position.stock_code }}</td>
             <td>{{ position.stock_name }}</td>
             <td>{{ position.quantity }}</td>
@@ -139,6 +167,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
 
     <!-- 交易记录 -->
@@ -147,20 +176,21 @@
       <div v-if="trades.length === 0" class="empty-state">
         <p>暂无交易记录</p>
       </div>
-      <table v-else class="data-table">
-        <thead>
-          <tr>
-            <th>时间</th>
-            <th>股票代码</th>
-            <th>股票名称</th>
-            <th>方向</th>
-            <th>数量</th>
-            <th>价格</th>
-            <th>金额</th>
-            <th>手续费</th>
-            <th>状态</th>
-          </tr>
-        </thead>
+      <div v-else class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>时间</th>
+              <th>股票代码</th>
+              <th>股票名称</th>
+              <th>方向</th>
+              <th>数量</th>
+              <th>价格</th>
+              <th>金额</th>
+              <th>手续费</th>
+              <th>状态</th>
+            </tr>
+          </thead>
         <tbody>
           <tr
             v-for="trade in trades"
@@ -183,6 +213,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
 
     <!-- 交易对话框 -->
@@ -254,17 +285,23 @@
 import { ref, reactive, onMounted, onUnmounted, nextTick } from 'vue'
 import axios from 'axios'
 import * as echarts from 'echarts'
+import API_BASE_URL from '@/config/api.js'
+import RealtimeMonitorPanel from './RealtimeMonitorPanel.vue'
 
 export default {
   name: 'SimpleTradingView',
+  components: {
+    RealtimeMonitorPanel
+  },
   setup() {
-    const API_BASE = 'http://localhost:8000/api/trading'
-    const KLINE_API = 'http://localhost:8000/api/kline'
+    const API_BASE = `${API_BASE_URL}/api/trading`
+    const KLINE_API = `${API_BASE_URL}/api/kline`
     
     // 状态
     const portfolio = ref(null)
     const trades = ref([])
     const showTradeDialog = ref(false)
+    const showMonitorPanel = ref(false)  // 实时盯盘面板显示状态
     
     // K线图状态
     const klineStock = ref('600519')
@@ -274,6 +311,14 @@ export default {
     const klineError = ref('')
     const klineChart = ref(null)
     let chartInstance = null
+    
+    // 技术指标开关
+    const indicators = reactive({
+      ma5: true,
+      ma20: true,
+      ma60: false,
+      boll: false
+    })
     
     // 周期选项
     const periods = [
@@ -395,6 +440,59 @@ export default {
       return ''
     }
     
+    // 计算移动平均线
+    const calculateMA = (data, period) => {
+      const result = []
+      for (let i = 0; i < data.length; i++) {
+        if (i < period - 1) {
+          result.push(null)
+        } else {
+          let sum = 0
+          for (let j = 0; j < period; j++) {
+            sum += Number(data[i - j].close) || 0
+          }
+          result.push((sum / period).toFixed(2))
+        }
+      }
+      return result
+    }
+    
+    // 计算布林带
+    const calculateBoll = (data, period = 20, multiplier = 2) => {
+      const upper = []
+      const middle = []
+      const lower = []
+      
+      for (let i = 0; i < data.length; i++) {
+        if (i < period - 1) {
+          upper.push(null)
+          middle.push(null)
+          lower.push(null)
+        } else {
+          // 计算中轨（MA20）
+          let sum = 0
+          for (let j = 0; j < period; j++) {
+            sum += Number(data[i - j].close) || 0
+          }
+          const ma = sum / period
+          
+          // 计算标准差
+          let squareSum = 0
+          for (let j = 0; j < period; j++) {
+            const diff = (Number(data[i - j].close) || 0) - ma
+            squareSum += diff * diff
+          }
+          const std = Math.sqrt(squareSum / period)
+          
+          middle.push(ma.toFixed(2))
+          upper.push((ma + multiplier * std).toFixed(2))
+          lower.push((ma - multiplier * std).toFixed(2))
+        }
+      }
+      
+      return { upper, middle, lower }
+    }
+    
     // 选择周期
     const selectPeriod = (period) => {
       klinePeriod.value = period
@@ -514,6 +612,12 @@ export default {
         
         const volumes = klineData.value.map(item => Number(item.volume) || 0)
         
+        // 计算技术指标
+        const ma5Data = indicators.ma5 ? calculateMA(klineData.value, 5) : []
+        const ma20Data = indicators.ma20 ? calculateMA(klineData.value, 20) : []
+        const ma60Data = indicators.ma60 ? calculateMA(klineData.value, 60) : []
+        const bollData = indicators.boll ? calculateBoll(klineData.value, 20, 2) : { upper: [], middle: [], lower: [] }
+        
         console.log('数据准备完成:', {
           dates: dates.length,
           values: values.length,
@@ -521,6 +625,15 @@ export default {
           sampleDate: dates[0],
           sampleValue: values[0]
         })
+        
+        // 构建图例数据
+        const legendData = ['K线', '成交量']
+        if (indicators.ma5) legendData.push('MA5')
+        if (indicators.ma20) legendData.push('MA20')
+        if (indicators.ma60) legendData.push('MA60')
+        if (indicators.boll) {
+          legendData.push('BOLL上轨', 'BOLL中轨', 'BOLL下轨')
+        }
       
       // 配置项
       const option = {
@@ -544,10 +657,11 @@ export default {
           }
         },
         legend: {
-          data: ['K线', '成交量'],
+          data: legendData,
           textStyle: {
             color: '#fff'
-          }
+          },
+          top: 30
         },
         grid: [
           {
@@ -651,7 +765,81 @@ export default {
                 return close >= open ? '#ef5350' : '#26a69a'
               }
             }
-          }
+          },
+          // MA5 均线
+          ...(indicators.ma5 ? [{
+            name: 'MA5',
+            type: 'line',
+            data: ma5Data,
+            smooth: true,
+            showSymbol: false,
+            lineStyle: {
+              width: 1,
+              color: '#f5d742'
+            }
+          }] : []),
+          // MA20 均线
+          ...(indicators.ma20 ? [{
+            name: 'MA20',
+            type: 'line',
+            data: ma20Data,
+            smooth: true,
+            showSymbol: false,
+            lineStyle: {
+              width: 1,
+              color: '#42a5f5'
+            }
+          }] : []),
+          // MA60 均线
+          ...(indicators.ma60 ? [{
+            name: 'MA60',
+            type: 'line',
+            data: ma60Data,
+            smooth: true,
+            showSymbol: false,
+            lineStyle: {
+              width: 1,
+              color: '#ab47bc'
+            }
+          }] : []),
+          // 布林带上轨
+          ...(indicators.boll ? [{
+            name: 'BOLL上轨',
+            type: 'line',
+            data: bollData.upper,
+            smooth: true,
+            showSymbol: false,
+            lineStyle: {
+              width: 1,
+              color: '#ff9800',
+              type: 'dashed'
+            }
+          }] : []),
+          // 布林带中轨
+          ...(indicators.boll ? [{
+            name: 'BOLL中轨',
+            type: 'line',
+            data: bollData.middle,
+            smooth: true,
+            showSymbol: false,
+            lineStyle: {
+              width: 1,
+              color: '#ff9800'
+            }
+          }] : []),
+          // 布林带下轨
+          ...(indicators.boll ? [{
+            name: 'BOLL下轨',
+            type: 'line',
+            data: bollData.lower,
+            smooth: true,
+            showSymbol: false,
+            lineStyle: {
+              width: 1,
+              color: '#ff9800',
+              type: 'dashed'
+            }
+          }] : [])
         ]
       }
       
@@ -707,6 +895,7 @@ export default {
       portfolio,
       trades,
       showTradeDialog,
+      showMonitorPanel,  // 实时盯盘面板
       tradeForm,
       loadPortfolio,
       executeTrade,
@@ -725,7 +914,10 @@ export default {
       periods,
       selectPeriod,
       loadKlineData,
-      loadStockKline
+      loadStockKline,
+      // 技术指标
+      indicators,
+      renderKlineChart
     }
   }
 }
@@ -817,6 +1009,10 @@ export default {
 .trades-section h3 {
   color: white;
   margin: 0 0 16px 0;
+}
+
+.table-wrapper {
+  width: 100%;
 }
 
 .data-table {
@@ -973,6 +1169,23 @@ export default {
   background: #ff7875;
 }
 
+.btn-monitor {
+  background: rgba(114, 46, 209, 0.2);
+  color: #a855f7;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.btn-monitor:hover {
+  background: rgba(114, 46, 209, 0.3);
+  border-color: rgba(168, 85, 247, 0.5);
+}
+
+.btn-monitor.active {
+  background: #7c3aed;
+  color: white;
+  border-color: #7c3aed;
+}
+
 .btn-danger-small {
   padding: 4px 12px;
   background: #ff4d4f;
@@ -1018,7 +1231,72 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
+}
+
+/* 技术指标开关 */
+.indicator-toggles {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.toggle-label {
+  color: #888;
+  font-size: 14px;
+  margin-right: 8px;
+}
+
+.toggle-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #1890ff;
+}
+
+.toggle-text {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 4px;
+  transition: all 0.3s;
+}
+
+.toggle-text.ma5 {
+  color: #f5d742;
+  background: rgba(245, 215, 66, 0.1);
+}
+
+.toggle-text.ma20 {
+  color: #42a5f5;
+  background: rgba(66, 165, 245, 0.1);
+}
+
+.toggle-text.ma60 {
+  color: #ab47bc;
+  background: rgba(171, 71, 188, 0.1);
+}
+
+.toggle-text.boll {
+  color: #ff9800;
+  background: rgba(255, 152, 0, 0.1);
+}
+
+.toggle-item:hover .toggle-text {
+  filter: brightness(1.2);
 }
 
 .kline-header h3 {
@@ -1153,5 +1431,264 @@ export default {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* ========== 移动端适配 ========== */
+@media (max-width: 768px) {
+  .trading-container {
+    padding: 12px;
+  }
+
+  .page-header h1 {
+    font-size: 1.4rem;
+  }
+
+  .subtitle {
+    font-size: 13px;
+  }
+
+  .action-buttons {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .action-buttons button {
+    flex: 1;
+    min-width: 80px;
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  /* 风险提示 */
+  .risk-alert {
+    padding: 12px;
+    font-size: 13px;
+  }
+
+  .alert-icon {
+    font-size: 20px;
+  }
+
+  /* 账户总览 */
+  .account-overview {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .overview-card {
+    padding: 12px;
+  }
+
+  .card-label {
+    font-size: 12px;
+  }
+
+  .card-value {
+    font-size: 18px;
+  }
+
+  /* K线图区域 */
+  .kline-section {
+    padding: 12px;
+    margin-bottom: 16px;
+  }
+
+  .kline-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .kline-header h3 {
+    font-size: 16px;
+  }
+
+  .kline-controls {
+    width: 100%;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .kline-input {
+    width: 100%;
+  }
+
+  .period-buttons {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .period-btn {
+    flex: 1;
+    min-width: 40px;
+    padding: 6px 8px;
+    font-size: 12px;
+    text-align: center;
+  }
+
+  .kline-chart {
+    height: 300px;
+    min-height: 250px;
+  }
+
+  /* 持仓和交易记录区域 */
+  .positions-section,
+  .trades-section {
+    padding: 12px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+
+  .positions-section h3,
+  .trades-section h3 {
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
+
+  /* 表格横向滚动 */
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    margin: 0 -12px;
+    padding: 0 12px;
+  }
+
+  .data-table {
+    min-width: 700px;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 8px 6px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .btn-danger-small {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
+  /* 弹窗 */
+  .modal-content {
+    min-width: auto;
+    max-width: calc(100vw - 32px);
+    width: calc(100vw - 32px);
+    padding: 16px;
+  }
+
+  .modal-content h3 {
+    font-size: 18px;
+  }
+
+  .form-group label {
+    font-size: 14px;
+  }
+
+  .input-field {
+    padding: 8px;
+    font-size: 14px;
+  }
+
+  .trade-tabs {
+    gap: 6px;
+  }
+
+  .tab-btn {
+    padding: 8px;
+    font-size: 13px;
+  }
+
+  .modal-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .modal-actions button {
+    width: 100%;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .trading-container {
+    padding: 8px;
+  }
+
+  .page-header h1 {
+    font-size: 1.2rem;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .action-buttons button {
+    width: 100%;
+    padding: 10px;
+  }
+
+  /* 账户总览 */
+  .account-overview {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .overview-card {
+    padding: 10px;
+  }
+
+  .card-label {
+    font-size: 11px;
+  }
+
+  .card-value {
+    font-size: 16px;
+  }
+
+  /* K线图 */
+  .kline-section {
+    padding: 10px;
+  }
+
+  .kline-header h3 {
+    font-size: 14px;
+  }
+
+  .period-btn {
+    padding: 5px 6px;
+    font-size: 11px;
+  }
+
+  .kline-chart {
+    height: 250px;
+    min-height: 200px;
+  }
+
+  /* 表格 */
+  .data-table th,
+  .data-table td {
+    padding: 6px 4px;
+    font-size: 11px;
+  }
+
+  .positions-section,
+  .trades-section {
+    padding: 10px;
+  }
+
+  .positions-section h3,
+  .trades-section h3 {
+    font-size: 14px;
+  }
 }
 </style>
