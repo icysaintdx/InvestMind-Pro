@@ -412,93 +412,32 @@ def remove_stock(ts_code: str):
     storage.remove_monitored_stock(ts_code)
 
 
-# ==================== 综合数据缓存持久化 ====================
+# ==================== 综合数据缓存持久化（已废弃，改用数据库） ====================
+# 以下函数保留用于向后兼容，但实际数据存储已迁移到数据库
+# 请使用 backend.database.services.StockDataService 进行数据操作
 
 def save_comprehensive_cache(ts_code: str, data: Dict):
     """
-    保存股票综合数据缓存到文件
-
-    Args:
-        ts_code: 股票代码
-        data: 综合数据
+    [已废弃] 保存股票综合数据缓存到文件
+    数据现在保存到数据库，此函数保留用于向后兼容
     """
-    storage = get_monitor_storage()
-    try:
-        cache_dir = storage.storage_dir / "comprehensive_cache"
-        cache_dir.mkdir(exist_ok=True)
-
-        cache_file = cache_dir / f"{ts_code.replace('.', '_')}.json"
-        cache_data = {
-            'ts_code': ts_code,
-            'data': data,
-            'cached_at': datetime.now().isoformat()
-        }
-
-        with open(cache_file, 'w', encoding='utf-8') as f:
-            json.dump(cache_data, f, ensure_ascii=False, indent=2, default=str)
-
-        logger.debug(f"✅ 保存综合数据缓存: {ts_code}")
-
-    except Exception as e:
-        logger.error(f"❌ 保存综合数据缓存失败 {ts_code}: {e}")
+    logger.debug(f"⚠️ save_comprehensive_cache 已废弃，数据应保存到数据库: {ts_code}")
+    pass
 
 
 def load_comprehensive_cache(ts_code: str) -> Optional[Dict]:
     """
-    从文件加载股票综合数据缓存
-
-    Args:
-        ts_code: 股票代码
-
-    Returns:
-        缓存数据字典，包含 'data' 和 'cached_at'，如果不存在返回 None
+    [已废弃] 从文件加载股票综合数据缓存
+    数据现在从数据库加载，此函数保留用于向后兼容
     """
-    storage = get_monitor_storage()
-    try:
-        cache_dir = storage.storage_dir / "comprehensive_cache"
-        cache_file = cache_dir / f"{ts_code.replace('.', '_')}.json"
-
-        if not cache_file.exists():
-            return None
-
-        with open(cache_file, 'r', encoding='utf-8') as f:
-            cache_data = json.load(f)
-
-        logger.debug(f"✅ 加载综合数据缓存: {ts_code}")
-        return cache_data
-
-    except Exception as e:
-        logger.error(f"❌ 加载综合数据缓存失败 {ts_code}: {e}")
-        return None
+    logger.debug(f"⚠️ load_comprehensive_cache 已废弃，数据应从数据库加载: {ts_code}")
+    return None
 
 
 def load_all_comprehensive_cache() -> Dict[str, Dict]:
     """
-    加载所有股票的综合数据缓存
-
-    Returns:
-        {ts_code: {'data': ..., 'cached_at': ...}, ...}
+    [已废弃] 加载所有股票的综合数据缓存
+    数据现在从数据库加载，此函数保留用于向后兼容
     """
-    storage = get_monitor_storage()
-    result = {}
-    try:
-        cache_dir = storage.storage_dir / "comprehensive_cache"
-        if not cache_dir.exists():
-            return result
-
-        for cache_file in cache_dir.glob("*.json"):
-            try:
-                with open(cache_file, 'r', encoding='utf-8') as f:
-                    cache_data = json.load(f)
-                ts_code = cache_data.get('ts_code')
-                if ts_code:
-                    result[f"comprehensive_{ts_code}"] = cache_data
-            except Exception as e:
-                logger.warning(f"⚠️ 加载缓存文件失败 {cache_file}: {e}")
-
-        logger.info(f"✅ 加载所有综合数据缓存: {len(result)}个")
-        return result
-
-    except Exception as e:
-        logger.error(f"❌ 加载所有综合数据缓存失败: {e}")
-        return result
+    logger.debug(f"⚠️ load_all_comprehensive_cache 已废弃，数据应从数据库加载")
+    return {}

@@ -87,38 +87,66 @@ class UpdateMonitorRequest(BaseModel):
 
 # ==================== 全局状态 ====================
 
-# 导入持久化存储
-from backend.dataflows.persistence.monitor_storage import (
-    get_monitor_storage,
-    save_comprehensive_cache,
-    load_comprehensive_cache,
-    load_all_comprehensive_cache
+# 导入数据库服务
+from backend.database.database import get_db_context
+from backend.database.services import (
+    MonitoredStockService,
+    StockDataService,
+    StockNewsService,
+    DataFlowStatsService
 )
 
-# 监控的股票列表（使用持久化存储）
+# 监控的股票列表（使用数据库存储）
 def _load_monitored_stocks():
-    """从持久化存储加载监控股票"""
+    """从数据库加载监控股票"""
     try:
-        storage = get_monitor_storage()
-        return storage.get_monitored_stocks()
+        with get_db_context() as db:
+            stocks = MonitoredStockService.get_all_active(db)
+            result = {}
+            for stock in stocks:
+                result[stock.ts_code] = {
+                    "name": stock.name,
+                    "code": stock.ts_code,
+                    "frequency": stock.frequency,
+                    "items": stock.items or {},
+                    "sentimentScore": 50,
+                    "riskLevel": "low",
+                    "latestNews": "",
+                    "lastUpdate": stock.last_update.isoformat() if stock.last_update else None,
+                    "pendingTasks": 0
+                }
+            return result
     except Exception as e:
         logger.error(f"加载监控股票失败: {e}")
         return {}
 
 def _save_monitored_stocks():
-    """保存监控股票到持久化存储"""
-    try:
-        storage = get_monitor_storage()
-        storage.save_monitor_config({'stocks': monitored_stocks})
-    except Exception as e:
-        logger.error(f"保存监控股票失败: {e}")
+    """保存监控股票到数据库（已在各操作中直接保存，此函数保留兼容性）"""
+    pass  # 数据库操作已在各API中直接执行
 
-# 初始化时从文件加载
+# 初始化时从数据库加载
 monitored_stocks = _load_monitored_stocks()
 
-# 数据缓存 - 启动时从文件加载
-data_cache = load_all_comprehensive_cache()
-logger.info(f"✅ 启动时加载综合数据缓存: {len(data_cache)}个")
+# 数据缓存 - 启动时从数据库加载
+def _load_comprehensive_cache_from_db():
+    """从数据库加载综合数据缓存"""
+    result = {}
+    try:
+        with get_db_context() as db:
+            stocks = MonitoredStockService.get_all_active(db)
+            for stock in stocks:
+                record = StockDataService.get_latest(db, stock.ts_code, 'comprehensive')
+                if record and record.data:
+                    result[f"comprehensive_{stock.ts_code}"] = {
+                        'cached_at': record.fetch_time.isoformat() if record.fetch_time else None,
+                        'data': record.data
+                    }
+        logger.info(f"✅ 启动时从数据库加载综合数据缓存: {len(result)}个")
+    except Exception as e:
+        logger.error(f"加载综合数据缓存失败: {e}")
+    return result
+
+data_cache = _load_comprehensive_cache_from_db()
 data_sources_status = {
     "tushare": {
         "id": "tushare",
@@ -225,8 +253,12 @@ async def get_daily_stats():
 @log_api_call("从数据库获取股票综合数据")
 async def get_stock_comprehensive_from_db(ts_code: str):
     """
-    从数据库/缓存获取股票的综合数据（不触发新的API请求）
-    优先从内存缓存获取，其次从文件缓存获取，如果都没有则返回空数据
+    从数据库获取股票的综合数据（只读取，不触发任何更新）
+
+    数据更新只在以下情况发生：
+    1. 首次添加监控股票后
+    2. 定时器到达时间
+    3. 手动点击立即更新按钮
 
     Args:
         ts_code: 股票代码
@@ -234,69 +266,43 @@ async def get_stock_comprehensive_from_db(ts_code: str):
     try:
         logger.info(f"📊 从数据库获取 {ts_code} 的综合数据...")
 
-        # 1. 检查内存缓存
-        cache_key = f"comprehensive_{ts_code}"
+        # 1. 优先从数据库获取
+        with get_db_context() as db:
+            record = StockDataService.get_latest(db, ts_code, 'comprehensive')
+            if record and record.data:
+                logger.info(f"✅ 从数据库获取数据成功")
+                # 清理非法float值（inf, -inf, nan）
+                sanitized_data = sanitize_for_json(record.data)
+                # 同时更新内存缓存
+                cache_key = f"comprehensive_{ts_code}"
+                data_cache[cache_key] = {
+                    'cached_at': record.fetch_time.isoformat() if record.fetch_time else None,
+                    'data': sanitized_data
+                }
+                return {
+                    "success": True,
+                    "has_data": True,
+                    "data": sanitized_data,
+                    "loaded_at": record.fetch_time.isoformat() if record.fetch_time else None,
+                    "from_database": True
+                }
 
+        # 2. 数据库没有数据，检查内存缓存（兼容旧数据）
+        cache_key = f"comprehensive_{ts_code}"
         if cache_key in data_cache:
             cached_data = data_cache[cache_key]
             logger.info(f"✅ 从内存缓存获取数据成功")
-            # 清理非法float值（inf, -inf, nan）
-            sanitized_data = sanitize_float_values(cached_data.get('data', {}))
+            sanitized_data = sanitize_for_json(cached_data.get('data', {}))
             return {
                 "success": True,
                 "has_data": True,
                 "data": sanitized_data,
                 "loaded_at": cached_data.get('cached_at'),
-                "from_database": True
-            }
-
-        # 2. 检查文件缓存
-        file_cache = load_comprehensive_cache(ts_code)
-        if file_cache:
-            logger.info(f"✅ 从文件缓存获取数据成功")
-            # 加载到内存缓存
-            data_cache[cache_key] = file_cache
-            sanitized_data = sanitize_float_values(file_cache.get('data', {}))
-            return {
-                "success": True,
-                "has_data": True,
-                "data": sanitized_data,
-                "loaded_at": file_cache.get('cached_at'),
-                "from_database": True
-            }
-
-        # 3. 检查监控股票中是否有数据
-        if ts_code in monitored_stocks:
-            stock_data = monitored_stocks[ts_code]
-            # 构建综合数据
-            comprehensive = {
-                "ts_code": ts_code,
-                "name": stock_data.get("name", ts_code.split('.')[0]),
-                "sentimentScore": stock_data.get("sentimentScore", 50),
-                "riskLevel": stock_data.get("riskLevel", "low"),
-                "riskScore": stock_data.get("riskScore", 0),
-                "news": [],
-                "risk": {
-                    "risk_level": stock_data.get("riskLevel", "low"),
-                    "risk_score": stock_data.get("riskScore", 0),
-                    "risk_factors": stock_data.get("riskFactors", {}),
-                    "warnings": stock_data.get("warnings", [])
-                },
-                "overall_score": stock_data.get("sentimentScore", 50),
-                "sentiment_summary": stock_data.get("sentimentDetail", {})
-            }
-
-            logger.info(f"✅ 从监控数据获取成功")
-            return {
-                "success": True,
-                "has_data": True,
-                "data": comprehensive,
-                "loaded_at": stock_data.get("lastUpdate"),
                 "from_database": False
             }
 
-        # 没有数据
-        logger.info(f"ℹ️ 没有找到 {ts_code} 的缓存数据")
+        # 3. 没有数据
+        logger.info(f"ℹ️ 没有找到 {ts_code} 的数据，请点击刷新按钮获取")
         return {
             "success": True,
             "has_data": False,
@@ -715,10 +721,13 @@ async def get_stock_risk(ts_code: str):
 @log_api_call("获取股票综合数据")
 async def get_stock_comprehensive(ts_code: str, force_update: bool = False):
     """
-    获取股票的所有综合数据
+    获取股票的所有综合数据（此接口会触发数据更新）
     包括：实时行情、停复牌、ST状态、财务数据、审计意见、
           业绩预告、分红送股、限售解禁、股权质押、
           股东增减持、龙虎榜、新闻等
+
+    注意：此接口会触发数据更新并保存到数据库
+    前端详情模态框应使用 /from-db 接口只读取数据
 
     Args:
         ts_code: 股票代码
@@ -738,7 +747,7 @@ async def get_stock_comprehensive(ts_code: str, force_update: bool = False):
             if (current_time - cache_time).total_seconds() < 300:  # 5分钟缓存
                 logger.info(f"📦 使用缓存数据 ({(current_time - cache_time).total_seconds():.1f}s前)")
                 # 清理非法float值（inf, -inf, nan）
-                sanitized_data = sanitize_float_values(cached_data['data'])
+                sanitized_data = sanitize_for_json(cached_data['data'])
                 return {
                     "success": True,
                     "cached": True,
@@ -751,7 +760,7 @@ async def get_stock_comprehensive(ts_code: str, force_update: bool = False):
         result = service.get_all_stock_data(ts_code)
 
         # 清理非法float值（inf, -inf, nan）
-        result = sanitize_float_values(result)
+        result = sanitize_for_json(result)
 
         # 保存到内存缓存
         data_cache[cache_key] = {
@@ -759,8 +768,18 @@ async def get_stock_comprehensive(ts_code: str, force_update: bool = False):
             'data': result
         }
 
-        # 同时保存到文件持久化
-        save_comprehensive_cache(ts_code, result)
+        # 保存到数据库
+        with get_db_context() as db:
+            StockDataService.save_or_update(
+                db=db,
+                ts_code=ts_code,
+                data_type='comprehensive',
+                data=result,
+                source='mixed'
+            )
+            # 更新监控股票的最后更新时间
+            MonitoredStockService.update_last_update(db, ts_code)
+        logger.info(f"✅ 综合数据已保存到数据库: {ts_code}")
 
         return {
             "success": True,
@@ -841,8 +860,18 @@ async def get_stock_comprehensive_stream(ts_code: str):
                 'data': result
             }
 
-            # 同时保存到文件持久化
-            save_comprehensive_cache(ts_code, result)
+            # 保存到数据库
+            with get_db_context() as db:
+                StockDataService.save_or_update(
+                    db=db,
+                    ts_code=ts_code,
+                    data_type='comprehensive',
+                    data=result,
+                    source='mixed'
+                )
+                # 更新监控股票的最后更新时间
+                MonitoredStockService.update_last_update(db, ts_code)
+            logger.info(f"✅ 综合数据已保存到数据库: {ts_code}")
 
             # 发送完成信号
             yield f"data: {json.dumps({'type': 'complete', 'success_count': success_count, 'total_count': total_count, 'success_rate': f'{success_count/total_count*100:.1f}%' if total_count > 0 else '0%', 'total_time': 0}, ensure_ascii=False)}\n\n"
@@ -870,6 +899,7 @@ async def get_stock_comprehensive_stream(ts_code: str):
 async def add_monitor(request: MonitorStockRequest, background_tasks: BackgroundTasks):
     """
     添加股票监控
+    首次添加后会立即执行一次数据更新
     """
     try:
         code = request.code
@@ -890,7 +920,17 @@ async def add_monitor(request: MonitorStockRequest, background_tasks: Background
         except Exception as e:
             logger.warning(f"⚠️ 获取股票名称失败，使用代码作为名称: {e}")
 
-        # 添加到监控列表
+        # 保存到数据库
+        with get_db_context() as db:
+            MonitoredStockService.add_stock(
+                db=db,
+                ts_code=code,
+                name=stock_name,
+                frequency=request.frequency,
+                items=request.items
+            )
+
+        # 添加到内存监控列表
         monitored_stocks[code] = {
             "name": stock_name,
             "code": code,
@@ -903,10 +943,7 @@ async def add_monitor(request: MonitorStockRequest, background_tasks: Background
             "pendingTasks": 0
         }
 
-        # 保存到持久化存储
-        _save_monitored_stocks()
-
-        # 添加后台任务：立即执行一次数据更新
+        # 添加后台任务：首次添加后立即执行一次数据更新
         background_tasks.add_task(update_stock_data, code)
 
         logger.info(f"添加监控股票: {code} ({stock_name})")
@@ -933,14 +970,16 @@ async def remove_monitor(request: RemoveMonitorRequest):
     """
     try:
         code = request.code
-        
+
         if code not in monitored_stocks:
             raise HTTPException(status_code=404, detail="该股票不在监控列表中")
 
-        del monitored_stocks[code]
+        # 从数据库删除
+        with get_db_context() as db:
+            MonitoredStockService.delete_stock(db, code)
 
-        # 保存到持久化存储
-        _save_monitored_stocks()
+        # 从内存删除
+        del monitored_stocks[code]
 
         logger.info(f"移除监控股票: {code}")
         
@@ -1165,7 +1204,39 @@ async def update_stock_data(code: str):
         
         # 更新时间
         stock_data["lastUpdate"] = datetime.now().isoformat()
-        
+
+        # 获取综合数据并保存到数据库
+        try:
+            logger.info(f"📊 获取并保存 {code} 的综合数据到数据库...")
+            service = get_comprehensive_service()
+            comprehensive_result = service.get_all_stock_data(code)
+
+            # 清理非法float值
+            comprehensive_result = sanitize_for_json(comprehensive_result)
+
+            # 保存到内存缓存
+            cache_key = f"comprehensive_{code}"
+            data_cache[cache_key] = {
+                'cached_at': datetime.now().isoformat(),
+                'data': comprehensive_result
+            }
+
+            # 保存到数据库
+            with get_db_context() as db:
+                StockDataService.save_or_update(
+                    db=db,
+                    ts_code=code,
+                    data_type='comprehensive',
+                    data=comprehensive_result,
+                    source='mixed'
+                )
+                # 更新监控股票的最后更新时间
+                MonitoredStockService.update_last_update(db, code)
+            logger.info(f"✅ 综合数据已保存到数据库: {code}")
+
+        except Exception as e:
+            logger.error(f"❌ 保存综合数据失败 {code}: {e}")
+
         logger.info(f"✅ 完成更新股票数据: {code}")
         
     except Exception as e:
