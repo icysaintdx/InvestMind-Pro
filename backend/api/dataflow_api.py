@@ -88,7 +88,12 @@ class UpdateMonitorRequest(BaseModel):
 # ==================== 全局状态 ====================
 
 # 导入持久化存储
-from backend.dataflows.persistence.monitor_storage import get_monitor_storage
+from backend.dataflows.persistence.monitor_storage import (
+    get_monitor_storage,
+    save_comprehensive_cache,
+    load_comprehensive_cache,
+    load_all_comprehensive_cache
+)
 
 # 监控的股票列表（使用持久化存储）
 def _load_monitored_stocks():
@@ -111,8 +116,9 @@ def _save_monitored_stocks():
 # 初始化时从文件加载
 monitored_stocks = _load_monitored_stocks()
 
-# 数据缓存 - 避免重复请求
-data_cache = {}
+# 数据缓存 - 启动时从文件加载
+data_cache = load_all_comprehensive_cache()
+logger.info(f"✅ 启动时加载综合数据缓存: {len(data_cache)}个")
 data_sources_status = {
     "tushare": {
         "id": "tushare",
@@ -220,7 +226,7 @@ async def get_daily_stats():
 async def get_stock_comprehensive_from_db(ts_code: str):
     """
     从数据库/缓存获取股票的综合数据（不触发新的API请求）
-    优先从缓存获取，如果没有则返回空数据
+    优先从内存缓存获取，其次从文件缓存获取，如果都没有则返回空数据
 
     Args:
         ts_code: 股票代码
@@ -228,12 +234,12 @@ async def get_stock_comprehensive_from_db(ts_code: str):
     try:
         logger.info(f"📊 从数据库获取 {ts_code} 的综合数据...")
 
-        # 检查缓存
+        # 1. 检查内存缓存
         cache_key = f"comprehensive_{ts_code}"
 
         if cache_key in data_cache:
             cached_data = data_cache[cache_key]
-            logger.info(f"✅ 从缓存获取数据成功")
+            logger.info(f"✅ 从内存缓存获取数据成功")
             # 清理非法float值（inf, -inf, nan）
             sanitized_data = sanitize_float_values(cached_data.get('data', {}))
             return {
@@ -244,7 +250,22 @@ async def get_stock_comprehensive_from_db(ts_code: str):
                 "from_database": True
             }
 
-        # 检查监控股票中是否有数据
+        # 2. 检查文件缓存
+        file_cache = load_comprehensive_cache(ts_code)
+        if file_cache:
+            logger.info(f"✅ 从文件缓存获取数据成功")
+            # 加载到内存缓存
+            data_cache[cache_key] = file_cache
+            sanitized_data = sanitize_float_values(file_cache.get('data', {}))
+            return {
+                "success": True,
+                "has_data": True,
+                "data": sanitized_data,
+                "loaded_at": file_cache.get('cached_at'),
+                "from_database": True
+            }
+
+        # 3. 检查监控股票中是否有数据
         if ts_code in monitored_stocks:
             stock_data = monitored_stocks[ts_code]
             # 构建综合数据
@@ -732,11 +753,14 @@ async def get_stock_comprehensive(ts_code: str, force_update: bool = False):
         # 清理非法float值（inf, -inf, nan）
         result = sanitize_float_values(result)
 
-        # 保存到缓存
+        # 保存到内存缓存
         data_cache[cache_key] = {
             'cached_at': current_time.isoformat(),
             'data': result
         }
+
+        # 同时保存到文件持久化
+        save_comprehensive_cache(ts_code, result)
 
         return {
             "success": True,
@@ -810,12 +834,15 @@ async def get_stock_comprehensive_stream(ts_code: str):
                 # 短暂延迟，让前端有时间处理
                 await asyncio.sleep(0.1)
 
-            # 保存到缓存（已清理的数据）
+            # 保存到内存缓存（已清理的数据）
             cache_key = f"comprehensive_{ts_code}"
             data_cache[cache_key] = {
                 'cached_at': datetime.now().isoformat(),
                 'data': result
             }
+
+            # 同时保存到文件持久化
+            save_comprehensive_cache(ts_code, result)
 
             # 发送完成信号
             yield f"data: {json.dumps({'type': 'complete', 'success_count': success_count, 'total_count': total_count, 'success_rate': f'{success_count/total_count*100:.1f}%' if total_count > 0 else '0%', 'total_time': 0}, ensure_ascii=False)}\n\n"
