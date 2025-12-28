@@ -637,6 +637,90 @@ async def get_stock_comprehensive(ts_code: str, force_update: bool = False):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+from fastapi.responses import StreamingResponse
+import json
+
+@router.get("/stock/comprehensive/{ts_code}/stream")
+async def get_stock_comprehensive_stream(ts_code: str):
+    """
+    流式获取股票综合数据（SSE）
+    前端可以边获取边渲染，提升用户体验
+    """
+    async def generate():
+        try:
+            # 发送开始信号
+            yield f"data: {json.dumps({'type': 'start', 'ts_code': ts_code})}\n\n"
+
+            # 获取综合数据服务
+            service = get_comprehensive_service()
+
+            # 定义数据分类
+            categories = {
+                'basic': {'name': '基础信息', 'fields': ['realtime', 'st_status', 'suspend']},
+                'financial': {'name': '财务数据', 'fields': ['financial', 'forecast', 'dividend', 'audit']},
+                'risk': {'name': '风险数据', 'fields': ['pledge', 'restricted', 'holder_trade']},
+                'market': {'name': '市场数据', 'fields': ['dragon_tiger', 'block_trade', 'margin']},
+                'news': {'name': '新闻舆情', 'fields': ['news_sina', 'announcements', 'news']},
+                'company': {'name': '公司信息', 'fields': ['company_info', 'managers', 'main_business']},
+            }
+
+            # 获取完整数据
+            logger.info(f"📊 开始流式获取 {ts_code} 的综合数据...")
+            result = service.get_all_stock_data(ts_code)
+
+            # 按分类发送数据
+            success_count = 0
+            total_count = 0
+
+            for category_key, category_info in categories.items():
+                category_data = {}
+                category_success = 0
+                category_total = 0
+
+                for field in category_info['fields']:
+                    if field in result:
+                        category_data[field] = result[field]
+                        category_total += 1
+                        if isinstance(result[field], dict) and result[field].get('status') in ['success', 'has_suspend', 'normal']:
+                            category_success += 1
+
+                total_count += category_total
+                success_count += category_success
+
+                # 发送分类数据
+                yield f"data: {json.dumps({'type': 'category', 'category': category_key, 'data': {'name': category_info['name'], 'data': category_data, 'success_count': category_success, 'total_count': category_total}}, ensure_ascii=False)}\n\n"
+
+                # 短暂延迟，让前端有时间处理
+                await asyncio.sleep(0.1)
+
+            # 保存到缓存
+            cache_key = f"comprehensive_{ts_code}"
+            data_cache[cache_key] = {
+                'cached_at': datetime.now().isoformat(),
+                'data': result
+            }
+
+            # 发送完成信号
+            yield f"data: {json.dumps({'type': 'complete', 'success_count': success_count, 'total_count': total_count, 'success_rate': f'{success_count/total_count*100:.1f}%' if total_count > 0 else '0%', 'total_time': 0}, ensure_ascii=False)}\n\n"
+
+        except Exception as e:
+            logger.error(f"流式获取数据失败: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            yield f"data: {json.dumps({'type': 'error', 'error': str(e)})}\n\n"
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "*",
+        }
+    )
+
+
 @router.post("/monitor/add")
 @log_api_call("添加监控股票")
 async def add_monitor(request: MonitorStockRequest, background_tasks: BackgroundTasks):
