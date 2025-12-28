@@ -151,5 +151,34 @@ def get_float(*keys, default: float = 0.0) -> float:
                 return float(value)
             except ValueError:
                 continue
-    
+
     return default
+
+
+def use_app_cache_enabled(default: bool = False) -> bool:
+    """
+    检查是否启用应用缓存
+
+    Args:
+        default: 默认值
+
+    Returns:
+        是否启用缓存
+    """
+    value = os.getenv('TA_USE_APP_CACHE') or os.getenv('USE_APP_CACHE')
+    if value is not None:
+        return value.lower() in ('true', '1', 'yes', 'on')
+    return default
+
+
+def get_timezone_name(default: str = "Asia/Shanghai") -> str:
+    """
+    获取时区名称
+
+    Args:
+        default: 默认时区
+
+    Returns:
+        时区名称
+    """
+    return os.getenv('TIMEZONE') or os.getenv('TZ') or default

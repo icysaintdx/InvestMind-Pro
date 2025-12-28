@@ -12,8 +12,8 @@ from datetime import datetime, timedelta, timezone
 from backend.utils.logging_config import get_logger
 logger = get_logger('agents')
 
-# 导入配置
-# from tradingagents.config.runtime_settings import get_int, get_float  # 已移除
+# 导入配置工具函数
+from backend.dataflows.config_utils import use_app_cache_enabled
 
 class MongoDBCacheAdapter:
     """MongoDB 缓存适配器（从 app 的 MongoDB 读取同步数据）"""
@@ -32,10 +32,14 @@ class MongoDBCacheAdapter:
     def _init_mongodb_connection(self):
         """初始化MongoDB连接"""
         try:
-            from tradingagents.config.database_manager import get_mongodb_client
-            self.mongodb_client = get_mongodb_client()
+            # 使用环境变量获取 MongoDB 连接
+            import os
+            from pymongo import MongoClient
+
+            mongodb_url = os.getenv('MONGODB_URL', 'mongodb://localhost:27017/')
+            self.mongodb_client = MongoClient(mongodb_url)
             if self.mongodb_client:
-                self.db = self.mongodb_client.get_database('tradingagents')
+                self.db = self.mongodb_client.get_database('investmind')
                 logger.debug("✅ MongoDB连接初始化成功")
             else:
                 logger.warning("⚠️ MongoDB客户端不可用，回退到传统模式")

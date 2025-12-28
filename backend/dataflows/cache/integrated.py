@@ -20,7 +20,7 @@ from .file_cache import StockDataCache
 # 导入自适应缓存系统
 try:
     from .adaptive import AdaptiveCacheSystem
-    from tradingagents.config.database_manager import get_database_manager
+    # 数据库管理器功能已移除，使用环境变量配置
     ADAPTIVE_CACHE_AVAILABLE = True
 except ImportError as e:
     ADAPTIVE_CACHE_AVAILABLE = False
@@ -43,7 +43,7 @@ class IntegratedCacheManager:
         if ADAPTIVE_CACHE_AVAILABLE:
             try:
                 self.adaptive_cache = AdaptiveCacheSystem(cache_dir)
-                self.db_manager = get_database_manager()
+                self.db_manager = None  # 数据库管理器已移除
                 self.use_adaptive = True
                 self.logger.info("✅ 自适应缓存系统已启用")
             except Exception as e:
@@ -59,13 +59,9 @@ class IntegratedCacheManager:
         """记录缓存状态"""
         if self.use_adaptive:
             backend = self.adaptive_cache.primary_backend
-            mongodb_available = self.db_manager.is_mongodb_available()
-            redis_available = self.db_manager.is_redis_available()
-            
+
             self.logger.info(f"📊 缓存配置:")
             self.logger.info(f"  主要后端: {backend}")
-            self.logger.info(f"  MongoDB: {'✅ 可用' if mongodb_available else '❌ 不可用'}")
-            self.logger.info(f"  Redis: {'✅ 可用' if redis_available else '❌ 不可用'}")
             self.logger.info(f"  降级支持: {'✅ 启用' if self.adaptive_cache.fallback_enabled else '❌ 禁用'}")
         else:
             self.logger.info("📁 使用传统文件缓存系统")
@@ -240,9 +236,14 @@ class IntegratedCacheManager:
             if 'backend_info' not in stats:
                 stats['backend_info'] = {}
 
-            stats['backend_info']['database_available'] = self.db_manager.is_database_available()
-            stats['backend_info']['mongodb_available'] = self.db_manager.is_mongodb_available()
-            stats['backend_info']['redis_available'] = self.db_manager.is_redis_available()
+            if hasattr(self, 'db_manager') and self.db_manager:
+                stats['backend_info']['database_available'] = self.db_manager.is_database_available()
+                stats['backend_info']['mongodb_available'] = self.db_manager.is_mongodb_available()
+                stats['backend_info']['redis_available'] = self.db_manager.is_redis_available()
+            else:
+                stats['backend_info']['database_available'] = False
+                stats['backend_info']['mongodb_available'] = False
+                stats['backend_info']['redis_available'] = False
 
             return stats
         else:
@@ -283,7 +284,7 @@ class IntegratedCacheManager:
         cleared_count = 0
 
         # 1. 清理 Redis 缓存
-        if self.use_adaptive and self.db_manager.is_redis_available():
+        if self.use_adaptive and hasattr(self, 'db_manager') and self.db_manager and self.db_manager.is_redis_available():
             try:
                 redis_client = self.db_manager.get_redis_client()
                 if max_age_days == 0:
@@ -297,15 +298,23 @@ class IntegratedCacheManager:
                 self.logger.error(f"⚠️ Redis 缓存清理失败: {e}")
 
         # 2. 清理 MongoDB 缓存
-        if self.use_adaptive and self.db_manager.is_mongodb_available():
+        if self.use_adaptive and self.adaptive_cache:
             try:
                 from datetime import datetime, timedelta
                 from zoneinfo import ZoneInfo
-                from tradingagents.config.runtime_settings import get_timezone_name
 
-                mongodb_db = self.db_manager.get_mongodb_db()
+                # 获取时区名称
+                def get_timezone_name():
+                    return 'Asia/Shanghai'
 
-                if max_age_days == 0:
+                # 尝试获取 MongoDB 数据库
+                mongodb_db = None
+                if hasattr(self.adaptive_cache, 'db_manager') and self.adaptive_cache.db_manager:
+                    mongodb_db = self.adaptive_cache.db_manager.get_mongodb_db()
+
+                if not mongodb_db:
+                    self.logger.debug("MongoDB 数据库不可用，跳过 MongoDB 缓存清理")
+                elif max_age_days == 0:
                     # 清空所有缓存集合
                     for collection_name in ["stock_data", "news_data", "fundamentals_data"]:
                         result = mongodb_db[collection_name].delete_many({})
@@ -339,12 +348,18 @@ class IntegratedCacheManager:
     def get_cache_backend_info(self) -> Dict[str, Any]:
         """获取缓存后端信息"""
         if self.use_adaptive:
+            mongodb_available = False
+            redis_available = False
+            if hasattr(self.adaptive_cache, 'db_manager') and self.adaptive_cache.db_manager:
+                mongodb_available = self.adaptive_cache.db_manager.is_mongodb_available()
+                redis_available = self.adaptive_cache.db_manager.is_redis_available()
+
             return {
                 "system": "adaptive",
                 "primary_backend": self.adaptive_cache.primary_backend,
                 "fallback_enabled": self.adaptive_cache.fallback_enabled,
-                "mongodb_available": self.db_manager.is_mongodb_available(),
-                "redis_available": self.db_manager.is_redis_available()
+                "mongodb_available": mongodb_available,
+                "redis_available": redis_available
             }
         else:
             return {
@@ -357,18 +372,21 @@ class IntegratedCacheManager:
     
     def is_database_available(self) -> bool:
         """检查数据库是否可用"""
-        if self.use_adaptive:
-            return self.db_manager.is_database_available()
+        if self.use_adaptive and hasattr(self.adaptive_cache, 'db_manager') and self.adaptive_cache.db_manager:
+            return self.adaptive_cache.db_manager.is_database_available()
         return False
     
     def get_performance_mode(self) -> str:
         """获取性能模式"""
         if not self.use_adaptive:
             return "基础模式 (文件缓存)"
-        
-        mongodb_available = self.db_manager.is_mongodb_available()
-        redis_available = self.db_manager.is_redis_available()
-        
+
+        mongodb_available = False
+        redis_available = False
+        if hasattr(self.adaptive_cache, 'db_manager') and self.adaptive_cache.db_manager:
+            mongodb_available = self.adaptive_cache.db_manager.is_mongodb_available()
+            redis_available = self.adaptive_cache.db_manager.is_redis_available()
+
         if redis_available and mongodb_available:
             return "高性能模式 (Redis + MongoDB + 文件)"
         elif redis_available:

@@ -16,8 +16,14 @@ import logging
 
 _logger = logging.getLogger('dataflows')
 
+# 使用环境变量获取 MongoDB 连接
 try:
-    from tradingagents.config.database_manager import get_mongodb_client
+    import os
+    from pymongo import MongoClient
+
+    def get_mongodb_client():
+        mongodb_url = os.getenv('MONGODB_URL', 'mongodb://localhost:27017/')
+        return MongoClient(mongodb_url)
 except Exception:  # pragma: no cover - 弱依赖
     get_mongodb_client = None  # type: ignore
 
@@ -34,14 +40,8 @@ def get_basics_from_cache(stock_code: Optional[str] = None) -> Optional[Dict[str
     if not client:
         return None
     try:
-        # 数据库名取自 DatabaseManager 内部配置
-        db_name = None
-        try:
-            # 访问 DatabaseManager 暴露的配置
-            from tradingagents.config.database_manager import get_database_manager  # type: ignore
-            db_name = get_database_manager().mongodb_config.get("database", "tradingagents")
-        except Exception:
-            db_name = "tradingagents"
+        # 使用 investmind 数据库
+        db_name = "investmind"
         db = client[db_name]
         coll = db[BASICS_COLLECTION]
         if stock_code:
@@ -78,9 +78,8 @@ def get_market_quote_dataframe(symbol: str) -> Optional[pd.DataFrame]:
     if not client:
         return None
     try:
-        # 获取数据库
-        from tradingagents.config.database_manager import get_database_manager  # type: ignore
-        db_name = get_database_manager().mongodb_config.get("database", "tradingagents")
+        # 使用 investmind 数据库
+        db_name = "investmind"
         db = client[db_name]
         coll = db[QUOTES_COLLECTION]
         code = str(symbol).zfill(6)

@@ -224,12 +224,8 @@ def create_fundamentals_analyst(llm, toolkit):
         # 检测阿里百炼模型并创建新实例
         if hasattr(llm, '__class__') and 'DashScope' in llm.__class__.__name__:
             logger.debug(f"📊 [DEBUG] 检测到阿里百炼模型，创建新实例以避免工具缓存")
-            from tradingagents.llm_adapters import ChatDashScopeOpenAI
-            fresh_llm = ChatDashScopeOpenAI(
-                model=llm.model_name,
-                temperature=llm.temperature,
-                max_tokens=getattr(llm, 'max_tokens', 2000)
-            )
+            # 使用现有的 llm 实例，不需要重新创建
+            fresh_llm = llm
         else:
             fresh_llm = llm
 

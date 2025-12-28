@@ -205,7 +205,7 @@ class UnifiedNewsAnalyzer:
                 logger.warning(f"[统一新闻工具] 无法连接到MongoDB")
                 return ""
 
-            db = client.get_database('tradingagents')
+            db = client.get_database('investmind')
             collection = db.stock_news
 
             # 标准化股票代码（去除后缀）

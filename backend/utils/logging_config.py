@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
 统一日志配置系统
-替代原有的 tradingagents.utils.logging_init
 """
 
 import logging

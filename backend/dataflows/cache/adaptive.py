@@ -14,16 +14,14 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Union
 import pandas as pd
 
-# from tradingagents.config.database_manager import get_database_manager  # 已移除
-
 class AdaptiveCacheSystem:
     """自适应缓存系统"""
     
     def __init__(self, cache_dir: str = None):
         self.logger = logging.getLogger(__name__)
 
-        # 获取数据库管理器
-        self.db_manager = get_database_manager()
+        # 数据库管理器已移除，使用环境变量配置
+        self.db_manager = None
 
         # 设置缓存目录
         if cache_dir is None:
@@ -31,9 +29,20 @@ class AdaptiveCacheSystem:
             cache_dir = "data/cache"
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
-        
-        # 获取配置
-        self.config = self.db_manager.get_config()
+
+        # 获取配置（使用默认配置，因为数据库管理器已移除）
+        self.config = {
+            "cache": {
+                "primary_backend": "file",
+                "fallback_enabled": True,
+                "ttl_settings": {
+                    "china_stock_data": 7200,
+                    "us_stock_data": 7200,
+                    "china_news_data": 3600,
+                    "us_news_data": 3600
+                }
+            }
+        }
         self.cache_config = self.config["cache"]
         
         # 初始化缓存后端
@@ -109,127 +118,23 @@ class AdaptiveCacheSystem:
     
     def _save_to_redis(self, cache_key: str, data: Any, metadata: Dict, ttl_seconds: int) -> bool:
         """保存到Redis缓存"""
-        redis_client = self.db_manager.get_redis_client()
-        if not redis_client:
-            return False
-        
-        try:
-            cache_data = {
-                'data': data,
-                'metadata': metadata,
-                'timestamp': datetime.now().isoformat(),
-                'backend': 'redis'
-            }
-            
-            serialized_data = pickle.dumps(cache_data)
-            redis_client.setex(cache_key, ttl_seconds, serialized_data)
-            
-            self.logger.debug(f"Redis缓存保存成功: {cache_key}")
-            return True
-            
-        except Exception as e:
-            self.logger.error(f"Redis缓存保存失败: {e}")
-            return False
+        # Redis 功能已移除
+        return False
     
     def _load_from_redis(self, cache_key: str) -> Optional[Dict]:
         """从Redis缓存加载"""
-        redis_client = self.db_manager.get_redis_client()
-        if not redis_client:
-            return None
-        
-        try:
-            serialized_data = redis_client.get(cache_key)
-            if not serialized_data:
-                return None
-            
-            cache_data = pickle.loads(serialized_data)
-            
-            # 转换时间戳
-            if isinstance(cache_data['timestamp'], str):
-                cache_data['timestamp'] = datetime.fromisoformat(cache_data['timestamp'])
-            
-            self.logger.debug(f"Redis缓存加载成功: {cache_key}")
-            return cache_data
-            
-        except Exception as e:
-            self.logger.error(f"Redis缓存加载失败: {e}")
-            return None
+        # Redis 功能已移除
+        return None
     
     def _save_to_mongodb(self, cache_key: str, data: Any, metadata: Dict, ttl_seconds: int) -> bool:
         """保存到MongoDB缓存"""
-        mongodb_client = self.db_manager.get_mongodb_client()
-        if not mongodb_client:
-            return False
-        
-        try:
-            db = mongodb_client.tradingagents
-            collection = db.cache
-            
-            # 序列化数据
-            if isinstance(data, pd.DataFrame):
-                serialized_data = data.to_json()
-                data_type = 'dataframe'
-            else:
-                serialized_data = pickle.dumps(data).hex()
-                data_type = 'pickle'
-            
-            cache_doc = {
-                '_id': cache_key,
-                'data': serialized_data,
-                'data_type': data_type,
-                'metadata': metadata,
-                'timestamp': datetime.now(),
-                'expires_at': datetime.now() + timedelta(seconds=ttl_seconds),
-                'backend': 'mongodb'
-            }
-            
-            collection.replace_one({'_id': cache_key}, cache_doc, upsert=True)
-            
-            self.logger.debug(f"MongoDB缓存保存成功: {cache_key}")
-            return True
-            
-        except Exception as e:
-            self.logger.error(f"MongoDB缓存保存失败: {e}")
-            return False
+        # MongoDB 功能已移除
+        return False
     
     def _load_from_mongodb(self, cache_key: str) -> Optional[Dict]:
         """从MongoDB缓存加载"""
-        mongodb_client = self.db_manager.get_mongodb_client()
-        if not mongodb_client:
-            return None
-        
-        try:
-            db = mongodb_client.tradingagents
-            collection = db.cache
-            
-            doc = collection.find_one({'_id': cache_key})
-            if not doc:
-                return None
-            
-            # 检查是否过期
-            if doc.get('expires_at') and doc['expires_at'] < datetime.now():
-                collection.delete_one({'_id': cache_key})
-                return None
-            
-            # 反序列化数据
-            if doc['data_type'] == 'dataframe':
-                data = pd.read_json(doc['data'])
-            else:
-                data = pickle.loads(bytes.fromhex(doc['data']))
-            
-            cache_data = {
-                'data': data,
-                'metadata': doc['metadata'],
-                'timestamp': doc['timestamp'],
-                'backend': 'mongodb'
-            }
-            
-            self.logger.debug(f"MongoDB缓存加载成功: {cache_key}")
-            return cache_data
-            
-        except Exception as e:
-            self.logger.error(f"MongoDB缓存加载失败: {e}")
-            return None
+        # MongoDB 功能已移除
+        return None
     
     def save_data(self, symbol: str, data: Any, start_date: str = "", end_date: str = "", 
                   data_source: str = "default", data_type: str = "stock_data") -> str:
@@ -331,58 +236,14 @@ class AdaptiveCacheSystem:
         backend_info = {
             'primary_backend': self.primary_backend,
             'fallback_enabled': self.fallback_enabled,
-            'database_available': self.db_manager.is_database_available(),
-            'mongodb_available': self.db_manager.is_mongodb_available(),
-            'redis_available': self.db_manager.is_redis_available(),
+            'database_available': False,
+            'mongodb_available': False,
+            'redis_available': False,
             'file_cache_directory': str(self.cache_dir),
             'file_cache_count': len(list(self.cache_dir.glob("*.pkl"))),
         }
 
         total_size_bytes = 0
-
-        # MongoDB统计
-        mongodb_client = self.db_manager.get_mongodb_client()
-        if mongodb_client:
-            try:
-                db = mongodb_client.tradingagents
-
-                # 统计各个集合
-                for collection_name in ["stock_data", "news_data", "fundamentals_data"]:
-                    if collection_name in db.list_collection_names():
-                        collection = db[collection_name]
-                        count = collection.count_documents({})
-
-                        # 获取集合大小
-                        try:
-                            coll_stats = db.command("collStats", collection_name)
-                            size = coll_stats.get("size", 0)
-                            total_size_bytes += size
-                        except:
-                            pass
-
-                        stats['total_files'] += count
-
-                        # 按类型分类
-                        if collection_name == "stock_data":
-                            stats['stock_data_count'] += count
-                        elif collection_name == "news_data":
-                            stats['news_count'] += count
-                        elif collection_name == "fundamentals_data":
-                            stats['fundamentals_count'] += count
-
-                backend_info['mongodb_cache_count'] = stats['total_files']
-            except:
-                backend_info['mongodb_status'] = 'Error'
-
-        # Redis统计
-        redis_client = self.db_manager.get_redis_client()
-        if redis_client:
-            try:
-                redis_info = redis_client.info()
-                backend_info['redis_memory_used'] = redis_info.get('used_memory_human', 'N/A')
-                backend_info['redis_keys'] = redis_client.dbsize()
-            except:
-                backend_info['redis_status'] = 'Error'
 
         # 文件缓存统计
         if self.primary_backend == 'file' or self.fallback_enabled:

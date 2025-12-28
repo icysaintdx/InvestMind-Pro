@@ -20,12 +20,11 @@ from .providers.us import get_data_in_range
 
 
 # 导入统一日志系统
-from tradingagents.utils.logging_init import setup_dataflow_logging
+from backend.utils.logging_config import get_logger, setup_logging
 
-# 导入日志模块
-from tradingagents.utils.logging_manager import get_logger
+# 初始化日志
 logger = get_logger('dataflows.interface')
-setup_dataflow_logging()
+setup_logging()
 
 # 导入港股工具
 try:
@@ -202,18 +201,12 @@ except ImportError as e:
     logger.warning(f"⚠️ yfinance库不可用: {e}")
     yf = None
     YF_AVAILABLE = False
-from tradingagents.config.config_manager import config_manager
+
+# 导入配置模块
+from backend.dataflows.utils.config import get_config, set_config, get_data_dir
 
 # 获取数据目录
-DATA_DIR = config_manager.get_data_dir()
-
-def get_config():
-    """获取配置（兼容性包装）"""
-    return config_manager.load_settings()
-
-def set_config(config):
-    """设置配置（兼容性包装）"""
-    config_manager.save_settings(config)
+DATA_DIR = get_data_dir()
 
 
 def get_finnhub_news(
@@ -501,7 +494,7 @@ def get_google_news(
     
     # 尝试使用StockUtils判断
     try:
-        from tradingagents.utils.stock_utils import StockUtils
+        from backend.utils.stock_utils import StockUtils
         market_info = StockUtils.get_market_info(query.split()[0])
         if market_info['is_china']:
             is_china_stock = True
@@ -1529,7 +1522,7 @@ def get_china_stock_data_unified(
         str: 格式化的股票数据报告
     """
     # 🔧 智能日期范围处理：自动扩展到配置的回溯天数，处理周末/节假日
-    from tradingagents.utils.dataflow_utils import get_trading_date_range
+    from backend.utils.dataflow_utils import get_trading_date_range
     from app.core.config import get_settings
 
     original_start_date = start_date
@@ -1761,7 +1754,7 @@ def get_hk_stock_data_unified(symbol: str, start_date: str = None, end_date: str
         logger.info(f"🇭🇰 获取港股数据: {symbol}")
 
         # 🔧 智能日期范围处理：自动扩展到配置的回溯天数，处理周末/节假日
-        from tradingagents.utils.dataflow_utils import get_trading_date_range
+        from backend.utils.dataflow_utils import get_trading_date_range
         from app.core.config import get_settings
 
         original_start_date = start_date
@@ -1822,7 +1815,7 @@ def get_hk_stock_data_unified(symbol: str, start_date: str = None, end_date: str
                         provider = OptimizedUSDataProvider()
                         get_us_stock_data_cached = provider.get_stock_data
                     except ImportError:
-                        from tradingagents.dataflows.providers.us.optimized import get_us_stock_data_cached
+                        from backend.dataflows.providers.us.optimized import get_us_stock_data_cached
 
                     logger.info(f"🔄 使用FINNHUB获取港股数据: {symbol}")
                     result = get_us_stock_data_cached(symbol, start_date, end_date)
@@ -1919,7 +1912,7 @@ def get_stock_data_by_market(symbol: str, start_date: str = None, end_date: str 
         str: 格式化的股票数据
     """
     try:
-        from tradingagents.utils.stock_utils import StockUtils
+        from backend.utils.stock_utils import StockUtils
 
         market_info = StockUtils.get_market_info(symbol)
 
@@ -1937,7 +1930,7 @@ def get_stock_data_by_market(symbol: str, start_date: str = None, end_date: str 
                 provider = OptimizedUSDataProvider()
                 return provider.get_stock_data(symbol, start_date, end_date)
             except ImportError:
-                from tradingagents.dataflows.providers.us.optimized import get_us_stock_data_cached
+                from backend.dataflows.providers.us.optimized import get_us_stock_data_cached
                 return get_us_stock_data_cached(symbol, start_date, end_date)
 
     except Exception as e:

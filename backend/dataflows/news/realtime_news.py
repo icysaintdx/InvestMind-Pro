@@ -15,8 +15,6 @@ import os
 from dataclasses import dataclass
 
 # 导入日志模块
-# from tradingagents.config.runtime_settings import get_int, get_float  # 已移除
-
 from backend.utils.logging_config import get_logger
 logger = get_logger('agents')
 
@@ -49,7 +47,7 @@ class RealtimeNewsAggregator:
 
     def __init__(self):
         self.headers = {
-            'User-Agent': 'TradingAgents-CN/1.0'
+            'User-Agent': 'InvestMindPro/1.0'
         }
 
         # API密钥配置

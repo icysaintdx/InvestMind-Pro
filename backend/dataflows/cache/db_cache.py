@@ -10,7 +10,6 @@ import pickle
 import hashlib
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
-# from tradingagents.config.runtime_settings import get_int, get_float  # 已移除
 
 from typing import Optional, Dict, Any, List, Union
 import pandas as pd
@@ -44,7 +43,7 @@ class DatabaseCacheManager:
     def __init__(self,
                  mongodb_url: Optional[str] = None,
                  redis_url: Optional[str] = None,
-                 mongodb_db: str = "tradingagents",
+                 mongodb_db: str = "investmind",
                  redis_db: int = 0):
         """
         初始化数据库缓存管理器
@@ -58,8 +57,8 @@ class DatabaseCacheManager:
         # 从配置文件获取正确的端口
         mongodb_port = os.getenv("MONGODB_PORT", "27018")
         redis_port = os.getenv("REDIS_PORT", "6380")
-        mongodb_password = os.getenv("MONGODB_PASSWORD", "tradingagents123")
-        redis_password = os.getenv("REDIS_PASSWORD", "tradingagents123")
+        mongodb_password = os.getenv("MONGODB_PASSWORD", "investmind123")
+        redis_password = os.getenv("REDIS_PASSWORD", "investmind123")
 
         self.mongodb_url = mongodb_url or os.getenv("MONGODB_URL", f"mongodb://admin:{mongodb_password}@localhost:{mongodb_port}")
         self.redis_url = redis_url or os.getenv("REDIS_URL", f"redis://:{redis_password}@localhost:{redis_port}")

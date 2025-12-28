@@ -1,9 +1,9 @@
 """
-示例SDK适配器实现 (tradingagents层)
+示例SDK适配器实现
 展示如何基于BaseStockDataProvider创建新的数据源适配器
 
 架构说明:
-- tradingagents层: 纯数据获取和标准化，不涉及数据库操作
+- dataflows层: 纯数据获取和标准化，不涉及数据库操作
 - app层: 数据同步服务，负责调用此适配器并写入数据库
 - 职责分离: 适配器只负责数据获取，同步服务负责数据存储
 """
@@ -19,7 +19,7 @@ from ..base_provider import BaseStockDataProvider
 
 class ExampleSDKProvider(BaseStockDataProvider):
     """
-    示例SDK数据提供器 (tradingagents层)
+    示例SDK数据提供器
 
     职责:
     - 连接外部SDK API
@@ -48,7 +48,7 @@ class ExampleSDKProvider(BaseStockDataProvider):
         
         # 请求头
         self.headers = {
-            "User-Agent": "TradingAgents/1.0",
+            "User-Agent": "InvestMindPro/1.0",
             "Accept": "application/json",
             "Content-Type": "application/json"
         }

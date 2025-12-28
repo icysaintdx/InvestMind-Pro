@@ -14,29 +14,42 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Union
 import pandas as pd
 
-from ..config.database_manager import get_database_manager
+# Database manager import removed - using direct MongoDB/Redis connections
+# from ..config.database_manager import get_database_manager
 
 class AdaptiveCacheSystem:
     """自适应缓存系统"""
-    
+
     def __init__(self, cache_dir: str = "data/cache"):
         self.logger = logging.getLogger(__name__)
-        
-        # 获取数据库管理器
-        self.db_manager = get_database_manager()
-        
+
         # 设置缓存目录
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
-        
-        # 获取配置
-        self.config = self.db_manager.get_config()
-        self.cache_config = self.config["cache"]
-        
+
+        # 获取配置 - 使用环境变量
+        self.cache_config = {
+            "primary_backend": os.getenv("CACHE_PRIMARY_BACKEND", "file"),
+            "fallback_enabled": os.getenv("CACHE_FALLBACK_ENABLED", "true").lower() == "true",
+            "ttl_settings": {
+                "china_stock_data": int(os.getenv("CACHE_TTL_CHINA_STOCK", "3600")),  # 1 hour
+                "us_stock_data": int(os.getenv("CACHE_TTL_US_STOCK", "7200")),  # 2 hours
+                "china_news": int(os.getenv("CACHE_TTL_CHINA_NEWS", "14400")),  # 4 hours
+                "us_news": int(os.getenv("CACHE_TTL_US_NEWS", "21600")),  # 6 hours
+                "china_fundamentals": int(os.getenv("CACHE_TTL_CHINA_FUNDAMENTALS", "43200")),  # 12 hours
+                "us_fundamentals": int(os.getenv("CACHE_TTL_US_FUNDAMENTALS", "86400")),  # 24 hours
+            }
+        }
+
         # 初始化缓存后端
         self.primary_backend = self.cache_config["primary_backend"]
         self.fallback_enabled = self.cache_config["fallback_enabled"]
-        
+
+        # 初始化数据库连接
+        self.mongodb_client = None
+        self.redis_client = None
+        self._init_database_connections()
+
         self.logger.info(f"自适应缓存系统初始化 - 主要后端: {self.primary_backend}")
     
     def _get_cache_key(self, symbol: str, start_date: str = "", end_date: str = "", 
@@ -45,6 +58,31 @@ class AdaptiveCacheSystem:
         key_data = f"{symbol}_{start_date}_{end_date}_{data_source}_{data_type}"
         return hashlib.md5(key_data.encode()).hexdigest()
     
+    def _init_database_connections(self):
+        """初始化数据库连接"""
+        # MongoDB
+        try:
+            from pymongo import MongoClient
+            mongodb_url = os.getenv("MONGODB_URI", os.getenv("MONGODB_URL", "mongodb://localhost:27017/"))
+            self.mongodb_client = MongoClient(mongodb_url, serverSelectionTimeoutMS=5000)
+            # Test connection
+            self.mongodb_client.admin.command('ping')
+            self.logger.info("MongoDB连接成功")
+        except Exception as e:
+            self.logger.warning(f"MongoDB连接失败: {e}")
+            self.mongodb_client = None
+
+        # Redis
+        try:
+            import redis
+            redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+            self.redis_client = redis.from_url(redis_url, decode_responses=False)
+            self.redis_client.ping()
+            self.logger.info("Redis连接成功")
+        except Exception as e:
+            self.logger.warning(f"Redis连接失败: {e}")
+            self.redis_client = None
+
     def _get_ttl_seconds(self, symbol: str, data_type: str = "stock_data") -> int:
         """获取TTL秒数"""
         # 判断市场类型
@@ -106,8 +144,7 @@ class AdaptiveCacheSystem:
     
     def _save_to_redis(self, cache_key: str, data: Any, metadata: Dict, ttl_seconds: int) -> bool:
         """保存到Redis缓存"""
-        redis_client = self.db_manager.get_redis_client()
-        if not redis_client:
+        if not self.redis_client:
             return False
         
         try:
@@ -119,7 +156,7 @@ class AdaptiveCacheSystem:
             }
             
             serialized_data = pickle.dumps(cache_data)
-            redis_client.setex(cache_key, ttl_seconds, serialized_data)
+            self.redis_client.setex(cache_key, ttl_seconds, serialized_data)
             
             self.logger.debug(f"Redis缓存保存成功: {cache_key}")
             return True
@@ -130,12 +167,11 @@ class AdaptiveCacheSystem:
     
     def _load_from_redis(self, cache_key: str) -> Optional[Dict]:
         """从Redis缓存加载"""
-        redis_client = self.db_manager.get_redis_client()
-        if not redis_client:
+        if not self.redis_client:
             return None
         
         try:
-            serialized_data = redis_client.get(cache_key)
+            serialized_data = self.redis_client.get(cache_key)
             if not serialized_data:
                 return None
             
@@ -154,12 +190,11 @@ class AdaptiveCacheSystem:
     
     def _save_to_mongodb(self, cache_key: str, data: Any, metadata: Dict, ttl_seconds: int) -> bool:
         """保存到MongoDB缓存"""
-        mongodb_client = self.db_manager.get_mongodb_client()
-        if not mongodb_client:
+        if not self.mongodb_client:
             return False
         
         try:
-            db = mongodb_client.tradingagents
+            db = self.mongodb_client.investmind
             collection = db.cache
             
             # 序列化数据
@@ -191,12 +226,11 @@ class AdaptiveCacheSystem:
     
     def _load_from_mongodb(self, cache_key: str) -> Optional[Dict]:
         """从MongoDB缓存加载"""
-        mongodb_client = self.db_manager.get_mongodb_client()
-        if not mongodb_client:
+        if not self.mongodb_client:
             return None
         
         try:
-            db = mongodb_client.tradingagents
+            db = self.mongodb_client.investmind
             collection = db.cache
             
             doc = collection.find_one({'_id': cache_key})
@@ -316,28 +350,25 @@ class AdaptiveCacheSystem:
         stats = {
             'primary_backend': self.primary_backend,
             'fallback_enabled': self.fallback_enabled,
-            'database_available': self.db_manager.is_database_available(),
-            'mongodb_available': self.db_manager.is_mongodb_available(),
-            'redis_available': self.db_manager.is_redis_available(),
+            'mongodb_available': self.mongodb_client is not None,
+            'redis_available': self.redis_client is not None,
             'file_cache_directory': str(self.cache_dir),
             'file_cache_count': len(list(self.cache_dir.glob("*.pkl"))),
         }
-        
+
         # Redis统计
-        redis_client = self.db_manager.get_redis_client()
-        if redis_client:
+        if self.redis_client:
             try:
-                redis_info = redis_client.info()
+                redis_info = self.redis_client.info()
                 stats['redis_memory_used'] = redis_info.get('used_memory_human', 'N/A')
-                stats['redis_keys'] = redis_client.dbsize()
+                stats['redis_keys'] = self.redis_client.dbsize()
             except:
                 stats['redis_status'] = 'Error'
         
         # MongoDB统计
-        mongodb_client = self.db_manager.get_mongodb_client()
-        if mongodb_client:
+        if self.mongodb_client:
             try:
-                db = mongodb_client.tradingagents
+                db = self.mongodb_client.investmind
                 stats['mongodb_cache_count'] = db.cache.count_documents({})
             except:
                 stats['mongodb_status'] = 'Error'

@@ -118,9 +118,8 @@ def get_api_key() -> str:
     # 3. 从配置文件获取
     logger.debug("🔍 [步骤3] 读取配置文件中的 API Key...")
     try:
-        from tradingagents.config.config_manager import ConfigManager
-        config_manager = ConfigManager()
-        api_key = config_manager.get("ALPHA_VANTAGE_API_KEY")
+        from backend.dataflows.utils.config import get_config
+        api_key = get_config("ALPHA_VANTAGE_API_KEY")
         if api_key:
             logger.debug(f"✅ [步骤3] 配置文件中找到 API Key (长度: {len(api_key)})")
             return api_key

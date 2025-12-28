@@ -14,7 +14,6 @@ try:
     STOCKSTATS_AVAILABLE = True
 except ImportError:
     STOCKSTATS_AVAILABLE = False
-# from tradingagents.config.config_manager import config_manager  # 已移除
 
 def get_config():
     """兼容性包装函数"""

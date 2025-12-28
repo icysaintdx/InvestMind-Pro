@@ -1,6 +1,6 @@
 """
 配置工具函数
-用于从环境变量获取配置值，替代tradingagents的runtime_settings
+用于从环境变量获取配置值
 """
 
 import os

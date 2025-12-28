@@ -12,11 +12,11 @@ from zoneinfo import ZoneInfo
 
 from typing import Optional, Dict, Any
 from .cache import get_cache
-from tradingagents.config.config_manager import config_manager
+from backend.dataflows.utils.config import get_config, get_data_dir
 
-from tradingagents.config.runtime_settings import get_float, get_timezone_name
+from backend.dataflows.config_utils import get_float, get_timezone_name
 # 导入日志模块
-from tradingagents.utils.logging_manager import get_logger
+from backend.utils.logging_config import get_logger
 logger = get_logger('agents')
 
 # 导入 MongoDB 缓存适配器
@@ -28,7 +28,7 @@ class OptimizedChinaDataProvider:
 
     def __init__(self):
         self.cache = get_cache()
-        self.config = config_manager.load_settings()
+        self.config = {}  # 配置已移除，使用环境变量
         self.last_api_call = 0
         self.min_api_interval = get_float("TA_CHINA_MIN_API_INTERVAL_SECONDS", "ta_china_min_api_interval_seconds", 0.5)
 
@@ -286,7 +286,7 @@ class OptimizedChinaDataProvider:
 
             # 如果基础信息获取失败，尝试从缓存获取最基本的信息
             try:
-                from tradingagents.config.runtime_settings import use_app_cache_enabled
+                from backend.dataflows.config_utils import use_app_cache_enabled
                 if use_app_cache_enabled(False):
                     from .cache.app_adapter import get_market_quote_dataframe
                     df_q = get_market_quote_dataframe(symbol)
@@ -355,7 +355,7 @@ class OptimizedChinaDataProvider:
         # 若仍缺失当前价格/涨跌幅/成交量，且启用app缓存，则直接读取 market_quotes 兜底
         try:
             if (current_price == "N/A" or change_pct == "N/A" or volume == "N/A"):
-                from tradingagents.config.runtime_settings import use_app_cache_enabled  # type: ignore
+                from backend.dataflows.config_utils import use_app_cache_enabled  # type: ignore
                 if use_app_cache_enabled(False):
                     from .cache.app_adapter import get_market_quote_dataframe
                     df_q = get_market_quote_dataframe(symbol)
@@ -845,38 +845,36 @@ class OptimizedChinaDataProvider:
         """获取真实财务指标 - 优先使用数据库缓存，再使用API"""
         try:
             # 🔥 优先从 market_quotes 获取实时股价，替换传入的 price_value
-            from tradingagents.config.database_manager import get_database_manager
-            db_manager = get_database_manager()
+            import os
+            from pymongo import MongoClient
+            mongo_uri = os.environ.get('MONGODB_URI', 'mongodb://localhost:27017')
             db_client = None
 
-            if db_manager.is_mongodb_available():
-                try:
-                    db_client = db_manager.get_mongodb_client()
-                    db = db_client['tradingagents']
+            try:
+                db_client = MongoClient(mongo_uri)
+                db = db_client['investmind']
 
-                    # 标准化股票代码为6位
-                    code6 = symbol.replace('.SH', '').replace('.SZ', '').zfill(6)
+                # 标准化股票代码为6位
+                code6 = symbol.replace('.SH', '').replace('.SZ', '').zfill(6)
 
-                    # 从 market_quotes 获取实时股价
-                    quote = db.market_quotes.find_one({"code": code6})
-                    if quote and quote.get("close"):
-                        realtime_price = float(quote.get("close"))
-                        logger.info(f"✅ 从 market_quotes 获取实时股价: {code6} = {realtime_price}元 (原价格: {price_value}元)")
-                        price_value = realtime_price
-                    else:
-                        logger.info(f"⚠️ market_quotes 中未找到{code6}的实时股价，使用传入价格: {price_value}元")
-                except Exception as e:
-                    logger.warning(f"⚠️ 从 market_quotes 获取实时股价失败: {e}，使用传入价格: {price_value}元")
-            else:
-                logger.info(f"⚠️ MongoDB 不可用，使用传入价格: {price_value}元")
+                # 从 market_quotes 获取实时股价
+                quote = db.market_quotes.find_one({"code": code6})
+                if quote and quote.get("close"):
+                    realtime_price = float(quote.get("close"))
+                    logger.info(f"✅ 从 market_quotes 获取实时股价: {code6} = {realtime_price}元 (原价格: {price_value}元)")
+                    price_value = realtime_price
+                else:
+                    logger.info(f"⚠️ market_quotes 中未找到{code6}的实时股价，使用传入价格: {price_value}元")
+            except Exception as e:
+                logger.warning(f"⚠️ 从 market_quotes 获取实时股价失败: {e}，使用传入价格: {price_value}元")
 
             # 第一优先级：从 MongoDB stock_financial_data 集合获取标准化财务数据
-            from tradingagents.config.runtime_settings import use_app_cache_enabled
+            from backend.dataflows.config_utils import use_app_cache_enabled
             if use_app_cache_enabled(False):
                 logger.info(f"🔍 优先从 MongoDB stock_financial_data 集合获取{symbol}财务数据")
 
                 # 直接从 MongoDB 获取标准化的财务数据
-                from tradingagents.dataflows.cache.mongodb_cache_adapter import get_mongodb_cache_adapter
+                from backend.dataflows.cache.mongodb_cache_adapter import get_mongodb_cache_adapter
                 adapter = get_mongodb_cache_adapter()
                 financial_data = adapter.get_financial_data(symbol)
 
@@ -1045,12 +1043,13 @@ class OptimizedChinaDataProvider:
 
             try:
                 # 优先使用实时计算
-                from tradingagents.dataflows.realtime_metrics import get_pe_pb_with_fallback
-                from tradingagents.config.database_manager import get_database_manager
+                from backend.dataflows.realtime_metrics import get_pe_pb_with_fallback
+                import os
+                from pymongo import MongoClient as PyMongoClient
 
-                db_manager = get_database_manager()
-                if db_manager.is_mongodb_available():
-                    client = db_manager.get_mongodb_client()
+                mongo_uri = os.environ.get('MONGODB_URI', 'mongodb://localhost:27017')
+                try:
+                    client = PyMongoClient(mongo_uri)
                     # 从symbol中提取股票代码
                     stock_code = latest_indicators.get('code') or latest_indicators.get('symbol', '').replace('.SZ', '').replace('.SH', '')
 
@@ -1401,12 +1400,13 @@ class OptimizedChinaDataProvider:
                 if stock_code:
                     logger.info(f"📊 [AKShare-PE计算-第1层] 尝试使用实时PE/PB计算: {stock_code}")
 
-                    from tradingagents.config.database_manager import get_database_manager
-                    from tradingagents.dataflows.realtime_metrics import get_pe_pb_with_fallback
+                    import os
+                    from pymongo import MongoClient as PyMongoClient2
+                    from backend.dataflows.realtime_metrics import get_pe_pb_with_fallback
 
-                    db_manager = get_database_manager()
-                    if db_manager.is_mongodb_available():
-                        client = db_manager.get_mongodb_client()
+                    mongo_uri = os.environ.get('MONGODB_URI', 'mongodb://localhost:27017')
+                    try:
+                        client = PyMongoClient2(mongo_uri)
 
                         # 获取实时PE/PB
                         realtime_metrics = get_pe_pb_with_fallback(stock_code, client)
@@ -1445,6 +1445,8 @@ class OptimizedChinaDataProvider:
                                 logger.info(f"✅ [AKShare-PB计算-第1层成功] PB={pb_value:.2f}倍")
                         else:
                             logger.warning(f"⚠️ [AKShare-PE计算-第1层失败] 实时计算返回空结果，将尝试降级计算")
+                    except Exception as inner_e:
+                        logger.warning(f"⚠️ [AKShare-PE计算-第1层内部异常] {inner_e}")
             except Exception as e:
                 logger.warning(f"⚠️ [AKShare-PE计算-第1层异常] 实时计算失败: {e}，将尝试降级计算")
 
@@ -2173,7 +2175,7 @@ def _add_financial_cache_methods():
                 logger.debug(f"📊 [财务缓存] MongoDB客户端不可用")
                 return None
 
-            db = client.get_database('tradingagents')
+            db = client.get_database('investmind')
 
             # 第一优先级：从 stock_financial_data 集合读取（定时任务同步的持久化数据）
             stock_financial_collection = db.stock_financial_data
@@ -2274,7 +2276,7 @@ def _add_financial_cache_methods():
             if not client:
                 return {}
 
-            db = client.get_database('tradingagents')
+            db = client.get_database('investmind')
             collection = db.stock_basic_info
 
             # 查找股票基本信息
@@ -2313,7 +2315,7 @@ def _add_financial_cache_methods():
     def _cache_raw_financial_data(self, symbol: str, financial_data: dict, stock_info: dict):
         """将原始财务数据缓存到数据库"""
         try:
-            from tradingagents.config.runtime_settings import use_app_cache_enabled
+            from backend.dataflows.config_utils import use_app_cache_enabled
             if not use_app_cache_enabled(False):
                 logger.debug(f"📊 [财务缓存] 应用缓存未启用，跳过缓存保存")
                 return
@@ -2324,7 +2326,7 @@ def _add_financial_cache_methods():
                 logger.debug(f"📊 [财务缓存] MongoDB客户端不可用")
                 return
 
-            db = client.get_database('tradingagents')
+            db = client.get_database('investmind')
             collection = db.financial_data_cache
 
             from datetime import datetime

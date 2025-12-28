@@ -1,6 +1,5 @@
 """
 统一的Tushare数据提供器
-合并app层和tradingagents层的所有优势功能
 """
 from typing import Optional, Dict, Any, List, Union
 from datetime import datetime, date, timedelta
@@ -9,7 +8,7 @@ import asyncio
 import logging
 
 from ..base_provider import BaseStockDataProvider
-from tradingagents.config.providers_config import get_provider_config
+from backend.dataflows.utils.providers_config import get_provider_config
 
 # 尝试导入tushare
 try:
@@ -25,7 +24,6 @@ logger = logging.getLogger(__name__)
 class TushareProvider(BaseStockDataProvider):
     """
     统一的Tushare数据提供器
-    合并app层和tradingagents层的所有优势功能
     """
     
     def __init__(self):

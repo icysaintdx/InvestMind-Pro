@@ -26,7 +26,7 @@ class StockDataCache:
         初始化缓存管理器
 
         Args:
-            cache_dir: 缓存目录路径，默认为 tradingagents/dataflows/data_cache
+            cache_dir: 缓存目录路径，默认为 backend/dataflows/data_cache
         """
         if cache_dir is None:
             # 获取当前文件所在目录

@@ -109,8 +109,8 @@ def patch_akshare_utils():
     为akshare_utils模块的get_stock_news_em函数添加过滤功能
     """
     try:
-        from tradingagents.dataflows import akshare_utils
-        
+        from backend.dataflows import akshare_utils
+
         # 保存原始函数
         if not hasattr(akshare_utils, '_original_get_stock_news_em'):
             akshare_utils._original_get_stock_news_em = akshare_utils.get_stock_news_em
@@ -151,7 +151,7 @@ def create_filtered_realtime_news_function():
         
         try:
             # 导入原始函数
-            from backend.dataflows.realtime_news_utils import get_realtime_stock_news
+            from backend.dataflows.news.realtime_news import get_realtime_stock_news
             
             # 调用原始函数获取新闻
             original_report = get_realtime_stock_news(ticker, curr_date, hours_back)
@@ -167,14 +167,17 @@ def create_filtered_realtime_news_function():
                 logger.info(f"[增强实时新闻] 检测到A股代码，尝试使用过滤版东方财富新闻")
                 
                 try:
-                    from backend.dataflows.akshare_utils import get_stock_news_em
+                    from backend.dataflows.providers.china.akshare import AKShareProvider
+                    provider = AKShareProvider()
+
+                    # 使用 AKShareProvider 的方法替代 get_stock_news_em
                     
                     # 清理股票代码
                     clean_ticker = ticker.replace('.SH', '').replace('.SZ', '').replace('.SS', '')\
                                     .replace('.XSHE', '').replace('.XSHG', '')
-                    
+
                     # 先获取原始新闻
-                    original_news_df = get_stock_news_em(clean_ticker)
+                    original_news_df = provider.get_stock_news_sync(symbol=clean_ticker)
                      
                     if enable_filter and not original_news_df.empty:
                          # 应用新闻过滤

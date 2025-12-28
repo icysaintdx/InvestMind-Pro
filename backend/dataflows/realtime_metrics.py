@@ -43,12 +43,15 @@ def calculate_realtime_pe_pb(
     try:
         # 获取数据库连接（确保是同步客户端）
         if db_client is None:
-            from tradingagents.config.database_manager import get_database_manager
-            db_manager = get_database_manager()
-            if not db_manager.is_mongodb_available():
-                logger.debug("MongoDB不可用，无法计算实时PE/PB")
+            # 数据库管理器已移除，尝试从环境变量获取 MongoDB 连接
+            import os
+            mongo_uri = os.environ.get('MONGODB_URI', 'mongodb://localhost:27017')
+            try:
+                from pymongo import MongoClient
+                db_client = MongoClient(mongo_uri)
+            except Exception as e:
+                logger.debug(f"MongoDB不可用，无法计算实时PE/PB: {e}")
                 return None
-            db_client = db_manager.get_mongodb_client()
 
         # 检查是否是异步客户端（AsyncIOMotorClient）
         # 如果是异步客户端，需要转换为同步客户端
@@ -60,7 +63,7 @@ def calculate_realtime_pe_pb(
             logger.debug(f"检测到异步客户端 {client_type}，转换为同步客户端")
             db_client = MongoClient(settings.MONGO_URI)
 
-        db = db_client['tradingagents']
+        db = db_client['investmind']
         code6 = str(symbol).zfill(6)
 
         logger.info(f"🔍 [实时PE计算] 开始计算股票 {code6}")
@@ -357,12 +360,15 @@ def get_pe_pb_with_fallback(
     # 准备数据库连接
     try:
         if db_client is None:
-            from tradingagents.config.database_manager import get_database_manager
-            db_manager = get_database_manager()
-            if not db_manager.is_mongodb_available():
-                logger.error("❌ [PE智能策略-失败] MongoDB不可用")
+            # 数据库管理器已移除，尝试从环境变量获取 MongoDB 连接
+            import os
+            mongo_uri = os.environ.get('MONGODB_URI', 'mongodb://localhost:27017')
+            try:
+                from pymongo import MongoClient
+                db_client = MongoClient(mongo_uri)
+            except Exception as e:
+                logger.error(f"❌ [PE智能策略-失败] MongoDB不可用: {e}")
                 return {}
-            db_client = db_manager.get_mongodb_client()
 
         # 检查是否是异步客户端
         client_type = type(db_client).__name__
@@ -398,7 +404,7 @@ def get_pe_pb_with_fallback(
     logger.info("   💡 说明: 使用Tushare官方PE_TTM，基于昨日收盘价")
 
     try:
-        db = db_client['tradingagents']
+        db = db_client['investmind']
         code6 = str(symbol).zfill(6)
 
         # 🔥 优先查询 Tushare 数据源
