@@ -781,6 +781,101 @@ export default defineComponent({
   box-sizing: border-box;
 }
 
+/* ========================================
+   全局滚动条美化
+   ======================================== */
+
+/* 全局滚动条样式 - 适用于所有元素 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.3);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-corner {
+  background: rgba(15, 23, 42, 0.3);
+}
+
+/* Firefox 滚动条样式 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #667eea rgba(15, 23, 42, 0.3);
+}
+
+/* 细滚动条变体 - 用于小型容器 */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 6px;
+}
+
+/* 隐藏滚动条但保留滚动功能 */
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* 绿色主题滚动条 - 用于成功/确认类区域 */
+.scrollbar-green::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.scrollbar-green::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+}
+
+/* 红色主题滚动条 - 用于警告/错误类区域 */
+.scrollbar-red::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.scrollbar-red::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+}
+
+/* 金色主题滚动条 - 用于高亮/重要区域 */
+.scrollbar-gold::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.scrollbar-gold::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+}
+
+/* 青色主题滚动条 - 用于信息类区域 */
+.scrollbar-cyan::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+}
+
+.scrollbar-cyan::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+}
+
 #app {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -882,24 +977,9 @@ export default defineComponent({
   max-width: 100%;     /* 限制最大宽度 */
 }
 
-/* API状态栏滚动条美化 */
+/* API状态栏使用细滚动条 */
 .api-status-bar::-webkit-scrollbar {
   height: 6px;  /* 水平滚动条使用height */
-}
-
-.api-status-bar::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.5);
-  border-radius: 10px;
-}
-
-.api-status-bar::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 10px;
-  transition: background 0.3s ease;
-}
-
-.api-status-bar::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
 }
 
 .status-group {
@@ -1184,26 +1264,6 @@ export default defineComponent({
   background: transparent;
 }
 
-/* 更新日志模态框滚动条美化 */
-.changelog-modal::-webkit-scrollbar {
-  width: 8px;
-}
-
-.changelog-modal::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.5);
-  border-radius: 10px;
-}
-
-.changelog-modal::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 10px;
-  transition: background 0.3s ease;
-}
-
-.changelog-modal::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
-}
-
 .modal-close-btn {
   position: fixed;
   top: 2rem;
@@ -1340,26 +1400,6 @@ export default defineComponent({
   position: relative;
 }
 
-/* 历史记录模态框滚动条美化 */
-.history-modal::-webkit-scrollbar {
-  width: 8px;
-}
-
-.history-modal::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.5);
-  border-radius: 10px;
-}
-
-.history-modal::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 10px;
-  transition: background 0.3s ease;
-}
-
-.history-modal::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
-}
-
 /* 项目介绍模态框 */
 .project-info-modal {
   position: relative;
@@ -1373,25 +1413,6 @@ export default defineComponent({
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
-/* 滚动条美化 */
-.project-info-modal::-webkit-scrollbar {
-  width: 8px;
-}
-
-.project-info-modal::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.5);
-  border-radius: 10px;
-}
-
-.project-info-modal::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 10px;
-}
-
-.project-info-modal::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
-}
-
 /* 文档中心模态框 */
 .document-modal {
   position: relative;
@@ -1403,18 +1424,9 @@ export default defineComponent({
   overflow: hidden;
 }
 
-.document-modal::-webkit-scrollbar {
-  width: 8px;
-}
-
-.document-modal::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.5);
-  border-radius: 10px;
-}
-
+/* 文档中心使用绿色主题滚动条 */
 .document-modal::-webkit-scrollbar-thumb {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border-radius: 10px;
 }
 
 .document-modal::-webkit-scrollbar-thumb:hover {
