@@ -205,6 +205,13 @@
         <span class="tab-icon">📰</span>
         <span class="tab-text">新闻中心</span>
       </button>
+      <button
+        @click="currentView = 'market-data'"
+        :class="['tab-btn', { active: currentView === 'market-data' }]"
+      >
+        <span class="tab-icon">📈</span>
+        <span class="tab-text">市场数据</span>
+      </button>
     </div>
     
     <!-- 主内容区 -->
@@ -236,6 +243,7 @@
       <SectorRotationView v-if="currentView === 'sector-rotation'" />
       <MarketSentimentView v-if="currentView === 'sentiment'" />
       <UnifiedNewsView v-if="currentView === 'unified-news'" />
+      <MarketDataView v-if="currentView === 'market-data'" />
     </main>
     
     <!-- 更新日志模态框 -->
@@ -300,6 +308,7 @@ import WencaiSelectorView from './views/WencaiSelectorView.vue'
 import SectorRotationView from './views/SectorRotationView.vue'
 import MarketSentimentView from './views/MarketSentimentView.vue'
 import UnifiedNewsView from './views/UnifiedNewsView.vue'
+import MarketDataView from './views/MarketDataView.vue'
 import ParticleBackground from './components/ParticleBackground.vue'
 import StockDataPanel from './components/StockDataPanel.vue'
 import NewsDataPanel from './components/NewsDataPanel.vue'
@@ -326,6 +335,7 @@ export default defineComponent({
     SectorRotationView,
     MarketSentimentView,
     UnifiedNewsView,
+    MarketDataView,
     ParticleBackground,
     StockDataPanel,
     NewsDataPanel,
