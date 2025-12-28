@@ -42,39 +42,59 @@ async def get_bid_ask(code: str):
             value = row['value']
             data[item] = value
 
+        # 安全转换函数 - 处理异常数据（如停牌股、退市股返回的 '---' 等）
+        def safe_float(val, default=0):
+            if val is None:
+                return default
+            if isinstance(val, (int, float)):
+                return float(val)
+            if isinstance(val, str):
+                # 去除可能的空格和特殊字符
+                val = val.strip().replace(',', '')
+                if val == '' or val == '-' or '--' in val:
+                    return default
+                try:
+                    return float(val)
+                except ValueError:
+                    return default
+            return default
+
+        def safe_int(val, default=0):
+            return int(safe_float(val, default))
+
         # 整理为结构化格式
         result = {
             "code": code,
             "asks": [
-                {"price": data.get('sell_5', 0), "volume": int(data.get('sell_5_vol', 0))},
-                {"price": data.get('sell_4', 0), "volume": int(data.get('sell_4_vol', 0))},
-                {"price": data.get('sell_3', 0), "volume": int(data.get('sell_3_vol', 0))},
-                {"price": data.get('sell_2', 0), "volume": int(data.get('sell_2_vol', 0))},
-                {"price": data.get('sell_1', 0), "volume": int(data.get('sell_1_vol', 0))},
+                {"price": safe_float(data.get('sell_5')), "volume": safe_int(data.get('sell_5_vol'))},
+                {"price": safe_float(data.get('sell_4')), "volume": safe_int(data.get('sell_4_vol'))},
+                {"price": safe_float(data.get('sell_3')), "volume": safe_int(data.get('sell_3_vol'))},
+                {"price": safe_float(data.get('sell_2')), "volume": safe_int(data.get('sell_2_vol'))},
+                {"price": safe_float(data.get('sell_1')), "volume": safe_int(data.get('sell_1_vol'))},
             ],
             "bids": [
-                {"price": data.get('buy_1', 0), "volume": int(data.get('buy_1_vol', 0))},
-                {"price": data.get('buy_2', 0), "volume": int(data.get('buy_2_vol', 0))},
-                {"price": data.get('buy_3', 0), "volume": int(data.get('buy_3_vol', 0))},
-                {"price": data.get('buy_4', 0), "volume": int(data.get('buy_4_vol', 0))},
-                {"price": data.get('buy_5', 0), "volume": int(data.get('buy_5_vol', 0))},
+                {"price": safe_float(data.get('buy_1')), "volume": safe_int(data.get('buy_1_vol'))},
+                {"price": safe_float(data.get('buy_2')), "volume": safe_int(data.get('buy_2_vol'))},
+                {"price": safe_float(data.get('buy_3')), "volume": safe_int(data.get('buy_3_vol'))},
+                {"price": safe_float(data.get('buy_4')), "volume": safe_int(data.get('buy_4_vol'))},
+                {"price": safe_float(data.get('buy_5')), "volume": safe_int(data.get('buy_5_vol'))},
             ],
-            "latest": data.get('最新', 0),
-            "avg_price": data.get('均价', 0),
-            "change_pct": data.get('涨幅', 0),
-            "change": data.get('涨跌', 0),
-            "volume": int(data.get('总手', 0)),
-            "amount": data.get('金额', 0),
-            "turnover": data.get('换手', 0),
-            "volume_ratio": data.get('量比', 0),
-            "high": data.get('最高', 0),
-            "low": data.get('最低', 0),
-            "open": data.get('今开', 0),
-            "pre_close": data.get('昨收', 0),
-            "limit_up": data.get('涨停', 0),
-            "limit_down": data.get('跌停', 0),
-            "outer_vol": int(data.get('外盘', 0)),
-            "inner_vol": int(data.get('内盘', 0)),
+            "latest": safe_float(data.get('最新')),
+            "avg_price": safe_float(data.get('均价')),
+            "change_pct": safe_float(data.get('涨幅')),
+            "change": safe_float(data.get('涨跌')),
+            "volume": safe_int(data.get('总手')),
+            "amount": safe_float(data.get('金额')),
+            "turnover": safe_float(data.get('换手')),
+            "volume_ratio": safe_float(data.get('量比')),
+            "high": safe_float(data.get('最高')),
+            "low": safe_float(data.get('最低')),
+            "open": safe_float(data.get('今开')),
+            "pre_close": safe_float(data.get('昨收')),
+            "limit_up": safe_float(data.get('涨停')),
+            "limit_down": safe_float(data.get('跌停')),
+            "outer_vol": safe_int(data.get('外盘')),
+            "inner_vol": safe_int(data.get('内盘')),
         }
 
         logger.info(f"[盘口信息] {code} 获取成功")
@@ -82,7 +102,8 @@ async def get_bid_ask(code: str):
 
     except Exception as e:
         logger.error(f"[盘口信息] {code} 错误: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        # 返回空数据而不是抛出异常，避免前端报错
+        return {"code": code, "asks": [], "bids": [], "message": f"获取失败: {str(e)}"}
 
 
 # ==================== 热点板块 ====================
@@ -167,16 +188,29 @@ async def get_sector_stocks(
     try:
         logger.info(f"[板块成分股] 获取 {sector_name} ({sector_type}) 成分股")
 
-        if sector_type == "concept":
-            df = ak.stock_board_concept_cons_em(symbol=sector_name)
-        else:
-            df = ak.stock_board_industry_cons_em(symbol=sector_name)
+        df = None
+        try:
+            if sector_type == "concept":
+                df = ak.stock_board_concept_cons_em(symbol=sector_name)
+            else:
+                df = ak.stock_board_industry_cons_em(symbol=sector_name)
+        except Exception as api_error:
+            logger.warning(f"[板块成分股] API调用失败: {api_error}")
+            # 尝试另一种板块类型
+            try:
+                if sector_type == "concept":
+                    df = ak.stock_board_industry_cons_em(symbol=sector_name)
+                else:
+                    df = ak.stock_board_concept_cons_em(symbol=sector_name)
+            except Exception:
+                pass
 
         if df is None or df.empty:
-            return {"stocks": [], "sector_name": sector_name, "message": "暂无数据"}
+            return {"stocks": [], "sector_name": sector_name, "message": "暂无数据或板块不存在"}
 
         # 按涨跌幅排序
-        df = df.sort_values(by='涨跌幅', ascending=False)
+        if '涨跌幅' in df.columns:
+            df = df.sort_values(by='涨跌幅', ascending=False)
 
         # 取前N个
         df = df.head(limit)
@@ -185,21 +219,21 @@ async def get_sector_stocks(
         stocks = []
         for _, row in df.iterrows():
             stocks.append({
-                "code": row.get('代码', ''),
-                "name": row.get('名称', ''),
-                "price": row.get('最新价', 0),
-                "change_pct": row.get('涨跌幅', 0),
-                "change": row.get('涨跌额', 0),
-                "volume": row.get('成交量', 0),
-                "amount": row.get('成交额', 0),
-                "amplitude": row.get('振幅', 0),
-                "high": row.get('最高', 0),
-                "low": row.get('最低', 0),
-                "open": row.get('今开', 0),
-                "pre_close": row.get('昨收', 0),
-                "turnover": row.get('换手率', 0),
-                "pe": row.get('市盈率-动态', 0),
-                "pb": row.get('市净率', 0),
+                "code": str(row.get('代码', '')),
+                "name": str(row.get('名称', '')),
+                "price": float(row.get('最新价', 0) or 0),
+                "change_pct": float(row.get('涨跌幅', 0) or 0),
+                "change": float(row.get('涨跌额', 0) or 0),
+                "volume": float(row.get('成交量', 0) or 0),
+                "amount": float(row.get('成交额', 0) or 0),
+                "amplitude": float(row.get('振幅', 0) or 0),
+                "high": float(row.get('最高', 0) or 0),
+                "low": float(row.get('最低', 0) or 0),
+                "open": float(row.get('今开', 0) or 0),
+                "pre_close": float(row.get('昨收', 0) or 0),
+                "turnover": float(row.get('换手率', 0) or 0),
+                "pe": float(row.get('市盈率-动态', 0) or 0),
+                "pb": float(row.get('市净率', 0) or 0),
             })
 
         logger.info(f"[板块成分股] {sector_name} 获取到 {len(stocks)} 只股票")
@@ -207,7 +241,8 @@ async def get_sector_stocks(
 
     except Exception as e:
         logger.error(f"[板块成分股] {sector_name} 错误: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        # 返回空数据而不是抛出异常
+        return {"stocks": [], "sector_name": sector_name, "message": f"获取失败: {str(e)}"}
 
 
 # ==================== 成交额排行 ====================
