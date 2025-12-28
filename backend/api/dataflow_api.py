@@ -13,23 +13,31 @@ import os
 from backend.utils.logging_config import get_logger
 from backend.utils.tool_logging import log_api_call
 import math
+from datetime import date as date_type
 
 
-def sanitize_float_values(obj):
+def sanitize_for_json(obj):
     """
-    递归清理数据中的非法float值（inf, -inf, nan）
-    将它们转换为None，以便JSON序列化
+    递归清理数据中无法JSON序列化的值：
+    - inf, -inf, nan -> None
+    - date, datetime -> ISO格式字符串
     """
     if isinstance(obj, dict):
-        return {k: sanitize_float_values(v) for k, v in obj.items()}
+        return {k: sanitize_for_json(v) for k, v in obj.items()}
     elif isinstance(obj, list):
-        return [sanitize_float_values(item) for item in obj]
+        return [sanitize_for_json(item) for item in obj]
     elif isinstance(obj, float):
         if math.isnan(obj) or math.isinf(obj):
             return None
         return obj
+    elif isinstance(obj, (datetime, date_type)):
+        return obj.isoformat()
     else:
         return obj
+
+
+# 保留旧函数名作为别名，保持向后兼容
+sanitize_float_values = sanitize_for_json
 
 # 导入风险监控模块
 from backend.dataflows.risk import (
