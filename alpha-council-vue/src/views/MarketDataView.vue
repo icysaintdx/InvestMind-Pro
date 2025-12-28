@@ -289,8 +289,16 @@ export default {
       try {
         const response = await fetch(`${API_BASE_URL}/api/market/overview`)
         const result = await response.json()
-        if (result.success) {
-          this.overview = result.data
+        // 后端返回 statistics 字段
+        if (result.statistics) {
+          this.overview = {
+            total_stocks: result.statistics.total,
+            up_count: result.statistics.rise,
+            down_count: result.statistics.fall,
+            flat_count: result.statistics.flat,
+            limit_up: result.statistics.limit_up,
+            limit_down: result.statistics.limit_down
+          }
         }
       } catch (error) {
         console.error('获取市场概览失败:', error)
@@ -302,9 +310,8 @@ export default {
       try {
         const response = await fetch(`${API_BASE_URL}/api/market/hot-sectors?type=${this.sectorType}`)
         const result = await response.json()
-        if (result.success) {
-          this.hotSectors = result.data || []
-        }
+        // 后端返回 sectors 字段
+        this.hotSectors = result.sectors || []
       } catch (error) {
         console.error('获取热点板块失败:', error)
       } finally {
@@ -316,11 +323,10 @@ export default {
       this.selectedSector = sector
       this.loading.sectorStocks = true
       try {
-        const response = await fetch(`${API_BASE_URL}/api/market/sector-stocks/${encodeURIComponent(sector.name)}`)
+        const response = await fetch(`${API_BASE_URL}/api/market/sector-stocks/${encodeURIComponent(sector.name)}?sector_type=${this.sectorType}`)
         const result = await response.json()
-        if (result.success) {
-          this.sectorStocks = result.data || []
-        }
+        // 后端返回 stocks 字段
+        this.sectorStocks = result.stocks || []
       } catch (error) {
         console.error('获取板块成分股失败:', error)
       } finally {
@@ -332,9 +338,8 @@ export default {
       try {
         const response = await fetch(`${API_BASE_URL}/api/market/top-gainers`)
         const result = await response.json()
-        if (result.success) {
-          this.topGainers = result.data || []
-        }
+        // 后端返回 stocks 字段
+        this.topGainers = result.stocks || []
       } catch (error) {
         console.error('获取涨幅榜失败:', error)
       }
@@ -344,9 +349,8 @@ export default {
       try {
         const response = await fetch(`${API_BASE_URL}/api/market/top-losers`)
         const result = await response.json()
-        if (result.success) {
-          this.topLosers = result.data || []
-        }
+        // 后端返回 stocks 字段
+        this.topLosers = result.stocks || []
       } catch (error) {
         console.error('获取跌幅榜失败:', error)
       }
@@ -356,9 +360,8 @@ export default {
       try {
         const response = await fetch(`${API_BASE_URL}/api/market/top-amount`)
         const result = await response.json()
-        if (result.success) {
-          this.topAmount = result.data || []
-        }
+        // 后端返回 stocks 字段
+        this.topAmount = result.stocks || []
       } catch (error) {
         console.error('获取成交额榜失败:', error)
       }
@@ -379,8 +382,36 @@ export default {
       try {
         const response = await fetch(`${API_BASE_URL}/api/market/bid-ask/${this.selectedStock.code}`)
         const result = await response.json()
-        if (result.success) {
-          this.bidAskData = result.data
+        // 后端直接返回盘口数据对象
+        if (result.code) {
+          // 转换为前端需要的格式
+          this.bidAskData = {
+            price: result.latest,
+            change: result.change,
+            change_pct: result.change_pct,
+            // 五档卖盘
+            ask_price5: result.asks?.[0]?.price,
+            ask_vol5: result.asks?.[0]?.volume,
+            ask_price4: result.asks?.[1]?.price,
+            ask_vol4: result.asks?.[1]?.volume,
+            ask_price3: result.asks?.[2]?.price,
+            ask_vol3: result.asks?.[2]?.volume,
+            ask_price2: result.asks?.[3]?.price,
+            ask_vol2: result.asks?.[3]?.volume,
+            ask_price1: result.asks?.[4]?.price,
+            ask_vol1: result.asks?.[4]?.volume,
+            // 五档买盘
+            bid_price1: result.bids?.[0]?.price,
+            bid_vol1: result.bids?.[0]?.volume,
+            bid_price2: result.bids?.[1]?.price,
+            bid_vol2: result.bids?.[1]?.volume,
+            bid_price3: result.bids?.[2]?.price,
+            bid_vol3: result.bids?.[2]?.volume,
+            bid_price4: result.bids?.[3]?.price,
+            bid_vol4: result.bids?.[3]?.volume,
+            bid_price5: result.bids?.[4]?.price,
+            bid_vol5: result.bids?.[4]?.volume,
+          }
         }
       } catch (error) {
         console.error('获取盘口数据失败:', error)
@@ -396,8 +427,14 @@ export default {
       try {
         const response = await fetch(`${API_BASE_URL}/api/market/transactions/${this.selectedStock.code}`)
         const result = await response.json()
-        if (result.success) {
-          this.transactions = result.data || []
+        // 后端返回 transactions 字段
+        if (result.transactions) {
+          this.transactions = result.transactions.map(tx => ({
+            time: tx.time,
+            price: tx.price,
+            volume: tx.volume,
+            type: tx.direction_code === 0 ? 'B' : 'S'  // 0=买入 1=卖出
+          }))
         }
       } catch (error) {
         console.error('获取成交明细失败:', error)
