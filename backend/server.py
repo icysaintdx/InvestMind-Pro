@@ -697,15 +697,16 @@ async def siliconflow_api(request: SiliconFlowRequest):
             }
             is_qwen3_model = isinstance(request.model, str) and "qwen3" in request.model.lower()
             # 默认输出长度控制：支持通过请求覆盖
-            max_tokens = 1024
+            # 增加默认值以支持更完整的分析报告
+            max_tokens = 4096
             if request.maxTokens is not None:
                 try:
                     max_tokens = int(request.maxTokens)
                 except Exception:
-                    max_tokens = 1024
+                    max_tokens = 4096
             elif is_qwen3_model:
                 # Qwen3 默认保守一些，避免长输出导致超时
-                max_tokens = 512
+                max_tokens = 2048
             data = {
                 "model": request.model,
                 "messages": [

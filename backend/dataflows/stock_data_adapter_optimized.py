@@ -117,8 +117,19 @@ class StockDataAdapter:
                             name_row = info_df[info_df['item'] == '股票简称']
                             if not name_row.empty:
                                 stock_name = str(name_row['value'].iloc[0])
-                    except:
-                        pass
+                                logger.info(f"[StockDataAdapter] 获取到股票名称: {stock_name}")
+                    except Exception as name_err:
+                        logger.warning(f"[StockDataAdapter] 获取股票名称失败: {name_err}")
+                        # 尝试从全市场数据获取名称
+                        try:
+                            spot_df = ak.stock_zh_a_spot_em()
+                            if spot_df is not None and not spot_df.empty:
+                                stock_row = spot_df[spot_df['代码'] == symbol]
+                                if not stock_row.empty:
+                                    stock_name = str(stock_row.iloc[0].get('名称', f'股票{symbol}'))
+                                    logger.info(f"[StockDataAdapter] 从全市场数据获取到股票名称: {stock_name}")
+                        except:
+                            pass
                     
                     result['success'] = True
                     result['name'] = stock_name
@@ -146,9 +157,20 @@ class StockDataAdapter:
                 hist_df = ak.stock_zh_a_hist(symbol=symbol, period="daily", adjust="")
                 if hist_df is not None and not hist_df.empty:
                     latest = hist_df.iloc[-1]
-                    
+
+                    # 尝试获取股票名称
+                    stock_name = f'股票{symbol}'
+                    try:
+                        info_df = ak.stock_individual_info_em(symbol=symbol)
+                        if info_df is not None and not info_df.empty:
+                            name_row = info_df[info_df['item'] == '股票简称']
+                            if not name_row.empty:
+                                stock_name = str(name_row['value'].iloc[0])
+                    except:
+                        pass
+
                     result['success'] = True
-                    result['name'] = f'股票{symbol}'  # 历史数据没有名称
+                    result['name'] = stock_name
                     result['price'] = float(latest.get('收盘', 0))
                     result['change'] = float(latest.get('涨跌幅', 0))
                     result['change_amount'] = float(latest.get('涨跌额', 0))
@@ -160,7 +182,7 @@ class StockDataAdapter:
                     result['amount'] = float(latest.get('成交额', 0))
                     result['data_source'] = 'akshare'
                     result['raw_text'] = self._format_as_text(result)
-                    
+
                     logger.info(f"[StockDataAdapter] ✅ AKShare stock_zh_a_hist 成功")
                     return result
             except:

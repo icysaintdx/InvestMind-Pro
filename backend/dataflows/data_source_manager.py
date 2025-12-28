@@ -1160,8 +1160,11 @@ class DataSourceManager:
         try:
             import akshare as ak
 
+            # 去除后缀（如 600252.SH -> 600252）
+            pure_symbol = symbol.split('.')[0] if '.' in symbol else symbol
+
             # 尝试获取个股信息
-            stock_info = ak.stock_individual_info_em(symbol=symbol)
+            stock_info = ak.stock_individual_info_em(symbol=pure_symbol)
 
             if stock_info is not None and not stock_info.empty:
                 # 转换为字典格式
@@ -1193,11 +1196,14 @@ class DataSourceManager:
         try:
             import baostock as bs
 
+            # 去除后缀（如 600252.SH -> 600252）
+            pure_symbol = symbol.split('.')[0] if '.' in symbol else symbol
+
             # 转换股票代码格式
-            if symbol.startswith('6'):
-                bs_code = f"sh.{symbol}"
+            if pure_symbol.startswith('6'):
+                bs_code = f"sh.{pure_symbol}"
             else:
-                bs_code = f"sz.{symbol}"
+                bs_code = f"sz.{pure_symbol}"
 
             # 登录BaoStock
             lg = bs.login()

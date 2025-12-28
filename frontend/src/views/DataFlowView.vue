@@ -2196,7 +2196,8 @@ export default {
 
       // 1. 先检查前端内存缓存
       const cachedData = stockDataCache.value[stock.code]
-      if (cachedData && cachedData.comprehensive) {
+      if (cachedData && cachedData.comprehensive && cachedData.comprehensive.realtime) {
+        // 只有当缓存数据包含完整的 realtime 等字段时才使用缓存
         comprehensiveData.value = cachedData.comprehensive
         stockNews.value = cachedData.news || []
         stockSentiment.value = cachedData.sentiment || {}
@@ -2214,53 +2215,45 @@ export default {
         const response = await axios.get(`${API_BASE}/dataflow/stock/comprehensive/${stock.code}/from-db`)
 
         if (response.data.success && response.data.has_data) {
-          console.log(`✅ 从数据库加载成功`)
-
-          // 使用数据库数据
           const dbData = response.data.data || {}
-          comprehensiveData.value = dbData
-          stockNews.value = dbData.news || []
-          stockSentiment.value = {
-            success: true,
-            overall_score: dbData.overall_score || 50,
-            sentiment_summary: dbData.sentiment_summary || '暂无'
-          }
-          stockRisk.value = dbData.risk || {}
 
-          // 保存到前端缓存
-          stockDataCache.value[stock.code] = {
-            comprehensive: dbData,
-            news: stockNews.value,
-            sentiment: stockSentiment.value,
-            risk: stockRisk.value,
-            timestamp: response.data.loaded_at || new Date().toISOString(),
-            from_database: true
-          }
-        } else {
-          // 3. 数据库无数据，尝试后端缓存
-          console.log(`ℹ️ 数据库无数据，尝试后端缓存: ${stock.code}`)
-          const cacheResponse = await axios.get(`${API_BASE}/dataflow/stock/cached/${stock.code}`)
-
-          if (cacheResponse.data.success && cacheResponse.data.has_data) {
-            const cached = cacheResponse.data.comprehensive || {}
-            comprehensiveData.value = cached
-            stockNews.value = cacheResponse.data.news || cached.news || []
+          // 检查数据是否完整（包含 realtime 等关键字段）
+          if (dbData.realtime || dbData.company_info || dbData.financial) {
+            console.log(`✅ 从数据库加载成功（完整数据）`)
+            comprehensiveData.value = dbData
+            stockNews.value = dbData.news || []
             stockSentiment.value = {
               success: true,
-              overall_score: cached.overall_score || 50,
-              sentiment_summary: cached.sentiment_summary || '暂无'
+              overall_score: dbData.overall_score || 50,
+              sentiment_summary: dbData.sentiment_summary || '暂无'
             }
-            stockRisk.value = cached.risk || {}
+            stockRisk.value = dbData.risk || {}
+
+            // 保存到前端缓存
+            stockDataCache.value[stock.code] = {
+              comprehensive: dbData,
+              news: stockNews.value,
+              sentiment: stockSentiment.value,
+              risk: stockRisk.value,
+              timestamp: response.data.loaded_at || new Date().toISOString(),
+              from_database: true
+            }
+            return
           } else {
-            // 4. 无任何数据，显示空状态
-            console.log(`ℹ️ 无缓存数据: ${stock.code}，请点击刷新按钮获取`)
-            comprehensiveData.value = null
-            stockNews.value = []
-            stockSentiment.value = {}
-            stockRisk.value = {}
-            showToast('暂无数据，请点击刷新按钮获取', 'info')
+            console.log(`ℹ️ 数据库数据不完整，自动获取完整数据: ${stock.code}`)
           }
         }
+
+        // 3. 数据库无数据或数据不完整，自动获取完整数据
+        console.log(`🔄 自动获取完整数据: ${stock.code}`)
+        showToast('正在获取详细数据...', 'info')
+
+        // 调用 fetchAndCacheStockData 获取完整数据
+        await fetchAndCacheStockData(stock.code)
+
+        // 获取完成后，数据已经更新到 comprehensiveData 等变量中
+        console.log(`✅ 完整数据获取完成: ${stock.code}`)
+
       } catch (error) {
         console.error('获取数据失败:', error)
         // 显示空状态
@@ -2268,6 +2261,7 @@ export default {
         stockNews.value = []
         stockSentiment.value = {}
         stockRisk.value = {}
+        showToast('获取数据失败，请点击刷新按钮重试', 'error')
       } finally {
         loadingComprehensive.value = false
       }
