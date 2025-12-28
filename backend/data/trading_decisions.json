@@ -433,5 +433,44 @@
         "status": "EXECUTED"
       }
     }
+  },
+  {
+    "record_id": "DR20251229022708",
+    "task_id": "AT20251229022658",
+    "timestamp": "2025-12-29T02:27:08.983097",
+    "market_data": {
+      "stock_code": "600284",
+      "current_price": 8.41,
+      "change_rate": -2.66,
+      "volume": 22740428.0,
+      "news_summary": "解密主力资金出逃股 连续5日净流出466股; 杠杆资金持续回流 两融余额五连升; 【数据揭秘】融资客看好个股一览"
+    },
+    "decision": {
+      "action": "buy",
+      "quantity": 300,
+      "reason": "当前无持仓，且股票价格出现单日-2.66%的跌幅，成交量2274万手，显示市场情绪偏弱。根据历史分析，石墨烯行业处于复苏初期，技术探索与商业化落地的过渡期，存在结构性机会。结合最新新闻中融资客持续回流和杠杆资金的动态，短期市场情绪可能有所修复，因此建议小仓位试探性买入。",
+      "confidence": 0.75,
+      "risk_level": "medium",
+      "stop_loss": 8.0,
+      "take_profit": 10.0
+    },
+    "executed": true,
+    "execution_result": {
+      "success": true,
+      "trade_id": "T20251229022708",
+      "message": "交易成功: BUY 300股 @ 8.41",
+      "trade": {
+        "trade_id": "T20251229022708",
+        "timestamp": "2025-12-29T02:27:08.486434",
+        "stock_code": "600284",
+        "stock_name": "浦东建设",
+        "action": "BUY",
+        "quantity": 300,
+        "price": 8.41,
+        "amount": 2523.0,
+        "commission": 5.0,
+        "status": "EXECUTED"
+      }
+    }
   }
 ]

@@ -1,11 +1,11 @@
 {
   "portfolio": {
     "initial_capital": 1000000,
-    "cash_balance": 529624.02,
-    "total_value": 994048.02,
-    "positions_value": 464424.00000000006,
+    "cash_balance": 527096.02,
+    "total_value": 994043.02,
+    "positions_value": 466947.00000000006,
     "total_profit_loss": 0,
-    "total_profit_loss_rate": -0.5951979999999981
+    "total_profit_loss_rate": -0.5956979999999982
   },
   "positions": {
     "600085": {
@@ -126,6 +126,23 @@
           "market": "CN"
         }
       ]
+    },
+    "600284": {
+      "stock_code": "600284",
+      "stock_name": "浦东建设",
+      "quantity": 300,
+      "avg_cost": 8.41,
+      "open_date": "2025-12-29T02:27:08.486434",
+      "last_update": "2025-12-29T02:27:08.486434",
+      "market": "CN",
+      "trades": [
+        {
+          "date": "2025-12-29T02:27:08.486434",
+          "quantity": 300,
+          "price": 8.41,
+          "market": "CN"
+        }
+      ]
     }
   },
   "trade_history": [
@@ -212,7 +229,19 @@
       "amount": 3816.0,
       "commission": 5.0,
       "status": "EXECUTED"
+    },
+    {
+      "trade_id": "T20251229022708",
+      "timestamp": "2025-12-29T02:27:08.486434",
+      "stock_code": "600284",
+      "stock_name": "浦东建设",
+      "action": "BUY",
+      "quantity": 300,
+      "price": 8.41,
+      "amount": 2523.0,
+      "commission": 5.0,
+      "status": "EXECUTED"
     }
   ],
-  "last_update": "2025-12-28T22:17:10.172357"
+  "last_update": "2025-12-29T02:30:25.759473"
 }
