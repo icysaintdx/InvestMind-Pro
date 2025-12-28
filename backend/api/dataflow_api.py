@@ -377,6 +377,8 @@ async def get_data_sources_status():
 async def _check_all_data_sources():
     """检测所有数据源状态"""
     try:
+        current_time = datetime.now().isoformat()
+
         # 检测AKShare
         try:
             import akshare as ak
@@ -384,14 +386,14 @@ async def _check_all_data_sources():
             df = ak.stock_zh_a_spot_em()
             if df is not None and not df.empty:
                 data_sources_status["akshare"]["status"] = "online"
-                data_sources_status["akshare"]["lastUpdate"] = datetime.now().isoformat()
                 data_sources_status["akshare"]["error"] = None
             else:
                 data_sources_status["akshare"]["status"] = "error"
                 data_sources_status["akshare"]["error"] = "无法获取数据"
         except Exception as e:
             data_sources_status["akshare"]["status"] = "error"
-            data_sources_status["akshare"]["error"] = str(e)
+            data_sources_status["akshare"]["error"] = str(e)[:100]
+        data_sources_status["akshare"]["lastUpdate"] = current_time
 
         # 检测Tushare
         try:
@@ -400,10 +402,10 @@ async def _check_all_data_sources():
             token = os.getenv('TUSHARE_TOKEN')
             if token:
                 ts.set_token(token)
-                df = ts.daily(ts_code='000001.SZ', start_date='20240101', end_date='20240102')
+                pro = ts.pro_api()
+                df = pro.daily(ts_code='000001.SZ', start_date='20250101', end_date='20250102')
                 if df is not None and not df.empty:
                     data_sources_status["tushare"]["status"] = "online"
-                    data_sources_status["tushare"]["lastUpdate"] = datetime.now().isoformat()
                     data_sources_status["tushare"]["error"] = None
                 else:
                     data_sources_status["tushare"]["status"] = "error"
@@ -413,26 +415,48 @@ async def _check_all_data_sources():
                 data_sources_status["tushare"]["error"] = "未配置TUSHARE_TOKEN"
         except Exception as e:
             data_sources_status["tushare"]["status"] = "error"
-            data_sources_status["tushare"]["error"] = str(e)
+            data_sources_status["tushare"]["error"] = str(e)[:100]
+        data_sources_status["tushare"]["lastUpdate"] = current_time
 
-        # 检测其他数据源
-        for source in ["eastmoney", "juhe"]:
-            if data_sources_status[source]["status"] == "offline":
-                try:
-                    # 简单的网络测试
-                    import requests
-                    if source == "eastmoney":
-                        response = requests.get("https://push2.eastmoney.com/api/qt/stock/get", timeout=5)
-                    else:  # juhe
-                        response = requests.get("https://apis.juhe.cn/1.0/api/v1/stock/news", timeout=5)
+        # 检测东方财富
+        try:
+            import requests
+            response = requests.get("https://push2.eastmoney.com/api/qt/stock/get", timeout=5)
+            if response.status_code == 200:
+                data_sources_status["eastmoney"]["status"] = "online"
+                data_sources_status["eastmoney"]["error"] = None
+            else:
+                data_sources_status["eastmoney"]["status"] = "error"
+                data_sources_status["eastmoney"]["error"] = f"HTTP {response.status_code}"
+        except Exception as e:
+            data_sources_status["eastmoney"]["status"] = "error"
+            data_sources_status["eastmoney"]["error"] = str(e)[:100]
+        data_sources_status["eastmoney"]["lastUpdate"] = current_time
 
-                    if response.status_code == 200:
-                        data_sources_status[source]["status"] = "online"
-                        data_sources_status[source]["lastUpdate"] = datetime.now().isoformat()
-                        data_sources_status[source]["error"] = None
-                except Exception as e:
-                    data_sources_status[source]["status"] = "error"
-                    data_sources_status[source]["error"] = str(e)
+        # 检测聚合数据
+        try:
+            import requests
+            juhe_key = os.getenv('JUHE_API_KEY')
+            if juhe_key:
+                response = requests.get(f"http://web.juhe.cn/finance/stock/hs?gid=sh601006&key={juhe_key}", timeout=5)
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get("error_code") == 0:
+                        data_sources_status["juhe"]["status"] = "online"
+                        data_sources_status["juhe"]["error"] = None
+                    else:
+                        data_sources_status["juhe"]["status"] = "error"
+                        data_sources_status["juhe"]["error"] = data.get("reason", "API错误")
+                else:
+                    data_sources_status["juhe"]["status"] = "error"
+                    data_sources_status["juhe"]["error"] = f"HTTP {response.status_code}"
+            else:
+                data_sources_status["juhe"]["status"] = "offline"
+                data_sources_status["juhe"]["error"] = "未配置JUHE_API_KEY"
+        except Exception as e:
+            data_sources_status["juhe"]["status"] = "error"
+            data_sources_status["juhe"]["error"] = str(e)[:100]
+        data_sources_status["juhe"]["lastUpdate"] = current_time
 
     except Exception as e:
         logger.error(f"检测数据源失败: {e}")
@@ -488,25 +512,82 @@ async def check_data_sources():
 async def get_news(source: Optional[str] = None, limit: int = 50):
     """
     获取新闻列表
-    
+
     Args:
         source: 数据源筛选（可选）
         limit: 返回数量限制
     """
     try:
+        global news_list
+
+        # 如果新闻列表为空，主动获取市场新闻
+        if not news_list:
+            logger.info("📰 新闻列表为空，正在获取市场新闻...")
+            try:
+                import akshare as ak
+
+                # 获取东方财富全球财经快讯
+                df = ak.stock_info_global_em()
+                if df is not None and not df.empty:
+                    for _, row in df.head(50).iterrows():
+                        title = str(row.get('标题', ''))
+                        content = str(row.get('内容', ''))
+                        pub_time = str(row.get('发布时间', ''))
+
+                        # 简单情绪分析
+                        sentiment = 'neutral'
+                        positive_keywords = ['涨', '上涨', '大涨', '暴涨', '利好', '突破', '新高', '增长', '盈利', '超预期', '上调', '增持']
+                        negative_keywords = ['跌', '下跌', '大跌', '暴跌', '利空', '下滑', '新低', '亏损', '下降', '不及预期', '下调', '减持']
+
+                        for kw in positive_keywords:
+                            if kw in title or kw in content:
+                                sentiment = 'positive'
+                                break
+                        if sentiment == 'neutral':
+                            for kw in negative_keywords:
+                                if kw in title or kw in content:
+                                    sentiment = 'negative'
+                                    break
+
+                        news_list.append({
+                            'id': f"em_{pub_time}_{len(news_list)}",
+                            'title': title,
+                            'summary': content[:200] if content else '',
+                            'content': content,
+                            'publishTime': pub_time,
+                            'pub_time': pub_time,
+                            'source': '东方财富',
+                            'sentiment': sentiment,
+                            'sentiment_score': 75 if sentiment == 'positive' else (25 if sentiment == 'negative' else 50),
+                            'url': '',
+                            'relatedStocks': []
+                        })
+
+                    logger.info(f"✅ 获取市场新闻成功: {len(news_list)}条")
+            except Exception as e:
+                logger.warning(f"⚠️ 获取市场新闻失败: {e}")
+
         filtered_news = news_list
-        
+
         if source and source != "all":
             filtered_news = [n for n in news_list if n.get("source") == source]
-        
+
         filtered_news = filtered_news[:limit]
-        
+
+        # 计算情绪统计
+        sentiment_stats = {
+            'positive': sum(1 for n in filtered_news if n.get('sentiment') == 'positive'),
+            'negative': sum(1 for n in filtered_news if n.get('sentiment') == 'negative'),
+            'neutral': sum(1 for n in filtered_news if n.get('sentiment') == 'neutral')
+        }
+
         return {
             "success": True,
             "news": filtered_news,
-            "total": len(filtered_news)
+            "total": len(filtered_news),
+            "sentiment_stats": sentiment_stats
         }
-        
+
     except Exception as e:
         logger.error(f"获取新闻失败: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -1093,13 +1174,222 @@ async def scheduled_update_task():
                 }
                 
                 interval_minutes = intervals.get(frequency, 60)
-                
+
                 if (current_time - last_time).total_seconds() >= interval_minutes * 60:
                     await update_stock_data(code)
-            
+
             # 每分钟检查一次
             await asyncio.sleep(60)
-            
+
         except Exception as e:
             logger.error(f"定时任务出错: {e}")
             await asyncio.sleep(60)
+
+
+# ==================== 接口测试 ====================
+
+@router.get("/interfaces/test/stream")
+async def test_interfaces_stream():
+    """
+    流式测试所有数据接口（SSE）
+    逐个测试各数据源的接口，实时返回测试结果
+    """
+    import time
+
+    async def generate():
+        try:
+            # 定义要测试的接口
+            interfaces = {
+                'tushare': {
+                    'name': 'Tushare',
+                    'icon': '📊',
+                    'interfaces': [
+                        {'id': 'tushare_daily', 'name': '日线数据', 'category': '行情数据', 'test_func': 'test_tushare_daily'},
+                        {'id': 'tushare_income', 'name': '利润表', 'category': '财务数据', 'test_func': 'test_tushare_income'},
+                        {'id': 'tushare_suspend', 'name': '停复牌', 'category': '公告数据', 'test_func': 'test_tushare_suspend'},
+                        {'id': 'tushare_pledge', 'name': '股权质押', 'category': '风险数据', 'test_func': 'test_tushare_pledge'},
+                    ]
+                },
+                'akshare': {
+                    'name': 'AKShare',
+                    'icon': '🔗',
+                    'interfaces': [
+                        {'id': 'akshare_spot', 'name': '实时行情', 'category': '行情数据', 'test_func': 'test_akshare_spot'},
+                        {'id': 'akshare_news', 'name': '个股新闻', 'category': '新闻数据', 'test_func': 'test_akshare_news'},
+                        {'id': 'akshare_st', 'name': 'ST股票', 'category': '风险数据', 'test_func': 'test_akshare_st'},
+                        {'id': 'akshare_block', 'name': '大宗交易', 'category': '交易数据', 'test_func': 'test_akshare_block'},
+                    ]
+                },
+                'eastmoney': {
+                    'name': '东方财富',
+                    'icon': '💰',
+                    'interfaces': [
+                        {'id': 'em_realtime', 'name': '实时行情', 'category': '行情数据', 'test_func': 'test_em_realtime'},
+                        {'id': 'em_news', 'name': '财经新闻', 'category': '新闻数据', 'test_func': 'test_em_news'},
+                    ]
+                }
+            }
+
+            # 计算总接口数
+            total = sum(len(source['interfaces']) for source in interfaces.values())
+
+            # 发送开始信号
+            yield f"data: {json.dumps({'type': 'start', 'total': total, 'sources': list(interfaces.keys())})}\n\n"
+
+            progress = 0
+            success_count = 0
+
+            # 测试函数映射
+            async def test_tushare_daily():
+                import os
+                token = os.getenv('TUSHARE_TOKEN')
+                if not token:
+                    return False, 'TUSHARE_TOKEN未配置'
+                import tushare as ts
+                ts.set_token(token)
+                pro = ts.pro_api()
+                df = pro.daily(ts_code='000001.SZ', start_date='20250101', end_date='20250102')
+                return df is not None and not df.empty, f'{len(df)}条数据' if df is not None else '无数据'
+
+            async def test_tushare_income():
+                import os
+                token = os.getenv('TUSHARE_TOKEN')
+                if not token:
+                    return False, 'TUSHARE_TOKEN未配置'
+                import tushare as ts
+                ts.set_token(token)
+                pro = ts.pro_api()
+                df = pro.income(ts_code='000001.SZ')
+                return df is not None and not df.empty, f'{len(df)}条数据' if df is not None else '无数据'
+
+            async def test_tushare_suspend():
+                import os
+                token = os.getenv('TUSHARE_TOKEN')
+                if not token:
+                    return False, 'TUSHARE_TOKEN未配置'
+                import tushare as ts
+                ts.set_token(token)
+                pro = ts.pro_api()
+                df = pro.suspend_d(ts_code='000001.SZ')
+                return True, '接口可用'
+
+            async def test_tushare_pledge():
+                import os
+                token = os.getenv('TUSHARE_TOKEN')
+                if not token:
+                    return False, 'TUSHARE_TOKEN未配置'
+                import tushare as ts
+                ts.set_token(token)
+                pro = ts.pro_api()
+                df = pro.pledge_stat(ts_code='000001.SZ')
+                return df is not None and not df.empty, f'{len(df)}条数据' if df is not None else '无数据'
+
+            async def test_akshare_spot():
+                import akshare as ak
+                df = ak.stock_zh_a_spot_em()
+                return df is not None and not df.empty, f'{len(df)}只股票'
+
+            async def test_akshare_news():
+                import akshare as ak
+                df = ak.stock_news_em(symbol='000001')
+                return df is not None and not df.empty, f'{len(df)}条新闻'
+
+            async def test_akshare_st():
+                import akshare as ak
+                df = ak.stock_zh_a_st_em()
+                return df is not None and not df.empty, f'{len(df)}只ST股票'
+
+            async def test_akshare_block():
+                import akshare as ak
+                df = ak.stock_dzjy_sctj()
+                return df is not None and not df.empty, f'{len(df)}条记录'
+
+            async def test_em_realtime():
+                import akshare as ak
+                df = ak.stock_zh_a_spot_em()
+                return df is not None and not df.empty, f'{len(df)}只股票'
+
+            async def test_em_news():
+                import akshare as ak
+                df = ak.stock_info_global_em()
+                return df is not None and not df.empty, f'{len(df)}条新闻'
+
+            test_funcs = {
+                'test_tushare_daily': test_tushare_daily,
+                'test_tushare_income': test_tushare_income,
+                'test_tushare_suspend': test_tushare_suspend,
+                'test_tushare_pledge': test_tushare_pledge,
+                'test_akshare_spot': test_akshare_spot,
+                'test_akshare_news': test_akshare_news,
+                'test_akshare_st': test_akshare_st,
+                'test_akshare_block': test_akshare_block,
+                'test_em_realtime': test_em_realtime,
+                'test_em_news': test_em_news,
+            }
+
+            # 逐个数据源测试
+            for source_key, source_info in interfaces.items():
+                # 发送数据源开始信号
+                yield f"data: {json.dumps({'type': 'source_start', 'source': source_key, 'name': source_info['name'], 'icon': source_info['icon'], 'count': len(source_info['interfaces'])})}\n\n"
+
+                source_success = 0
+                source_fail = 0
+
+                for iface in source_info['interfaces']:
+                    # 发送测试开始信号
+                    yield f"data: {json.dumps({'type': 'test_start', 'source': source_key, 'interface_id': iface['id'], 'name': iface['name'], 'category': iface['category']})}\n\n"
+
+                    start_time = time.time()
+                    try:
+                        test_func = test_funcs.get(iface['test_func'])
+                        if test_func:
+                            success, message = await test_func()
+                            elapsed = round(time.time() - start_time, 2)
+                            status = 'success' if success else 'error'
+                            if success:
+                                source_success += 1
+                                success_count += 1
+                            else:
+                                source_fail += 1
+                        else:
+                            elapsed = 0
+                            status = 'not_implemented'
+                            message = '测试函数未实现'
+                            source_fail += 1
+                    except Exception as e:
+                        elapsed = round(time.time() - start_time, 2)
+                        status = 'error'
+                        message = str(e)[:100]
+                        source_fail += 1
+
+                    progress += 1
+
+                    # 发送测试结果
+                    yield f"data: {json.dumps({'type': 'test_result', 'source': source_key, 'interface_id': iface['id'], 'status': status, 'elapsed': elapsed, 'message': message, 'progress': progress})}\n\n"
+
+                    # 短暂延迟避免过快
+                    await asyncio.sleep(0.1)
+
+                # 发送数据源完成信号
+                yield f"data: {json.dumps({'type': 'source_complete', 'source': source_key, 'name': source_info['name'], 'success': source_success, 'fail': source_fail})}\n\n"
+
+            # 发送完成信号
+            success_rate = round(success_count / total * 100, 1) if total > 0 else 0
+            yield f"data: {json.dumps({'type': 'complete', 'total': total, 'success': success_count, 'fail': total - success_count, 'success_rate': success_rate})}\n\n"
+
+        except Exception as e:
+            logger.error(f"接口测试失败: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            yield f"data: {json.dumps({'type': 'error', 'error': str(e)})}\n\n"
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "*",
+        }
+    )
