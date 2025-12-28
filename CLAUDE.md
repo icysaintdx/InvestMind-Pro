@@ -18,7 +18,7 @@ python backend/server.py
 
 ### Frontend (Vue 3)
 ```bash
-cd alpha-council-vue
+cd frontend
 npm install
 npm run serve    # Dev server at http://localhost:8080
 npm run build    # Production build
@@ -46,7 +46,7 @@ start.bat
   - `services/` - Business logic (llm/, strategy/, cache/)
   - `strategies/` - 20+ trading strategies
   - `backtest/` - Backtesting engine
-- `alpha-council-vue/` - Vue 3 frontend
+- `frontend/` - Vue 3 frontend
   - `src/views/` - Page components
   - `src/components/` - Reusable components
 
@@ -77,7 +77,7 @@ Copy `.env.example` to `.env` and configure:
 | `backend/agent_configs.json` | Agent model and temperature configuration |
 | `backend/dataflows/interface.py` | Unified data access interface |
 | `backend/dataflows/data_source_manager.py` | Multi-source data management |
-| `alpha-council-vue/src/App.vue` | Main Vue application |
+| `frontend/src/App.vue` | Main Vue application |
 
 ## API Endpoints
 
@@ -90,6 +90,6 @@ Copy `.env.example` to `.env` and configure:
 ## Notes
 
 - Primary language is Chinese (comments, docs, UI)
-- Database: SQLite (`InvestMindPro.db`, `backend/alphacouncil.db`)
+- Database: SQLite (`InvestMindPro.db`, `backend/investmind.db`)
 - Real-time updates via Server-Sent Events (SSE)
-- `TradingAgents-CN-main/` is a reference project, excluded from git
+- `tradingagents/` is a compatibility layer for legacy imports

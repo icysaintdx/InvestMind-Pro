@@ -34,7 +34,7 @@ echo.
 echo Step 3: Build Frontend Image
 echo ------------------------------------------------------------
 echo Building frontend image...
-cd alpha-council-vue
+cd frontend
 docker build -t InvestMindPro-frontend:latest .
 if errorlevel 1 (
     echo ERROR: Frontend build failed!

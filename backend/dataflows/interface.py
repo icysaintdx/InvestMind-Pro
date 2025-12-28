@@ -24,8 +24,8 @@ from tradingagents.utils.logging_init import setup_dataflow_logging
 
 # 导入日志模块
 from tradingagents.utils.logging_manager import get_logger
-logger = get_logger('agents')
-logger = setup_dataflow_logging()
+logger = get_logger('dataflows.interface')
+setup_dataflow_logging()
 
 # 导入港股工具
 try:

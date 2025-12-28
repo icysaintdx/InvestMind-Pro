@@ -1,4 +1,4 @@
-# TradingAgents-CN directory (excluded as requested)
+# Legacy reference project (excluded)
 TradingAgents-CN-main/
 
 # Environment files
@@ -33,8 +33,8 @@ yarn-error.log*
 .DS_Store
 
 # Vue build output
-alpha-council-vue/dist/
-alpha-council-vue/.env.local
+frontend/dist/
+frontend/.env.local
 
 # Logs
 logs/

@@ -38,7 +38,7 @@ services:
   # 前端服务
   frontend:
     build:
-      context: ./alpha-council-vue
+      context: ./frontend
       dockerfile: Dockerfile
     container_name: InvestMindPro-frontend
     restart: unless-stopped

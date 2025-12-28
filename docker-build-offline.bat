@@ -49,7 +49,7 @@ echo ============================================================
 echo Step 2: Build Frontend Image
 echo ============================================================
 echo.
-cd alpha-council-vue
+cd frontend
 echo Building InvestMindPro-frontend:latest...
 echo This includes Node.js build process...
 echo.

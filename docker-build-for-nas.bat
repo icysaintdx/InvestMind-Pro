@@ -36,7 +36,7 @@ echo ============================================================
 echo Step 2: Build Frontend Image (Standalone Version)
 echo ============================================================
 echo.
-cd alpha-council-vue
+cd frontend
 echo Building InvestMindPro-frontend:latest (standalone)...
 docker build --progress=plain -f Dockerfile.standalone -t InvestMindPro-frontend:latest .
 
