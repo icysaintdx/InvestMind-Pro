@@ -19,16 +19,79 @@
         <p class="subtitle">实时监控股票数据流、新闻舆情与风险分析</p>
       </div>
       <div class="header-actions">
-        <button @click="refreshAllData" class="btn-primary" :disabled="isRefreshing">
+        <button @click="refreshAllData()" class="btn-primary" :disabled="isRefreshing">
           <span v-if="!isRefreshing">🔄 全部刷新</span>
           <span v-else>⏳ 刷新中...</span>
         </button>
         <button @click="showAddMonitor = true" class="btn-primary">
           ➕ 添加监控股票
         </button>
+        <button @click="showRefreshSettings = true" class="btn-secondary">
+          ⏱️ 刷新设置
+        </button>
         <button @click="showNotificationSettings = true" class="btn-secondary">
           🔔 通知设置
         </button>
+      </div>
+    </div>
+
+    <!-- 刷新频率设置弹窗 -->
+    <div v-if="showRefreshSettings" class="modal-overlay" @click.self="showRefreshSettings = false">
+      <div class="modal-content refresh-settings-modal">
+        <div class="modal-header">
+          <h3>⏱️ 刷新频率设置</h3>
+          <button @click="showRefreshSettings = false" class="close-btn">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="settings-section">
+            <h4>📰 新闻监控频率</h4>
+            <p class="setting-desc">控制新闻流的自动刷新间隔，频率越高越能及时获取最新资讯</p>
+            <div class="setting-options">
+              <label v-for="option in newsRefreshOptions" :key="option.value" class="radio-option">
+                <input type="radio" v-model="refreshSettings.newsInterval" :value="option.value">
+                <span class="radio-label">{{ option.label }}</span>
+                <span class="radio-desc">{{ option.desc }}</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <h4>📢 公告监控频率</h4>
+            <p class="setting-desc">控制公告数据的检查间隔，公告通常影响较大</p>
+            <div class="setting-options">
+              <label v-for="option in announcementRefreshOptions" :key="option.value" class="radio-option">
+                <input type="radio" v-model="refreshSettings.announcementInterval" :value="option.value">
+                <span class="radio-label">{{ option.label }}</span>
+                <span class="radio-desc">{{ option.desc }}</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <h4>📊 其他数据更新频率</h4>
+            <p class="setting-desc">控制行情、财务等数据的更新间隔</p>
+            <div class="setting-options">
+              <label v-for="option in otherDataRefreshOptions" :key="option.value" class="radio-option">
+                <input type="radio" v-model="refreshSettings.otherDataInterval" :value="option.value">
+                <span class="radio-label">{{ option.label }}</span>
+                <span class="radio-desc">{{ option.desc }}</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="settings-info">
+            <p>💡 <strong>建议：</strong></p>
+            <ul>
+              <li>新闻监控建议设置为30秒-1分钟，以便及时获取重要资讯</li>
+              <li>公告监控建议设置为1-2分钟，公告通常对股价影响较大</li>
+              <li>其他数据时效性要求不高，可设置为30分钟-1小时</li>
+            </ul>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button @click="saveRefreshSettings" class="btn-primary">💾 保存设置</button>
+          <button @click="showRefreshSettings = false" class="btn-secondary">取消</button>
+        </div>
       </div>
     </div>
 
@@ -1489,7 +1552,7 @@ export default {
   },
   setup() {
     const API_BASE = `${API_BASE_URL}/api`
-    
+
     // 状态数据
     const isRefreshing = ref(false)
     const refreshingText = ref('数据刷新中...')
@@ -1498,10 +1561,45 @@ export default {
     const showStockDetails = ref(false)
     const showNotificationSettings = ref(false)  // 通知设置弹窗
     const showInterfaceTest = ref(false)  // 接口测试弹窗
+    const showRefreshSettings = ref(false)  // 刷新频率设置弹窗
     const currentFilter = ref('全部')
     const newsSource = ref('all')
     const detailTab = ref('interface')  // interface, basic, market, financial, capital, risk, news
     const newsTypeFilter = ref('all')  // all, financial, announcement, news, policy, research
+
+    // 刷新频率设置
+    const refreshSettings = ref({
+      newsInterval: 60,           // 新闻刷新间隔（秒）
+      announcementInterval: 120,  // 公告刷新间隔（秒）
+      otherDataInterval: 1800     // 其他数据刷新间隔（秒）
+    })
+
+    // 刷新频率选项
+    const newsRefreshOptions = [
+      { value: 30, label: '30秒', desc: '高频监控，适合盯盘时使用' },
+      { value: 60, label: '1分钟', desc: '推荐设置，平衡时效性和性能' },
+      { value: 120, label: '2分钟', desc: '默认设置' },
+      { value: 300, label: '5分钟', desc: '低频监控，节省资源' }
+    ]
+
+    const announcementRefreshOptions = [
+      { value: 60, label: '1分钟', desc: '高频监控，及时获取公告' },
+      { value: 120, label: '2分钟', desc: '推荐设置' },
+      { value: 300, label: '5分钟', desc: '默认设置' },
+      { value: 600, label: '10分钟', desc: '低频监控' }
+    ]
+
+    const otherDataRefreshOptions = [
+      { value: 300, label: '5分钟', desc: '高频更新' },
+      { value: 600, label: '10分钟', desc: '较高频率' },
+      { value: 1800, label: '30分钟', desc: '推荐设置' },
+      { value: 3600, label: '1小时', desc: '默认设置，适合大多数场景' }
+    ]
+
+    // 定时器引用
+    let newsRefreshTimer = null
+    let announcementRefreshTimer = null
+    let otherDataRefreshTimer = null
 
     // 通知相关状态
     const notificationChannels = ref({})
@@ -3343,8 +3441,81 @@ export default {
       }
     }
 
+    // 保存刷新设置
+    const saveRefreshSettings = () => {
+      // 保存到 localStorage
+      localStorage.setItem('dataflow_refresh_settings', JSON.stringify(refreshSettings.value))
+
+      // 重新设置定时器
+      setupRefreshTimers()
+
+      showRefreshSettings.value = false
+      showToast('刷新设置已保存', 'success')
+    }
+
+    // 加载刷新设置
+    const loadRefreshSettings = () => {
+      const saved = localStorage.getItem('dataflow_refresh_settings')
+      if (saved) {
+        try {
+          const settings = JSON.parse(saved)
+          refreshSettings.value = { ...refreshSettings.value, ...settings }
+        } catch (e) {
+          console.error('加载刷新设置失败:', e)
+        }
+      }
+    }
+
+    // 设置刷新定时器
+    const setupRefreshTimers = () => {
+      // 清除现有定时器
+      if (newsRefreshTimer) clearInterval(newsRefreshTimer)
+      if (announcementRefreshTimer) clearInterval(announcementRefreshTimer)
+      if (otherDataRefreshTimer) clearInterval(otherDataRefreshTimer)
+
+      // 新闻刷新定时器
+      newsRefreshTimer = setInterval(() => {
+        console.log(`📰 新闻自动刷新 (间隔: ${refreshSettings.value.newsInterval}秒)`)
+        loadNews(true)  // 静默刷新
+      }, refreshSettings.value.newsInterval * 1000)
+
+      // 公告刷新定时器（暂时与新闻合并，后续可分离）
+      // announcementRefreshTimer = setInterval(() => {
+      //   console.log(`📢 公告自动刷新 (间隔: ${refreshSettings.value.announcementInterval}秒)`)
+      //   loadAnnouncements(true)
+      // }, refreshSettings.value.announcementInterval * 1000)
+
+      // 其他数据刷新定时器
+      otherDataRefreshTimer = setInterval(() => {
+        console.log(`📊 其他数据自动刷新 (间隔: ${refreshSettings.value.otherDataInterval}秒)`)
+        loadMonitoredStocks()
+        loadDailyStats()
+      }, refreshSettings.value.otherDataInterval * 1000)
+
+      console.log(`⏱️ 刷新定时器已设置: 新闻=${refreshSettings.value.newsInterval}秒, 其他数据=${refreshSettings.value.otherDataInterval}秒`)
+    }
+
+    // 清除所有定时器
+    const clearRefreshTimers = () => {
+      if (newsRefreshTimer) {
+        clearInterval(newsRefreshTimer)
+        newsRefreshTimer = null
+      }
+      if (announcementRefreshTimer) {
+        clearInterval(announcementRefreshTimer)
+        announcementRefreshTimer = null
+      }
+      if (otherDataRefreshTimer) {
+        clearInterval(otherDataRefreshTimer)
+        otherDataRefreshTimer = null
+      }
+    }
+
     // 生命周期
     onMounted(() => {
+      // 加载刷新设置
+      loadRefreshSettings()
+
       // 页面加载时检测一次数据源状态
       loadDataSources()
       // 加载其他数据
@@ -3353,8 +3524,9 @@ export default {
       loadNotificationChannels()
       loadConfigGuide()
       loadNotificationConfig()
-      // 每2分钟自动刷新监控股票和新闻（静默刷新，不显示加载遮罩）
-      setInterval(() => refreshAllData(true), 120000)
+
+      // 设置自定义刷新定时器
+      setupRefreshTimers()
 
       // 连接 WebSocket 接收实时更新通知
       connectWebSocket()
@@ -3371,6 +3543,7 @@ export default {
     onUnmounted(() => {
       disposeCharts()
       disconnectWebSocket()
+      clearRefreshTimers()
     })
 
     // 安全获取数组数据（处理 data 可能是对象或数组的情况）
@@ -3395,6 +3568,12 @@ export default {
       showStockDetails,
       showNotificationSettings,  // 通知设置弹窗
       showInterfaceTest,  // 接口测试弹窗
+      showRefreshSettings,  // 刷新频率设置弹窗
+      refreshSettings,  // 刷新设置
+      newsRefreshOptions,  // 新闻刷新选项
+      announcementRefreshOptions,  // 公告刷新选项
+      otherDataRefreshOptions,  // 其他数据刷新选项
+      saveRefreshSettings,  // 保存刷新设置
       currentFilter,
       newsSource,
       detailTab,
@@ -6906,5 +7085,108 @@ export default {
     padding: 10px 15px;
     font-size: 0.85rem;
   }
+}
+
+/* 刷新设置弹窗样式 */
+.refresh-settings-modal {
+  max-width: 600px;
+  width: 90%;
+}
+
+.refresh-settings-modal .modal-body {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.settings-section {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #334155;
+}
+
+.settings-section:last-of-type {
+  border-bottom: none;
+}
+
+.settings-section h4 {
+  color: #e2e8f0;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.setting-desc {
+  color: #94a3b8;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.setting-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #1e293b;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.radio-option:hover {
+  background: #334155;
+}
+
+.radio-option:has(input:checked) {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: #3b82f6;
+}
+
+.radio-option input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #3b82f6;
+  cursor: pointer;
+}
+
+.radio-label {
+  color: #e2e8f0;
+  font-weight: 500;
+  min-width: 60px;
+}
+
+.radio-desc {
+  color: #94a3b8;
+  font-size: 0.85rem;
+  flex: 1;
+}
+
+.settings-info {
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+.settings-info p {
+  color: #93c5fd;
+  margin-bottom: 0.5rem;
+}
+
+.settings-info ul {
+  color: #94a3b8;
+  font-size: 0.85rem;
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.settings-info li {
+  margin-bottom: 0.25rem;
 }
 </style>
