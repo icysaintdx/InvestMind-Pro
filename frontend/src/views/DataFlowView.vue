@@ -2402,8 +2402,8 @@ export default {
                   success: true,
                   ts_code: code,
                   timestamp: new Date().toISOString(),
-                  interface_status: {},
-                  alerts: [],
+                  interface_status: data.interface_status || {},
+                  alerts: data.alerts || [],
                   data_summary: {
                     total_time: data.total_time,
                     success_count: data.success_count,

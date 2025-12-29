@@ -409,12 +409,10 @@ async def get_monitored_stocks():
 @log_api_call("获取数据源状态")
 async def get_data_sources_status():
     """
-    获取所有数据源的状态（自动检测）
+    获取所有数据源的状态（使用缓存，不自动检测）
+    自动检测会很慢，改为只在用户点击"检测连接"时才检测
     """
     try:
-        # 自动检测数据源状态
-        await _check_all_data_sources()
-
         sources = list(data_sources_status.values())
         return {
             "success": True,
@@ -427,15 +425,15 @@ async def get_data_sources_status():
 
 
 async def _check_all_data_sources():
-    """检测所有数据源状态"""
+    """检测所有数据源状态（使用轻量级API）"""
     try:
         current_time = datetime.now().isoformat()
 
-        # 检测AKShare
+        # 检测AKShare - 使用轻量级API
         try:
             import akshare as ak
-            # 尝试获取一个简单的数据
-            df = ak.stock_zh_a_spot_em()
+            # 使用交易日历API，比全市场行情快很多
+            df = ak.tool_trade_date_hist_sina()
             if df is not None and not df.empty:
                 data_sources_status["akshare"]["status"] = "online"
                 data_sources_status["akshare"]["error"] = None
@@ -954,8 +952,17 @@ async def get_stock_comprehensive_stream(ts_code: str):
                 if 'news' in result and isinstance(result['news'], list) and result['news']:
                     monitored_stocks[ts_code]["latestNews"] = result['news'][0].get('title', '') if result['news'] else ''
 
-            # 发送完成信号
-            yield f"data: {json.dumps({'type': 'complete', 'success_count': success_count, 'total_count': total_count, 'success_rate': f'{success_count/total_count*100:.1f}%' if total_count > 0 else '0%', 'total_time': 0}, ensure_ascii=False)}\n\n"
+            # 发送完成信号，包含 interface_status
+            complete_data = {
+                'type': 'complete',
+                'success_count': success_count,
+                'total_count': total_count,
+                'success_rate': f'{success_count/total_count*100:.1f}%' if total_count > 0 else '0%',
+                'total_time': 0,
+                'interface_status': result.get('interface_status', {}),
+                'alerts': result.get('alerts', [])
+            }
+            yield f"data: {json.dumps(complete_data, ensure_ascii=False)}\n\n"
 
         except Exception as e:
             logger.error(f"流式获取数据失败: {e}")
@@ -1294,6 +1301,16 @@ async def update_stock_data(code: str):
 
             # 清理非法float值
             comprehensive_result = sanitize_for_json(comprehensive_result)
+
+            # 将情绪分析和风险分析结果添加到综合数据中
+            comprehensive_result['overall_score'] = stock_data.get('sentimentScore', 50)
+            comprehensive_result['sentiment_detail'] = stock_data.get('sentimentDetail', {})
+            comprehensive_result['risk'] = {
+                'risk_level': stock_data.get('riskLevel', 'low'),
+                'risk_score': stock_data.get('riskScore', 0),
+                'risk_factors': stock_data.get('riskFactors', {}),
+                'warnings': stock_data.get('warnings', [])
+            }
 
             # 保存到内存缓存
             cache_key = f"comprehensive_{code}"
