@@ -2061,6 +2061,132 @@ async def load_agent_configs():
         print(f"[配置] 加载失败: {str(e)}")
         return {"success": False, "error": str(e)}
 
+
+async def _check_tushare_points(pro) -> dict:
+    """
+    检测 Tushare Token 的积分权限
+
+    通过测试各接口来估算账户积分等级
+
+    Returns:
+        dict: {'summary': '积分摘要', 'details': '详细信息', 'estimated_points': 积分数}
+    """
+    from datetime import datetime, timedelta
+    import asyncio
+
+    # 定义要检测的接口及其所需积分
+    interfaces = {
+        'stock_basic': {'points': 0, 'desc': '股票列表', 'group': '基础'},
+        'daily': {'points': 0, 'desc': '日线行情', 'group': '基础'},
+        'daily_basic': {'points': 120, 'desc': '每日指标', 'group': '进阶'},
+        'income': {'points': 500, 'desc': '利润表', 'group': '财务'},
+        'fina_indicator': {'points': 500, 'desc': '财务指标', 'group': '财务'},
+        'pledge_detail': {'points': 2000, 'desc': '质押明细', 'group': '高级'},
+        'stk_holdertrade': {'points': 2000, 'desc': '股东增减持', 'group': '高级'},
+        'top_inst': {'points': 2000, 'desc': '机构龙虎榜', 'group': '高级'},
+        'stk_rewards': {'points': 5000, 'desc': '管理层薪酬', 'group': 'VIP'},
+    }
+
+    results = {}
+    today = datetime.now().strftime('%Y%m%d')
+    yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y%m%d')
+
+    def test_interface(interface):
+        """同步测试单个接口"""
+        try:
+            if interface == 'stock_basic':
+                data = pro.stock_basic(list_status='L', limit=1)
+            elif interface == 'daily':
+                data = pro.daily(ts_code='000001.SZ', start_date=yesterday, end_date=today)
+            elif interface == 'daily_basic':
+                data = pro.daily_basic(trade_date=yesterday, limit=1)
+            elif interface in ['income', 'fina_indicator']:
+                data = getattr(pro, interface)(ts_code='000001.SZ', limit=1)
+            elif interface == 'pledge_detail':
+                data = pro.pledge_detail(ts_code='000001.SZ')
+            elif interface == 'stk_holdertrade':
+                data = pro.stk_holdertrade(ts_code='000001.SZ', start_date='20240101', end_date=today)
+            elif interface == 'top_inst':
+                data = pro.top_inst(trade_date=yesterday)
+            elif interface == 'stk_rewards':
+                data = pro.stk_rewards(ts_code='000001.SZ', end_date='20231231')
+            else:
+                data = None
+
+            return data is not None and (not hasattr(data, 'empty') or not data.empty)
+        except Exception as e:
+            error_msg = str(e).lower()
+            # 积分不足或权限不足
+            if '积分' in error_msg or 'point' in error_msg or '权限' in error_msg:
+                return False
+            # 其他错误（如网络问题）也视为不可用
+            return False
+
+    # 在线程池中并行测试接口
+    import concurrent.futures
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        future_to_interface = {
+            executor.submit(test_interface, interface): interface
+            for interface in interfaces.keys()
+        }
+        for future in concurrent.futures.as_completed(future_to_interface):
+            interface = future_to_interface[future]
+            try:
+                results[interface] = future.result()
+            except Exception:
+                results[interface] = False
+
+    # 统计结果
+    available_count = sum(1 for v in results.values() if v)
+    total_count = len(results)
+
+    # 估算积分
+    estimated_points = 0
+    for interface, available in results.items():
+        if available:
+            estimated_points = max(estimated_points, interfaces[interface]['points'])
+
+    # 生成详细信息
+    details_lines = []
+    groups = {'基础': [], '进阶': [], '财务': [], '高级': [], 'VIP': []}
+
+    for interface, info in interfaces.items():
+        status = '✅' if results.get(interface) else '❌'
+        groups[info['group']].append(f"  {status} {info['desc']} ({info['points']}分)")
+
+    for group_name, items in groups.items():
+        if items:
+            details_lines.append(f"【{group_name}接口】")
+            details_lines.extend(items)
+
+    # 生成摘要
+    if estimated_points >= 5000:
+        level = "VIP会员 (5000+积分)"
+        level_emoji = "👑"
+    elif estimated_points >= 2000:
+        level = "高级会员 (2000+积分)"
+        level_emoji = "⭐"
+    elif estimated_points >= 500:
+        level = "标准会员 (500+积分)"
+        level_emoji = "📊"
+    elif estimated_points >= 120:
+        level = "进阶会员 (120+积分)"
+        level_emoji = "📈"
+    else:
+        level = "基础会员 (0积分)"
+        level_emoji = "📋"
+
+    summary = f"{level_emoji} 账户等级: {level}\n📊 接口可用: {available_count}/{total_count}"
+
+    return {
+        'summary': summary,
+        'details': '\n'.join(details_lines),
+        'estimated_points': estimated_points,
+        'available_count': available_count,
+        'total_count': total_count
+    }
+
+
 class TestApiRequest(BaseModel):
     api_key: str
 
@@ -2257,21 +2383,25 @@ async def test_api_connection(provider: str, request: TestApiRequest):
                 return {"success": False, "error": f"HTTP {response.status_code}: {response.text[:200]}"}
                 
         elif provider == 'tushare':
-            # 测试 Tushare API
+            # 测试 Tushare API 并检测积分
             try:
                 import tushare as ts
                 ts.set_token(api_key)
                 pro = ts.pro_api()
-                # 测试获取交易日历
+
+                # 测试基础接口
                 df = pro.trade_cal(exchange='SSE', start_date='20240101', end_date='20240110')
-                if df is not None and len(df) > 0:
-                    return {
-                        "success": True,
-                        "message": "Tushare API 连接成功！",
-                        "test_response": f"成功获取 {len(df)} 条交易日历数据"
-                    }
-                else:
-                    return {"success": False, "error": "无法获取数据"}
+                if df is None or len(df) == 0:
+                    return {"success": False, "error": "无法获取数据，Token 可能无效"}
+
+                # 检测各接口权限来估算积分
+                points_info = await _check_tushare_points(pro)
+
+                return {
+                    "success": True,
+                    "message": f"Tushare API 连接成功！",
+                    "test_response": f"Token 有效 ✅\n\n{points_info['summary']}\n\n接口权限详情:\n{points_info['details']}"
+                }
             except ImportError:
                 return {"success": False, "error": "Tushare 未安装。请运行: pip install tushare"}
             except Exception as e:

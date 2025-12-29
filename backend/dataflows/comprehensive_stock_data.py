@@ -838,60 +838,119 @@ class ComprehensiveStockDataService:
         except Exception as e:
             logger.warning(f"⚠️ 龙虎榜数据获取失败: {e}")
             return {'status': 'no_data', 'message': f'龙虎榜查询失败'}
-    
+
     def _get_top_inst(self, ts_code: str) -> Dict:
-        """获取龙虎榜机构明细"""
+        """获取龙虎榜机构明细（优先Tushare，备选AKShare）"""
+        symbol = ts_code.split('.')[0]
+
+        # 1. 尝试 Tushare
+        if self.tushare_api:
+            try:
+                end_date = datetime.now()
+                start_date = end_date - timedelta(days=30)
+
+                all_records = []
+                current_date = end_date
+                days_checked = 0
+
+                while current_date >= start_date and len(all_records) < 10 and days_checked < 45:
+                    if current_date.weekday() < 5:
+                        try:
+                            trade_date_str = current_date.strftime('%Y%m%d')
+                            df = self.tushare_api.top_inst(
+                                trade_date=trade_date_str
+                            )
+
+                            if df is not None and not df.empty:
+                                stock_df = df[df['ts_code'] == ts_code]
+                                if not stock_df.empty:
+                                    for _, row in stock_df.iterrows():
+                                        all_records.append({
+                                            'trade_date': row.get('trade_date', ''),
+                                            'exalter': row.get('exalter', ''),
+                                            'buy': float(row.get('buy', 0) or 0),
+                                            'buy_rate': float(row.get('buy_rate', 0) or 0),
+                                            'sell': float(row.get('sell', 0) or 0),
+                                            'sell_rate': float(row.get('sell_rate', 0) or 0),
+                                            'net_buy': float(row.get('net_buy', 0) or 0),
+                                            'source': 'tushare'
+                                        })
+                        except:
+                            pass
+
+                    current_date -= timedelta(days=1)
+                    days_checked += 1
+
+                if all_records:
+                    return {
+                        'status': 'success',
+                        'count': len(all_records),
+                        'records': all_records,
+                        'source': 'tushare'
+                    }
+            except Exception as e:
+                logger.debug(f"Tushare龙虎榜机构明细获取失败: {e}")
+
+        # 2. 备选：使用 AKShare
         try:
-            if not self.tushare_api:
-                return {'status': 'error', 'message': 'Tushare API未初始化'}
-            
-            # 获取最近30天的机构明细
-            end_date = datetime.now()
-            start_date = end_date - timedelta(days=30)
-            
-            all_records = []
-            current_date = end_date
-            days_checked = 0
-            
-            while current_date >= start_date and len(all_records) < 10 and days_checked < 45:
-                if current_date.weekday() < 5:
-                    try:
-                        trade_date_str = current_date.strftime('%Y%m%d')
-                        df = self.tushare_api.top_inst(
-                            trade_date=trade_date_str
-                        )
-                        
-                        if df is not None and not df.empty:
-                            stock_df = df[df['ts_code'] == ts_code]
-                            if not stock_df.empty:
-                                for _, row in stock_df.iterrows():
-                                    all_records.append({
-                                        'trade_date': row.get('trade_date', ''),
-                                        'exalter': row.get('exalter', ''),
-                                        'buy': float(row.get('buy', 0) or 0),
-                                        'buy_rate': float(row.get('buy_rate', 0) or 0),
-                                        'sell': float(row.get('sell', 0) or 0),
-                                        'sell_rate': float(row.get('sell_rate', 0) or 0),
-                                        'net_buy': float(row.get('net_buy', 0) or 0)
-                                    })
-                    except:
-                        pass
-                
-                current_date -= timedelta(days=1)
-                days_checked += 1
-            
-            if all_records:
+            import akshare as ak
+
+            records = []
+
+            # 获取机构龙虎榜统计
+            try:
+                df = ak.stock_lhb_jgstatistic_em(symbol="近一月")
+                if df is not None and not df.empty:
+                    # 筛选当前股票
+                    stock_df = df[df['代码'].astype(str) == symbol]
+                    if not stock_df.empty:
+                        for _, row in stock_df.iterrows():
+                            records.append({
+                                'trade_date': '',
+                                'exalter': '机构专用',
+                                'buy': float(row.get('买入额', 0) or 0),
+                                'buy_rate': 0,
+                                'sell': float(row.get('卖出额', 0) or 0),
+                                'sell_rate': 0,
+                                'net_buy': float(row.get('净买入额', 0) or 0),
+                                'times': int(row.get('上榜次数', 0) or 0),
+                                'source': 'akshare_jgstatistic'
+                            })
+            except Exception as e1:
+                logger.debug(f"AKShare机构龙虎榜统计获取失败: {e1}")
+
+            # 如果统计数据为空，尝试获取个股龙虎榜明细
+            if not records:
+                try:
+                    today = datetime.now().strftime('%Y%m%d')
+                    df = ak.stock_lhb_stock_detail_em(symbol=symbol, date=today, flag="买入")
+                    if df is not None and not df.empty:
+                        for _, row in df.iterrows():
+                            if '机构' in str(row.get('营业部名称', '')):
+                                records.append({
+                                    'trade_date': today,
+                                    'exalter': row.get('营业部名称', ''),
+                                    'buy': float(row.get('买入金额', 0) or 0),
+                                    'buy_rate': 0,
+                                    'sell': 0,
+                                    'sell_rate': 0,
+                                    'net_buy': float(row.get('买入金额', 0) or 0),
+                                    'source': 'akshare_stock_detail'
+                                })
+                except Exception as e2:
+                    logger.debug(f"AKShare个股龙虎榜明细获取失败: {e2}")
+
+            if records:
                 return {
                     'status': 'success',
-                    'count': len(all_records),
-                    'records': all_records
+                    'count': len(records),
+                    'records': records,
+                    'source': 'akshare'
                 }
-            else:
-                return {'status': 'no_data', 'message': '近30天无机构龙虎榜'}
-                
         except Exception as e:
-            logger.warning(f"⚠️ 龙虎榜机构明细获取失败: {e}")
-            return {'status': 'no_data', 'message': '机构明细查询失败'}
+            logger.debug(f"AKShare龙虎榜机构明细获取失败: {e}")
+
+        return {'status': 'no_data', 'message': '近30天无机构龙虎榜'}
     
     def _get_block_trade(self, ts_code: str) -> Dict:
         """获取大宗交易数据（AKShare）"""
@@ -1571,71 +1630,186 @@ class ComprehensiveStockDataService:
         }
     
     def _get_limit_list(self, ts_code: str) -> Dict:
-        """获取涨跌停数据"""
+        """获取涨跌停数据（优先Tushare，备选AKShare）"""
+        symbol = ts_code.split('.')[0]
+
+        # 1. 尝试 Tushare
+        if self.tushare_api:
+            try:
+                end_date = datetime.now()
+                start_date = end_date - timedelta(days=30)
+
+                df = self.tushare_api.limit_list_d(
+                    ts_code=ts_code,
+                    start_date=start_date.strftime('%Y%m%d'),
+                    end_date=end_date.strftime('%Y%m%d')
+                )
+
+                if df is not None and not df.empty:
+                    records = df.to_dict('records')
+                    return {
+                        'status': 'success',
+                        'count': len(records),
+                        'data': records,
+                        'source': 'tushare'
+                    }
+            except Exception as e:
+                logger.debug(f"Tushare涨跌停数据获取失败: {e}")
+
+        # 2. 备选：使用 AKShare
         try:
-            if not self.tushare_api:
-                return {'status': 'error', 'error': 'Tushare API未初始化'}
-            
-            # 获取最近30天的数据
-            end_date = datetime.now()
-            start_date = end_date - timedelta(days=30)
-            
-            df = self.tushare_api.limit_list_d(
-                ts_code=ts_code,
-                start_date=start_date.strftime('%Y%m%d'),
-                end_date=end_date.strftime('%Y%m%d')
-            )
-            
-            if df is not None and not df.empty:
-                records = df.to_dict('records')
-                return {
-                    'status': 'success',
-                    'count': len(records),
-                    'data': records
-                }
-            else:
-                return {
-                    'status': 'no_data',
-                    'message': '近30天无涨跌停记录'
-                }
-                
-        except Exception as e:
-            logger.warning(f"⚠️ 涨跌停数据获取失败: {e}")
-            return {'status': 'error', 'error': str(e)}
-    
-    def _get_margin_data(self, ts_code: str) -> Dict:
-        """获取融资融券数据"""
-        try:
-            if not self.tushare_api:
-                return {'status': 'error', 'error': 'Tushare API未初始化'}
-            
-            # 获取最近10条记录
-            end_date = datetime.now().strftime('%Y%m%d')
-            start_date = (datetime.now() - timedelta(days=30)).strftime('%Y%m%d')
-            
-            df = self.tushare_api.margin(
-                ts_code=ts_code,
-                start_date=start_date,
-                end_date=end_date
-            )
-            
-            if df is not None and not df.empty:
-                records = df.head(10).to_dict('records')
+            import akshare as ak
+            from datetime import datetime
+
+            # 获取今日涨停池
+            today = datetime.now().strftime('%Y%m%d')
+            records = []
+
+            # 尝试获取涨停池
+            try:
+                zt_df = ak.stock_zt_pool_em(date=today)
+                if zt_df is not None and not zt_df.empty:
+                    # 筛选当前股票
+                    stock_zt = zt_df[zt_df['代码'].astype(str) == symbol]
+                    if not stock_zt.empty:
+                        for _, row in stock_zt.iterrows():
+                            records.append({
+                                'trade_date': today,
+                                'limit': 'U',  # 涨停
+                                'name': row.get('名称', ''),
+                                'close': row.get('最新价', 0),
+                                'pct_chg': row.get('涨跌幅', 0),
+                                'source': 'akshare_zt_pool'
+                            })
+            except Exception as e1:
+                logger.debug(f"AKShare涨停池获取失败: {e1}")
+
+            # 尝试获取跌停池
+            try:
+                dt_df = ak.stock_dt_pool_em(date=today)
+                if dt_df is not None and not dt_df.empty:
+                    stock_dt = dt_df[dt_df['代码'].astype(str) == symbol]
+                    if not stock_dt.empty:
+                        for _, row in stock_dt.iterrows():
+                            records.append({
+                                'trade_date': today,
+                                'limit': 'D',  # 跌停
+                                'name': row.get('名称', ''),
+                                'close': row.get('最新价', 0),
+                                'pct_chg': row.get('涨跌幅', 0),
+                                'source': 'akshare_dt_pool'
+                            })
+            except Exception as e2:
+                logger.debug(f"AKShare跌停池获取失败: {e2}")
+
+            if records:
                 return {
                     'status': 'success',
                     'count': len(records),
                     'data': records,
-                    'latest': records[0] if records else None
+                    'source': 'akshare'
                 }
-            else:
-                return {
-                    'status': 'no_data',
-                    'message': '无融资融券数据'
-                }
-                
         except Exception as e:
-            logger.warning(f"⚠️ 融资融券数据获取失败: {e}")
-            return {'status': 'error', 'error': str(e)}
+            logger.debug(f"AKShare涨跌停数据获取失败: {e}")
+
+        return {
+            'status': 'no_data',
+            'message': '近期无涨跌停记录'
+        }
+    
+    def _get_margin_data(self, ts_code: str) -> Dict:
+        """获取融资融券数据（优先Tushare，备选AKShare）"""
+        symbol = ts_code.split('.')[0]
+        exchange = 'SH' if ts_code.endswith('.SH') else 'SZ'
+
+        # 1. 尝试 Tushare
+        if self.tushare_api:
+            try:
+                end_date = datetime.now().strftime('%Y%m%d')
+                start_date = (datetime.now() - timedelta(days=30)).strftime('%Y%m%d')
+
+                df = self.tushare_api.margin(
+                    ts_code=ts_code,
+                    start_date=start_date,
+                    end_date=end_date
+                )
+
+                if df is not None and not df.empty:
+                    records = df.head(10).to_dict('records')
+                    return {
+                        'status': 'success',
+                        'count': len(records),
+                        'data': records,
+                        'latest': records[0] if records else None,
+                        'source': 'tushare'
+                    }
+            except Exception as e:
+                logger.debug(f"Tushare融资融券数据获取失败: {e}")
+
+        # 2. 备选：使用 AKShare
+        try:
+            import akshare as ak
+
+            records = []
+
+            # 根据交易所选择接口
+            if exchange == 'SH':
+                # 上交所融资融券
+                try:
+                    df = ak.stock_margin_detail_sse(date="")
+                    if df is not None and not df.empty:
+                        # 筛选当前股票
+                        stock_df = df[df['标的证券代码'].astype(str) == symbol]
+                        if not stock_df.empty:
+                            for _, row in stock_df.head(10).iterrows():
+                                records.append({
+                                    'trade_date': row.get('信用交易日期', ''),
+                                    'rzye': row.get('融资余额', 0),
+                                    'rzmre': row.get('融资买入额', 0),
+                                    'rzche': row.get('融资偿还额', 0),
+                                    'rqye': row.get('融券余量', 0),
+                                    'rqmcl': row.get('融券卖出量', 0),
+                                    'rqchl': row.get('融券偿还量', 0),
+                                    'source': 'akshare_sse'
+                                })
+                except Exception as e1:
+                    logger.debug(f"AKShare上交所融资融券获取失败: {e1}")
+            else:
+                # 深交所融资融券
+                try:
+                    df = ak.stock_margin_detail_szse(date="")
+                    if df is not None and not df.empty:
+                        stock_df = df[df['证券代码'].astype(str) == symbol]
+                        if not stock_df.empty:
+                            for _, row in stock_df.head(10).iterrows():
+                                records.append({
+                                    'trade_date': row.get('交易日期', ''),
+                                    'rzye': row.get('融资余额', 0),
+                                    'rzmre': row.get('融资买入额', 0),
+                                    'rzche': row.get('融资偿还额', 0),
+                                    'rqye': row.get('融券余量', 0),
+                                    'rqmcl': row.get('融券卖出量', 0),
+                                    'rqchl': row.get('融券偿还量', 0),
+                                    'source': 'akshare_szse'
+                                })
+                except Exception as e2:
+                    logger.debug(f"AKShare深交所融资融券获取失败: {e2}")
+
+            if records:
+                return {
+                    'status': 'success',
+                    'count': len(records),
+                    'data': records,
+                    'latest': records[0] if records else None,
+                    'source': 'akshare'
+                }
+        except Exception as e:
+            logger.debug(f"AKShare融资融券数据获取失败: {e}")
+
+        return {
+            'status': 'no_data',
+            'message': '无融资融券数据'
+        }
     
     def _get_company_info(self, ts_code: str) -> Dict:
         """获取上市公司基本信息"""
@@ -1727,14 +1901,16 @@ class ComprehensiveStockDataService:
         # 1. 尝试Tushare
         if self.tushare_api:
             try:
+                # 不指定 period 参数，获取所有可用数据
+                # fina_mainbz 的 period 参数需要是季度末日期（如20240630），不指定则返回所有数据
                 df = self.tushare_api.fina_mainbz(
                     ts_code=ts_code,
-                    period=(datetime.now() - timedelta(days=365)).strftime('%Y%m%d'),
                     type='P'  # P按产品 D按地区
                 )
 
                 if df is not None and not df.empty:
-                    records = df.to_dict('records')
+                    # 只取最新报告期的数据（前20条）
+                    records = df.head(20).to_dict('records')
                     return {
                         'status': 'success',
                         'count': len(records),
