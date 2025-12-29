@@ -1,6 +1,6 @@
 """
 板块轮动数据获取模块
-使用AKShare获取行业板块和概念板块数据
+使用TDX（优先）和AKShare获取行业板块和概念板块数据
 """
 
 import akshare as ak
@@ -12,6 +12,18 @@ import time
 from backend.utils.logging_config import get_logger
 
 logger = get_logger("dataflows.sector_rotation")
+
+# TDX连接配置
+TDX_SERVERS = [
+    ('119.147.212.81', 7709),
+    ('112.74.214.43', 7727),
+    ('221.231.141.60', 7709),
+    ('101.227.73.20', 7709),
+    ('101.227.77.254', 7709),
+    ('14.215.128.18', 7709),
+    ('59.173.18.140', 7709),
+    ('180.153.39.51', 7709),
+]
 
 
 class SectorRotationDataFetcher:
@@ -25,6 +37,122 @@ class SectorRotationDataFetcher:
         self._cache_time = {}
         self._cache_ttl = 300  # 5分钟缓存
         logger.info("[板块轮动] 数据获取器初始化完成")
+
+    def _get_market_stats_from_tdx(self) -> Optional[Dict[str, Any]]:
+        """使用TDX获取市场统计数据"""
+        try:
+            from pytdx.hq import TdxHq_API
+
+            tdx = TdxHq_API()
+            connected = False
+
+            for host, port in TDX_SERVERS:
+                try:
+                    if tdx.connect(host, port):
+                        connected = True
+                        logger.info(f"[板块轮动] TDX连接成功: {host}:{port}")
+                        break
+                except Exception as e:
+                    logger.debug(f"[板块轮动] TDX连接失败 {host}:{port}: {e}")
+                    continue
+
+            if not connected:
+                logger.warning("[板块轮动] 所有TDX服务器连接失败")
+                return None
+
+            try:
+                all_stocks = []
+
+                # 深圳市场（A股在前面，从0开始）
+                for start in range(0, 6000, 1000):
+                    stocks = tdx.get_stock_list(0, start)
+                    if not stocks:
+                        break
+                    for s in stocks:
+                        code = s.get('code', '')
+                        if code.startswith(('00', '30')):
+                            all_stocks.append(('0', code))
+
+                # 上海市场（A股在后面，从20000开始）
+                for start in range(20000, 30000, 1000):
+                    stocks = tdx.get_stock_list(1, start)
+                    if not stocks:
+                        continue
+                    for s in stocks:
+                        code = s.get('code', '')
+                        if code.startswith(('60', '68')):
+                            all_stocks.append(('1', code))
+
+                logger.info(f"[板块轮动] TDX获取到 {len(all_stocks)} 只A股")
+
+                if len(all_stocks) < 1000:
+                    logger.warning(f"[板块轮动] TDX股票数量异常: {len(all_stocks)}")
+                    return None
+
+                # 批量获取行情
+                up_count = 0
+                down_count = 0
+                flat_count = 0
+                limit_up = 0
+                limit_down = 0
+
+                batch_size = 80
+                for i in range(0, len(all_stocks), batch_size):
+                    batch = all_stocks[i:i+batch_size]
+                    stock_list = [(int(m), c) for m, c in batch]
+
+                    quotes = tdx.get_security_quotes(stock_list)
+                    if quotes:
+                        for q in quotes:
+                            if q and q.get('last_close', 0) > 0:
+                                last_close = q['last_close']
+                                price = q.get('price', 0)
+                                if price > 0:
+                                    change_pct = (price - last_close) / last_close * 100
+
+                                    if change_pct > 0.01:
+                                        up_count += 1
+                                    elif change_pct < -0.01:
+                                        down_count += 1
+                                    else:
+                                        flat_count += 1
+
+                                    # 涨停跌停判断
+                                    code = q.get('code', '')
+                                    if code.startswith(('30', '68')):
+                                        limit_threshold = 19.5
+                                    else:
+                                        limit_threshold = 9.5
+
+                                    if change_pct >= limit_threshold:
+                                        limit_up += 1
+                                    elif change_pct <= -limit_threshold:
+                                        limit_down += 1
+
+                total_count = up_count + down_count + flat_count
+
+                result = {
+                    "total_stocks": total_count,
+                    "up_count": up_count,
+                    "down_count": down_count,
+                    "flat_count": flat_count,
+                    "up_ratio": round(up_count / total_count * 100, 2) if total_count > 0 else 0,
+                    "limit_up": limit_up,
+                    "limit_down": limit_down
+                }
+
+                logger.info(f"[板块轮动] TDX市场统计: 总{total_count}, 涨{up_count}, 跌{down_count}, 涨停{limit_up}, 跌停{limit_down}")
+                return result
+
+            finally:
+                tdx.disconnect()
+
+        except ImportError:
+            logger.warning("[板块轮动] pytdx未安装，无法使用TDX")
+            return None
+        except Exception as e:
+            logger.error(f"[板块轮动] TDX获取市场统计失败: {e}")
+            return None
 
     def _safe_request(self, func, *args, **kwargs):
         """安全的请求函数，包含重试机制"""
@@ -353,36 +481,43 @@ class SectorRotationDataFetcher:
             logger.info("[板块轮动] 获取市场概况...")
             overview = {}
 
-            # 获取A股市场统计
-            try:
-                df_stat = self._safe_request(ak.stock_zh_a_spot_em)
-                if df_stat is not None and not df_stat.empty:
-                    total_count = len(df_stat)
-                    up_count = len(df_stat[df_stat['涨跌幅'] > 0])
-                    down_count = len(df_stat[df_stat['涨跌幅'] < 0])
-                    flat_count = total_count - up_count - down_count
+            # 优先使用TDX获取A股市场统计
+            tdx_stats = self._get_market_stats_from_tdx()
+            if tdx_stats:
+                logger.info("[板块轮动] 使用TDX数据获取市场统计")
+                overview.update(tdx_stats)
+            else:
+                # 降级到AKShare
+                logger.info("[板块轮动] TDX不可用，降级到AKShare获取市场统计")
+                try:
+                    df_stat = self._safe_request(ak.stock_zh_a_spot_em)
+                    if df_stat is not None and not df_stat.empty:
+                        total_count = len(df_stat)
+                        up_count = len(df_stat[df_stat['涨跌幅'] > 0])
+                        down_count = len(df_stat[df_stat['涨跌幅'] < 0])
+                        flat_count = total_count - up_count - down_count
 
-                    overview["total_stocks"] = total_count
-                    overview["up_count"] = up_count
-                    overview["down_count"] = down_count
-                    overview["flat_count"] = flat_count
-                    overview["up_ratio"] = round(up_count / total_count * 100, 2) if total_count > 0 else 0
+                        overview["total_stocks"] = total_count
+                        overview["up_count"] = up_count
+                        overview["down_count"] = down_count
+                        overview["flat_count"] = flat_count
+                        overview["up_ratio"] = round(up_count / total_count * 100, 2) if total_count > 0 else 0
 
-                    # 涨停跌停
-                    limit_up = len(df_stat[df_stat['涨跌幅'] >= 9.5])
-                    limit_down = len(df_stat[df_stat['涨跌幅'] <= -9.5])
-                    overview["limit_up"] = limit_up
-                    overview["limit_down"] = limit_down
-            except Exception as e:
-                logger.warning(f"获取A股统计失败: {e}")
-                # 设置默认值
-                overview["total_stocks"] = 0
-                overview["up_count"] = 0
-                overview["down_count"] = 0
-                overview["flat_count"] = 0
-                overview["up_ratio"] = 0
-                overview["limit_up"] = 0
-                overview["limit_down"] = 0
+                        # 涨停跌停
+                        limit_up = len(df_stat[df_stat['涨跌幅'] >= 9.5])
+                        limit_down = len(df_stat[df_stat['涨跌幅'] <= -9.5])
+                        overview["limit_up"] = limit_up
+                        overview["limit_down"] = limit_down
+                except Exception as e:
+                    logger.warning(f"获取A股统计失败: {e}")
+                    # 设置默认值
+                    overview["total_stocks"] = 0
+                    overview["up_count"] = 0
+                    overview["down_count"] = 0
+                    overview["flat_count"] = 0
+                    overview["up_ratio"] = 0
+                    overview["limit_up"] = 0
+                    overview["limit_down"] = 0
 
             overview["indices"] = []
             
