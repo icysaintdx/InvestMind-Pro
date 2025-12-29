@@ -1256,12 +1256,12 @@
                   </p>
                 </div>
 
-                <div class="risk-card" :class="comprehensiveData.restricted?.status === 'success' ? 'warning' : 'safe'">
+                <div class="risk-card" :class="comprehensiveData.restricted?.status === 'success' && (comprehensiveData.restricted?.count || 0) > 0 ? 'warning' : 'safe'">
                   <h4>📅 限售解禁</h4>
                   <div class="risk-status-value">
-                    {{ comprehensiveData.restricted?.count || 0 }} 批
+                    {{ (comprehensiveData.restricted?.count || 0) > 0 ? `近期 ${comprehensiveData.restricted?.count} 批解禁` : '无近期解禁' }}
                   </div>
-                  <p class="risk-message">{{ comprehensiveData.restricted?.message || '无近期解禁' }}</p>
+                  <p class="risk-message">{{ comprehensiveData.restricted?.message || '暂无限售股解禁计划' }}</p>
                 </div>
               </div>
             </div>
@@ -2777,12 +2777,18 @@ export default {
       if (!comprehensiveData.value?.interface_status) return '0%'
       let total = 0
       let success = 0
+      let deferred = 0
       for (const category of Object.values(comprehensiveData.value.interface_status)) {
-        total += category.total || 0
+        // 使用后端提供的total，或者计算接口数量
+        const catTotal = category.total || (category.success + category.failed + category.no_data + (category.deferred || 0))
+        total += catTotal
         success += category.success || 0
+        deferred += category.deferred || 0
       }
-      if (total === 0) return '0%'
-      return Math.round((success / total) * 100) + '%'
+      // 排除deferred的接口计算成功率
+      const effectiveTotal = total - deferred
+      if (effectiveTotal === 0) return '100%'
+      return Math.round((success / effectiveTotal) * 100) + '%'
     }
 
     // 获取接口中文名称（共48个接口 - Tushare 33个 + AKShare 15个）

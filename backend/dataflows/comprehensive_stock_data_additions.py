@@ -257,6 +257,8 @@ def generate_interface_status(data: Dict) -> Dict:
             'success': 0,
             'failed': 0,
             'no_data': 0,
+            'deferred': 0,
+            'total': len(cat_info['interfaces']),
             'interfaces': {}
         }
 
@@ -274,7 +276,7 @@ def generate_interface_status(data: Dict) -> Dict:
                         'count': len(interface_data.get('data', [])) if isinstance(interface_data.get('data'), list) else 0
                     }
                 elif status == 'deferred':
-                    cat_result['no_data'] += 1
+                    cat_result['deferred'] += 1
                     cat_result['interfaces'][interface] = {
                         'status': 'deferred',
                         'status_label': '⏳ 按需加载',

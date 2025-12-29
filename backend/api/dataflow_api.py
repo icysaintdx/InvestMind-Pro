@@ -98,20 +98,44 @@ from backend.database.services import (
 
 # 监控的股票列表（使用数据库存储）
 def _load_monitored_stocks():
-    """从数据库加载监控股票"""
+    """从数据库加载监控股票，包括情绪和风险数据"""
     try:
         with get_db_context() as db:
             stocks = MonitoredStockService.get_all_active(db)
             result = {}
             for stock in stocks:
+                # 尝试从数据库加载综合数据以获取情绪和风险信息
+                sentiment_score = 50
+                risk_level = "low"
+                risk_score = 0
+                latest_news = ""
+
+                try:
+                    record = StockDataService.get_latest(db, stock.ts_code, 'comprehensive')
+                    if record and record.data:
+                        data = record.data
+                        # 获取情绪评分
+                        if 'overall_score' in data:
+                            sentiment_score = data.get('overall_score', 50)
+                        # 获取风险信息
+                        if 'risk' in data and isinstance(data['risk'], dict):
+                            risk_level = data['risk'].get('risk_level', 'low')
+                            risk_score = data['risk'].get('risk_score', 0)
+                        # 获取最新新闻
+                        if 'news' in data and isinstance(data['news'], list) and data['news']:
+                            latest_news = data['news'][0].get('title', '') if data['news'] else ''
+                except Exception as e:
+                    logger.warning(f"加载{stock.ts_code}的综合数据失败: {e}")
+
                 result[stock.ts_code] = {
                     "name": stock.name,
                     "code": stock.ts_code,
                     "frequency": stock.frequency,
                     "items": stock.items or {},
-                    "sentimentScore": 50,
-                    "riskLevel": "low",
-                    "latestNews": "",
+                    "sentimentScore": sentiment_score,
+                    "riskLevel": risk_level,
+                    "riskScore": risk_score,
+                    "latestNews": latest_news,
                     "lastUpdate": stock.last_update.isoformat() if stock.last_update else None,
                     "pendingTasks": 0
                 }
@@ -364,17 +388,18 @@ async def get_monitored_stocks():
                 "name": data.get("name", "未知"),
                 "sentimentScore": data.get("sentimentScore", 50),
                 "riskLevel": data.get("riskLevel", "low"),
+                "riskScore": data.get("riskScore", 0),
                 "latestNews": data.get("latestNews", ""),
                 "updateFrequency": data.get("frequency", "1h"),
                 "lastUpdate": data.get("lastUpdate"),
                 "pendingTasks": data.get("pendingTasks", 0)
             })
-        
+
         return {
             "success": True,
             "stocks": stocks
         }
-        
+
     except Exception as e:
         logger.error(f"获取监控股票失败: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -553,46 +578,77 @@ async def get_news(source: Optional[str] = None, limit: int = 50):
             try:
                 import akshare as ak
 
-                # 获取东方财富全球财经快讯
-                df = ak.stock_info_global_em()
-                if df is not None and not df.empty:
-                    for _, row in df.head(50).iterrows():
-                        title = str(row.get('标题', ''))
-                        content = str(row.get('内容', ''))
-                        pub_time = str(row.get('发布时间', ''))
+                # 尝试多个新闻源
+                news_sources = [
+                    ('stock_info_global_em', '东方财富'),
+                    ('stock_news_em', '东方财富个股'),
+                ]
 
-                        # 简单情绪分析
-                        sentiment = 'neutral'
-                        positive_keywords = ['涨', '上涨', '大涨', '暴涨', '利好', '突破', '新高', '增长', '盈利', '超预期', '上调', '增持']
-                        negative_keywords = ['跌', '下跌', '大跌', '暴跌', '利空', '下滑', '新低', '亏损', '下降', '不及预期', '下调', '减持']
+                for api_name, source_name in news_sources:
+                    if news_list:  # 如果已经获取到新闻，跳过
+                        break
+                    try:
+                        if api_name == 'stock_info_global_em':
+                            df = ak.stock_info_global_em()
+                        elif api_name == 'stock_news_em':
+                            # 获取热门股票新闻
+                            df = ak.stock_news_em(symbol="000001")
+                        else:
+                            continue
 
-                        for kw in positive_keywords:
-                            if kw in title or kw in content:
-                                sentiment = 'positive'
-                                break
-                        if sentiment == 'neutral':
-                            for kw in negative_keywords:
-                                if kw in title or kw in content:
-                                    sentiment = 'negative'
-                                    break
+                        if df is not None and not df.empty:
+                            for _, row in df.head(50).iterrows():
+                                # 根据不同API调整字段名
+                                if api_name == 'stock_info_global_em':
+                                    title = str(row.get('标题', ''))
+                                    content = str(row.get('内容', ''))
+                                    pub_time = str(row.get('发布时间', ''))
+                                else:
+                                    title = str(row.get('新闻标题', row.get('标题', '')))
+                                    content = str(row.get('新闻内容', row.get('内容', '')))
+                                    pub_time = str(row.get('发布时间', row.get('时间', '')))
 
-                        news_list.append({
-                            'id': f"em_{pub_time}_{len(news_list)}",
-                            'title': title,
-                            'summary': content[:200] if content else '',
-                            'content': content,
-                            'publishTime': pub_time,
-                            'pub_time': pub_time,
-                            'source': '东方财富',
-                            'sentiment': sentiment,
-                            'sentiment_score': 75 if sentiment == 'positive' else (25 if sentiment == 'negative' else 50),
-                            'url': '',
-                            'relatedStocks': []
-                        })
+                                if not title:
+                                    continue
 
-                    logger.info(f"✅ 获取市场新闻成功: {len(news_list)}条")
+                                # 简单情绪分析
+                                sentiment = 'neutral'
+                                positive_keywords = ['涨', '上涨', '大涨', '暴涨', '利好', '突破', '新高', '增长', '盈利', '超预期', '上调', '增持']
+                                negative_keywords = ['跌', '下跌', '大跌', '暴跌', '利空', '下滑', '新低', '亏损', '下降', '不及预期', '下调', '减持']
+
+                                for kw in positive_keywords:
+                                    if kw in title or kw in content:
+                                        sentiment = 'positive'
+                                        break
+                                if sentiment == 'neutral':
+                                    for kw in negative_keywords:
+                                        if kw in title or kw in content:
+                                            sentiment = 'negative'
+                                            break
+
+                                news_list.append({
+                                    'id': f"em_{pub_time}_{len(news_list)}",
+                                    'title': title,
+                                    'summary': content[:200] if content else '',
+                                    'content': content,
+                                    'publishTime': pub_time,
+                                    'pub_time': pub_time,
+                                    'source': source_name,
+                                    'sentiment': sentiment,
+                                    'sentiment_score': 75 if sentiment == 'positive' else (25 if sentiment == 'negative' else 50),
+                                    'url': '',
+                                    'relatedStocks': []
+                                })
+
+                            logger.info(f"✅ 从{source_name}获取市场新闻成功: {len(news_list)}条")
+                    except Exception as e:
+                        logger.warning(f"⚠️ 从{source_name}获取新闻失败: {e}")
+                        continue
+
             except Exception as e:
                 logger.warning(f"⚠️ 获取市场新闻失败: {e}")
+                import traceback
+                logger.warning(traceback.format_exc())
 
         filtered_news = news_list
 
@@ -781,6 +837,18 @@ async def get_stock_comprehensive(ts_code: str, force_update: bool = False):
             MonitoredStockService.update_last_update(db, ts_code)
         logger.info(f"✅ 综合数据已保存到数据库: {ts_code}")
 
+        # 更新内存中的监控股票信息
+        if ts_code in monitored_stocks:
+            monitored_stocks[ts_code]["lastUpdate"] = current_time.isoformat()
+            # 同时更新情绪和风险数据
+            if 'overall_score' in result:
+                monitored_stocks[ts_code]["sentimentScore"] = result.get('overall_score', 50)
+            if 'risk' in result and isinstance(result['risk'], dict):
+                monitored_stocks[ts_code]["riskLevel"] = result['risk'].get('risk_level', 'low')
+                monitored_stocks[ts_code]["riskScore"] = result['risk'].get('risk_score', 0)
+            if 'news' in result and isinstance(result['news'], list) and result['news']:
+                monitored_stocks[ts_code]["latestNews"] = result['news'][0].get('title', '') if result['news'] else ''
+
         return {
             "success": True,
             "cached": False,
@@ -855,8 +923,9 @@ async def get_stock_comprehensive_stream(ts_code: str):
 
             # 保存到内存缓存（已清理的数据）
             cache_key = f"comprehensive_{ts_code}"
+            current_time = datetime.now()
             data_cache[cache_key] = {
-                'cached_at': datetime.now().isoformat(),
+                'cached_at': current_time.isoformat(),
                 'data': result
             }
 
@@ -872,6 +941,18 @@ async def get_stock_comprehensive_stream(ts_code: str):
                 # 更新监控股票的最后更新时间
                 MonitoredStockService.update_last_update(db, ts_code)
             logger.info(f"✅ 综合数据已保存到数据库: {ts_code}")
+
+            # 更新内存中的监控股票信息
+            if ts_code in monitored_stocks:
+                monitored_stocks[ts_code]["lastUpdate"] = current_time.isoformat()
+                # 同时更新情绪和风险数据
+                if 'overall_score' in result:
+                    monitored_stocks[ts_code]["sentimentScore"] = result.get('overall_score', 50)
+                if 'risk' in result and isinstance(result['risk'], dict):
+                    monitored_stocks[ts_code]["riskLevel"] = result['risk'].get('risk_level', 'low')
+                    monitored_stocks[ts_code]["riskScore"] = result['risk'].get('risk_score', 0)
+                if 'news' in result and isinstance(result['news'], list) and result['news']:
+                    monitored_stocks[ts_code]["latestNews"] = result['news'][0].get('title', '') if result['news'] else ''
 
             # 发送完成信号
             yield f"data: {json.dumps({'type': 'complete', 'success_count': success_count, 'total_count': total_count, 'success_rate': f'{success_count/total_count*100:.1f}%' if total_count > 0 else '0%', 'total_time': 0}, ensure_ascii=False)}\n\n"

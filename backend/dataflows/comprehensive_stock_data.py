@@ -143,6 +143,11 @@ class ComprehensiveStockDataService:
             'margin': (self._get_margin_data, ts_code),
             'company_info': (self._get_company_info, ts_code),
             'announcements': (self._get_announcements_akshare, ts_code),
+
+            # 基础信息（原来是deferred，现在实际获取）
+            'managers': (self._get_managers, ts_code),
+            'manager_rewards': (self._get_manager_rewards, ts_code),
+            'main_business': (self._get_main_business, ts_code),
         }
 
         # 创建一个锁来保护日志输出
@@ -204,9 +209,6 @@ class ComprehensiveStockDataService:
         result['realtime_tick'] = {'status': 'deferred', 'message': '按需加载'}
         result['top_inst'] = {'status': 'deferred', 'message': '按需加载'}
         result['limit_list'] = {'status': 'deferred', 'message': '按需加载'}
-        result['managers'] = {'status': 'deferred', 'message': '按需加载'}
-        result['manager_rewards'] = {'status': 'deferred', 'message': '按需加载'}
-        result['main_business'] = {'status': 'deferred', 'message': '按需加载'}
         result['hsgt_holding'] = {'status': 'deferred', 'message': '按需加载'}
         result['market_news'] = {'status': 'deferred', 'message': '按需加载'}
         result['industry_policy'] = {'status': 'deferred', 'message': '按需加载'}
