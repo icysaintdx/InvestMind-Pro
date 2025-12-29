@@ -74,7 +74,7 @@ def _get_market_data_from_tdx():
         # 获取所有股票代码
         all_stocks = []
 
-        # 深圳市场
+        # 深圳市场（A股在前面，从0开始）
         for start in range(0, 6000, 1000):
             stocks = tdx.get_stock_list(0, start)
             if not stocks:
@@ -87,23 +87,28 @@ def _get_market_data_from_tdx():
             if len(stocks) < 1000:
                 break
 
-        # 上海市场
-        for start in range(0, 6000, 1000):
+        sz_count = len(all_stocks)
+        logger.info(f"[市场数据] TDX深圳市场获取到 {sz_count} 只A股")
+
+        # 上海市场（A股在后面，从20000开始）
+        # pytdx的上海市场股票列表中，A股（60/68开头）在较后的位置
+        for start in range(20000, 30000, 1000):
             stocks = tdx.get_stock_list(1, start)
             if not stocks:
-                break
+                continue  # 上海市场可能有空洞，继续尝试
             # 只保留A股（60/68开头）
             for s in stocks:
                 code = s.get('code', '')
                 if code.startswith(('60', '68')):
                     all_stocks.append(code)
-            if len(stocks) < 1000:
-                break
+
+        sh_count = len(all_stocks) - sz_count
+        logger.info(f"[市场数据] TDX上海市场获取到 {sh_count} 只A股")
 
         if not all_stocks:
             return None
 
-        logger.info(f"[市场数据] TDX获取到 {len(all_stocks)} 只A股代码")
+        logger.info(f"[市场数据] TDX共获取到 {len(all_stocks)} 只A股代码")
 
         # 批量获取行情（每次最多80只）
         all_quotes = []
@@ -111,7 +116,8 @@ def _get_market_data_from_tdx():
         for i in range(0, len(all_stocks), batch_size):
             batch = all_stocks[i:i+batch_size]
             quotes = tdx.get_realtime_quotes(batch)
-            all_quotes.extend(quotes)
+            if quotes:
+                all_quotes.extend(quotes)
 
         if not all_quotes:
             return None
