@@ -369,42 +369,21 @@ export default defineComponent({
         const selectedSource = allSources.value.find(s => s.id === filters.source)
         const sourceName = selectedSource ? selectedSource.name : ''
 
-        // 调试日志
-        console.log('[Filter Debug] filters.source:', filters.source)
-        console.log('[Filter Debug] sourceName:', sourceName)
-        console.log('[Filter Debug] allSources:', allSources.value.length)
-        if (result.length > 0) {
-          console.log('[Filter Debug] Sample news item:', {
-            source: result[0].source,
-            source_name: result[0].source_name,
-            source_id: result[0].source_id,
-            source_type: result[0].source_type
-          })
-        }
-
         // 匹配多种可能的字段组合（不区分大小写）
         result = result.filter(n => {
           // 获取新闻项的所有可能的source字段
           const newsSource = (n.source || '').toLowerCase()
           const newsSourceName = (n.source_name || '').toLowerCase()
-          const newsSourceId = (n.source_id || '').toLowerCase()
-          const newsSourceType = (n.source_type || '').toLowerCase()
 
           const filterSourceLower = filters.source.toLowerCase()
           const sourceNameLower = sourceName.toLowerCase()
 
-          // 检查所有可能的字段是否匹配ID或名称
+          // 检查source字段是否匹配ID或名称
           return newsSource === filterSourceLower ||
                  newsSourceName === filterSourceLower ||
-                 newsSourceId === filterSourceLower ||
-                 newsSourceType === filterSourceLower ||
                  (sourceNameLower && newsSource === sourceNameLower) ||
-                 (sourceNameLower && newsSourceName === sourceNameLower) ||
-                 (sourceNameLower && newsSourceId === sourceNameLower) ||
-                 (sourceNameLower && newsSourceType === sourceNameLower)
+                 (sourceNameLower && newsSourceName === sourceNameLower)
         })
-
-        console.log('[Filter Debug] Filtered result count:', result.length)
       }
       if (filters.keyword) {
         const keyword = filters.keyword.toLowerCase()
@@ -443,7 +422,7 @@ export default defineComponent({
         if (filters.news_type) params.append('news_type', filters.news_type)
         if (filters.sentiment) params.append('sentiment', filters.sentiment)
         if (filters.source) params.append('source', filters.source)
-        params.append('limit', '200')
+        params.append('limit', '1000')  // 增加到1000条以加载更多数据
 
         const response = await fetch(`${API_BASE_URL}/api/unified-news/list?${params}`)
         const data = await response.json()
