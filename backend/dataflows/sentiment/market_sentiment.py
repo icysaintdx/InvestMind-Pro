@@ -602,18 +602,37 @@ class MarketSentimentFetcher:
         }
 
     def _get_stock_turnover(self, stock_code: str) -> Dict[str, Any]:
-        """获取个股换手率"""
+        """获取个股换手率（使用单股票API，避免获取全市场数据）"""
         try:
-            df = ak.stock_zh_a_spot_em()
+            # 使用 stock_bid_ask_em 获取单只股票数据（比 stock_zh_a_spot_em 快得多）
+            df = ak.stock_bid_ask_em(symbol=stock_code)
             if df is None or df.empty:
                 return {}
 
-            stock_data = df[df['代码'] == stock_code]
-            if stock_data.empty:
-                return {}
+            # 转换为字典
+            data = {}
+            for _, row in df.iterrows():
+                item = row['item']
+                value = row['value']
+                data[item] = value
 
-            row = stock_data.iloc[0]
-            turnover_rate = float(row.get('换手率', 0) or 0)
+            # 安全转换
+            def safe_float(val, default=0):
+                if val is None:
+                    return default
+                if isinstance(val, (int, float)):
+                    return float(val)
+                if isinstance(val, str):
+                    val = val.strip().replace(',', '')
+                    if val == '' or val == '-' or '--' in val:
+                        return default
+                    try:
+                        return float(val)
+                    except ValueError:
+                        return default
+                return default
+
+            turnover_rate = safe_float(data.get('换手'))
 
             # 解读换手率
             if turnover_rate > 20:

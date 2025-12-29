@@ -303,37 +303,57 @@ class ComprehensiveStockDataService:
         return result
     
     def _get_realtime_quote(self, ts_code: str) -> Dict:
-        """获取实时行情（优先使用AKShare，备选Tushare）"""
-        # 优先使用AKShare获取实时行情
+        """获取实时行情（优先使用AKShare单股票API，避免获取全市场数据）"""
+        # 优先使用AKShare获取实时行情（使用单股票API）
         try:
             import akshare as ak
             symbol = ts_code.split('.')[0]
 
-            # 使用东方财富实时行情
-            df = ak.stock_zh_a_spot_em()
+            # 使用 stock_bid_ask_em 获取单只股票实时行情（比 stock_zh_a_spot_em 快得多）
+            df = ak.stock_bid_ask_em(symbol=symbol)
             if df is not None and not df.empty:
-                stock_data = df[df['代码'] == symbol]
-                if not stock_data.empty:
-                    row = stock_data.iloc[0]
-                    return {
-                        'status': 'success',
-                        'source': 'akshare',
-                        'data': {
-                            'name': str(row.get('名称', '')),
-                            'price': float(row.get('最新价', 0) or 0),
-                            'change': float(row.get('涨跌额', 0) or 0),
-                            'pct_change': float(row.get('涨跌幅', 0) or 0),  # 前端使用pct_change
-                            'change_pct': float(row.get('涨跌幅', 0) or 0),  # 兼容旧字段
-                            'volume': int(row.get('成交量', 0) or 0),
-                            'amount': float(row.get('成交额', 0) or 0),
-                            'high': float(row.get('最高', 0) or 0),
-                            'low': float(row.get('最低', 0) or 0),
-                            'open': float(row.get('今开', 0) or 0),
-                            'pre_close': float(row.get('昨收', 0) or 0),
-                            'date': datetime.now().strftime('%Y-%m-%d'),
-                            'time': datetime.now().strftime('%H:%M:%S')
-                        }
+                # 转换为字典
+                data = {}
+                for _, row in df.iterrows():
+                    item = row['item']
+                    value = row['value']
+                    data[item] = value
+
+                # 安全转换函数
+                def safe_float(val, default=0):
+                    if val is None:
+                        return default
+                    if isinstance(val, (int, float)):
+                        return float(val)
+                    if isinstance(val, str):
+                        val = val.strip().replace(',', '')
+                        if val == '' or val == '-' or '--' in val:
+                            return default
+                        try:
+                            return float(val)
+                        except ValueError:
+                            return default
+                    return default
+
+                return {
+                    'status': 'success',
+                    'source': 'akshare',
+                    'data': {
+                        'name': '',  # bid_ask_em 不返回名称
+                        'price': safe_float(data.get('最新')),
+                        'change': safe_float(data.get('涨跌')),
+                        'pct_change': safe_float(data.get('涨幅')),  # 前端使用pct_change
+                        'change_pct': safe_float(data.get('涨幅')),  # 兼容旧字段
+                        'volume': int(safe_float(data.get('总手'))),
+                        'amount': safe_float(data.get('金额')),
+                        'high': safe_float(data.get('最高')),
+                        'low': safe_float(data.get('最低')),
+                        'open': safe_float(data.get('今开')),
+                        'pre_close': safe_float(data.get('昨收')),
+                        'date': datetime.now().strftime('%Y-%m-%d'),
+                        'time': datetime.now().strftime('%H:%M:%S')
                     }
+                }
         except Exception as e:
             logger.debug(f"AKShare实时行情获取失败: {e}")
 

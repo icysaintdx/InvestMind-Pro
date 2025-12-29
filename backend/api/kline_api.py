@@ -451,30 +451,55 @@ async def get_realtime_data(
 
 
 async def _get_realtime_from_akshare(symbol: str) -> dict:
-    """从AKShare获取实时行情"""
+    """从AKShare获取实时行情（使用单股票API，避免获取全市场数据）"""
     import akshare as ak
 
-    # 获取实时行情
-    df = ak.stock_zh_a_spot_em()
-    stock_data = df[df['代码'] == symbol]
+    # 使用 stock_bid_ask_em 获取单只股票实时行情（比 stock_zh_a_spot_em 快得多）
+    try:
+        df = ak.stock_bid_ask_em(symbol=symbol)
+        if df is None or df.empty:
+            raise HTTPException(status_code=404, detail="股票不存在")
 
-    if stock_data.empty:
-        raise HTTPException(status_code=404, detail="股票不存在")
+        # 转换为字典
+        data = {}
+        for _, row in df.iterrows():
+            item = row['item']
+            value = row['value']
+            data[item] = value
 
-    row = stock_data.iloc[0]
-    return {
-        "symbol": symbol,
-        "name": row.get('名称', ''),
-        "price": row.get('最新价', 0),
-        "change": row.get('涨跌额', 0),
-        "change_pct": row.get('涨跌幅', 0),
-        "open": row.get('今开', 0),
-        "high": row.get('最高', 0),
-        "low": row.get('最低', 0),
-        "volume": row.get('成交量', 0),
-        "amount": row.get('成交额', 0),
-        "turnover": row.get('换手率', 0)
-    }
+        # 安全转换函数
+        def safe_float(val, default=0):
+            if val is None:
+                return default
+            if isinstance(val, (int, float)):
+                return float(val)
+            if isinstance(val, str):
+                val = val.strip().replace(',', '')
+                if val == '' or val == '-' or '--' in val:
+                    return default
+                try:
+                    return float(val)
+                except ValueError:
+                    return default
+            return default
+
+        return {
+            "symbol": symbol,
+            "name": "",  # bid_ask_em 不返回名称
+            "price": safe_float(data.get('最新')),
+            "change": safe_float(data.get('涨跌')),
+            "change_pct": safe_float(data.get('涨幅')),
+            "open": safe_float(data.get('今开')),
+            "high": safe_float(data.get('最高')),
+            "low": safe_float(data.get('最低')),
+            "volume": safe_float(data.get('总手')),
+            "amount": safe_float(data.get('金额')),
+            "turnover": safe_float(data.get('换手'))
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取行情失败: {str(e)}")
 
 
 @router.get("/periods")

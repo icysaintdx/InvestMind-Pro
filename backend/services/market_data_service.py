@@ -349,42 +349,56 @@ class MarketDataService:
         return None
 
     def _get_quote_from_akshare(self, code: str) -> Dict[str, Any]:
-        """从AKShare获取实时行情"""
+        """从AKShare获取实时行情（使用单股票API，避免获取全市场数据）"""
         try:
             import akshare as ak
 
-            # 使用AKShare获取实时行情
-            df = ak.stock_zh_a_spot_em()
+            # 使用 stock_bid_ask_em 获取单只股票实时行情（比 stock_zh_a_spot_em 快得多）
+            df = ak.stock_bid_ask_em(symbol=code)
 
-            # 查找股票
-            stock_data = df[df['代码'] == code]
-
-            if stock_data.empty:
-                # 尝试带前缀的代码
-                stock_data = df[df['代码'].str.contains(code)]
-
-            if stock_data.empty:
+            if df is None or df.empty:
                 logger.warning(f"未找到股票: {code}")
                 return self._get_fallback_quote(code)
 
-            row = stock_data.iloc[0]
+            # 转换为字典
+            data = {}
+            for _, row in df.iterrows():
+                item = row['item']
+                value = row['value']
+                data[item] = value
+
+            # 安全转换函数
+            def safe_float(val, default=0):
+                if val is None:
+                    return default
+                if isinstance(val, (int, float)):
+                    return float(val)
+                if isinstance(val, str):
+                    val = val.strip().replace(',', '')
+                    if val == '' or val == '-' or '--' in val:
+                        return default
+                    try:
+                        return float(val)
+                    except ValueError:
+                        return default
+                return default
 
             result = {
                 "stock_code": code,
-                "stock_name": row.get('名称', code),
-                "current_price": float(row.get('最新价', 0) or 0),
-                "open_price": float(row.get('今开', 0) or 0),
-                "high_price": float(row.get('最高', 0) or 0),
-                "low_price": float(row.get('最低', 0) or 0),
-                "pre_close": float(row.get('昨收', 0) or 0),
-                "change": float(row.get('涨跌额', 0) or 0),
-                "change_rate": float(row.get('涨跌幅', 0) or 0),
-                "volume": float(row.get('成交量', 0) or 0),
-                "amount": float(row.get('成交额', 0) or 0),
-                "turnover_rate": float(row.get('换手率', 0) or 0) if '换手率' in row else 0,
-                "pe_ratio": float(row.get('市盈率-动态', 0) or 0) if '市盈率-动态' in row else 0,
-                "pb_ratio": float(row.get('市净率', 0) or 0) if '市净率' in row else 0,
-                "total_market_cap": float(row.get('总市值', 0) or 0) if '总市值' in row else 0,
+                "stock_name": "",  # bid_ask_em 不返回名称
+                "current_price": safe_float(data.get('最新')),
+                "open_price": safe_float(data.get('今开')),
+                "high_price": safe_float(data.get('最高')),
+                "low_price": safe_float(data.get('最低')),
+                "pre_close": safe_float(data.get('昨收')),
+                "change": safe_float(data.get('涨跌')),
+                "change_rate": safe_float(data.get('涨幅')),
+                "volume": safe_float(data.get('总手')),
+                "amount": safe_float(data.get('金额')),
+                "turnover_rate": safe_float(data.get('换手')),
+                "pe_ratio": 0,  # bid_ask_em 不返回市盈率
+                "pb_ratio": 0,  # bid_ask_em 不返回市净率
+                "total_market_cap": 0,  # bid_ask_em 不返回市值
                 "timestamp": datetime.now().isoformat(),
                 "source": "akshare"
             }
