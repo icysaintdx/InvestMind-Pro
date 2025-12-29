@@ -289,7 +289,7 @@ def _fetch_global_em() -> List[Dict[str, Any]]:
         import akshare as ak
         df = ak.stock_info_global_em()
         if df is not None and not df.empty:
-            for idx, row in df.head(50).iterrows():
+            for idx, row in df.head(100).iterrows():  # 增加到100条
                 title = str(row.get("标题", row.get("title", "")))
                 if title:
                     news_list.append({
@@ -318,7 +318,7 @@ def _fetch_futu_global() -> List[Dict[str, Any]]:
         import akshare as ak
         df = ak.stock_info_global_futu()
         if df is not None and not df.empty:
-            for idx, row in df.head(50).iterrows():
+            for idx, row in df.head(100).iterrows():  # 增加到100条
                 title = str(row.get("标题", ""))
                 if title:
                     news_list.append({
@@ -347,7 +347,7 @@ def _fetch_sina_global() -> List[Dict[str, Any]]:
         import akshare as ak
         df = ak.stock_info_global_sina()
         if df is not None and not df.empty:
-            for idx, row in df.head(30).iterrows():
+            for idx, row in df.head(100).iterrows():  # 增加到100条
                 content = str(row.get("内容", ""))
                 title = content
                 if "【" in content and "】" in content:
@@ -378,7 +378,7 @@ def _fetch_ths_global() -> List[Dict[str, Any]]:
         import akshare as ak
         df = ak.stock_info_global_ths()
         if df is not None and not df.empty:
-            for idx, row in df.head(30).iterrows():
+            for idx, row in df.head(100).iterrows():  # 增加到100条
                 title = str(row.get("标题", ""))
                 if title:
                     news_list.append({
@@ -411,7 +411,7 @@ def _fetch_cls_global() -> List[Dict[str, Any]]:
         try:
             df = ak.stock_info_global_cls()
             if df is not None and not df.empty:
-                for idx, row in df.head(30).iterrows():
+                for idx, row in df.head(100).iterrows():  # 增加到100条
                     title = str(row.get("标题", row.get("title", "")))
                     if title:
                         news_list.append({
@@ -442,7 +442,7 @@ def _fetch_weibo_hot() -> List[Dict[str, Any]]:
         import akshare as ak
         df = ak.stock_js_weibo_report()
         if df is not None and not df.empty:
-            for idx, row in df.head(30).iterrows():
+            for idx, row in df.head(80).iterrows():  # 增加到80条
                 # 微博热议数据格式：股票代码、股票名称、讨论数等
                 stock_name = str(row.get("name", row.get("股票名称", "")))
                 stock_code = str(row.get("code", row.get("股票代码", "")))
@@ -476,7 +476,7 @@ def _fetch_morning_news() -> List[Dict[str, Any]]:
         import akshare as ak
         df = ak.stock_info_cjzc_em()
         if df is not None and not df.empty:
-            for idx, row in df.head(30).iterrows():
+            for idx, row in df.head(100).iterrows():  # 增加到100条
                 title = str(row.get("标题", ""))
                 content = str(row.get("内容", ""))
                 if title:
@@ -500,46 +500,43 @@ def _fetch_morning_news() -> List[Dict[str, Any]]:
 
 
 def _fetch_cninfo_announcement() -> List[Dict[str, Any]]:
-    """获取巨潮资讯公告（权威公告源）"""
+    """获取巨潮资讯公告（权威公告源）- 使用东方财富公告作为替代"""
     news_list = []
     try:
         import akshare as ak
 
-        end_date = datetime.now().strftime("%Y%m%d")
-        start_date = (datetime.now() - timedelta(days=3)).strftime("%Y%m%d")
+        # 获取最近几天的公告
+        for days_ago in range(3):
+            try:
+                date = (datetime.now() - timedelta(days=days_ago)).strftime("%Y%m%d")
+                df = ak.stock_notice_report(symbol="全部", date=date)
+                if df is not None and not df.empty:
+                    for idx, row in df.head(50).iterrows():
+                        # 列名：代码, 名称, 公告标题, 公告类型, 公告日期, 地址
+                        title = str(row.iloc[2]) if len(row) > 2 else ""  # 公告标题
+                        if title and title != "nan":
+                            stock_code = str(row.iloc[0]) if len(row) > 0 else ""  # 代码
+                            stock_name = str(row.iloc[1]) if len(row) > 1 else ""  # 名称
+                            notice_type = str(row.iloc[3]) if len(row) > 3 else ""  # 公告类型
+                            ann_date = str(row.iloc[4]) if len(row) > 4 else ""  # 公告日期
+                            url = str(row.iloc[5]) if len(row) > 5 else ""  # 地址
 
-        # 获取重大事项公告
-        try:
-            df = ak.stock_zh_a_disclosure_report_cninfo(
-                symbol="000001",  # 使用一个示例代码获取最新公告
-                market="沪深",
-                start_date=start_date,
-                end_date=end_date
-            )
-            if df is not None and not df.empty:
-                for idx, row in df.head(30).iterrows():
-                    title = str(row.get("公告标题", row.get("announcementTitle", "")))
-                    if title:
-                        stock_code = str(row.get("证券代码", row.get("secCode", "")))
-                        stock_name = str(row.get("证券简称", row.get("secName", "")))
-                        ann_time = str(row.get("公告时间", row.get("announcementTime", "")))
-
-                        news_list.append({
-                            "id": f"cninfo_{idx}_{datetime.now().timestamp()}",
-                            "title": f"【公告】{stock_name}({stock_code}): {title}",
-                            "summary": title,
-                            "source": "akshare_cninfo",
-                            "source_name": "巨潮资讯",
-                            "publish_time": ann_time if ann_time else datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                            "market": "A股",
-                            "news_type": "公告",
-                            "sentiment": "neutral",
-                            "sentiment_score": 0.5,
-                            "related_stocks": [stock_code] if stock_code else [],
-                            "url": ""
-                        })
-        except Exception as e:
-            logger.debug(f"巨潮资讯个股公告获取失败: {e}")
+                            news_list.append({
+                                "id": f"cninfo_{date}_{idx}_{datetime.now().timestamp()}",
+                                "title": f"【公告】{stock_name}({stock_code}): {title}",
+                                "summary": f"{notice_type}: {title}",
+                                "source": "akshare_cninfo",
+                                "source_name": "巨潮资讯",
+                                "publish_time": ann_date if ann_date else f"{date[:4]}-{date[4:6]}-{date[6:8]}",
+                                "market": "A股",
+                                "news_type": "公告",
+                                "sentiment": "neutral",
+                                "sentiment_score": 0.5,
+                                "related_stocks": [stock_code] if stock_code else [],
+                                "url": url
+                            })
+            except Exception as e:
+                logger.debug(f"巨潮资讯{date}获取失败: {e}")
 
     except Exception as e:
         logger.warning(f"[数据源] 巨潮资讯公告获取失败: {e}")
@@ -547,26 +544,27 @@ def _fetch_cninfo_announcement() -> List[Dict[str, Any]]:
 
 
 def _fetch_eastmoney_notice() -> List[Dict[str, Any]]:
-    """获取东方财富公告"""
+    """获取东方财富分类公告（重大事项、财务报告、融资公告）"""
     news_list = []
     try:
         import akshare as ak
 
-        # 获取今日公告
         today = datetime.now().strftime("%Y%m%d")
 
-        # 获取重大事项公告
-        categories = ["重大事项", "财务报告", "融资公告"]
+        # 获取分类公告
+        categories = ["重大事项", "财务报告", "融资公告", "风险提示"]
         for category in categories:
             try:
                 df = ak.stock_notice_report(symbol=category, date=today)
                 if df is not None and not df.empty:
-                    for idx, row in df.head(15).iterrows():
-                        title = str(row.get("公告标题", row.get("title", "")))
-                        if title:
-                            stock_code = str(row.get("代码", row.get("code", "")))
-                            stock_name = str(row.get("名称", row.get("name", "")))
-                            ann_time = str(row.get("公告时间", row.get("date", "")))
+                    for idx, row in df.head(30).iterrows():
+                        # 列名：代码, 名称, 公告标题, 公告类型, 公告日期, 地址
+                        title = str(row.iloc[2]) if len(row) > 2 else ""  # 公告标题
+                        if title and title != "nan":
+                            stock_code = str(row.iloc[0]) if len(row) > 0 else ""  # 代码
+                            stock_name = str(row.iloc[1]) if len(row) > 1 else ""  # 名称
+                            ann_date = str(row.iloc[4]) if len(row) > 4 else ""  # 公告日期
+                            url = str(row.iloc[5]) if len(row) > 5 else ""  # 地址
 
                             news_list.append({
                                 "id": f"em_notice_{category}_{idx}_{datetime.now().timestamp()}",
@@ -574,13 +572,13 @@ def _fetch_eastmoney_notice() -> List[Dict[str, Any]]:
                                 "summary": title,
                                 "source": "akshare_em_notice",
                                 "source_name": "东方财富公告",
-                                "publish_time": ann_time if ann_time else datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                "publish_time": ann_date if ann_date else today,
                                 "market": "A股",
                                 "news_type": category,
                                 "sentiment": "neutral",
                                 "sentiment_score": 0.5,
                                 "related_stocks": [stock_code] if stock_code else [],
-                                "url": ""
+                                "url": url
                             })
             except Exception as e:
                 logger.debug(f"东方财富{category}公告获取失败: {e}")
@@ -629,33 +627,53 @@ def _fetch_cctv_news() -> List[Dict[str, Any]]:
 
 
 def _fetch_baidu_economic() -> List[Dict[str, Any]]:
-    """获取百度经济新闻"""
+    """获取百度经济新闻（财经日历）"""
     news_list = []
     try:
         import akshare as ak
 
-        df = ak.news_economic_baidu()
-        if df is not None and not df.empty:
-            for idx, row in df.head(30).iterrows():
-                title = str(row.get("title", row.get("标题", "")))
-                content = str(row.get("content", row.get("内容", "")))
-                pub_time = str(row.get("date", row.get("时间", "")))
+        # 获取最近几天的财经日历数据
+        for days_ago in range(3):
+            try:
+                date = (datetime.now() - timedelta(days=days_ago)).strftime("%Y%m%d")
+                df = ak.news_economic_baidu(date=date)
+                if df is not None and not df.empty:
+                    for idx, row in df.head(20).iterrows():
+                        # 百度财经日历的列名
+                        event = str(row.get("事件", row.get("title", "")))
+                        country = str(row.get("国家", ""))
+                        time_str = str(row.get("时间", ""))
+                        actual = str(row.get("今值", ""))
+                        forecast = str(row.get("预期", ""))
+                        previous = str(row.get("前值", ""))
+                        importance = row.get("重要性", 1)
 
-                if title:
-                    news_list.append({
-                        "id": f"baidu_eco_{idx}_{datetime.now().timestamp()}",
-                        "title": title,
-                        "summary": content[:300] if content else title,
-                        "source": "akshare_baidu",
-                        "source_name": "百度财经",
-                        "publish_time": pub_time if pub_time else datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                        "market": "全球",
-                        "news_type": "经济新闻",
-                        "sentiment": _analyze_sentiment(title + content),
-                        "sentiment_score": 0.5,
-                        "related_stocks": [],
-                        "url": str(row.get("url", row.get("链接", "")))
-                    })
+                        if event and event != "nan":
+                            title = f"【{country}】{event}"
+                            summary = f"{country} {event}"
+                            if actual and actual != "nan":
+                                summary += f" 今值:{actual}"
+                            if forecast and forecast != "nan":
+                                summary += f" 预期:{forecast}"
+                            if previous and previous != "nan":
+                                summary += f" 前值:{previous}"
+
+                            news_list.append({
+                                "id": f"baidu_eco_{date}_{idx}_{datetime.now().timestamp()}",
+                                "title": title,
+                                "summary": summary,
+                                "source": "akshare_baidu",
+                                "source_name": "百度财经",
+                                "publish_time": f"{date[:4]}-{date[4:6]}-{date[6:8]} {time_str}" if time_str else f"{date[:4]}-{date[4:6]}-{date[6:8]}",
+                                "market": "全球",
+                                "news_type": "财经日历",
+                                "sentiment": "neutral",
+                                "sentiment_score": 0.5,
+                                "related_stocks": [],
+                                "url": ""
+                            })
+            except Exception as e:
+                logger.debug(f"百度财经{date}获取失败: {e}")
 
     except Exception as e:
         logger.warning(f"[数据源] 百度经济新闻获取失败: {e}")
@@ -835,11 +853,16 @@ async def get_news_list(
     news_type: Optional[str] = Query(None, description="新闻类型"),
     sentiment: Optional[str] = Query(None, description="情绪筛选"),
     source: Optional[str] = Query(None, description="数据源筛选"),
-    limit: int = Query(200, description="返回数量限制")
+    limit: int = Query(500, description="返回数量限制")  # 增加默认限制到500
 ):
     """获取新闻列表（新闻中心使用）"""
     try:
         news_data = _get_news_center_cached()
+
+        # 先计算全部数据的统计（用于显示总数）
+        full_statistics = _calculate_news_statistics(news_data)
+
+        # 然后进行筛选
         result = news_data.copy()
 
         if market:
@@ -851,14 +874,19 @@ async def get_news_list(
         if source:
             result = [n for n in result if n.get("source") == source or n.get("source_name") == source]
 
+        # 筛选后的统计
+        filtered_statistics = _calculate_news_statistics(result)
+
+        # 限制返回数量
         result = result[:limit]
-        statistics = _calculate_news_statistics(result)
 
         return {
             "success": True,
             "data": result,
-            "statistics": statistics,
+            "statistics": full_statistics,  # 返回全部数据的统计
+            "filtered_statistics": filtered_statistics,  # 返回筛选后的统计
             "total": len(result),
+            "full_total": len(news_data),  # 全部数据总数
             "timestamp": datetime.now().isoformat()
         }
 

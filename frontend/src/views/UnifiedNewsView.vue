@@ -352,15 +352,8 @@ export default defineComponent({
       { value: 'negative', label: '消极', class: 'negative' }
     ]
 
-    const allSources = ref([
-      { id: 'akshare_eastmoney', name: '东方财富', description: 'AKShare东方财富新闻', priority: 1, status: 'unknown' },
-      { id: 'akshare_futu', name: '富途', description: 'AKShare富途全球资讯', priority: 2, status: 'unknown' },
-      { id: 'akshare_ths', name: '同花顺', description: 'AKShare同花顺全球资讯', priority: 3, status: 'unknown' },
-      { id: 'akshare_sina', name: '新浪财经', description: 'AKShare新浪财经', priority: 4, status: 'unknown' },
-      { id: 'akshare_cctv', name: '央视财经', description: 'AKShare央视财经', priority: 5, status: 'unknown' },
-      { id: 'akshare_cls', name: '财联社', description: 'AKShare财联社快讯', priority: 6, status: 'unknown' },
-      { id: 'wencai', name: '问财', description: '同花顺问财新闻', priority: 7, status: 'unknown' }
-    ])
+    // 数据源列表从API动态获取，初始为空
+    const allSources = ref([])
 
     const availableSources = computed(() => {
       return allSources.value.filter(s => s.status === 'healthy' || s.status === 'degraded' || s.status === 'unknown')
@@ -488,10 +481,18 @@ export default defineComponent({
         const data = await response.json()
         if (data.success) {
           sourceStatus.value = data.data || {}
-          allSources.value.forEach(source => {
-            const status = sourceStatus.value[source.id]
-            if (status) source.status = status.status || 'unknown'
-          })
+          // 从API响应动态构建数据源列表
+          const sourcesFromApi = Object.values(data.data || {}).map(source => ({
+            id: source.id,
+            name: source.name,
+            description: source.description,
+            priority: source.priority,
+            status: source.status === 'healthy' ? 'healthy' : (source.status === 'offline' ? 'offline' : 'unknown'),
+            news_count: source.news_count || 0
+          }))
+          // 按优先级排序
+          sourcesFromApi.sort((a, b) => a.priority - b.priority)
+          allSources.value = sourcesFromApi
         }
       } catch (error) {
         console.error('获取数据源状态失败:', error)
