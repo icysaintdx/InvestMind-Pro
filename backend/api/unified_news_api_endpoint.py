@@ -443,25 +443,31 @@ def _fetch_weibo_hot() -> List[Dict[str, Any]]:
         df = ak.stock_js_weibo_report()
         if df is not None and not df.empty:
             for idx, row in df.head(80).iterrows():  # 增加到80条
-                # 微博热议数据格式：股票代码、股票名称、讨论数等
-                stock_name = str(row.get("name", row.get("股票名称", "")))
-                stock_code = str(row.get("code", row.get("股票代码", "")))
-                discuss_count = row.get("num", row.get("讨论数", 0))
+                # 微博热议数据格式：name(股票名称), rate(涨跌幅)
+                stock_name = str(row.get("name", ""))
+                rate = row.get("rate", 0)
 
-                if stock_name:
-                    title = f"【微博热议】{stock_name}({stock_code}) 讨论热度: {discuss_count}"
+                # 格式化涨跌幅
+                try:
+                    rate_val = float(rate) if rate else 0
+                    rate_str = f"{rate_val:+.2f}%" if rate_val != 0 else "0.00%"
+                except:
+                    rate_str = "0.00%"
+
+                if stock_name and stock_name != "nan":
+                    title = f"【微博热议】{stock_name} 涨跌幅: {rate_str}"
                     news_list.append({
                         "id": f"weibo_{idx}_{datetime.now().timestamp()}",
                         "title": title,
-                        "summary": f"{stock_name} 在微博上引发热议，当前讨论数: {discuss_count}",
+                        "summary": f"{stock_name} 在微博上引发热议，当前涨跌幅: {rate_str}",
                         "source": "akshare_weibo",
                         "source_name": "微博热议",
                         "publish_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         "market": "A股",
                         "news_type": "社交热议",
-                        "sentiment": "neutral",
-                        "sentiment_score": 0.5,
-                        "related_stocks": [stock_code] if stock_code else [],
+                        "sentiment": "positive" if rate_val > 0 else ("negative" if rate_val < 0 else "neutral"),
+                        "sentiment_score": 0.5 + rate_val / 20,  # 根据涨跌幅调整情绪分数
+                        "related_stocks": [],
                         "url": ""
                     })
     except Exception as e:
@@ -639,24 +645,33 @@ def _fetch_baidu_economic() -> List[Dict[str, Any]]:
                 df = ak.news_economic_baidu(date=date)
                 if df is not None and not df.empty:
                     for idx, row in df.head(20).iterrows():
-                        # 百度财经日历的列名
-                        event = str(row.get("事件", row.get("title", "")))
-                        country = str(row.get("国家", ""))
+                        # 百度财经日历的列名：日期, 时间, 地区, 事件, 公布, 预期, 前值, 重要性
+                        event = str(row.get("事件", ""))
+                        region = str(row.get("地区", row.get("国家", "")))
                         time_str = str(row.get("时间", ""))
-                        actual = str(row.get("今值", ""))
+                        actual = str(row.get("公布", row.get("今值", "")))
                         forecast = str(row.get("预期", ""))
                         previous = str(row.get("前值", ""))
-                        importance = row.get("重要性", 1)
 
                         if event and event != "nan":
-                            title = f"【{country}】{event}"
-                            summary = f"{country} {event}"
-                            if actual and actual != "nan":
-                                summary += f" 今值:{actual}"
-                            if forecast and forecast != "nan":
-                                summary += f" 预期:{forecast}"
-                            if previous and previous != "nan":
-                                summary += f" 前值:{previous}"
+                            # 构建标题，如果有地区则显示，否则不显示括号
+                            if region and region != "nan":
+                                title = f"【{region}】{event}"
+                            else:
+                                title = event
+
+                            # 构建摘要
+                            summary_parts = []
+                            if region and region != "nan":
+                                summary_parts.append(region)
+                            summary_parts.append(event)
+                            if actual and actual != "nan" and actual != "NaN":
+                                summary_parts.append(f"公布:{actual}")
+                            if forecast and forecast != "nan" and forecast != "NaN":
+                                summary_parts.append(f"预期:{forecast}")
+                            if previous and previous != "nan" and previous != "NaN":
+                                summary_parts.append(f"前值:{previous}")
+                            summary = " ".join(summary_parts)
 
                             news_list.append({
                                 "id": f"baidu_eco_{date}_{idx}_{datetime.now().timestamp()}",
@@ -664,7 +679,7 @@ def _fetch_baidu_economic() -> List[Dict[str, Any]]:
                                 "summary": summary,
                                 "source": "akshare_baidu",
                                 "source_name": "百度财经",
-                                "publish_time": f"{date[:4]}-{date[4:6]}-{date[6:8]} {time_str}" if time_str else f"{date[:4]}-{date[4:6]}-{date[6:8]}",
+                                "publish_time": f"{date[:4]}-{date[4:6]}-{date[6:8]} {time_str}" if time_str and time_str != "nan" else f"{date[:4]}-{date[4:6]}-{date[6:8]}",
                                 "market": "全球",
                                 "news_type": "财经日历",
                                 "sentiment": "neutral",
