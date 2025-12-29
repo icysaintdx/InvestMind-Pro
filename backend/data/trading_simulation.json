@@ -2,10 +2,10 @@
   "portfolio": {
     "initial_capital": 1000000,
     "cash_balance": 527096.02,
-    "total_value": 994043.02,
-    "positions_value": 466947.00000000006,
+    "total_value": 990251.02,
+    "positions_value": 463155.0,
     "total_profit_loss": 0,
-    "total_profit_loss_rate": -0.5956979999999982
+    "total_profit_loss_rate": -0.9748979999999982
   },
   "positions": {
     "600085": {
@@ -243,5 +243,5 @@
       "status": "EXECUTED"
     }
   ],
-  "last_update": "2025-12-29T02:30:25.759473"
+  "last_update": "2025-12-29T23:17:03.974431"
 }
