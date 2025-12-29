@@ -9,209 +9,220 @@
       :speed="particleSpeed"
     />
     
-    <!-- 头部导航 -->
-    <header class="navbar">
-      <div class="navbar-content">
-        <!-- 左侧：Logo -->
-        <div class="flex items-center">
-          <h1 class="text-xl font-bold text-white">
-            <span class="text-2xl mr-2">🏅</span>
-            InvestMind Pro
+    <!-- 头部导航 - 新版精简设计 -->
+    <header class="navbar-v2">
+      <div class="navbar-v2-content">
+        <!-- 左侧：Logo + 汉堡菜单(移动端) -->
+        <div class="navbar-v2-left">
+          <button @click="toggleMobileMenu" class="mobile-menu-btn">
+            <span>☰</span>
+          </button>
+          <h1 class="logo" @click="currentView = 'analysis'">
+            <span class="logo-icon">🏅</span>
+            <span class="logo-text">InvestMind Pro</span>
           </h1>
-          <button 
-            @click="showProjectInfo = true" 
-            class="project-info-btn"
-            title="项目介绍"
-          >
-            <span class="info-icon">ℹ️</span>
-          </button>
-          <button 
-            @click="showDocuments = true" 
-            class="doc-btn"
-            title="文档中心"
-          >
-            <span class="doc-icon">📚</span>
-          </button>
-          <button 
-            @click="toggleLogWindow" 
-            class="log-btn"
-            :class="{ 'active': showLogWindow }"
-            title="实时日志"
-          >
-            <span class="log-icon">📡</span>
-          </button>
-          <button 
-            @click="showHistory = true" 
-            class="history-btn"
-            title="分析历史"
-          >
-            <span class="history-icon">📊</span>
-          </button>
-        </div>
-        
-        <!-- 中间：API状态指示器 -->
-        <div class="api-status-bar">
-          <!-- 后端连接状态 -->
-          <span 
-            :class="['backend-status', backendStatus]"
-            :title="backendStatusText"
-          >
-            <span class="status-icon">●</span>
-            <span class="status-text">{{ backendStatusText }}</span>
-          </span>
-          
-          <span class="status-divider">|</span>
-          
-          <span class="status-label">API</span>
-          <span 
-            v-for="provider in ['gemini', 'deepseek', 'qwen', 'siliconflow']" 
-            :key="provider"
-            :class="['status-item', getStatusClass(apiStatus[provider])]"
-            :title="getProviderName(provider)"
-          >
-            <span class="status-dot"></span>
-            <span class="status-name">{{ getProviderShort(provider) }}</span>
-          </span>
-          <span class="status-divider">|</span>
-          <span class="status-label">数据</span>
-          <span 
-            v-for="channel in ['juhe', 'finnhub', 'tushare', 'akshare']" 
-            :key="channel"
-            :class="['status-item', getStatusClass(dataChannelStatus[channel])]"
-            :title="getDataChannelName(channel)"
-          >
-            <span class="status-dot"></span>
-            <span class="status-name">{{ getDataChannelShort(channel) }}</span>
-          </span>
         </div>
 
         <!-- 右侧控制按钮 -->
-        <div class="nav-controls">
-          <button @click="showHotRankModal = true" class="nav-btn hot-rank-btn" title="查看热榜">
+        <div class="navbar-v2-right">
+          <button @click="showHotRankModal = true" class="nav-v2-btn hot-btn" title="热榜">
             <span class="btn-icon">🔥</span>
-            <span class="btn-text">热榜</span>
+            <span class="btn-label">热榜</span>
           </button>
-          <button @click="showChangelog = true" class="nav-btn version-btn" :title="`版本 ${versionInfo.version} - ${versionInfo.codename}`">
-            <span class="btn-icon">📋</span>
-            <span class="btn-text">v{{ versionInfo.version }}</span>
-          </button>
-          <button @click="toggleConfigMode" class="nav-btn" :class="{ active: configMode }">
+          <button @click="showSettings = true" class="nav-v2-btn settings-btn" title="设置">
             <span class="btn-icon">⚙️</span>
-            <span class="btn-text">配置模式</span>
+            <span class="btn-label">设置</span>
           </button>
-          <button @click="showAgentConfig = true" class="nav-btn">
-            <span class="btn-icon">🤖</span>
-            <span class="btn-text">智能体</span>
-          </button>
-          <button @click="showModelManager = true" class="nav-btn">
-            <span class="btn-icon">🎯</span>
-            <span class="btn-text">模型</span>
-          </button>
-          <button @click="showApiConfig = true" class="nav-btn">
-            <span class="btn-icon">🔑</span>
-            <span class="btn-text">API</span>
-          </button>
-          <button @click="toggleStylePanel" class="nav-btn">
-            <span class="btn-icon">🎨</span>
-            <span class="btn-text">样式</span>
-          </button>
+          <!-- Server状态悬浮 -->
+          <div class="server-status-wrapper" @mouseenter="showServerStatus = true" @mouseleave="showServerStatus = false">
+            <div :class="['server-status', backendStatus]">
+              <span class="server-dot">●</span>
+              <span class="server-text">Server</span>
+            </div>
+            <!-- 悬浮详情 -->
+            <div v-show="showServerStatus" class="server-status-popup">
+              <div class="popup-header">服务状态</div>
+              <div class="popup-section">
+                <div class="popup-label">后端连接</div>
+                <div :class="['popup-status', backendStatus]">{{ backendStatusText }}</div>
+              </div>
+              <div class="popup-divider"></div>
+              <div class="popup-section">
+                <div class="popup-label">AI API</div>
+                <div class="popup-items">
+                  <span v-for="provider in ['gemini', 'deepseek', 'qwen', 'siliconflow']" :key="provider" :class="['popup-item', getStatusClass(apiStatus[provider])]">
+                    <span class="item-dot">●</span>
+                    <span class="item-name">{{ getProviderName(provider) }}</span>
+                  </span>
+                </div>
+              </div>
+              <div class="popup-divider"></div>
+              <div class="popup-section">
+                <div class="popup-label">数据源</div>
+                <div class="popup-items">
+                  <span v-for="channel in ['juhe', 'finnhub', 'tushare', 'akshare']" :key="channel" :class="['popup-item', getStatusClass(dataChannelStatus[channel])]">
+                    <span class="item-dot">●</span>
+                    <span class="item-name">{{ getDataChannelName(channel) }}</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </header>
     
-    <!-- 选项卡导航 -->
-    <div class="tab-navigation">
-      <button 
-        @click="currentView = 'analysis'" 
-        :class="['tab-btn', { active: currentView === 'analysis' }]"
-      >
-        <span class="tab-icon">📊</span>
-        <span class="tab-text">智能分析</span>
+    <!-- 分组下拉导航 -->
+    <nav class="nav-v2-menu">
+      <!-- 分析组 -->
+      <div class="nav-group" @mouseenter="activeNavGroup = 'analysis'" @mouseleave="activeNavGroup = null">
+        <button :class="['nav-group-btn', { active: isGroupActive('analysis') }]">
+          <span class="group-icon">📊</span>
+          <span class="group-text">分析</span>
+          <span class="group-arrow">▼</span>
+        </button>
+        <div v-show="activeNavGroup === 'analysis'" class="nav-dropdown">
+          <button @click="currentView = 'analysis'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'analysis' }]">
+            <span class="item-icon">📊</span>智能分析
+          </button>
+          <button @click="currentView = 'analysis-summary'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'analysis-summary' }]">
+            <span class="item-icon">🧭</span>分析总结
+          </button>
+        </div>
+      </div>
+
+      <!-- 交易组 -->
+      <div class="nav-group" @mouseenter="activeNavGroup = 'trading'" @mouseleave="activeNavGroup = null">
+        <button :class="['nav-group-btn', { active: isGroupActive('trading') }]">
+          <span class="group-icon">📈</span>
+          <span class="group-text">交易</span>
+          <span class="group-arrow">▼</span>
+        </button>
+        <div v-show="activeNavGroup === 'trading'" class="nav-dropdown">
+          <button @click="currentView = 'backtest'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'backtest' }]">
+            <span class="item-icon">📈</span>策略回测
+          </button>
+          <button @click="currentView = 'paper-trading'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'paper-trading' }]">
+            <span class="item-icon">💼</span>模拟交易
+          </button>
+          <button @click="currentView = 'tracking-center'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'tracking-center' }]">
+            <span class="item-icon">🔄</span>跟踪验证
+          </button>
+        </div>
+      </div>
+
+      <!-- 市场组 -->
+      <div class="nav-group" @mouseenter="activeNavGroup = 'market'" @mouseleave="activeNavGroup = null">
+        <button :class="['nav-group-btn', { active: isGroupActive('market') }]">
+          <span class="group-icon">💹</span>
+          <span class="group-text">市场</span>
+          <span class="group-arrow">▼</span>
+        </button>
+        <div v-show="activeNavGroup === 'market'" class="nav-dropdown">
+          <button @click="currentView = 'longhubang'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'longhubang' }]">
+            <span class="item-icon">🐉</span>龙虎榜
+          </button>
+          <button @click="currentView = 'sector-rotation'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'sector-rotation' }]">
+            <span class="item-icon">🔄</span>板块轮动
+          </button>
+          <button @click="currentView = 'sentiment'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'sentiment' }]">
+            <span class="item-icon">💹</span>市场情绪
+          </button>
+          <button @click="currentView = 'unified-news'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'unified-news' }]">
+            <span class="item-icon">📰</span>新闻中心
+          </button>
+          <button @click="currentView = 'market-data'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'market-data' }]">
+            <span class="item-icon">📈</span>市场数据
+          </button>
+        </div>
+      </div>
+
+      <!-- 工具组 -->
+      <div class="nav-group" @mouseenter="activeNavGroup = 'tools'" @mouseleave="activeNavGroup = null">
+        <button :class="['nav-group-btn', { active: isGroupActive('tools') }]">
+          <span class="group-icon">🔧</span>
+          <span class="group-text">工具</span>
+          <span class="group-arrow">▼</span>
+        </button>
+        <div v-show="activeNavGroup === 'tools'" class="nav-dropdown">
+          <button @click="currentView = 'dataflow'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'dataflow' }]">
+            <span class="item-icon">📊</span>数据流
+          </button>
+          <button @click="currentView = 'llm-config'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'llm-config' }]">
+            <span class="item-icon">⚙️</span>LLM配置
+          </button>
+          <button @click="currentView = 'wencai'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'wencai' }]">
+            <span class="item-icon">🔍</span>问财选股
+          </button>
+        </div>
+      </div>
+
+      <!-- 当前页面指示 -->
+      <div class="current-page-indicator">
+        <span class="indicator-icon">{{ getCurrentPageIcon() }}</span>
+        <span class="indicator-text">{{ getCurrentPageName() }}</span>
+      </div>
+    </nav>
+
+    <!-- 智能分析页面专属工具栏 -->
+    <div v-if="currentView === 'analysis'" class="analysis-toolbar">
+      <button @click="toggleLogWindow" :class="['toolbar-btn', { active: showLogWindow }]" title="实时日志">
+        <span class="btn-icon">📡</span>
+        <span class="btn-text">日志</span>
       </button>
-      <button 
-        @click="currentView = 'analysis-summary'" 
-        :class="['tab-btn', { active: currentView === 'analysis-summary' }]"
-      >
-        <span class="tab-icon">🧭</span>
-        <span class="tab-text">分析总结</span>
+      <button @click="showHistory = true" class="toolbar-btn" title="分析历史">
+        <span class="btn-icon">📊</span>
+        <span class="btn-text">历史</span>
       </button>
-      <button 
-        @click="currentView = 'dataflow'" 
-        :class="['tab-btn', { active: currentView === 'dataflow' }]"
-      >
-        <span class="tab-icon">📊</span>
-        <span class="tab-text">数据流</span>
+      <button @click="showAgentConfig = true" class="toolbar-btn" title="智能体配置">
+        <span class="btn-icon">🤖</span>
+        <span class="btn-text">智能体</span>
       </button>
-      <button 
-        @click="currentView = 'backtest'" 
-        :class="['tab-btn', { active: currentView === 'backtest' }]"
-      >
-        <span class="tab-icon">📈</span>
-        <span class="tab-text">策略回测</span>
+      <button @click="toggleConfigMode" :class="['toolbar-btn', { active: configMode }]" title="配置模式">
+        <span class="btn-icon">⚙️</span>
+        <span class="btn-text">配置模式</span>
       </button>
-      <button 
-        @click="currentView = 'paper-trading'" 
-        :class="['tab-btn', { active: currentView === 'paper-trading' }]"
-      >
-        <span class="tab-icon">💼</span>
-        <span class="tab-text">模拟交易</span>
-      </button>
-      <button 
-        @click="currentView = 'tracking-center'" 
-        :class="['tab-btn', { active: currentView === 'tracking-center' }]"
-      >
-        <span class="tab-icon">🔄</span>
-        <span class="tab-text">跟踪验证</span>
-      </button>
-      <button
-        @click="currentView = 'llm-config'"
-        :class="['tab-btn', { active: currentView === 'llm-config' }]"
-      >
-        <span class="tab-icon">⚙️</span>
-        <span class="tab-text">LLM配置</span>
-      </button>
-      <button
-        @click="currentView = 'longhubang'"
-        :class="['tab-btn', { active: currentView === 'longhubang' }]"
-      >
-        <span class="tab-icon">🐉</span>
-        <span class="tab-text">龙虎榜</span>
-      </button>
-      <button
-        @click="currentView = 'wencai'"
-        :class="['tab-btn', { active: currentView === 'wencai' }]"
-      >
-        <span class="tab-icon">🔍</span>
-        <span class="tab-text">问财选股</span>
-      </button>
-      <button
-        @click="currentView = 'sector-rotation'"
-        :class="['tab-btn', { active: currentView === 'sector-rotation' }]"
-      >
-        <span class="tab-icon">🔄</span>
-        <span class="tab-text">板块轮动</span>
-      </button>
-      <button
-        @click="currentView = 'sentiment'"
-        :class="['tab-btn', { active: currentView === 'sentiment' }]"
-      >
-        <span class="tab-icon">💹</span>
-        <span class="tab-text">市场情绪</span>
-      </button>
-      <button
-        @click="currentView = 'unified-news'"
-        :class="['tab-btn', { active: currentView === 'unified-news' }]"
-      >
-        <span class="tab-icon">📰</span>
-        <span class="tab-text">新闻中心</span>
-      </button>
-      <button
-        @click="currentView = 'market-data'"
-        :class="['tab-btn', { active: currentView === 'market-data' }]"
-      >
-        <span class="tab-icon">📈</span>
-        <span class="tab-text">市场数据</span>
-      </button>
+    </div>
+
+    <!-- 移动端菜单 -->
+    <div v-if="showMobileMenu" class="mobile-menu-overlay" @click="showMobileMenu = false">
+      <div class="mobile-menu" @click.stop>
+        <div class="mobile-menu-header">
+          <span class="mobile-menu-title">导航菜单</span>
+          <button @click="showMobileMenu = false" class="mobile-menu-close">✕</button>
+        </div>
+        <div class="mobile-menu-content">
+          <!-- 分析 -->
+          <div class="mobile-menu-group">
+            <div class="mobile-group-title">📊 分析</div>
+            <button @click="currentView = 'analysis'; showMobileMenu = false" :class="['mobile-menu-item', { active: currentView === 'analysis' }]">智能分析</button>
+            <button @click="currentView = 'analysis-summary'; showMobileMenu = false" :class="['mobile-menu-item', { active: currentView === 'analysis-summary' }]">分析总结</button>
+          </div>
+          <!-- 交易 -->
+          <div class="mobile-menu-group">
+            <div class="mobile-group-title">📈 交易</div>
+            <button @click="currentView = 'backtest'; showMobileMenu = false" :class="['mobile-menu-item', { active: currentView === 'backtest' }]">策略回测</button>
+            <button @click="currentView = 'paper-trading'; showMobileMenu = false" :class="['mobile-menu-item', { active: currentView === 'paper-trading' }]">模拟交易</button>
+            <button @click="currentView = 'tracking-center'; showMobileMenu = false" :class="['mobile-menu-item', { active: currentView === 'tracking-center' }]">跟踪验证</button>
+          </div>
+          <!-- 市场 -->
+          <div class="mobile-menu-group">
+            <div class="mobile-group-title">💹 市场</div>
+            <button @click="currentView = 'longhubang'; showMobileMenu = false" :class="['mobile-menu-item', { active: currentView === 'longhubang' }]">龙虎榜</button>
+            <button @click="currentView = 'sector-rotation'; showMobileMenu = false" :class="['mobile-menu-item', { active: currentView === 'sector-rotation' }]">板块轮动</button>
+            <button @click="currentView = 'sentiment'; showMobileMenu = false" :class="['mobile-menu-item', { active: currentView === 'sentiment' }]">市场情绪</button>
+            <button @click="currentView = 'unified-news'; showMobileMenu = false" :class="['mobile-menu-item', { active: currentView === 'unified-news' }]">新闻中心</button>
+            <button @click="currentView = 'market-data'; showMobileMenu = false" :class="['mobile-menu-item', { active: currentView === 'market-data' }]">市场数据</button>
+          </div>
+          <!-- 工具 -->
+          <div class="mobile-menu-group">
+            <div class="mobile-group-title">🔧 工具</div>
+            <button @click="currentView = 'dataflow'; showMobileMenu = false" :class="['mobile-menu-item', { active: currentView === 'dataflow' }]">数据流</button>
+            <button @click="currentView = 'llm-config'; showMobileMenu = false" :class="['mobile-menu-item', { active: currentView === 'llm-config' }]">LLM配置</button>
+            <button @click="currentView = 'wencai'; showMobileMenu = false" :class="['mobile-menu-item', { active: currentView === 'wencai' }]">问财选股</button>
+          </div>
+        </div>
+      </div>
     </div>
     
     <!-- 主内容区 -->
@@ -287,6 +298,62 @@
     
     <!-- 智能体配置面板 -->
     <AgentConfigPanel :visible="showAgentConfig" @close="showAgentConfig = false" @save="handleAgentConfigSave" />
+
+    <!-- 设置面板 -->
+    <div v-if="showSettings" class="settings-overlay" @click.self="showSettings = false">
+      <div class="settings-panel">
+        <div class="settings-header">
+          <h2 class="settings-title">⚙️ 设置</h2>
+          <button @click="showSettings = false" class="settings-close">✕</button>
+        </div>
+        <div class="settings-content">
+          <!-- 配置类 -->
+          <div class="settings-section">
+            <div class="section-label">配置</div>
+            <button @click="showApiConfig = true; showSettings = false" class="settings-item">
+              <span class="item-icon">🔑</span>
+              <span class="item-text">API密钥配置</span>
+              <span class="item-arrow">›</span>
+            </button>
+            <button @click="showModelManager = true; showSettings = false" class="settings-item">
+              <span class="item-icon">🎯</span>
+              <span class="item-text">模型管理</span>
+              <span class="item-arrow">›</span>
+            </button>
+            <button @click="showAgentConfig = true; showSettings = false" class="settings-item">
+              <span class="item-icon">🤖</span>
+              <span class="item-text">智能体配置</span>
+              <span class="item-arrow">›</span>
+            </button>
+            <button @click="toggleStylePanel(); showSettings = false" class="settings-item">
+              <span class="item-icon">🎨</span>
+              <span class="item-text">界面样式</span>
+              <span class="item-arrow">›</span>
+            </button>
+          </div>
+          <!-- 帮助类 -->
+          <div class="settings-section">
+            <div class="section-label">帮助</div>
+            <button @click="showDocuments = true; showSettings = false" class="settings-item">
+              <span class="item-icon">📚</span>
+              <span class="item-text">文档中心</span>
+              <span class="item-arrow">›</span>
+            </button>
+            <button @click="showProjectInfo = true; showSettings = false" class="settings-item">
+              <span class="item-icon">ℹ️</span>
+              <span class="item-text">项目介绍</span>
+              <span class="item-arrow">›</span>
+            </button>
+            <button @click="showChangelog = true; showSettings = false" class="settings-item">
+              <span class="item-icon">📋</span>
+              <span class="item-text">更新日志</span>
+              <span class="item-desc">v{{ versionInfo.version }}</span>
+              <span class="item-arrow">›</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -355,6 +422,10 @@ export default defineComponent({
     const showLogWindow = ref(false)  // 全局日志窗口显示状态
     const showHistory = ref(false)  // 历史记录显示状态
     const showAgentConfig = ref(false)  // 智能体配置面板显示状态
+    const showSettings = ref(false)  // 设置面板显示状态
+    const showServerStatus = ref(false)  // Server状态悬浮显示
+    const showMobileMenu = ref(false)  // 移动端菜单显示状态
+    const activeNavGroup = ref(null)  // 当前激活的导航分组
     
     const versionInfo = ref(getVersionInfo())
     
@@ -419,6 +490,62 @@ export default defineComponent({
 
     const toggleStylePanel = () => {
       showStylePanel.value = !showStylePanel.value
+    }
+
+    // 移动端菜单切换
+    const toggleMobileMenu = () => {
+      showMobileMenu.value = !showMobileMenu.value
+    }
+
+    // 判断导航分组是否激活
+    const isGroupActive = (group) => {
+      const groupPages = {
+        analysis: ['analysis', 'analysis-summary'],
+        trading: ['backtest', 'paper-trading', 'tracking-center'],
+        market: ['longhubang', 'sector-rotation', 'sentiment', 'unified-news', 'market-data'],
+        tools: ['dataflow', 'llm-config', 'wencai']
+      }
+      return groupPages[group]?.includes(currentView.value)
+    }
+
+    // 获取当前页面图标
+    const getCurrentPageIcon = () => {
+      const icons = {
+        'analysis': '📊',
+        'analysis-summary': '🧭',
+        'backtest': '📈',
+        'paper-trading': '💼',
+        'tracking-center': '🔄',
+        'longhubang': '🐉',
+        'sector-rotation': '🔄',
+        'sentiment': '💹',
+        'unified-news': '📰',
+        'market-data': '📈',
+        'dataflow': '📊',
+        'llm-config': '⚙️',
+        'wencai': '🔍'
+      }
+      return icons[currentView.value] || '📊'
+    }
+
+    // 获取当前页面名称
+    const getCurrentPageName = () => {
+      const names = {
+        'analysis': '智能分析',
+        'analysis-summary': '分析总结',
+        'backtest': '策略回测',
+        'paper-trading': '模拟交易',
+        'tracking-center': '跟踪验证',
+        'longhubang': '龙虎榜',
+        'sector-rotation': '板块轮动',
+        'sentiment': '市场情绪',
+        'unified-news': '新闻中心',
+        'market-data': '市场数据',
+        'dataflow': '数据流',
+        'llm-config': 'LLM配置',
+        'wencai': '问财选股'
+      }
+      return names[currentView.value] || '智能分析'
     }
 
     const getStatusClass = (status) => {
@@ -737,6 +864,10 @@ export default defineComponent({
       showLogWindow,
       showHistory,
       showAgentConfig,
+      showSettings,
+      showServerStatus,
+      showMobileMenu,
+      activeNavGroup,
       integrationContext,
       versionInfo,
       backendStatus,
@@ -755,6 +886,10 @@ export default defineComponent({
       toggleConfigMode,
       toggleStylePanel,
       toggleLogWindow,
+      toggleMobileMenu,
+      isGroupActive,
+      getCurrentPageIcon,
+      getCurrentPageName,
       getStatusClass,
       getProviderName,
       getProviderShort,
@@ -1660,5 +1795,763 @@ export default defineComponent({
 
 .paper-trading-placeholder p {
   font-size: 1.1rem;
+}
+
+/* ========================================
+   新版导航样式 V2
+   ======================================== */
+
+/* 顶部导航栏 V2 */
+.navbar-v2 {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+  height: 3.5rem;
+}
+
+.navbar-v2-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  padding: 0 1rem;
+  max-width: 100%;
+}
+
+.navbar-v2-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.mobile-menu-btn {
+  display: none;
+  padding: 0.5rem;
+  background: transparent;
+  border: 1px solid rgba(51, 65, 85, 0.5);
+  border-radius: 0.375rem;
+  color: #94a3b8;
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mobile-menu-btn:hover {
+  background: rgba(51, 65, 85, 0.5);
+  color: white;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.logo:hover {
+  opacity: 0.8;
+}
+
+.logo-icon {
+  font-size: 1.5rem;
+}
+
+.logo-text {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: white;
+}
+
+.navbar-v2-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nav-v2-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0.375rem;
+  color: #94a3b8;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nav-v2-btn:hover {
+  background: rgba(51, 65, 85, 0.5);
+  color: white;
+}
+
+.nav-v2-btn.hot-btn {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+.nav-v2-btn.hot-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.nav-v2-btn.settings-btn:hover {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+.btn-label {
+  font-weight: 500;
+}
+
+/* Server状态 */
+.server-status-wrapper {
+  position: relative;
+}
+
+.server-status {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(51, 65, 85, 0.5);
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  cursor: default;
+  transition: all 0.2s;
+}
+
+.server-dot {
+  font-size: 0.625rem;
+}
+
+.server-text {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.server-status.checking {
+  color: #94a3b8;
+}
+
+.server-status.connected {
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.server-status.connected .server-dot {
+  color: #10b981;
+}
+
+.server-status.disconnected {
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.server-status.disconnected .server-dot {
+  color: #ef4444;
+}
+
+.server-status.error {
+  border-color: rgba(251, 146, 60, 0.3);
+}
+
+.server-status.error .server-dot {
+  color: #fb923c;
+}
+
+/* Server状态悬浮弹窗 */
+.server-status-popup {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.5rem;
+  width: 280px;
+  background: rgba(15, 23, 42, 0.98);
+  border: 1px solid rgba(51, 65, 85, 0.8);
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.popup-header {
+  padding: 0.75rem 1rem;
+  background: rgba(30, 41, 59, 0.5);
+  border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: white;
+}
+
+.popup-section {
+  padding: 0.75rem 1rem;
+}
+
+.popup-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.popup-status {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.popup-status.connected {
+  color: #10b981;
+}
+
+.popup-status.disconnected {
+  color: #ef4444;
+}
+
+.popup-status.checking {
+  color: #94a3b8;
+}
+
+.popup-divider {
+  height: 1px;
+  background: rgba(51, 65, 85, 0.5);
+}
+
+.popup-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.popup-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+}
+
+.popup-item .item-dot {
+  font-size: 0.5rem;
+}
+
+.popup-item .item-name {
+  color: #94a3b8;
+}
+
+.popup-item.status-configured .item-dot {
+  color: #10b981;
+}
+
+.popup-item.status-configured .item-name {
+  color: #e2e8f0;
+}
+
+.popup-item.status-unconfigured .item-dot {
+  color: #64748b;
+}
+
+.popup-item.status-error .item-dot {
+  color: #ef4444;
+}
+
+/* 分组下拉导航 */
+.nav-v2-menu {
+  position: fixed;
+  top: 3.5rem;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  background: rgba(30, 41, 59, 0.95);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+  height: 2.75rem;
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  gap: 0.5rem;
+}
+
+.nav-group {
+  position: relative;
+}
+
+.nav-group-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0.375rem;
+  color: #94a3b8;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nav-group-btn:hover {
+  background: rgba(51, 65, 85, 0.3);
+  color: #e2e8f0;
+}
+
+.nav-group-btn.active {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: #60a5fa;
+}
+
+.group-icon {
+  font-size: 1rem;
+}
+
+.group-text {
+  font-size: 0.875rem;
+}
+
+.group-arrow {
+  font-size: 0.625rem;
+  margin-left: 0.25rem;
+  transition: transform 0.2s;
+}
+
+.nav-group:hover .group-arrow {
+  transform: rotate(180deg);
+}
+
+/* 下拉菜单 */
+.nav-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 0.25rem;
+  min-width: 160px;
+  background: rgba(15, 23, 42, 0.98);
+  border: 1px solid rgba(51, 65, 85, 0.8);
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  z-index: 50;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.625rem 1rem;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.875rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dropdown-item:hover {
+  background: rgba(51, 65, 85, 0.5);
+  color: white;
+}
+
+.dropdown-item.active {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+.dropdown-item .item-icon {
+  font-size: 1rem;
+}
+
+/* 当前页面指示器 */
+.current-page-indicator {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 0.375rem;
+}
+
+.indicator-icon {
+  font-size: 1rem;
+}
+
+.indicator-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #60a5fa;
+}
+
+/* 智能分析页面专属工具栏 */
+.analysis-toolbar {
+  position: fixed;
+  top: 6.25rem;
+  right: 1rem;
+  z-index: 35;
+  display: flex;
+  gap: 0.375rem;
+  padding: 0.375rem;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(51, 65, 85, 0.5);
+  border-radius: 0.5rem;
+  backdrop-filter: blur(8px);
+}
+
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.375rem 0.625rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0.25rem;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.toolbar-btn:hover {
+  background: rgba(51, 65, 85, 0.5);
+  color: white;
+}
+
+.toolbar-btn.active {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: #60a5fa;
+}
+
+.toolbar-btn .btn-icon {
+  font-size: 0.875rem;
+}
+
+.toolbar-btn .btn-text {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* 设置面板 */
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.settings-panel {
+  width: 320px;
+  max-width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.98);
+  border-left: 1px solid rgba(51, 65, 85, 0.5);
+  display: flex;
+  flex-direction: column;
+  animation: slideInRight 0.3s ease;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+}
+
+.settings-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: white;
+  margin: 0;
+}
+
+.settings-close {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.25rem;
+  cursor: pointer;
+  border-radius: 0.25rem;
+  transition: all 0.2s;
+}
+
+.settings-close:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.settings-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.settings-section {
+  margin-bottom: 1.5rem;
+}
+
+.settings-section .section-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+  padding: 0 0.5rem;
+}
+
+.settings-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.75rem;
+  background: transparent;
+  border: none;
+  border-radius: 0.5rem;
+  color: #e2e8f0;
+  font-size: 0.875rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.settings-item:hover {
+  background: rgba(51, 65, 85, 0.3);
+}
+
+.settings-item .item-icon {
+  font-size: 1.125rem;
+  margin-right: 0.75rem;
+}
+
+.settings-item .item-text {
+  flex: 1;
+}
+
+.settings-item .item-desc {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-right: 0.5rem;
+}
+
+.settings-item .item-arrow {
+  color: #64748b;
+  font-size: 1rem;
+}
+
+/* 移动端菜单 */
+.mobile-menu-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+}
+
+.mobile-menu {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 280px;
+  max-width: 85%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.98);
+  border-right: 1px solid rgba(51, 65, 85, 0.5);
+  display: flex;
+  flex-direction: column;
+  animation: slideInLeft 0.3s ease;
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.mobile-menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+}
+
+.mobile-menu-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+}
+
+.mobile-menu-close {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.25rem;
+  cursor: pointer;
+  border-radius: 0.25rem;
+}
+
+.mobile-menu-close:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.mobile-menu-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.mobile-menu-group {
+  margin-bottom: 1.5rem;
+}
+
+.mobile-group-title {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+  padding: 0 0.5rem;
+}
+
+.mobile-menu-item {
+  display: block;
+  width: 100%;
+  padding: 0.75rem;
+  background: transparent;
+  border: none;
+  border-radius: 0.375rem;
+  color: #e2e8f0;
+  font-size: 0.875rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mobile-menu-item:hover {
+  background: rgba(51, 65, 85, 0.3);
+}
+
+.mobile-menu-item.active {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+/* 调整主内容区域 - 新版导航 */
+.pt-32 {
+  padding-top: 7rem; /* 顶栏3.5rem + 导航栏2.75rem + 间距 */
+}
+
+/* 移动端响应式 - 新版导航 */
+@media (max-width: 768px) {
+  .mobile-menu-btn {
+    display: flex;
+  }
+
+  .logo-text {
+    display: none;
+  }
+
+  .nav-v2-btn .btn-label {
+    display: none;
+  }
+
+  .nav-v2-menu {
+    display: none;
+  }
+
+  .analysis-toolbar {
+    top: 4rem;
+    right: 0.5rem;
+    left: 0.5rem;
+    justify-content: center;
+  }
+
+  .toolbar-btn .btn-text {
+    display: none;
+  }
+
+  .current-page-indicator {
+    display: none;
+  }
+
+  .pt-32 {
+    padding-top: 5rem;
+  }
+
+  /* 智能分析页面需要更多顶部空间 */
+  .analysis-toolbar + .pt-32,
+  .analysis-toolbar ~ main {
+    padding-top: 7rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar-v2 {
+    height: 3rem;
+  }
+
+  .logo-icon {
+    font-size: 1.25rem;
+  }
+
+  .nav-v2-btn {
+    padding: 0.375rem 0.5rem;
+  }
+
+  .server-status {
+    padding: 0.25rem 0.5rem;
+  }
+
+  .server-text {
+    display: none;
+  }
+
+  .settings-panel {
+    width: 100%;
+  }
+
+  .pt-32 {
+    padding-top: 4rem;
+  }
 }
 </style>
