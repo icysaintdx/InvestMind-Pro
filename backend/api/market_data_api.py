@@ -7,6 +7,7 @@ from fastapi import APIRouter, HTTPException, Query
 from typing import Optional, List
 from datetime import datetime, timedelta
 import threading
+import pandas as pd
 import akshare as ak
 
 from backend.utils.logging_config import get_logger
@@ -22,7 +23,7 @@ _MARKET_DATA_CACHE_DURATION = 30  # 缓存30秒
 
 
 def _get_market_data_cached():
-    """获取全市场行情数据（带缓存）"""
+    """获取全市场行情数据（优先TDX，降级到AKShare，带缓存）"""
     global _market_data_cache, _market_data_cache_time
 
     with _market_data_cache_lock:
@@ -35,21 +36,111 @@ def _get_market_data_cached():
             return _market_data_cache
 
         # 缓存过期或不存在，重新获取
-        logger.info("[市场数据] 获取全市场行情...")
+        # 优先使用TDX（快得多，约3-5秒 vs AKShare的1分钟）
+        df = _get_market_data_from_tdx()
+        if df is not None and not df.empty:
+            _market_data_cache = df
+            _market_data_cache_time = now
+            logger.info(f"[市场数据] TDX获取成功，共 {len(df)} 只股票")
+            return df
+
+        # 降级到AKShare
+        logger.info("[市场数据] 降级到AKShare获取全市场行情...")
         try:
             df = ak.stock_zh_a_spot_em()
             if df is not None and not df.empty:
                 _market_data_cache = df
                 _market_data_cache_time = now
-                logger.info(f"[市场数据] 获取成功，共 {len(df)} 只股票")
+                logger.info(f"[市场数据] AKShare获取成功，共 {len(df)} 只股票")
                 return df
         except Exception as e:
-            logger.error(f"[市场数据] 获取失败: {e}")
+            logger.error(f"[市场数据] AKShare获取失败: {e}")
             # 如果获取失败但有旧缓存，返回旧缓存
             if _market_data_cache is not None:
                 logger.warning("[市场数据] 使用过期缓存")
                 return _market_data_cache
 
+        return None
+
+
+def _get_market_data_from_tdx():
+    """从TDX获取全市场行情数据"""
+    try:
+        from backend.dataflows.providers.tdx_native_provider import get_tdx_native_provider
+        tdx = get_tdx_native_provider()
+        if not tdx or not tdx.is_available():
+            return None
+
+        # 获取所有股票代码
+        all_stocks = []
+
+        # 深圳市场
+        for start in range(0, 6000, 1000):
+            stocks = tdx.get_stock_list(0, start)
+            if not stocks:
+                break
+            # 只保留A股（00/30开头）
+            for s in stocks:
+                code = s.get('code', '')
+                if code.startswith(('00', '30')):
+                    all_stocks.append(code)
+            if len(stocks) < 1000:
+                break
+
+        # 上海市场
+        for start in range(0, 6000, 1000):
+            stocks = tdx.get_stock_list(1, start)
+            if not stocks:
+                break
+            # 只保留A股（60/68开头）
+            for s in stocks:
+                code = s.get('code', '')
+                if code.startswith(('60', '68')):
+                    all_stocks.append(code)
+            if len(stocks) < 1000:
+                break
+
+        if not all_stocks:
+            return None
+
+        logger.info(f"[市场数据] TDX获取到 {len(all_stocks)} 只A股代码")
+
+        # 批量获取行情（每次最多80只）
+        all_quotes = []
+        batch_size = 80
+        for i in range(0, len(all_stocks), batch_size):
+            batch = all_stocks[i:i+batch_size]
+            quotes = tdx.get_realtime_quotes(batch)
+            all_quotes.extend(quotes)
+
+        if not all_quotes:
+            return None
+
+        # 转换为DataFrame（与AKShare格式兼容）
+        data = []
+        for q in all_quotes:
+            data.append({
+                '代码': q.get('code', ''),
+                '名称': q.get('name', ''),
+                '最新价': q.get('price', 0) or 0,
+                '涨跌幅': q.get('change_pct', 0) or 0,
+                '涨跌额': q.get('change', 0) or 0,
+                '成交量': q.get('volume', 0) or 0,
+                '成交额': q.get('amount', 0) or 0,
+                '振幅': 0,  # TDX不直接提供
+                '最高': q.get('high', 0) or 0,
+                '最低': q.get('low', 0) or 0,
+                '今开': q.get('open', 0) or 0,
+                '昨收': q.get('pre_close', 0) or 0,
+                '换手率': 0,  # TDX不直接提供
+            })
+
+        df = pd.DataFrame(data)
+        logger.info(f"[市场数据] TDX转换完成，共 {len(df)} 条记录")
+        return df
+
+    except Exception as e:
+        logger.error(f"[市场数据] TDX获取失败: {e}")
         return None
 
 

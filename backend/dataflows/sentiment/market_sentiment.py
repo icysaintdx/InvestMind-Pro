@@ -104,7 +104,134 @@ class MarketSentimentFetcher:
         return sentiment_data
 
     def _get_market_stats(self) -> Dict[str, Any]:
-        """获取市场涨跌统计"""
+        """获取市场涨跌统计（优先TDX，降级到AKShare）"""
+        # 优先使用TDX（快得多，约2-3秒 vs AKShare的1分钟）
+        try:
+            from backend.dataflows.providers.tdx_native_provider import get_tdx_native_provider
+            tdx = get_tdx_native_provider()
+            if tdx and tdx.is_available():
+                result = self._get_market_stats_from_tdx(tdx)
+                if result:
+                    logger.info("[市场情绪] TDX获取市场统计成功")
+                    return result
+        except Exception as e:
+            logger.debug(f"[市场情绪] TDX获取市场统计失败: {e}")
+
+        # 降级到AKShare（慢，约1分钟）
+        logger.info("[市场情绪] 降级到AKShare获取市场统计...")
+        return self._get_market_stats_from_akshare()
+
+    def _get_market_stats_from_tdx(self, tdx) -> Dict[str, Any]:
+        """从TDX获取市场涨跌统计"""
+        try:
+            # 获取所有股票代码
+            all_stocks = []
+
+            # 深圳市场
+            for start in range(0, 6000, 1000):
+                stocks = tdx.get_stock_list(0, start)
+                if not stocks:
+                    break
+                # 只保留A股（00/30开头）
+                for s in stocks:
+                    code = s.get('code', '')
+                    if code.startswith(('00', '30')):
+                        all_stocks.append(code)
+                if len(stocks) < 1000:
+                    break
+
+            # 上海市场
+            for start in range(0, 6000, 1000):
+                stocks = tdx.get_stock_list(1, start)
+                if not stocks:
+                    break
+                # 只保留A股（60/68开头）
+                for s in stocks:
+                    code = s.get('code', '')
+                    if code.startswith(('60', '68')):
+                        all_stocks.append(code)
+                if len(stocks) < 1000:
+                    break
+
+            if not all_stocks:
+                return {}
+
+            logger.info(f"[市场情绪] TDX获取到 {len(all_stocks)} 只A股")
+
+            # 批量获取行情（每次最多80只）
+            up_count = 0
+            down_count = 0
+            flat_count = 0
+            up_5_pct = 0
+            up_3_pct = 0
+            down_3_pct = 0
+            down_5_pct = 0
+            total_count = 0
+
+            batch_size = 80
+            for i in range(0, len(all_stocks), batch_size):
+                batch = all_stocks[i:i+batch_size]
+                quotes = tdx.get_realtime_quotes(batch)
+
+                for q in quotes:
+                    change_pct = q.get('change_pct', 0) or 0
+                    total_count += 1
+
+                    if change_pct > 0:
+                        up_count += 1
+                        if change_pct >= 5:
+                            up_5_pct += 1
+                        elif change_pct >= 3:
+                            up_3_pct += 1
+                    elif change_pct < 0:
+                        down_count += 1
+                        if change_pct <= -5:
+                            down_5_pct += 1
+                        elif change_pct <= -3:
+                            down_3_pct += 1
+                    else:
+                        flat_count += 1
+
+            if total_count == 0:
+                return {}
+
+            # 计算市场情绪得分
+            sentiment_score = (up_count - down_count) / total_count * 100
+
+            # 解读市场情绪
+            if sentiment_score > 30:
+                sentiment_level = "极度乐观"
+            elif sentiment_score > 10:
+                sentiment_level = "偏多"
+            elif sentiment_score > -10:
+                sentiment_level = "中性"
+            elif sentiment_score > -30:
+                sentiment_level = "偏空"
+            else:
+                sentiment_level = "极度悲观"
+
+            return {
+                "total_count": total_count,
+                "up_count": up_count,
+                "down_count": down_count,
+                "flat_count": flat_count,
+                "up_ratio": round(up_count / total_count * 100, 2),
+                "down_ratio": round(down_count / total_count * 100, 2),
+                "up_5_pct": up_5_pct,
+                "up_3_pct": up_3_pct,
+                "down_3_pct": down_3_pct,
+                "down_5_pct": down_5_pct,
+                "sentiment_score": round(sentiment_score, 2),
+                "sentiment_level": sentiment_level,
+                "source": "tdx"
+            }
+
+        except Exception as e:
+            logger.error(f"[市场情绪] TDX获取市场统计失败: {e}")
+            return {}
+
+    def _get_market_stats_from_akshare(self) -> Dict[str, Any]:
+        """从AKShare获取市场涨跌统计（慢，约1分钟）"""
         try:
             df = ak.stock_zh_a_spot_em()
             if df is None or df.empty:
@@ -148,11 +275,12 @@ class MarketSentimentFetcher:
                 "down_3_pct": down_3_pct,
                 "down_5_pct": down_5_pct,
                 "sentiment_score": round(sentiment_score, 2),
-                "sentiment_level": sentiment_level
+                "sentiment_level": sentiment_level,
+                "source": "akshare"
             }
 
         except Exception as e:
-            logger.error(f"[市场情绪] 获取市场统计失败: {e}")
+            logger.error(f"[市场情绪] AKShare获取市场统计失败: {e}")
             return {}
 
     def _get_limit_stats(self) -> Dict[str, Any]:
