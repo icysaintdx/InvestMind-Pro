@@ -303,13 +303,43 @@ class ComprehensiveStockDataService:
         return result
     
     def _get_realtime_quote(self, ts_code: str) -> Dict:
-        """获取实时行情（优先使用AKShare单股票API，避免获取全市场数据）"""
-        # 优先使用AKShare获取实时行情（使用单股票API）
+        """获取实时行情（优先TDX，降级到AKShare单股票API）"""
+        symbol = ts_code.split('.')[0]
+
+        # 优先使用TDX（最快最可靠）
+        try:
+            from backend.dataflows.providers.tdx_native_provider import get_tdx_native_provider
+            tdx = get_tdx_native_provider()
+            if tdx and tdx.is_available():
+                quote = tdx.get_realtime_quote(symbol)
+                if quote:
+                    return {
+                        'status': 'success',
+                        'source': 'tdx',
+                        'data': {
+                            'name': quote.get('name', ''),
+                            'price': quote.get('price', 0),
+                            'change': quote.get('change', 0),
+                            'pct_change': quote.get('change_pct', 0),
+                            'change_pct': quote.get('change_pct', 0),
+                            'volume': quote.get('volume', 0),
+                            'amount': quote.get('amount', 0),
+                            'high': quote.get('high', 0),
+                            'low': quote.get('low', 0),
+                            'open': quote.get('open', 0),
+                            'pre_close': quote.get('pre_close', 0),
+                            'date': datetime.now().strftime('%Y-%m-%d'),
+                            'time': datetime.now().strftime('%H:%M:%S')
+                        }
+                    }
+        except Exception as e:
+            logger.debug(f"TDX实时行情获取失败: {e}")
+
+        # 降级：使用AKShare单股票API
         try:
             import akshare as ak
-            symbol = ts_code.split('.')[0]
 
-            # 使用 stock_bid_ask_em 获取单只股票实时行情（比 stock_zh_a_spot_em 快得多）
+            # 使用 stock_bid_ask_em 获取单只股票实时行情
             df = ak.stock_bid_ask_em(symbol=symbol)
             if df is not None and not df.empty:
                 # 转换为字典

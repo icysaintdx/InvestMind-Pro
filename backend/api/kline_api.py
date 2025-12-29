@@ -451,10 +451,33 @@ async def get_realtime_data(
 
 
 async def _get_realtime_from_akshare(symbol: str) -> dict:
-    """从AKShare获取实时行情（使用单股票API，避免获取全市场数据）"""
-    import akshare as ak
+    """获取实时行情（优先TDX，降级到AKShare单股票API）"""
 
-    # 使用 stock_bid_ask_em 获取单只股票实时行情（比 stock_zh_a_spot_em 快得多）
+    # 优先使用TDX（最快最可靠）
+    try:
+        from backend.dataflows.providers.tdx_native_provider import get_tdx_native_provider
+        tdx = get_tdx_native_provider()
+        if tdx and tdx.is_available():
+            quote = tdx.get_realtime_quote(symbol)
+            if quote:
+                return {
+                    "symbol": symbol,
+                    "name": quote.get('name', ''),
+                    "price": quote.get('price', 0),
+                    "change": quote.get('change', 0),
+                    "change_pct": quote.get('change_pct', 0),
+                    "open": quote.get('open', 0),
+                    "high": quote.get('high', 0),
+                    "low": quote.get('low', 0),
+                    "volume": quote.get('volume', 0),
+                    "amount": quote.get('amount', 0),
+                    "turnover": 0  # TDX不返回换手率
+                }
+    except Exception:
+        pass  # TDX不可用，降级到AKShare
+
+    # 降级：使用 stock_bid_ask_em 获取单只股票实时行情
+    import akshare as ak
     try:
         df = ak.stock_bid_ask_em(symbol=symbol)
         if df is None or df.empty:

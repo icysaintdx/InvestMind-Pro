@@ -602,37 +602,52 @@ class MarketSentimentFetcher:
         }
 
     def _get_stock_turnover(self, stock_code: str) -> Dict[str, Any]:
-        """获取个股换手率（使用单股票API，避免获取全市场数据）"""
+        """获取个股换手率（优先TDX，降级到AKShare单股票API）"""
         try:
-            # 使用 stock_bid_ask_em 获取单只股票数据（比 stock_zh_a_spot_em 快得多）
-            df = ak.stock_bid_ask_em(symbol=stock_code)
-            if df is None or df.empty:
-                return {}
+            turnover_rate = 0
 
-            # 转换为字典
-            data = {}
-            for _, row in df.iterrows():
-                item = row['item']
-                value = row['value']
-                data[item] = value
+            # 优先使用TDX（最快最可靠）
+            try:
+                from backend.dataflows.providers.tdx_native_provider import get_tdx_native_provider
+                tdx = get_tdx_native_provider()
+                if tdx and tdx.is_available():
+                    quote = tdx.get_realtime_quote(stock_code)
+                    if quote:
+                        # TDX返回的数据中可能包含换手率
+                        turnover_rate = float(quote.get('turnover_rate', 0) or 0)
+                        if turnover_rate > 0:
+                            logger.debug(f"TDX获取换手率成功: {stock_code} = {turnover_rate}%")
+            except Exception as e:
+                logger.debug(f"TDX获取换手率失败: {e}")
 
-            # 安全转换
-            def safe_float(val, default=0):
-                if val is None:
-                    return default
-                if isinstance(val, (int, float)):
-                    return float(val)
-                if isinstance(val, str):
-                    val = val.strip().replace(',', '')
-                    if val == '' or val == '-' or '--' in val:
+            # 如果TDX没有换手率数据，降级到AKShare
+            if turnover_rate == 0:
+                df = ak.stock_bid_ask_em(symbol=stock_code)
+                if df is not None and not df.empty:
+                    # 转换为字典
+                    data = {}
+                    for _, row in df.iterrows():
+                        item = row['item']
+                        value = row['value']
+                        data[item] = value
+
+                    # 安全转换
+                    def safe_float(val, default=0):
+                        if val is None:
+                            return default
+                        if isinstance(val, (int, float)):
+                            return float(val)
+                        if isinstance(val, str):
+                            val = val.strip().replace(',', '')
+                            if val == '' or val == '-' or '--' in val:
+                                return default
+                            try:
+                                return float(val)
+                            except ValueError:
+                                return default
                         return default
-                    try:
-                        return float(val)
-                    except ValueError:
-                        return default
-                return default
 
-            turnover_rate = safe_float(data.get('换手'))
+                    turnover_rate = safe_float(data.get('换手'))
 
             # 解读换手率
             if turnover_rate > 20:
