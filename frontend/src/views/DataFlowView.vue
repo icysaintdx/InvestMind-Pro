@@ -1896,9 +1896,10 @@ export default {
     const newsLoading = ref(false)
     let newsPollingTimer = null
 
-    const loadNews = async (isPolling = false) => {
-      // 如果不是轮询调用，设置加载状态
-      if (!isPolling) {
+    // silent: 静默加载，不显示加载状态（用于自动定时刷新）
+    const loadNews = async (silent = false) => {
+      // 如果不是静默加载，设置加载状态
+      if (!silent) {
         newsLoading.value = true
       }
 
@@ -1908,17 +1909,19 @@ export default {
         if (response.data.success) {
           // 检查是否正在后台加载
           if (response.data.loading) {
-            // 后台正在加载，3秒后重试
+            // 后台正在加载，3秒后重试（静默模式下也静默重试）
             console.log('📰 新闻正在后台加载中，3秒后重试...')
             if (!newsPollingTimer) {
               newsPollingTimer = setTimeout(() => {
                 newsPollingTimer = null
-                loadNews(true)  // 轮询调用
+                loadNews(true)  // 静默轮询
               }, 3000)
             }
           } else {
             // 数据已就绪
-            newsLoading.value = false
+            if (!silent) {
+              newsLoading.value = false
+            }
             newsList.value = response.data.news || []
             // 更新情绪统计
             if (response.data.sentiment_stats) {
@@ -1934,7 +1937,9 @@ export default {
         }
       } catch (error) {
         console.error('加载新闻失败:', error)
-        newsLoading.value = false
+        if (!silent) {
+          newsLoading.value = false
+        }
       }
     }
     
@@ -1945,28 +1950,34 @@ export default {
     }
 
     // 刷新数据（不包含数据源状态，数据源状态只在页面加载时检测一次）
-    const refreshAllData = async () => {
-      isRefreshing.value = true
-      refreshingProgress.value = 0
+    // silent: 静默刷新，不显示加载遮罩（用于自动定时刷新）
+    const refreshAllData = async (silent = false) => {
+      // 如果是静默刷新，不显示加载遮罩
+      if (!silent) {
+        isRefreshing.value = true
+        refreshingProgress.value = 0
+      }
       try {
         // 步骤1: 加载监控股票
-        updateRefreshProgress('正在加载监控股票...', 20)
+        if (!silent) updateRefreshProgress('正在加载监控股票...', 20)
         await loadMonitoredStocks()
-        
-        // 步骤2: 加载新闻
-        updateRefreshProgress('正在加载新闻数据...', 50)
-        await loadNews()
-        
+
+        // 步骤2: 加载新闻（静默模式下也不显示新闻加载状态）
+        if (!silent) updateRefreshProgress('正在加载新闻数据...', 50)
+        await loadNews(silent)
+
         // 步骤3: 加载统计数据
-        updateRefreshProgress('正在加载统计数据...', 80)
+        if (!silent) updateRefreshProgress('正在加载统计数据...', 80)
         await loadDailyStats()
-        
-        updateRefreshProgress('数据刷新完成', 100)
+
+        if (!silent) updateRefreshProgress('数据刷新完成', 100)
       } finally {
-        setTimeout(() => {
-          isRefreshing.value = false
-          refreshingProgress.value = 0
-        }, 300)
+        if (!silent) {
+          setTimeout(() => {
+            isRefreshing.value = false
+            refreshingProgress.value = 0
+          }, 300)
+        }
       }
     }
     
@@ -3342,8 +3353,8 @@ export default {
       loadNotificationChannels()
       loadConfigGuide()
       loadNotificationConfig()
-      // 每2分钟自动刷新监控股票和新闻（不刷新数据源状态）
-      setInterval(refreshAllData, 120000)
+      // 每2分钟自动刷新监控股票和新闻（静默刷新，不显示加载遮罩）
+      setInterval(() => refreshAllData(true), 120000)
 
       // 连接 WebSocket 接收实时更新通知
       connectWebSocket()
