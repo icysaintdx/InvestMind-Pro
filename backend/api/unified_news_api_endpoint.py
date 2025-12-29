@@ -435,25 +435,91 @@ def _fetch_cls_global() -> List[Dict[str, Any]]:
     return news_list
 
 
+def _fetch_weibo_hot() -> List[Dict[str, Any]]:
+    """获取微博股票热议"""
+    news_list = []
+    try:
+        import akshare as ak
+        df = ak.stock_js_weibo_report()
+        if df is not None and not df.empty:
+            for idx, row in df.head(30).iterrows():
+                # 微博热议数据格式：股票代码、股票名称、讨论数等
+                stock_name = str(row.get("name", row.get("股票名称", "")))
+                stock_code = str(row.get("code", row.get("股票代码", "")))
+                discuss_count = row.get("num", row.get("讨论数", 0))
+
+                if stock_name:
+                    title = f"【微博热议】{stock_name}({stock_code}) 讨论热度: {discuss_count}"
+                    news_list.append({
+                        "id": f"weibo_{idx}_{datetime.now().timestamp()}",
+                        "title": title,
+                        "summary": f"{stock_name} 在微博上引发热议，当前讨论数: {discuss_count}",
+                        "source": "akshare_weibo",
+                        "source_name": "微博热议",
+                        "publish_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "market": "A股",
+                        "news_type": "社交热议",
+                        "sentiment": "neutral",
+                        "sentiment_score": 0.5,
+                        "related_stocks": [stock_code] if stock_code else [],
+                        "url": ""
+                    })
+    except Exception as e:
+        logger.warning(f"[数据源] 微博热议获取失败: {e}")
+    return news_list
+
+
+def _fetch_morning_news() -> List[Dict[str, Any]]:
+    """获取财经早餐"""
+    news_list = []
+    try:
+        import akshare as ak
+        df = ak.stock_info_cjzc_em()
+        if df is not None and not df.empty:
+            for idx, row in df.head(30).iterrows():
+                title = str(row.get("标题", ""))
+                content = str(row.get("内容", ""))
+                if title:
+                    news_list.append({
+                        "id": f"morning_{idx}_{datetime.now().timestamp()}",
+                        "title": title,
+                        "summary": content[:300] if content else title,
+                        "source": "akshare_morning",
+                        "source_name": "财经早餐",
+                        "publish_time": str(row.get("发布时间", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))),
+                        "market": "A股",
+                        "news_type": "财经早餐",
+                        "sentiment": _analyze_sentiment(title + content),
+                        "sentiment_score": 0.5,
+                        "related_stocks": [],
+                        "url": ""
+                    })
+    except Exception as e:
+        logger.warning(f"[数据源] 财经早餐获取失败: {e}")
+    return news_list
+
+
 def _fetch_all_news_center_parallel() -> List[Dict[str, Any]]:
-    """并行获取新闻中心所有数据源"""
+    """并行获取新闻中心所有数据源（已整合智能分析页面的数据源）"""
     global _news_center_source_stats
     all_news = []
     source_stats = {}
 
     logger.info("=" * 60)
-    logger.info("开始并行获取新闻中心数据...")
+    logger.info("开始并行获取新闻中心数据（7个数据源）...")
     logger.info("=" * 60)
 
     start_time = datetime.now()
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
         futures = {
             executor.submit(_fetch_global_em): "东方财富",
             executor.submit(_fetch_futu_global): "富途",
             executor.submit(_fetch_sina_global): "新浪财经",
             executor.submit(_fetch_ths_global): "同花顺",
             executor.submit(_fetch_cls_global): "财联社",
+            executor.submit(_fetch_weibo_hot): "微博热议",
+            executor.submit(_fetch_morning_news): "财经早餐",
         }
 
         for future in concurrent.futures.as_completed(futures, timeout=30):
@@ -607,6 +673,8 @@ async def get_news_sources():
             {"id": "akshare_ths", "name": "同花顺", "description": "同花顺全球资讯", "priority": 3},
             {"id": "akshare_sina", "name": "新浪财经", "description": "新浪财经快讯", "priority": 4},
             {"id": "akshare_cls", "name": "财联社", "description": "财联社全球资讯", "priority": 5},
+            {"id": "akshare_weibo", "name": "微博热议", "description": "微博股票热议榜", "priority": 6},
+            {"id": "akshare_morning", "name": "财经早餐", "description": "东方财富财经早餐", "priority": 7},
         ]
 
         sources = {}
