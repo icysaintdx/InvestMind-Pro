@@ -11,7 +11,7 @@
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
-from datetime import datetime
+from datetime import datetime, timedelta
 import concurrent.futures
 import threading
 
@@ -499,20 +499,241 @@ def _fetch_morning_news() -> List[Dict[str, Any]]:
     return news_list
 
 
+def _fetch_cninfo_announcement() -> List[Dict[str, Any]]:
+    """获取巨潮资讯公告（权威公告源）"""
+    news_list = []
+    try:
+        import akshare as ak
+
+        end_date = datetime.now().strftime("%Y%m%d")
+        start_date = (datetime.now() - timedelta(days=3)).strftime("%Y%m%d")
+
+        # 获取重大事项公告
+        try:
+            df = ak.stock_zh_a_disclosure_report_cninfo(
+                symbol="000001",  # 使用一个示例代码获取最新公告
+                market="沪深",
+                start_date=start_date,
+                end_date=end_date
+            )
+            if df is not None and not df.empty:
+                for idx, row in df.head(30).iterrows():
+                    title = str(row.get("公告标题", row.get("announcementTitle", "")))
+                    if title:
+                        stock_code = str(row.get("证券代码", row.get("secCode", "")))
+                        stock_name = str(row.get("证券简称", row.get("secName", "")))
+                        ann_time = str(row.get("公告时间", row.get("announcementTime", "")))
+
+                        news_list.append({
+                            "id": f"cninfo_{idx}_{datetime.now().timestamp()}",
+                            "title": f"【公告】{stock_name}({stock_code}): {title}",
+                            "summary": title,
+                            "source": "akshare_cninfo",
+                            "source_name": "巨潮资讯",
+                            "publish_time": ann_time if ann_time else datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            "market": "A股",
+                            "news_type": "公告",
+                            "sentiment": "neutral",
+                            "sentiment_score": 0.5,
+                            "related_stocks": [stock_code] if stock_code else [],
+                            "url": ""
+                        })
+        except Exception as e:
+            logger.debug(f"巨潮资讯个股公告获取失败: {e}")
+
+    except Exception as e:
+        logger.warning(f"[数据源] 巨潮资讯公告获取失败: {e}")
+    return news_list
+
+
+def _fetch_eastmoney_notice() -> List[Dict[str, Any]]:
+    """获取东方财富公告"""
+    news_list = []
+    try:
+        import akshare as ak
+
+        # 获取今日公告
+        today = datetime.now().strftime("%Y%m%d")
+
+        # 获取重大事项公告
+        categories = ["重大事项", "财务报告", "融资公告"]
+        for category in categories:
+            try:
+                df = ak.stock_notice_report(symbol=category, date=today)
+                if df is not None and not df.empty:
+                    for idx, row in df.head(15).iterrows():
+                        title = str(row.get("公告标题", row.get("title", "")))
+                        if title:
+                            stock_code = str(row.get("代码", row.get("code", "")))
+                            stock_name = str(row.get("名称", row.get("name", "")))
+                            ann_time = str(row.get("公告时间", row.get("date", "")))
+
+                            news_list.append({
+                                "id": f"em_notice_{category}_{idx}_{datetime.now().timestamp()}",
+                                "title": f"【{category}】{stock_name}({stock_code}): {title}",
+                                "summary": title,
+                                "source": "akshare_em_notice",
+                                "source_name": "东方财富公告",
+                                "publish_time": ann_time if ann_time else datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                "market": "A股",
+                                "news_type": category,
+                                "sentiment": "neutral",
+                                "sentiment_score": 0.5,
+                                "related_stocks": [stock_code] if stock_code else [],
+                                "url": ""
+                            })
+            except Exception as e:
+                logger.debug(f"东方财富{category}公告获取失败: {e}")
+
+    except Exception as e:
+        logger.warning(f"[数据源] 东方财富公告获取失败: {e}")
+    return news_list
+
+
+def _fetch_cctv_news() -> List[Dict[str, Any]]:
+    """获取新闻联播文字稿"""
+    news_list = []
+    try:
+        import akshare as ak
+
+        # 获取最近几天的新闻联播
+        for days_ago in range(3):
+            try:
+                date = (datetime.now() - timedelta(days=days_ago)).strftime("%Y%m%d")
+                df = ak.news_cctv(date=date)
+                if df is not None and not df.empty:
+                    for idx, row in df.head(10).iterrows():
+                        title = str(row.get("title", row.get("标题", "")))
+                        content = str(row.get("content", row.get("内容", "")))
+                        if title:
+                            news_list.append({
+                                "id": f"cctv_{date}_{idx}_{datetime.now().timestamp()}",
+                                "title": f"【新闻联播】{title}",
+                                "summary": content[:300] if content else title,
+                                "source": "akshare_cctv",
+                                "source_name": "新闻联播",
+                                "publish_time": f"{date[:4]}-{date[4:6]}-{date[6:8]} 19:00:00",
+                                "market": "政策",
+                                "news_type": "政策新闻",
+                                "sentiment": _analyze_sentiment(title + content),
+                                "sentiment_score": 0.5,
+                                "related_stocks": [],
+                                "url": ""
+                            })
+            except Exception as e:
+                logger.debug(f"新闻联播{date}获取失败: {e}")
+
+    except Exception as e:
+        logger.warning(f"[数据源] 新闻联播获取失败: {e}")
+    return news_list
+
+
+def _fetch_baidu_economic() -> List[Dict[str, Any]]:
+    """获取百度经济新闻"""
+    news_list = []
+    try:
+        import akshare as ak
+
+        df = ak.news_economic_baidu()
+        if df is not None and not df.empty:
+            for idx, row in df.head(30).iterrows():
+                title = str(row.get("title", row.get("标题", "")))
+                content = str(row.get("content", row.get("内容", "")))
+                pub_time = str(row.get("date", row.get("时间", "")))
+
+                if title:
+                    news_list.append({
+                        "id": f"baidu_eco_{idx}_{datetime.now().timestamp()}",
+                        "title": title,
+                        "summary": content[:300] if content else title,
+                        "source": "akshare_baidu",
+                        "source_name": "百度财经",
+                        "publish_time": pub_time if pub_time else datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "market": "全球",
+                        "news_type": "经济新闻",
+                        "sentiment": _analyze_sentiment(title + content),
+                        "sentiment_score": 0.5,
+                        "related_stocks": [],
+                        "url": str(row.get("url", row.get("链接", "")))
+                    })
+
+    except Exception as e:
+        logger.warning(f"[数据源] 百度经济新闻获取失败: {e}")
+    return news_list
+
+
+def _fetch_tushare_news() -> List[Dict[str, Any]]:
+    """获取Tushare新闻（条件性启用，需要权限）"""
+    news_list = []
+    try:
+        from backend.dataflows.providers.china.tushare import get_tushare_provider
+        import asyncio
+
+        provider = get_tushare_provider()
+        if not provider.is_available():
+            logger.debug("[数据源] Tushare不可用，跳过")
+            return []
+
+        # 尝试获取新闻
+        try:
+            # 使用同步方式调用
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                news_data = loop.run_until_complete(provider.get_stock_news(limit=20, hours_back=24))
+            finally:
+                loop.close()
+
+            if news_data:
+                for idx, item in enumerate(news_data):
+                    title = item.get("title", "")
+                    if title:
+                        news_list.append({
+                            "id": f"tushare_{idx}_{datetime.now().timestamp()}",
+                            "title": title,
+                            "summary": item.get("summary", item.get("content", ""))[:300],
+                            "source": "tushare",
+                            "source_name": f"Tushare-{item.get('source', '综合')}",
+                            "publish_time": item.get("publish_time", datetime.now()).strftime("%Y-%m-%d %H:%M:%S") if hasattr(item.get("publish_time"), "strftime") else str(item.get("publish_time", "")),
+                            "market": "A股",
+                            "news_type": item.get("category", "综合新闻"),
+                            "sentiment": item.get("sentiment", "neutral"),
+                            "sentiment_score": 0.5,
+                            "related_stocks": [],
+                            "url": item.get("url", "")
+                        })
+                logger.info(f"[数据源] Tushare新闻获取成功: {len(news_list)} 条")
+
+        except Exception as e:
+            error_msg = str(e).lower()
+            if any(keyword in error_msg for keyword in ['权限', 'permission', 'unauthorized', '积分', 'point']):
+                logger.debug(f"[数据源] Tushare新闻需要付费权限，跳过: {e}")
+            else:
+                logger.warning(f"[数据源] Tushare新闻获取失败: {e}")
+
+    except ImportError:
+        logger.debug("[数据源] Tushare未安装，跳过")
+    except Exception as e:
+        logger.warning(f"[数据源] Tushare新闻获取失败: {e}")
+
+    return news_list
+
+
 def _fetch_all_news_center_parallel() -> List[Dict[str, Any]]:
-    """并行获取新闻中心所有数据源（已整合智能分析页面的数据源）"""
+    """并行获取新闻中心所有数据源（已整合智能分析页面的数据源 + 公告 + 政策）"""
     global _news_center_source_stats
     all_news = []
     source_stats = {}
 
     logger.info("=" * 60)
-    logger.info("开始并行获取新闻中心数据（7个数据源）...")
+    logger.info("开始并行获取新闻中心数据（12个数据源）...")
     logger.info("=" * 60)
 
     start_time = datetime.now()
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=14) as executor:
         futures = {
+            # 原有数据源（7个）
             executor.submit(_fetch_global_em): "东方财富",
             executor.submit(_fetch_futu_global): "富途",
             executor.submit(_fetch_sina_global): "新浪财经",
@@ -520,6 +741,12 @@ def _fetch_all_news_center_parallel() -> List[Dict[str, Any]]:
             executor.submit(_fetch_cls_global): "财联社",
             executor.submit(_fetch_weibo_hot): "微博热议",
             executor.submit(_fetch_morning_news): "财经早餐",
+            # 新增数据源（5个）
+            executor.submit(_fetch_cninfo_announcement): "巨潮资讯",
+            executor.submit(_fetch_eastmoney_notice): "东方财富公告",
+            executor.submit(_fetch_cctv_news): "新闻联播",
+            executor.submit(_fetch_baidu_economic): "百度财经",
+            executor.submit(_fetch_tushare_news): "Tushare",
         }
 
         for future in concurrent.futures.as_completed(futures, timeout=30):
@@ -668,6 +895,7 @@ async def get_news_sources():
         _get_news_center_cached()
 
         source_configs = [
+            # 原有数据源（7个）
             {"id": "akshare_eastmoney", "name": "东方财富", "description": "东方财富全球资讯", "priority": 1},
             {"id": "akshare_futu", "name": "富途", "description": "富途全球资讯", "priority": 2},
             {"id": "akshare_ths", "name": "同花顺", "description": "同花顺全球资讯", "priority": 3},
@@ -675,6 +903,12 @@ async def get_news_sources():
             {"id": "akshare_cls", "name": "财联社", "description": "财联社全球资讯", "priority": 5},
             {"id": "akshare_weibo", "name": "微博热议", "description": "微博股票热议榜", "priority": 6},
             {"id": "akshare_morning", "name": "财经早餐", "description": "东方财富财经早餐", "priority": 7},
+            # 新增数据源（5个）
+            {"id": "akshare_cninfo", "name": "巨潮资讯", "description": "巨潮资讯公告（权威）", "priority": 8},
+            {"id": "akshare_em_notice", "name": "东方财富公告", "description": "东方财富公告信息", "priority": 9},
+            {"id": "akshare_cctv", "name": "新闻联播", "description": "央视新闻联播文字稿", "priority": 10},
+            {"id": "akshare_baidu", "name": "百度财经", "description": "百度经济新闻", "priority": 11},
+            {"id": "tushare", "name": "Tushare", "description": "Tushare新闻（需权限）", "priority": 12},
         ]
 
         sources = {}
