@@ -356,56 +356,86 @@ class MultiSourceNewsAggregator:
 
             news_list = []
 
-            # 尝试解析新闻报告中的独立条目
-            # 通常格式为: 时间 - 标题 或 数字. 标题
+            # 解析新闻报告格式：
+            # ### 新闻标题
+            # 📅 发布时间
+            # 🔗 新闻链接
+            # 新闻内容
+
             lines = news_report.split('\n')
+            current_news = None
+
             for line in lines:
                 line = line.strip()
-                if not line or len(line) < 10:
+                if not line:
                     continue
 
-                # 跳过标题行和分隔线
+                # 检测新闻标题行（以 ### 开头）
+                if line.startswith('### '):
+                    # 保存之前的新闻
+                    if current_news and current_news.get('title'):
+                        news_list.append(current_news)
+                        if len(news_list) >= limit:
+                            break
+
+                    # 开始新的新闻条目
+                    title = line[4:].strip()
+                    # 跳过无效标题（时间、URL等）
+                    if title and not title.startswith('http') and not re.match(r'^\d{4}-\d{2}-\d{2}', title):
+                        current_news = {
+                            'title': title,
+                            'content': '',
+                            'pub_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                            'source': 'RealTime-东方财富',
+                            'url': ''
+                        }
+                    else:
+                        current_news = None
+                    continue
+
+                # 如果当前没有有效的新闻条目，跳过
+                if not current_news:
+                    continue
+
+                # 解析发布时间
+                if line.startswith('📅 '):
+                    current_news['pub_time'] = line[2:].strip()
+                    continue
+
+                # 解析新闻链接
+                if line.startswith('🔗 '):
+                    current_news['url'] = line[2:].strip()
+                    continue
+
+                # 跳过标题行、分隔线和元数据行
                 if line.startswith('#') or line.startswith('=') or line.startswith('-'):
                     continue
+                if line.startswith('📅') or line.startswith('📊') or line.startswith('🕒'):
+                    continue
 
-                # 尝试提取新闻标题
-                # 格式1: "1. 标题内容"
-                match1 = re.match(r'^\d+\.\s*(.+)$', line)
-                # 格式2: "时间 - 标题"
-                match2 = re.match(r'^[\d\-:\s]+[-–]\s*(.+)$', line)
-                # 格式3: "【标题】内容"
-                match3 = re.match(r'^【(.+?)】(.*)$', line)
+                # 其他内容作为新闻内容
+                if current_news and len(line) > 5:
+                    if current_news['content']:
+                        current_news['content'] += ' ' + line
+                    else:
+                        current_news['content'] = line
 
-                title = None
-                content = ''
-
-                if match1:
-                    title = match1.group(1).strip()
-                elif match2:
-                    title = match2.group(1).strip()
-                elif match3:
-                    title = match3.group(1).strip()
-                    content = match3.group(2).strip()
-                elif len(line) > 15 and not line.startswith('http'):
-                    # 如果是较长的文本行，可能是新闻标题
-                    title = line[:100] if len(line) > 100 else line
-
-                if title and len(title) > 5:
-                    news_list.append({
-                        'title': title,
-                        'content': content or title,
-                        'pub_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                        'source': 'RealTime-东方财富',
-                        'url': f'https://so.eastmoney.com/news/s?keyword={symbol}'
-                    })
-
-                if len(news_list) >= limit:
-                    break
+            # 保存最后一条新闻
+            if current_news and current_news.get('title'):
+                news_list.append(current_news)
 
             # 如果没有解析出独立条目，返回整体摘要
             if not news_list and news_report:
+                # 尝试提取第一个有效标题
+                title_match = re.search(r'### (.+?)(?:\n|$)', news_report)
+                title = title_match.group(1).strip() if title_match else f'{symbol} 今日新闻动态'
+
+                # 跳过无效标题
+                if title.startswith('http') or re.match(r'^\d{4}-\d{2}-\d{2}', title):
+                    title = f'{symbol} 今日新闻动态'
+
                 news_list = [{
-                    'title': f'{symbol} 今日新闻动态',
+                    'title': title,
                     'content': news_report[:500],
                     'pub_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                     'source': 'RealTime-东方财富',
