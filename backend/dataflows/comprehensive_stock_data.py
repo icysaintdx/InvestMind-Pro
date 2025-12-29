@@ -122,7 +122,7 @@ class ComprehensiveStockDataService:
         logger.info("🔄 开始并发获取数据...")
         start_time = time.time()
 
-        # 定义数据获取任务
+        # 定义数据获取任务（所有接口都实际获取，不再使用deferred）
         tasks = {
             # 核心数据（优先级高）
             'realtime': (self._get_realtime_quote, ts_code),
@@ -144,10 +144,21 @@ class ComprehensiveStockDataService:
             'company_info': (self._get_company_info, ts_code),
             'announcements': (self._get_announcements_akshare, ts_code),
 
-            # 基础信息（原来是deferred，现在实际获取）
+            # 公司信息
             'managers': (self._get_managers, ts_code),
             'manager_rewards': (self._get_manager_rewards, ts_code),
             'main_business': (self._get_main_business, ts_code),
+
+            # 原deferred接口，现在全部实际获取
+            'realtime_tick': (self._get_realtime_tick, ts_code),
+            'top_inst': (self._get_top_inst, ts_code),
+            'limit_list': (self._get_limit_list, ts_code),
+            'hsgt_holding': (self._get_hsgt_holding, ts_code),
+            'pledge_detail': (self._get_pledge_detail, ts_code),
+            'margin_detail': (self._get_margin_detail, ts_code),
+            'ggt_top10': (self._get_ggt_top10, ts_code),
+            'hk_hold': (self._get_hk_hold, ts_code),
+            'limit_list_ths': (self._get_limit_list_ths, ts_code),
         }
 
         # 创建一个锁来保护日志输出
@@ -172,20 +183,20 @@ class ComprehensiveStockDataService:
                     logger.error(f"❌ {key} 执行异常 ({elapsed:.2f}s) - {str(e)[:100]}")
                 return {'status': 'error', 'message': str(e)}
 
-        # 使用线程池并发执行（限制并发数避免API限流）
-        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+        # 使用线程池并发执行（增加并发数和超时时间以处理更多接口）
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
             # 提交所有任务
             future_to_key = {}
             for key, (func, arg) in tasks.items():
                 future = executor.submit(execute_task, key, func, arg)
                 future_to_key[future] = key
 
-            # 等待所有任务完成
+            # 等待所有任务完成（增加超时时间到60秒）
             completed_count = 0
-            for future in concurrent.futures.as_completed(future_to_key, timeout=30):
+            for future in concurrent.futures.as_completed(future_to_key, timeout=60):
                 key = future_to_key[future]
                 try:
-                    result[key] = future.result(timeout=10)
+                    result[key] = future.result(timeout=15)
                     completed_count += 1
                 except concurrent.futures.TimeoutError:
                     logger.warning(f"⚠️ {key} 获取超时")
@@ -204,24 +215,35 @@ class ComprehensiveStockDataService:
             logger.warning(f"⚠️ 新闻数据获取失败: {e}")
             result['news'] = []
 
-        # 跳过耗时的次要接口，使用空数据
-        # 这些数据可以在用户需要时单独加载
-        result['realtime_tick'] = {'status': 'deferred', 'message': '按需加载'}
-        result['top_inst'] = {'status': 'deferred', 'message': '按需加载'}
-        result['limit_list'] = {'status': 'deferred', 'message': '按需加载'}
-        result['hsgt_holding'] = {'status': 'deferred', 'message': '按需加载'}
-        result['market_news'] = {'status': 'deferred', 'message': '按需加载'}
-        result['industry_policy'] = {'status': 'deferred', 'message': '按需加载'}
-        result['realtime_list'] = {'status': 'deferred', 'message': '按需加载'}
-        result['pledge_detail'] = {'status': 'deferred', 'message': '按需加载'}
-        result['margin_detail'] = {'status': 'deferred', 'message': '按需加载'}
-        result['ggt_top10'] = {'status': 'deferred', 'message': '按需加载'}
-        result['hk_hold'] = {'status': 'deferred', 'message': '按需加载'}
-        result['moneyflow_hsgt'] = {'status': 'deferred', 'message': '按需加载'}
-        result['limit_list_ths'] = {'status': 'deferred', 'message': '按需加载'}
-        result['news_em'] = {'status': 'deferred', 'message': '按需加载'}
-        result['akshare_ext'] = {'status': 'deferred', 'message': '按需加载'}
-        
+        # 获取不需要ts_code参数的全市场数据
+        try:
+            result['market_news'] = self._get_market_news_cninfo()
+        except Exception as e:
+            logger.warning(f"⚠️ 市场新闻获取失败: {e}")
+            result['market_news'] = {'status': 'error', 'message': str(e)}
+
+        try:
+            result['industry_policy'] = self._get_industry_policy()
+        except Exception as e:
+            logger.warning(f"⚠️ 行业政策获取失败: {e}")
+            result['industry_policy'] = {'status': 'error', 'message': str(e)}
+
+        try:
+            result['realtime_list'] = self._get_realtime_list()
+        except Exception as e:
+            logger.warning(f"⚠️ 全市场行情获取失败: {e}")
+            result['realtime_list'] = {'status': 'error', 'message': str(e)}
+
+        try:
+            result['moneyflow_hsgt'] = self._get_moneyflow_hsgt()
+        except Exception as e:
+            logger.warning(f"⚠️ 北向资金获取失败: {e}")
+            result['moneyflow_hsgt'] = {'status': 'error', 'message': str(e)}
+
+        # 东方财富新闻和AKShare扩展数据暂不获取（接口不稳定）
+        result['news_em'] = {'status': 'no_data', 'message': '暂不支持'}
+        result['akshare_ext'] = {'status': 'no_data', 'message': '暂不支持'}
+
         # 调整数据结构以匹配前端期望
         result = self._adjust_data_structure(result)
 
@@ -1701,34 +1723,63 @@ class ComprehensiveStockDataService:
             return {'status': 'error', 'error': str(e)}
     
     def _get_main_business(self, ts_code: str) -> Dict:
-        """获取主营业务构成"""
+        """获取主营业务构成（优先Tushare，备选AKShare）"""
+        # 1. 尝试Tushare
+        if self.tushare_api:
+            try:
+                df = self.tushare_api.fina_mainbz(
+                    ts_code=ts_code,
+                    period=(datetime.now() - timedelta(days=365)).strftime('%Y%m%d'),
+                    type='P'  # P按产品 D按地区
+                )
+
+                if df is not None and not df.empty:
+                    records = df.to_dict('records')
+                    return {
+                        'status': 'success',
+                        'count': len(records),
+                        'data': records,
+                        'source': 'tushare'
+                    }
+            except Exception as e:
+                logger.warning(f"⚠️ Tushare主营业务获取失败: {e}")
+
+        # 2. 备选：使用AKShare获取主营业务
         try:
-            if not self.tushare_api:
-                return {'status': 'error', 'error': 'Tushare API未初始化'}
-            
-            # 获取最近3期数据
-            df = self.tushare_api.fina_mainbz(
-                ts_code=ts_code,
-                period=(datetime.now() - timedelta(days=365)).strftime('%Y%m%d'),
-                type='P'  # P按产品 D按地区
-            )
-            
+            import akshare as ak
+            # 转换股票代码格式：600519.SH -> 600519
+            stock_code = ts_code.split('.')[0]
+
+            # 使用AKShare的主营业务接口
+            df = ak.stock_zygc_ym(symbol=stock_code)
+
             if df is not None and not df.empty:
-                records = df.to_dict('records')
+                # 转换列名以匹配前端期望
+                records = []
+                for _, row in df.head(10).iterrows():
+                    records.append({
+                        'bz_item': row.get('主营构成', row.get('分类', '')),
+                        'bz_sales': row.get('主营收入', 0),
+                        'bz_sales_ratio': row.get('收入比例', 0) / 100 if row.get('收入比例', 0) else 0,
+                        'bz_profit': row.get('主营利润', 0),
+                        'bz_profit_ratio': row.get('利润比例', 0) / 100 if row.get('利润比例', 0) else 0,
+                        'bz_cost': row.get('主营成本', 0),
+                        'report_date': str(row.get('报告日期', ''))
+                    })
+
                 return {
                     'status': 'success',
                     'count': len(records),
-                    'data': records
+                    'data': records,
+                    'source': 'akshare'
                 }
-            else:
-                return {
-                    'status': 'no_data',
-                    'message': '无主营业务数据'
-                }
-                
         except Exception as e:
-            logger.warning(f"⚠️ 主营业务数据获取失败: {e}")
-            return {'status': 'error', 'error': str(e)}
+            logger.warning(f"⚠️ AKShare主营业务获取失败: {e}")
+
+        return {
+            'status': 'no_data',
+            'message': '无主营业务数据（Tushare和AKShare均不可用）'
+        }
     
     def _get_hsgt_holding(self, ts_code: str) -> Dict:
         """获取沪深港通持股数据"""

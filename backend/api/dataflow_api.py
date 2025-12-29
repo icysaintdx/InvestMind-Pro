@@ -653,6 +653,8 @@ async def get_news(source: Optional[str] = None, limit: int = 50):
         if source and source != "all":
             filtered_news = [n for n in news_list if n.get("source") == source]
 
+        # 记录去重前的数量
+        total_before_limit = len(filtered_news)
         filtered_news = filtered_news[:limit]
 
         # 计算情绪统计
@@ -666,6 +668,8 @@ async def get_news(source: Optional[str] = None, limit: int = 50):
             "success": True,
             "news": filtered_news,
             "total": len(filtered_news),
+            "total_fetched": len(news_list),  # 原始获取数量
+            "total_after_filter": total_before_limit,  # 筛选后数量
             "sentiment_stats": sentiment_stats
         }
 

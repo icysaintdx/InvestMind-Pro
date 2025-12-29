@@ -179,7 +179,7 @@
     <!-- 新闻流 -->
     <div class="card section">
       <div class="section-header">
-        <h2>📰 实时新闻流</h2>
+        <h2>📰 实时新闻流 <span v-if="newsStats.totalFetched > 0" class="news-count-info">共获取到{{ newsStats.totalFetched }}条新闻，去重后剩余{{ newsStats.total }}条</span></h2>
         <div class="news-filters">
           <div class="sentiment-tabs">
             <button
@@ -717,20 +717,20 @@
         <div class="detail-overview">
           <div class="overview-item">
             <span class="overview-label">风险等级</span>
-            <span :class="['risk-badge', selectedStock?.riskLevel]">
-              {{ getRiskText(selectedStock?.riskLevel) }}
+            <span :class="['risk-badge', stockRisk?.risk_level || comprehensiveData?.risk?.risk_level || selectedStock?.riskLevel]">
+              {{ getRiskText(stockRisk?.risk_level || comprehensiveData?.risk?.risk_level || selectedStock?.riskLevel) }}
             </span>
           </div>
           <div class="overview-item">
             <span class="overview-label">情绪评分</span>
-            <span class="sentiment-score" :style="{ color: getSentimentColor(selectedStock?.sentimentScore) }">
-              {{ selectedStock?.sentimentScore || 50 }}分
+            <span class="sentiment-score" :style="{ color: getSentimentColor(stockSentiment?.overall_score || comprehensiveData?.overall_score || selectedStock?.sentimentScore || 50) }">
+              {{ stockSentiment?.overall_score || comprehensiveData?.overall_score || selectedStock?.sentimentScore || 50 }}分
             </span>
           </div>
           <div class="overview-item">
             <span class="overview-label">风险评分</span>
-            <span class="risk-score-value" :class="getRiskScoreClass(stockRisk.risk_score)">
-              {{ stockRisk.risk_score || comprehensiveData?.risk_score || 0 }}分
+            <span class="risk-score-value" :class="getRiskScoreClass(stockRisk?.risk_score || comprehensiveData?.risk?.risk_score || 0)">
+              {{ stockRisk?.risk_score || comprehensiveData?.risk?.risk_score || 0 }}分
             </span>
           </div>
           <div class="overview-item">
@@ -1563,6 +1563,7 @@ export default {
     const newsList = ref([])
     const sentimentFilter = ref('non_neutral')  // 默认显示有情绪的新闻
     const sentimentStats = ref({ positive: 0, negative: 0, neutral: 0 })
+    const newsStats = ref({ total: 0, totalFetched: 0 })  // 新闻统计
     const selectedStock = ref(null)
     const stockNews = ref([])
     const stockSentiment = ref({})
@@ -1922,6 +1923,11 @@ export default {
             // 更新情绪统计
             if (response.data.sentiment_stats) {
               sentimentStats.value = response.data.sentiment_stats
+            }
+            // 更新新闻统计
+            newsStats.value = {
+              total: response.data.total || newsList.value.length,
+              totalFetched: response.data.total_fetched || newsList.value.length
             }
             console.log(`📰 新闻加载完成: ${newsList.value.length}条`)
           }
@@ -3388,6 +3394,7 @@ export default {
       filteredNewsList,
       sentimentFilter,
       sentimentStats,
+      newsStats,  // 新闻统计
       newsLoading,  // 新闻加载状态
       selectedStock,
       stockNews,
@@ -3733,6 +3740,13 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.news-count-info {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  font-weight: normal;
+  margin-left: 0.5rem;
 }
 
 .collapse-icon {
