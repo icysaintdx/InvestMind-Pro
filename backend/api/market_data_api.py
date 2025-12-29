@@ -5,12 +5,52 @@
 
 from fastapi import APIRouter, HTTPException, Query
 from typing import Optional, List
+from datetime import datetime, timedelta
+import threading
 import akshare as ak
 
 from backend.utils.logging_config import get_logger
 
 logger = get_logger("api.market_data")
 router = APIRouter(prefix="/api/market", tags=["Market Data"])
+
+# ==================== 全市场行情缓存 ====================
+_market_data_cache = None
+_market_data_cache_time = None
+_market_data_cache_lock = threading.Lock()
+_MARKET_DATA_CACHE_DURATION = 30  # 缓存30秒
+
+
+def _get_market_data_cached():
+    """获取全市场行情数据（带缓存）"""
+    global _market_data_cache, _market_data_cache_time
+
+    with _market_data_cache_lock:
+        now = datetime.now()
+        # 检查缓存是否有效
+        if (_market_data_cache is not None and
+            _market_data_cache_time is not None and
+            (now - _market_data_cache_time).total_seconds() < _MARKET_DATA_CACHE_DURATION):
+            logger.debug("[市场数据] 使用缓存数据")
+            return _market_data_cache
+
+        # 缓存过期或不存在，重新获取
+        logger.info("[市场数据] 获取全市场行情...")
+        try:
+            df = ak.stock_zh_a_spot_em()
+            if df is not None and not df.empty:
+                _market_data_cache = df
+                _market_data_cache_time = now
+                logger.info(f"[市场数据] 获取成功，共 {len(df)} 只股票")
+                return df
+        except Exception as e:
+            logger.error(f"[市场数据] 获取失败: {e}")
+            # 如果获取失败但有旧缓存，返回旧缓存
+            if _market_data_cache is not None:
+                logger.warning("[市场数据] 使用过期缓存")
+                return _market_data_cache
+
+        return None
 
 
 # ==================== 盘口信息 ====================
@@ -263,8 +303,8 @@ async def get_top_amount(
     try:
         logger.info(f"[成交额排行] 获取前 {limit} 名")
 
-        # 获取全市场行情
-        df = ak.stock_zh_a_spot_em()
+        # 使用缓存获取全市场行情
+        df = _get_market_data_cached()
 
         if df is None or df.empty:
             return {"stocks": [], "message": "暂无数据"}
@@ -371,8 +411,8 @@ async def get_top_gainers(
     try:
         logger.info(f"[涨幅排名] 获取前 {limit} 名")
 
-        # 获取全市场行情
-        df = ak.stock_zh_a_spot_em()
+        # 使用缓存获取全市场行情
+        df = _get_market_data_cached()
 
         if df is None or df.empty:
             return {"stocks": [], "message": "暂无数据"}
@@ -430,8 +470,8 @@ async def get_top_losers(
     try:
         logger.info(f"[跌幅排名] 获取前 {limit} 名")
 
-        # 获取全市场行情
-        df = ak.stock_zh_a_spot_em()
+        # 使用缓存获取全市场行情
+        df = _get_market_data_cached()
 
         if df is None or df.empty:
             return {"stocks": [], "message": "暂无数据"}
@@ -484,8 +524,8 @@ async def get_market_overview():
     try:
         logger.info("[市场概览] 获取综合数据")
 
-        # 获取全市场行情
-        df = ak.stock_zh_a_spot_em()
+        # 使用缓存获取全市场行情
+        df = _get_market_data_cached()
 
         if df is None or df.empty:
             return {"message": "暂无数据"}
