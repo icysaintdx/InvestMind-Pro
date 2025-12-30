@@ -1,195 +1,254 @@
-# 🏅 InvestMind Pro - 智投顾问团
+# InvestMind-Pro 智投顾问团
 
-> 基于多智能体协同的智能投资分析系统
+<div align="center">
 
-## 📋 项目简介
+![Version](https://img.shields.io/badge/version-2.5.0-blue.svg)
+![Python](https://img.shields.io/badge/Python-3.8+-green.svg)
+![Vue](https://img.shields.io/badge/Vue-3.2+-brightgreen.svg)
+![License](https://img.shields.io/badge/license-MIT-yellow.svg)
 
-**InvestMind Pro（智投顾问团）** 是一个集成了10个专业AI智能体的股票投资分析系统。通过多层级、多角度的协同分析，为投资决策提供全方位的专业支持。
+**多智能体 AI 驱动的中国 A 股投资分析系统**
 
-## ✨ 核心特性
+[功能特性](#-功能特性) • [快速开始](#-快速开始) • [系统架构](#-系统架构) • [更新日志](#-更新日志)
 
-- **🤖 10个专业智能体**：覆盖宏观、行业、技术、资金、基本面等多个维度
-- **📊 4阶段递进分析**：从基础分析到风控评估，层层深入
-- **🎯 智能决策整合**：投资决策总经理统筹全局，输出专业报告
-- **🚀 多模型支持**：支持Gemini、DeepSeek、Qwen、SiliconFlow等多个AI模型
-- **📈 实时数据分析**：整合聚合数据、Finnhub、Tushare等多个数据源
-- **💡 美观的UI界面**：基于Vue3的现代化前端界面
-- **📥 报告导出**：支持Markdown、HTML、PDF多种格式导出
+</div>
 
-## 🏗️ 系统架构
+---
 
-### 智能体层级
+## 📖 项目简介
 
-```
-第一阶段：专业分析师（5个）
-├── 🌍 宏观政策分析师
-├── 🏭 行业轮动分析师  
-├── 📈 技术分析专家
-├── 💰 资金流向分析师
-└── 💼 基本面估值分析师
+**InvestMind-Pro (智投顾问团)** 是一个基于多智能体协作的 AI 投资分析系统，专注于中国 A 股市场。系统采用 21 个专业 AI 智能体，通过 4 阶段协作分析流程，为投资者提供全方位的投资决策支持。
 
-第二阶段：经理团队（2个）
-├── 👔 基本面研究总监
-└── ⚡ 市场动能总监
+### 核心理念
 
-第三阶段：风控团队（2个）
-├── ⚠️ 系统性风险总监
-└── ⚖️ 组合风险总监
+- 🤖 **多智能体协作**: 模拟真实投资团队的分工协作
+- 📊 **多维度分析**: 技术面、基本面、资金面、情绪面全覆盖
+- ⚖️ **辩论式决策**: 多空博弈 + 三方风控，确保决策稳健
+- 🔄 **实时监控**: 风险预警 + 数据流监控，及时响应市场变化
 
-第四阶段：总经理决策（1个）
-└── 👑 投资决策总经理
-```
+---
+
+## ✨ 功能特性
+
+### 🧠 21个专业AI智能体
+
+| 阶段 | 智能体 | 职责 |
+|------|--------|------|
+| **阶段1: 情报收集** | 新闻分析师、技术分析师、基本面分析师、资金流向分析师、行业轮动分析师 | 多维度数据采集与初步分析 |
+| **阶段2: 中观整合** | 研究部经理、风控部经理 | 汇总分析结果，形成初步建议 |
+| **阶段3: 深度辩论** | 看涨研究员、看跌研究员、激进风控师、保守风控师、中立风控师 | 多空博弈，风险评估 |
+| **阶段4: 最终决策** | 投资决策总经理 | 综合所有分析，输出最终建议 |
+
+### 📈 核心功能模块
+
+- **智能分析**: 一键启动21个智能体协作分析
+- **多空辩论**: 看涨vs看跌研究员智能辩论
+- **三方风控**: 激进/保守/中立三方风控评估
+- **策略回测**: 20+交易策略，完整回测引擎
+- **模拟交易**: 纸上交易系统，验证策略效果
+- **数据流监控**: 实时监控多数据源状态
+- **新闻聚合**: 多源新闻 + 情绪分析
+- **风险预警**: ST状态、停复牌、股权质押等实时预警
+
+### 📊 数据源支持
+
+| 数据源 | 类型 | 说明 |
+|--------|------|------|
+| AKShare | 主数据源 | 免费、稳定、接口丰富 |
+| Tushare | 辅助数据源 | 专业金融数据 |
+| 聚合数据 | 备用数据源 | 多维度数据补充 |
+| 东方财富 | 行情数据 | 实时行情、龙虎榜 |
+| 新浪财经 | 新闻数据 | 财经新闻、公告 |
+
+---
 
 ## 🚀 快速开始
 
 ### 环境要求
 
 - Python 3.8+
-- Node.js 14+
-- npm 或 yarn
+- Node.js 16+
+- SQLite 3
 
 ### 安装步骤
 
-1. **克隆项目**
+#### 1. 克隆项目
+
 ```bash
-git clone https://github.com/yourusername/investmind-pro.git
-cd investmind-pro
+git clone https://github.com/icysaintdx/InvestMind-Pro.git
+cd InvestMind-Pro
 ```
 
-2. **配置环境变量**
+#### 2. 后端安装
+
 ```bash
-# 复制环境变量模板
+# 创建虚拟环境
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# 安装依赖
+pip install -r backend/requirements.txt
+
+# 配置环境变量
 cp .env.example .env
-
-# 编辑.env文件，填入你的API密钥
-# - Gemini API Key
-# - DeepSeek API Key
-# - 聚合数据 API Key
-# - SiliconFlow API Key
-# - 其他数据源API Key
+# 编辑 .env 文件，配置 API Keys
 ```
 
-3. **安装依赖**
-```bash
-# 安装Python依赖
-pip install -r requirements.txt
+#### 3. 前端安装
 
-# 安装前端依赖
-cd alpha-council-vue
+```bash
+cd frontend
 npm install
 ```
 
-4. **启动系统**
+#### 4. 启动服务
 
-Windows用户：
 ```bash
-# 一键启动前后端
-start.bat
-```
-
-Mac/Linux用户：
-```bash
-# 启动后端
+# 启动后端 (在项目根目录)
 python backend/server.py
 
-# 新终端启动前端
-cd alpha-council-vue
+# 启动前端 (在 frontend 目录)
 npm run serve
 ```
 
-5. **访问系统**
-- 前端界面: http://localhost:8080
-- 后端API: http://localhost:8000
-- API文档: http://localhost:8000/docs
+#### 5. 访问系统
 
-## 📖 使用说明
+打开浏览器访问 `http://localhost:8080`
 
-1. **输入股票代码**：在主界面输入6位股票代码（如：000001）
-2. **点击分析**：系统自动启动10个智能体进行分析
-3. **查看结果**：实时显示各智能体的分析结果
-4. **生成报告**：所有分析完成后自动生成综合报告
-5. **导出报告**：支持导出为MD/HTML/PDF格式
+### Docker 部署
 
-## 🛠️ 技术栈
-
-### 后端
-- **框架**：FastAPI
-- **AI模型**：Gemini、DeepSeek、Qwen、SiliconFlow
-- **数据源**：聚合数据、Finnhub、Tushare
-- **异步处理**：asyncio、httpx
-
-### 前端
-- **框架**：Vue 3
-- **UI组件**：自定义组件
-- **状态管理**：Composition API
-- **HTTP客户端**：Axios
-- **样式**：TailwindCSS
-
-## 📁 项目结构
-
+```bash
+# 使用 docker-compose 一键部署
+docker-compose up -d
 ```
-InvestMind-Pro/
-├── backend/                # 后端代码
-│   ├── server.py          # FastAPI主程序
-│   ├── agent_configs.json # 智能体配置
-│   └── static/            # 静态资源
-├── alpha-council-vue/      # Vue前端
-│   ├── src/
-│   │   ├── components/    # Vue组件
-│   │   ├── views/         # 页面视图
-│   │   └── App.vue        # 主应用
-│   └── public/            # 公共资源
-├── docs/                  # 项目文档
-├── scripts/               # 脚本工具
-├── .env                   # 环境变量
-└── README.md             # 项目说明
-```
-
-## 🔑 API配置
-
-系统支持多个AI模型和数据源，需要在`.env`文件中配置相应的API密钥：
-
-| 服务 | 用途 | 获取地址 |
-|------|------|----------|
-| Gemini | AI分析模型 | https://aistudio.google.com/app/apikey |
-| DeepSeek | AI分析模型 | https://platform.deepseek.com/api_keys |
-| Qwen | AI分析模型（可选） | https://dashscope.console.aliyun.com/apiKey |
-| 聚合数据 | 股票数据源 | https://www.juhe.cn/ |
-| SiliconFlow | AI模型平台 | https://siliconflow.cn/account/ak |
-| Finnhub | 国际市场数据（可选） | https://finnhub.io/dashboard |
-| Tushare | A股数据（可选） | https://tushare.pro/register |
-
-## 📊 功能特性
-
-### 已实现
-- ✅ 10智能体协同分析
-- ✅ 多模型动态切换
-- ✅ 实时打字机效果
-- ✅ 综合报告生成
-- ✅ 多格式报告导出
-- ✅ 响应式UI设计
-- ✅ API状态监控
-- ✅ 样式自定义配置
-
-### 开发中
-- 🚧 历史记录保存
-- 🚧 批量股票分析
-- 🚧 策略回测系统
-- 🚧 实时行情推送
-- 🚧 投资组合管理
-
-## 🤝 贡献指南
-
-欢迎提交Issue和Pull Request！
-
-## 📄 许可证
-
-MIT License
-
-## 🙏 致谢
-
-感谢所有AI模型提供商和数据源提供商的支持。
 
 ---
 
-**InvestMind Pro - 让投资决策更智能！** 🚀
+## 🏗 系统架构
+
+```
+InvestMind-Pro/
+├── backend/                    # Python FastAPI 后端
+│   ├── api/                    # 30+ API路由文件
+│   ├── agents/                 # 21个AI智能体
+│   │   ├── analysts/           # 阶段1: 5个分析师
+│   │   ├── managers/           # 阶段2: 2个管理者
+│   │   ├── risk_mgmt/          # 阶段3: 3个风控辩论者
+│   │   └── trader/             # 阶段4: 1个决策者
+│   ├── dataflows/              # 数据流模块
+│   │   ├── news/               # 新闻聚合模块
+│   │   ├── risk/               # 风险监控模块
+│   │   └── akshare/            # AKShare数据适配
+│   ├── strategies/             # 20+交易策略
+│   ├── backtest/               # 回测引擎
+│   └── database/               # 数据库模型
+├── frontend/                   # Vue 3 前端
+│   ├── src/views/              # 页面组件
+│   └── src/components/         # 可复用组件
+└── docs/                       # 项目文档
+```
+
+### 技术栈
+
+| 层级 | 技术 |
+|------|------|
+| 前端 | Vue 3 + Axios + ECharts |
+| 后端 | Python FastAPI + SQLAlchemy |
+| 数据库 | SQLite |
+| AI模型 | Gemini / DeepSeek / Qwen / SiliconFlow / Ollama |
+
+---
+
+## 📝 更新日志
+
+### v2.5.0 (当前版本)
+- 🎆 新增数据流监控优化
+- 🔧 修复多个数据源接口问题
+- 📊 优化风险预警显示
+
+### v1.8.0
+- ⭐ LLM配置管理系统
+- ⭐ 真实LLM服务集成 (Ollama/OpenAI/DeepSeek/Qwen)
+- ⭐ 真实回测引擎对接
+- ⭐ 策略库扩展 (5个策略)
+- ⭐ 分层缓存体系 (L1/L2/L3)
+
+### v1.7.0
+- ⭐ 多级降级处理器
+- ⭐ LLM智能文本摘要
+- ⭐ 前端降级显示系统
+
+### v1.6.0
+- ⭐ 智能体配置系统
+- ⭐ 智能依赖管理
+- ⭐ 配置界面与工具
+
+### v1.5.0
+- ⭐ 多空研判博弈LLM接入
+- ⭐ 三方风控评估LLM接入
+- ⭐ 本地规则引擎兜底机制
+
+[查看完整更新日志](CHANGELOG.md)
+
+---
+
+## 🔧 配置说明
+
+### 环境变量配置
+
+```bash
+# AI API Keys
+SILICONFLOW_API_KEY=your_key
+DEEPSEEK_API_KEY=your_key
+OPENAI_API_KEY=your_key
+
+# 数据源 API Keys
+TUSHARE_TOKEN=your_token
+JUHE_API_KEY=your_key
+
+# Ollama 配置 (本地模型)
+OLLAMA_BASE_URL=http://localhost:11434
+```
+
+### 智能体配置
+
+智能体配置文件位于 `backend/agent_configs.json`，支持：
+- 模型选择
+- 温度参数
+- 超时设置
+- 启用/禁用
+
+---
+
+## 📚 文档
+
+- [项目概述](docs/PROJECT_OVERVIEW.md)
+- [Docker部署指南](DOCKER_DEPLOYMENT_GUIDE.md)
+- [API文档](docs/API文档.md)
+- [数据源集成指南](docs/Tushare数据源集成指南.md)
+
+---
+
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+---
+
+## 📄 许可证
+
+本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情
+
+---
+
+## ⚠️ 免责声明
+
+本项目仅供学习和研究使用，不构成任何投资建议。投资有风险，入市需谨慎。
+
+---
+
+<div align="center">
+
+**如果这个项目对你有帮助，请给一个 ⭐ Star！**
+
+</div>
