@@ -146,16 +146,8 @@ class CninfoApiClient:
         """获取请求头"""
         headers = {
             'Accept': 'application/json',
-            'Content-Type': 'application/x-www-form-urlencoded',
             'User-Agent': 'InvestMindPro/1.0'
         }
-
-        # 添加认证信息
-        access_token = self.config._get_config('CNINFO_ACCESS_TOKEN', '')
-        if access_token:
-            # 巨潮API使用 mcode 参数传递token
-            headers['mcode'] = access_token
-
         return headers
 
     async def _request(self, endpoint: str, params: Optional[Dict] = None) -> Dict[str, Any]:
@@ -169,15 +161,16 @@ class CninfoApiClient:
         try:
             client = await self._get_client()
 
-            # 巨潮API使用POST请求，参数放在body中
-            data = params or {}
+            # 构建请求参数
+            request_params = params.copy() if params else {}
 
-            # 添加mcode到请求数据中（部分接口需要）
+            # 添加mcode认证参数
             access_token = self.config._get_config('CNINFO_ACCESS_TOKEN', '')
-            if access_token and 'mcode' not in data:
-                data['mcode'] = access_token
+            if access_token:
+                request_params['mcode'] = access_token
 
-            response = await client.post(url, data=data, headers=headers)
+            # 巨潮API使用GET请求
+            response = await client.get(url, params=request_params, headers=headers)
 
             if response.status_code == 200:
                 result = response.json()
