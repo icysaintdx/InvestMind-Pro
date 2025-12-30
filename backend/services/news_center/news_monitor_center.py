@@ -138,6 +138,8 @@ class NewsMonitorCenter:
                     news_list = await self._fetch_eastmoney_global()
                 else:
                     news_list = await self._fetch_eastmoney()
+            elif config.source_type == DataSourceType.CNINFO:
+                news_list = await self._fetch_cninfo()
         except Exception as e:
             logger.error(f"Fetch {source_id} failed: {e}")
             return
@@ -176,6 +178,57 @@ class NewsMonitorCenter:
         except Exception as e:
             logger.error(f"Fetch eastmoney global failed: {e}")
             return []
+
+    async def _fetch_cninfo(self) -> List[Dict]:
+        """获取巨潮资讯网公告（转换为新闻格式）"""
+        try:
+            from backend.dataflows.announcement.cninfo_crawler import get_cninfo_crawler
+            crawler = get_cninfo_crawler()
+            loop = asyncio.get_event_loop()
+            # 获取监控股票列表的公告
+            monitored_stocks = self._get_monitored_stocks()
+            all_announcements = []
+            for stock_code in monitored_stocks[:5]:  # 限制每次最多5只股票
+                try:
+                    announcements = await loop.run_in_executor(
+                        self._executor,
+                        lambda sc=stock_code: crawler.get_company_announcements(sc, days=7)
+                    )
+                    all_announcements.extend(announcements)
+                except Exception as e:
+                    logger.warning(f"Fetch cninfo for {stock_code} failed: {e}")
+            # 转换为新闻格式
+            news_list = []
+            for ann in all_announcements[:30]:  # 限制数量
+                news_list.append({
+                    "title": f"[公告] {ann.get('title', '')}",
+                    "content": ann.get('summary', '')[:500],
+                    "pub_time": ann.get('publish_date', ''),
+                    "source": "巨潮公告",
+                    "url": ann.get('url', ''),
+                    "stock_code": ann.get('stock_code', ''),
+                    "announcement_type": ann.get('type', ''),
+                    "importance": ann.get('importance', 'low')
+                })
+            return news_list
+        except Exception as e:
+            logger.error(f"Fetch cninfo failed: {e}")
+            return []
+
+    def _get_monitored_stocks(self) -> List[str]:
+        """获取当前监控的股票列表"""
+        try:
+            # 尝试从监控服务获取
+            from backend.services.realtime_monitor_service import get_realtime_monitor_service
+            monitor = get_realtime_monitor_service()
+            if hasattr(monitor, 'config') and monitor.config:
+                stocks = monitor.config.get('stocks', [])
+                if stocks:
+                    return stocks
+        except:
+            pass
+        # 默认返回一些热门股票
+        return ["600519.SH", "000858.SZ", "601318.SH", "000001.SZ", "600036.SH"]
     
     async def _process_news(self, news_list: List[Dict], source_id: str):
         new_count = 0
@@ -226,6 +279,39 @@ class NewsMonitorCenter:
                     asyncio.create_task(ws_urgent(urgent_news))
                 except:
                     pass
+            # 发送通知（企业微信/钉钉/邮件等）
+            try:
+                asyncio.create_task(self._send_urgent_notification(urgent_news))
+            except:
+                pass
+
+    async def _send_urgent_notification(self, urgent_news: List[Dict]):
+        """发送紧急新闻通知到配置的渠道"""
+        try:
+            from backend.services.notification_service import get_notification_service
+            notification_service = get_notification_service()
+
+            # 转换为预警格式
+            alerts = []
+            for news in urgent_news[:5]:  # 最多5条
+                urgency = news.get('urgency', 'medium')
+                level = 'critical' if urgency == 'critical' else 'high' if urgency == 'high' else 'medium'
+                alerts.append({
+                    'title': f"📰 {news.get('title', '重要新闻')[:50]}",
+                    'message': news.get('content', '')[:200] if news.get('content') else news.get('title', ''),
+                    'level': level,
+                    'stock_code': ', '.join(news.get('related_stocks', [])[:3]) or '市场',
+                    'suggestion': f"来源: {news.get('source', '未知')} | 情绪: {news.get('sentiment', 'neutral')}"
+                })
+
+            if alerts:
+                result = await notification_service.send_alert_notification(alerts)
+                if result.get('success'):
+                    logger.info(f"✅ 紧急新闻通知发送成功: {len(alerts)}条")
+                else:
+                    logger.warning(f"⚠️ 紧急新闻通知发送部分失败: {result.get('message')}")
+        except Exception as e:
+            logger.error(f"发送紧急新闻通知失败: {e}")
 
     def get_latest_news(self, limit: int = 50, **filters) -> List[Dict]:
         news_list = self._cache.get_latest_news(limit, **filters)

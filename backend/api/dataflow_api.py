@@ -561,13 +561,69 @@ async def check_data_sources():
 @log_api_call("获取新闻列表")
 async def get_news(source: Optional[str] = None, limit: int = 50):
     """
-    获取新闻列表
+    获取新闻列表 - 使用统一新闻监控中心
 
     Args:
         source: 数据源筛选（可选）
         limit: 返回数量限制
     """
     try:
+        # 优先使用统一新闻监控中心
+        try:
+            from backend.services.news_center import get_news_monitor_center
+            monitor = get_news_monitor_center()
+
+            # 从监控中心获取新闻
+            news_data = monitor.get_latest_news(limit=limit)
+
+            if news_data:
+                # 按来源筛选
+                if source and source != "all":
+                    news_data = [n for n in news_data if n.get("source") == source]
+
+                # 转换为前端期望的格式
+                formatted_news = []
+                for n in news_data:
+                    formatted_news.append({
+                        'id': n.get('id', ''),
+                        'title': n.get('title', ''),
+                        'summary': n.get('content', '')[:200] if n.get('content') else '',
+                        'content': n.get('content', ''),
+                        'publishTime': n.get('pub_time', ''),
+                        'pub_time': n.get('pub_time', ''),
+                        'source': n.get('source', ''),
+                        'sentiment': n.get('sentiment', 'neutral'),
+                        'sentiment_score': n.get('sentiment_score', 50),
+                        'url': n.get('url', ''),
+                        'keywords': n.get('keywords', []),
+                        'urgency': n.get('urgency', 'low'),
+                        'related_stocks': n.get('related_stocks', []),
+                        'impact_score': n.get('impact_score', 0)
+                    })
+
+                # 计算情绪统计
+                sentiment_stats = {
+                    'positive': sum(1 for n in formatted_news if n.get('sentiment') == 'positive'),
+                    'negative': sum(1 for n in formatted_news if n.get('sentiment') == 'negative'),
+                    'neutral': sum(1 for n in formatted_news if n.get('sentiment') == 'neutral')
+                }
+
+                # 获取监控中心统计
+                monitor_stats = monitor.get_stats()
+
+                logger.info(f"📰 从统一新闻中心获取新闻: {len(formatted_news)}条")
+                return {
+                    "success": True,
+                    "news": formatted_news,
+                    "total": len(formatted_news),
+                    "total_fetched": monitor_stats.get('total_fetched', len(formatted_news)),
+                    "sentiment_stats": sentiment_stats,
+                    "source": "news_monitor_center"
+                }
+        except Exception as e:
+            logger.warning(f"统一新闻中心不可用，回退到旧逻辑: {e}")
+
+        # 回退到旧逻辑
         global news_list
 
         # 如果新闻列表为空，主动获取市场新闻
@@ -682,12 +738,60 @@ async def get_news(source: Optional[str] = None, limit: int = 50):
 @log_api_call("获取股票新闻")
 async def get_stock_news(ts_code: str, limit: int = 20):
     """
-    获取指定股票的新闻
+    获取指定股票的新闻 - 优先使用统一新闻监控中心
     """
     try:
         logger.info(f"获取{ts_code}的新闻...")
+
+        # 优先使用统一新闻监控中心
+        try:
+            from backend.services.news_center import get_news_monitor_center
+            monitor = get_news_monitor_center()
+
+            # 从监控中心获取该股票相关新闻
+            news_data = monitor.get_news_for_stock(ts_code, limit=limit)
+
+            if news_data:
+                # 转换为前端期望的格式
+                formatted_news = []
+                for n in news_data:
+                    formatted_news.append({
+                        'title': n.get('title', ''),
+                        'content': n.get('content', ''),
+                        'pub_time': n.get('pub_time', ''),
+                        'source': n.get('source', ''),
+                        'sentiment': n.get('sentiment', 'neutral'),
+                        'score': n.get('sentiment_score', 50),
+                        'url': n.get('url', ''),
+                        'keywords': n.get('keywords', []),
+                        'urgency': n.get('urgency', 'low'),
+                        'report_type': n.get('report_type', 'news'),
+                        'impact_score': n.get('impact_score', 0)
+                    })
+
+                # 计算情绪统计
+                overall_score = sum(n.get('score', 50) for n in formatted_news) / len(formatted_news) if formatted_news else 50
+                sentiment_summary = {
+                    'positive': sum(1 for n in formatted_news if n.get('sentiment') == 'positive'),
+                    'negative': sum(1 for n in formatted_news if n.get('sentiment') == 'negative'),
+                    'neutral': sum(1 for n in formatted_news if n.get('sentiment') == 'neutral')
+                }
+
+                logger.info(f"✅ 从统一新闻中心获取{ts_code}新闻: {len(formatted_news)}条")
+                return {
+                    "success": True,
+                    "news": formatted_news,
+                    "total": len(formatted_news),
+                    "overall_score": overall_score,
+                    "sentiment_summary": sentiment_summary,
+                    "source": "news_monitor_center"
+                }
+        except Exception as e:
+            logger.warning(f"统一新闻中心不可用，回退到旧逻辑: {e}")
+
+        # 回退到旧逻辑
         aggregator = get_news_aggregator()
-        
+
         # 修复：使用正确的参数名 limit_per_source
         result = aggregator.aggregate_news(
             ts_code=ts_code,
@@ -696,19 +800,19 @@ async def get_stock_news(ts_code: str, limit: int = 20):
             include_akshare=True,
             include_market_news=False
         )
-        
+
         # 修复：使用正确的字段名 merged_news
         news_list = result.get('merged_news', [])
-        
+
         logger.info(f"✅ 返回{len(news_list)}条新闻")
-        
+
         return {
             "success": True,
             "news": news_list,
             "total": result.get('total_count', 0),
             "sources": result.get('sources', {})
         }
-        
+
     except Exception as e:
         logger.error(f"获取股票新闻失败: {e}")
         import traceback

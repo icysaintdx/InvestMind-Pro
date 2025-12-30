@@ -282,6 +282,17 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             print(f"⚠️ 实时盯盘监控服务启动失败: {e}")
 
+    # 启动统一新闻监控中心（默认启动）
+    # 该服务整合所有新闻数据源，提供统一缓存和实时推送
+    if os.getenv("ENABLE_NEWS_MONITOR_CENTER", "true").lower() == "true":
+        try:
+            from backend.services.news_center import get_news_monitor_center
+            news_monitor = get_news_monitor_center()
+            await news_monitor.start()
+            print("✅ 统一新闻监控中心已启动")
+        except Exception as e:
+            print(f"⚠️ 统一新闻监控中心启动失败: {e}")
+
     # yield 控制权给应用
     yield
 
@@ -324,6 +335,15 @@ async def lifespan(app: FastAPI):
         if realtime_monitor.is_running:
             realtime_monitor.stop_monitoring()
             print("✅ 实时盯盘监控服务已停止")
+    except:
+        pass
+
+    # 停止统一新闻监控中心
+    try:
+        from backend.services.news_center import get_news_monitor_center
+        news_monitor = get_news_monitor_center()
+        await news_monitor.stop()
+        print("✅ 统一新闻监控中心已停止")
     except:
         pass
 
