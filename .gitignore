@@ -32,6 +32,10 @@ yarn-error.log*
 *~
 .DS_Store
 
+# AI Tools config folders
+.claude/
+.kilocode/
+
 # Vue build output
 frontend/dist/
 frontend/.env.local
@@ -64,5 +68,3 @@ config/secrets.json
 
 # 可选：忽略所有tar压缩包
 *.tar
-
-
