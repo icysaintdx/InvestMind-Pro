@@ -1,529 +1,508 @@
-# 数据流监控模块优化方案
+# 数据流监控模块优化方案 v2.0
 
-## 一、现状分析
+## 一、现状深度分析
 
-### 1.1 当前架构问题
+### 1.1 现有基础设施（已实现）
 
-#### 数据源分散
-- **数据流页面 (DataFlowView)**: 仅使用2个数据源（东方财富全球资讯、个股新闻）
-- **统一新闻中心 (UnifiedNewsView)**: 使用12个数据源
-- **详情模态框**: 使用独立的新闻获取逻辑
-- **问题**: 三个地方的新闻数据没有统一管理，存在重复获取和数据不一致
+| 组件 | 文件位置 | 功能 | 使用情况 |
+|------|----------|------|----------|
+| 后台新闻服务 | `backend/services/background_news_service.py` | ProcessPoolExecutor独立进程池 | ✅ 已实现 |
+| 情绪分析引擎 | `backend/dataflows/news/sentiment_engine.py` | 完整情绪词典+分析逻辑 | ✅ 已实现 |
+| 巨潮资讯爬虫 | `backend/dataflows/announcement/cninfo_crawler.py` | 公告数据获取 | ⚠️ 未被调用 |
+| 统一新闻API | `backend/api/unified_news_api_endpoint.py` | 12个数据源聚合 | ✅ 已实现 |
+| 多源新闻聚合器 | `backend/dataflows/news/multi_source_news_aggregator.py` | Tushare+AKShare | ✅ 已实现 |
 
-#### 时效性不足
-- 当前缓存TTL: 5分钟
-- 前端定时刷新: 2分钟
-- 实际新闻延迟: 5-10分钟
-- **问题**: 无法满足30秒内通知的需求
+### 1.2 新闻数据调用点分析
 
-#### 公告数据不完整
-- 巨潮资讯网爬虫存在但未充分利用
-- AKShare的公告接口按日更新，时效性差
-- 缺少交易所实时公告推送
+| 调用位置 | 数据源 | 问题 |
+|----------|--------|------|
+| 数据流页面 (DataFlowView) | 2个数据源 | 数据源太少 |
+| 统一新闻中心 (UnifiedNewsView) | 12个数据源 | 最完整，但独立运行 |
+| 详情模态框 | 独立获取逻辑 | 与新闻流不共享 |
+| 智能分析模块 | 独立获取逻辑 | 重复获取 |
+| 综合数据服务 | 独立获取逻辑 | 缓存不统一 |
 
-### 1.2 数据源时效性评估
+### 1.3 核心问题
 
-| 数据源 | 理论时效 | 实际时效 | 接口稳定性 | 建议更新频率 |
-|--------|----------|----------|------------|--------------|
-| 财联社快讯 | 10秒级 | 30-60秒 | 高 | 30秒 |
-| 东方财富新闻 | 秒级 | 10-30秒 | 高 | 30秒 |
-| 新浪财经 | 5-10秒 | 30-60秒 | 中 | 60秒 |
-| 同花顺 | 3分钟 | 3-5分钟 | 中 | 60秒 |
-| 巨潮资讯公告 | 实时 | 1-5分钟 | 高 | 60秒 |
-| 微博热议 | 实时 | 5-10分钟 | 低 | 5分钟 |
-| 新闻联播 | 按日 | 按日 | 高 | 1小时 |
+1. **数据源分散**: 5个地方各自获取新闻，没有统一入口
+2. **重复请求**: 同一条新闻可能被获取多次
+3. **缓存不统一**: 各模块各自缓存，数据不一致
+4. **巨潮爬虫闲置**: 已实现但未被任何模块调用
+5. **情绪分析分散**: 多处重复实现情绪分析逻辑
 
-### 1.3 现有接口清单
+---
 
-#### AKShare 新闻接口
-```python
-# 高时效性接口（建议30-60秒更新）
-ak.stock_info_global_cls()      # 财联社快讯 - 最快
-ak.stock_info_global_em()       # 东方财富全球资讯
-ak.stock_news_em(symbol)        # 东方财富个股新闻
+## 二、统一架构方案
 
-# 中时效性接口（建议1-5分钟更新）
-ak.stock_info_global_sina()     # 新浪财经
-ak.stock_info_global_ths()      # 同花顺
-ak.stock_info_global_futu()     # 富途牛牛
-ak.stock_notice_report()        # 公告数据
+### 2.1 核心设计原则
 
-# 低时效性接口（建议5分钟以上更新）
-ak.stock_js_weibo_report()      # 微博热议
-ak.stock_info_cjzc_em()         # 财经早餐
-ak.news_cctv(date)              # 新闻联播
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         统一新闻监控中心 (NewsMonitorCenter)                  │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                        后台数据采集层                                │   │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────────┐  │   │
+│  │  │ 进程池执行器  │  │ 定时调度器   │  │ 增量检测器                │  │   │
+│  │  │ (已有)       │  │ (新增)       │  │ (新增)                   │  │   │
+│  │  └──────────────┘  └──────────────┘  └──────────────────────────┘  │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                        │
+│  ┌─────────────────────────────────▼───────────────────────────────────┐   │
+│  │                        统一数据源层                                  │   │
+│  │  ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────────┐   │   │
+│  │  │ AKShare    │ │ Tushare    │ │ 巨潮资讯   │ │ 其他数据源     │   │   │
+│  │  │ 新闻接口   │ │ 新闻接口   │ │ 爬虫(激活) │ │ (财联社等)     │   │   │
+│  │  └────────────┘ └────────────┘ └────────────┘ └────────────────┘   │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                        │
+│  ┌─────────────────────────────────▼───────────────────────────────────┐   │
+│  │                        统一缓存层                                    │   │
+│  │  ┌──────────────────────────────────────────────────────────────┐  │   │
+│  │  │ 新闻缓存池 (NewsCache)                                        │  │   │
+│  │  │ - 全局新闻列表 (去重后)                                       │  │   │
+│  │  │ - 按股票索引 (stock_code -> news_ids)                        │  │   │
+│  │  │ - 新闻指纹集合 (防重复)                                       │  │   │
+│  │  │ - TTL: 新闻30分钟, 公告1小时                                  │  │   │
+│  │  └──────────────────────────────────────────────────────────────┘  │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                        │
+│  ┌─────────────────────────────────▼───────────────────────────────────┐   │
+│  │                        智能分析层                                    │   │
+│  │  ┌────────────────┐ ┌────────────────┐ ┌────────────────────────┐  │   │
+│  │  │ 情绪分析引擎   │ │ 股票关联分析   │ │ 影响评估引擎           │  │   │
+│  │  │ (已有,复用)    │ │ (新增)         │ │ (新增)                 │  │   │
+│  │  └────────────────┘ └────────────────┘ └────────────────────────┘  │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                    │                                        │
+│  ┌─────────────────────────────────▼───────────────────────────────────┐   │
+│  │                        统一API层                                     │   │
+│  │  ┌──────────────────────────────────────────────────────────────┐  │   │
+│  │  │ /api/news-center/*                                           │  │   │
+│  │  │ - GET /latest          获取最新新闻                          │  │   │
+│  │  │ - GET /stock/{code}    获取股票相关新闻                      │  │   │
+│  │  │ - GET /announcements   获取公告                              │  │   │
+│  │  │ - WS  /realtime        WebSocket实时推送                     │  │   │
+│  │  └──────────────────────────────────────────────────────────────┘  │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                     │
+                                     ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              前端调用方                                      │
+│  ┌────────────────┐ ┌────────────────┐ ┌────────────────┐ ┌──────────────┐ │
+│  │ 数据流页面     │ │ 统一新闻中心   │ │ 详情模态框     │ │ 智能分析     │ │
+│  │ (DataFlowView) │ │ (UnifiedNews)  │ │ (StockDetail)  │ │ (Analysis)   │ │
+│  └────────────────┘ └────────────────┘ └────────────────┘ └──────────────┘ │
+│                              │                                              │
+│                    全部调用统一API，不再各自获取                             │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-#### Tushare 新闻接口
-```python
-# 需要5000积分
-pro.news(src='sina')            # 新浪新闻
-pro.news(src='wallstreetcn')    # 华尔街见闻
-pro.news(src='10jqka')          # 同花顺
-pro.news(src='eastmoney')       # 东方财富
-pro.news(src='yuncaijing')      # 云财经
-```
+### 2.2 统一 vs 独立的选择
 
-#### 公告接口
-```python
-# AKShare
-ak.stock_notice_report(symbol, date)  # 巨潮资讯公告
+**结论：采用统一架构**
 
-# 自建爬虫
-CninfoCrawler.get_company_announcements(stock_code, days)  # 巨潮资讯网
+| 对比项 | 统一架构 | 独立架构 |
+|--------|----------|----------|
+| 数据一致性 | ✅ 所有模块数据一致 | ❌ 可能不一致 |
+| 请求效率 | ✅ 一次获取，多处使用 | ❌ 重复请求 |
+| 缓存效率 | ✅ 统一缓存，命中率高 | ❌ 各自缓存，浪费内存 |
+| 维护成本 | ✅ 一处修改，全局生效 | ❌ 多处修改 |
+| 实时性 | ✅ 统一推送机制 | ❌ 各自轮询 |
+| 复杂度 | ⚠️ 初期开发复杂 | ✅ 简单独立 |
+
+### 2.3 后台静默运行机制
+
+```python
+class NewsMonitorCenter:
+    """统一新闻监控中心 - 后台静默运行"""
+
+    def __init__(self):
+        # 使用独立进程池，不影响主线程
+        self.process_pool = ProcessPoolExecutor(max_workers=4)
+        # 使用独立线程池处理分析任务
+        self.thread_pool = ThreadPoolExecutor(max_workers=8)
+        # 定时调度器
+        self.scheduler = BackgroundScheduler()
+
+    async def start(self):
+        """启动后台监控"""
+        # 所有任务在后台运行，不阻塞主线程
+        self.scheduler.add_job(
+            self._fetch_news_batch,
+            'interval',
+            seconds=30,  # 30秒获取一次
+            id='news_fetch'
+        )
+        self.scheduler.add_job(
+            self._fetch_announcements,
+            'interval',
+            seconds=60,  # 60秒获取一次公告
+            id='announcement_fetch'
+        )
+        self.scheduler.start()
 ```
 
 ---
 
-## 二、优化方案
+## 三、数据源整合方案
 
-### 2.1 架构重构：统一新闻中心
+### 3.1 激活巨潮资讯爬虫
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    实时新闻监控中心                              │
-│  ┌─────────────────────────────────────────────────────────────┐│
-│  │                    新闻聚合引擎                              ││
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ ││
-│  │  │ 高频轮询器   │  │ 增量检测器   │  │ 智能去重器          │ ││
-│  │  │ (30秒)      │  │ (新闻指纹)   │  │ (标题+时间+来源)    │ ││
-│  │  └─────────────┘  └─────────────┘  └─────────────────────┘ ││
-│  └─────────────────────────────────────────────────────────────┘│
-│                              │                                   │
-│  ┌───────────────────────────▼───────────────────────────────┐  │
-│  │                    股票关联分析器                          │  │
-│  │  - 监控股票匹配                                           │  │
-│  │  - 行业关联分析                                           │  │
-│  │  - 概念板块关联                                           │  │
-│  └───────────────────────────────────────────────────────────┘  │
-│                              │                                   │
-│  ┌───────────────────────────▼───────────────────────────────┐  │
-│  │                    影响评估引擎                            │  │
-│  │  - 情绪分析 (正面/负面/中性)                              │  │
-│  │  - 重要性评分 (1-10)                                      │  │
-│  │  - 紧急程度判定 (高/中/低)                                │  │
-│  └───────────────────────────────────────────────────────────┘  │
-│                              │                                   │
-│  ┌───────────────────────────▼───────────────────────────────┐  │
-│  │                    通知推送系统                            │  │
-│  │  - WebSocket 实时推送                                     │  │
-│  │  - 浏览器通知                                             │  │
-│  │  - 声音提醒                                               │  │
-│  │  - 微信/钉钉推送 (可选)                                   │  │
-│  └───────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### 2.2 分层更新策略
-
-#### 第一层：高频监控（30秒）
-- 财联社快讯
-- 东方财富全球资讯
-- 监控股票个股新闻
-- 巨潮资讯公告（监控股票）
-
-#### 第二层：中频监控（2分钟）
-- 新浪财经
-- 同花顺
-- 富途牛牛
-- 全市场公告
-
-#### 第三层：低频监控（10分钟）
-- 微博热议
-- 财经早餐
-- 新闻联播
-- 百度财经日历
-
-### 2.3 增量更新机制
+当前 `CninfoCrawler` 已实现但未被调用，需要整合到统一新闻中心：
 
 ```python
-class IncrementalNewsMonitor:
-    """增量新闻监控器"""
+# 在 NewsMonitorCenter 中整合
+from backend.dataflows.announcement.cninfo_crawler import CninfoCrawler
+
+class NewsMonitorCenter:
+    def __init__(self):
+        self.cninfo_crawler = CninfoCrawler()
+
+    async def _fetch_announcements(self):
+        """获取监控股票的公告"""
+        for stock_code in self.monitored_stocks:
+            announcements = self.cninfo_crawler.get_company_announcements(
+                stock_code=stock_code,
+                days=1  # 只获取最近1天
+            )
+            await self._process_announcements(announcements)
+```
+
+### 3.2 数据源优先级和更新频率
+
+| 优先级 | 数据源 | 更新频率 | 用途 |
+|--------|--------|----------|------|
+| P0 | 财联社快讯 | 30秒 | 突发新闻 |
+| P0 | 巨潮资讯公告 | 60秒 | 权威公告 |
+| P1 | 东方财富新闻 | 30秒 | 综合新闻 |
+| P1 | 监控股票个股新闻 | 30秒 | 直接相关 |
+| P2 | 新浪/同花顺/富途 | 2分钟 | 补充来源 |
+| P3 | 微博热议 | 5分钟 | 舆情参考 |
+| P4 | 新闻联播/财经早餐 | 1小时 | 宏观参考 |
+
+### 3.3 完整数据源清单
+
+```python
+DATA_SOURCES = {
+    # 高频数据源 (30秒)
+    'high_frequency': [
+        {'name': 'cls_flash', 'func': 'ak.stock_info_global_cls', 'desc': '财联社快讯'},
+        {'name': 'em_global', 'func': 'ak.stock_info_global_em', 'desc': '东方财富全球'},
+        {'name': 'em_stock', 'func': 'ak.stock_news_em', 'desc': '东方财富个股', 'need_code': True},
+        {'name': 'cninfo', 'func': 'CninfoCrawler.get_company_announcements', 'desc': '巨潮公告', 'need_code': True},
+    ],
+
+    # 中频数据源 (2分钟)
+    'medium_frequency': [
+        {'name': 'sina_global', 'func': 'ak.stock_info_global_sina', 'desc': '新浪财经'},
+        {'name': 'ths_global', 'func': 'ak.stock_info_global_ths', 'desc': '同花顺'},
+        {'name': 'futu_global', 'func': 'ak.stock_info_global_futu', 'desc': '富途牛牛'},
+        {'name': 'em_notice', 'func': 'ak.stock_notice_report', 'desc': '东方财富公告'},
+    ],
+
+    # 低频数据源 (5分钟+)
+    'low_frequency': [
+        {'name': 'weibo_hot', 'func': 'ak.stock_js_weibo_report', 'desc': '微博热议'},
+        {'name': 'cjzc', 'func': 'ak.stock_info_cjzc_em', 'desc': '财经早餐'},
+        {'name': 'cctv', 'func': 'ak.news_cctv', 'desc': '新闻联播'},
+        {'name': 'baidu_eco', 'func': 'ak.news_economic_baidu', 'desc': '百度财经'},
+    ],
+
+    # Tushare数据源 (需要积分)
+    'tushare': [
+        {'name': 'ts_news', 'func': 'pro.news', 'desc': 'Tushare新闻', 'points': 5000},
+    ]
+}
+```
+
+---
+
+## 四、智能分析层设计
+
+### 4.1 复用现有情绪分析引擎
+
+```python
+from backend.dataflows.news.sentiment_engine import SentimentEngine
+
+class NewsAnalyzer:
+    """新闻分析器 - 复用现有组件"""
 
     def __init__(self):
-        self.news_fingerprints = set()  # 新闻指纹集合
-        self.last_check_time = {}       # 各数据源最后检查时间
+        # 复用已有的情绪分析引擎
+        self.sentiment_engine = SentimentEngine()
 
-    def generate_fingerprint(self, news: dict) -> str:
-        """生成新闻指纹"""
-        content = f"{news['title']}_{news['source']}_{news['publish_time'][:16]}"
-        return hashlib.md5(content.encode()).hexdigest()
-
-    def is_new(self, news: dict) -> bool:
-        """判断是否为新新闻"""
-        fp = self.generate_fingerprint(news)
-        if fp in self.news_fingerprints:
-            return False
-        self.news_fingerprints.add(fp)
-        return True
-
-    def check_incremental(self, source: str) -> List[dict]:
-        """增量检查新新闻"""
-        all_news = self.fetch_news(source)
-        new_news = [n for n in all_news if self.is_new(n)]
-        return new_news
-```
-
-### 2.4 股票关联分析
-
-```python
-class StockNewsRelationAnalyzer:
-    """股票新闻关联分析器"""
-
-    def __init__(self, monitored_stocks: List[str]):
-        self.monitored_stocks = monitored_stocks
-        self.stock_names = {}      # 股票代码 -> 名称
-        self.stock_industries = {} # 股票代码 -> 行业
-        self.stock_concepts = {}   # 股票代码 -> 概念板块
-
-    def analyze_relevance(self, news: dict) -> dict:
-        """分析新闻与监控股票的关联性"""
+    def analyze(self, news: dict) -> dict:
+        """分析单条新闻"""
         title = news.get('title', '')
         content = news.get('content', '')
-        text = f"{title} {content}"
 
-        related_stocks = []
-        for code in self.monitored_stocks:
-            name = self.stock_names.get(code, '')
-            # 直接匹配
-            if code in text or name in text:
-                related_stocks.append({
-                    'code': code,
-                    'name': name,
-                    'match_type': 'direct',
-                    'relevance_score': 1.0
-                })
-            # 行业关联
-            elif self._check_industry_match(code, text):
-                related_stocks.append({
-                    'code': code,
-                    'name': name,
-                    'match_type': 'industry',
-                    'relevance_score': 0.6
-                })
-            # 概念关联
-            elif self._check_concept_match(code, text):
-                related_stocks.append({
-                    'code': code,
-                    'name': name,
-                    'match_type': 'concept',
-                    'relevance_score': 0.4
-                })
+        # 情绪分析 (复用现有)
+        sentiment = self.sentiment_engine.analyze(title + ' ' + content)
+
+        # 股票关联分析 (新增)
+        related_stocks = self._find_related_stocks(title, content)
+
+        # 影响评估 (新增)
+        impact = self._assess_impact(news, sentiment, related_stocks)
 
         return {
             'news': news,
+            'sentiment': sentiment,
             'related_stocks': related_stocks,
-            'is_relevant': len(related_stocks) > 0
+            'impact': impact
         }
 ```
 
-### 2.5 影响评估引擎
+### 4.2 股票关联分析
 
 ```python
-class NewsImpactAssessor:
-    """新闻影响评估器"""
+class StockRelationAnalyzer:
+    """股票关联分析器"""
+
+    def __init__(self, monitored_stocks: List[str]):
+        self.monitored_stocks = monitored_stocks
+        self.stock_info = {}  # 股票代码 -> {name, industry, concepts}
+
+    def find_related(self, text: str) -> List[dict]:
+        """查找文本中提到的监控股票"""
+        related = []
+
+        for code in self.monitored_stocks:
+            info = self.stock_info.get(code, {})
+            name = info.get('name', '')
+
+            # 直接匹配
+            if code in text or name in text:
+                related.append({
+                    'code': code,
+                    'name': name,
+                    'match_type': 'direct',
+                    'relevance': 1.0
+                })
+            # 行业匹配
+            elif self._match_industry(info.get('industry'), text):
+                related.append({
+                    'code': code,
+                    'name': name,
+                    'match_type': 'industry',
+                    'relevance': 0.6
+                })
+
+        return related
+```
+
+### 4.3 影响评估引擎
+
+```python
+class ImpactAssessor:
+    """影响评估引擎"""
 
     # 高影响关键词
-    HIGH_IMPACT_KEYWORDS = [
-        '涨停', '跌停', '停牌', '复牌', '退市', '摘帽', '戴帽',
-        '重组', '并购', '收购', '增持', '减持', '回购',
-        '业绩预增', '业绩预减', '业绩亏损', '业绩扭亏',
-        '立案调查', '行政处罚', '违规', '造假',
-        '中标', '签约', '合同', '订单',
-        '突发', '紧急', '重大', '利好', '利空'
-    ]
+    HIGH_IMPACT = ['涨停', '跌停', '停牌', '退市', '重组', '立案', '处罚']
+    URGENT = ['停牌', '退市', '立案', '暴跌', '闪崩', '紧急']
 
-    # 紧急关键词
-    URGENT_KEYWORDS = [
-        '停牌', '退市', '立案', '处罚', '违规', '造假',
-        '突发', '紧急', '重大利空', '暴跌', '闪崩'
-    ]
-
-    def assess(self, news: dict, related_stocks: List[dict]) -> dict:
+    def assess(self, news: dict, sentiment: dict, related_stocks: List) -> dict:
         """评估新闻影响"""
-        title = news.get('title', '')
-        content = news.get('content', '')
-        text = f"{title} {content}"
+        text = news.get('title', '') + news.get('content', '')
 
-        # 计算影响分数
-        impact_score = self._calculate_impact_score(text)
-
-        # 判断紧急程度
-        urgency = self._determine_urgency(text)
-
-        # 情绪分析
-        sentiment = self._analyze_sentiment(text)
-
-        return {
-            'impact_score': impact_score,      # 1-10
-            'urgency': urgency,                # high/medium/low
-            'sentiment': sentiment,            # positive/negative/neutral
-            'should_notify': impact_score >= 7 or urgency == 'high',
-            'notification_level': self._get_notification_level(impact_score, urgency)
-        }
-
-    def _calculate_impact_score(self, text: str) -> int:
-        """计算影响分数"""
-        score = 5  # 基础分
-        for keyword in self.HIGH_IMPACT_KEYWORDS:
+        # 计算影响分数 (1-10)
+        score = 5
+        for keyword in self.HIGH_IMPACT:
             if keyword in text:
                 score += 1
-        return min(10, score)
+        score = min(10, score)
 
-    def _determine_urgency(self, text: str) -> str:
-        """判断紧急程度"""
-        for keyword in self.URGENT_KEYWORDS:
-            if keyword in text:
-                return 'high'
-        return 'medium' if any(k in text for k in self.HIGH_IMPACT_KEYWORDS) else 'low'
+        # 判断紧急程度
+        urgency = 'high' if any(k in text for k in self.URGENT) else 'medium'
+
+        # 是否需要通知
+        should_notify = (
+            score >= 7 or
+            urgency == 'high' or
+            (len(related_stocks) > 0 and score >= 5)
+        )
+
+        return {
+            'impact_score': score,
+            'urgency': urgency,
+            'sentiment': sentiment.get('label', 'neutral'),
+            'should_notify': should_notify,
+            'related_count': len(related_stocks)
+        }
 ```
 
-### 2.6 实时推送系统
+---
+
+## 五、实时通知系统
+
+### 5.1 WebSocket 推送
 
 ```python
-class RealtimeNotificationSystem:
-    """实时通知系统"""
+class RealtimeNotifier:
+    """实时通知器"""
 
     def __init__(self):
-        self.websocket_connections = set()
-        self.notification_queue = asyncio.Queue()
+        self.connections: Set[WebSocket] = set()
 
-    async def push_notification(self, notification: dict):
-        """推送通知到所有连接的客户端"""
-        message = json.dumps({
-            'type': 'news_alert',
-            'data': notification,
-            'timestamp': datetime.now().isoformat()
-        })
-
-        # WebSocket 推送
-        for ws in self.websocket_connections:
+    async def broadcast(self, message: dict):
+        """广播消息到所有连接"""
+        data = json.dumps(message, ensure_ascii=False)
+        for ws in self.connections.copy():
             try:
-                await ws.send_text(message)
+                await ws.send_text(data)
             except:
-                self.websocket_connections.discard(ws)
+                self.connections.discard(ws)
 
-        # 记录通知
-        await self._log_notification(notification)
+    async def notify_news(self, news: dict, analysis: dict):
+        """通知新新闻"""
+        if analysis['impact']['should_notify']:
+            await self.broadcast({
+                'type': 'news_alert',
+                'data': {
+                    'news': news,
+                    'analysis': analysis,
+                    'timestamp': datetime.now().isoformat()
+                }
+            })
+```
 
-    async def create_notification(self, news: dict, assessment: dict, related_stocks: List[dict]):
-        """创建通知"""
-        notification = {
-            'id': str(uuid.uuid4()),
-            'title': news['title'],
-            'source': news['source'],
-            'publish_time': news['publish_time'],
-            'related_stocks': related_stocks,
-            'impact_score': assessment['impact_score'],
-            'urgency': assessment['urgency'],
-            'sentiment': assessment['sentiment'],
-            'notification_level': assessment['notification_level'],
-            'created_at': datetime.now().isoformat()
-        }
+### 5.2 通知分级
 
-        await self.push_notification(notification)
-        return notification
+| 级别 | 条件 | 通知方式 |
+|------|------|----------|
+| 紧急 | urgency=high 或 impact>=9 | 弹窗+声音+推送 |
+| 重要 | impact>=7 且 related_stocks>0 | 弹窗+推送 |
+| 一般 | impact>=5 且 related_stocks>0 | 列表高亮 |
+| 普通 | 其他 | 静默更新 |
+
+---
+
+## 六、API 统一设计
+
+### 6.1 新闻中心 API
+
+```python
+# 所有新闻相关请求统一入口
+@router.get("/api/news-center/latest")
+async def get_latest_news(
+    limit: int = 50,
+    source: str = None,
+    sentiment: str = None
+):
+    """获取最新新闻（所有模块调用此接口）"""
+    return news_center.get_latest(limit, source, sentiment)
+
+@router.get("/api/news-center/stock/{code}")
+async def get_stock_news(code: str, limit: int = 20):
+    """获取股票相关新闻（详情模态框、智能分析调用）"""
+    return news_center.get_by_stock(code, limit)
+
+@router.get("/api/news-center/announcements")
+async def get_announcements(code: str = None, limit: int = 20):
+    """获取公告（整合巨潮资讯）"""
+    return news_center.get_announcements(code, limit)
+
+@router.websocket("/api/news-center/realtime")
+async def realtime_news(websocket: WebSocket):
+    """WebSocket 实时推送"""
+    await news_center.connect(websocket)
+```
+
+### 6.2 前端调用统一
+
+```javascript
+// 所有页面统一使用 NewsService
+class NewsService {
+  static async getLatest(options = {}) {
+    return axios.get('/api/news-center/latest', { params: options })
+  }
+
+  static async getStockNews(code, limit = 20) {
+    return axios.get(`/api/news-center/stock/${code}`, { params: { limit } })
+  }
+
+  static async getAnnouncements(code = null) {
+    return axios.get('/api/news-center/announcements', { params: { code } })
+  }
+
+  static connectRealtime(onMessage) {
+    const ws = new WebSocket(`${WS_BASE}/api/news-center/realtime`)
+    ws.onmessage = (event) => onMessage(JSON.parse(event.data))
+    return ws
+  }
+}
 ```
 
 ---
 
-## 三、前端优化方案
+## 七、实施计划
 
-### 3.1 刷新频率设置组件
+### 第一阶段：统一新闻中心核心（3-4天）
 
-```vue
-<template>
-  <div class="refresh-settings">
-    <h4>刷新频率设置</h4>
-    <div class="setting-item">
-      <label>新闻监控频率</label>
-      <select v-model="newsRefreshInterval">
-        <option value="30">30秒（高频）</option>
-        <option value="60">1分钟</option>
-        <option value="120">2分钟（默认）</option>
-        <option value="300">5分钟</option>
-      </select>
-    </div>
-    <div class="setting-item">
-      <label>公告监控频率</label>
-      <select v-model="announcementRefreshInterval">
-        <option value="60">1分钟</option>
-        <option value="120">2分钟</option>
-        <option value="300">5分钟（默认）</option>
-      </select>
-    </div>
-    <div class="setting-item">
-      <label>其他数据更新频率</label>
-      <select v-model="otherDataRefreshInterval">
-        <option value="300">5分钟</option>
-        <option value="600">10分钟</option>
-        <option value="1800">30分钟</option>
-        <option value="3600">1小时（默认）</option>
-      </select>
-    </div>
-  </div>
-</template>
-```
+1. **创建 NewsMonitorCenter 类**
+   - 整合所有数据源
+   - 实现统一缓存
+   - 激活巨潮资讯爬虫
 
-### 3.2 实时通知组件
+2. **实现后台调度器**
+   - 分层定时任务
+   - 进程池隔离
+   - 增量检测
 
-```vue
-<template>
-  <div class="realtime-notifications">
-    <!-- 通知铃铛 -->
-    <div class="notification-bell" @click="toggleNotificationPanel">
-      <span class="bell-icon">🔔</span>
-      <span v-if="unreadCount > 0" class="badge">{{ unreadCount }}</span>
-    </div>
+3. **统一 API 接口**
+   - 创建 `/api/news-center/*` 路由
+   - 迁移现有接口
 
-    <!-- 通知面板 -->
-    <div v-if="showPanel" class="notification-panel">
-      <div class="panel-header">
-        <h4>实时预警</h4>
-        <button @click="markAllRead">全部已读</button>
-      </div>
-      <div class="notification-list">
-        <div
-          v-for="notification in notifications"
-          :key="notification.id"
-          :class="['notification-item', notification.urgency, { unread: !notification.read }]"
-        >
-          <div class="notification-header">
-            <span class="urgency-badge">{{ getUrgencyText(notification.urgency) }}</span>
-            <span class="time">{{ formatTime(notification.created_at) }}</span>
-          </div>
-          <div class="notification-title">{{ notification.title }}</div>
-          <div class="related-stocks">
-            <span v-for="stock in notification.related_stocks" :key="stock.code" class="stock-tag">
-              {{ stock.name }}
-            </span>
-          </div>
-          <div class="notification-footer">
-            <span class="source">{{ notification.source }}</span>
-            <span class="impact">影响: {{ notification.impact_score }}/10</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-```
+### 第二阶段：智能分析整合（2-3天）
 
-### 3.3 新闻高亮显示
+1. **复用情绪分析引擎**
+2. **实现股票关联分析**
+3. **实现影响评估引擎**
 
-```vue
-<template>
-  <div
-    :class="['news-item', {
-      'highlight-high': isHighImpact,
-      'highlight-related': isRelatedToMonitored,
-      'new-item': isNew
-    }]"
-  >
-    <div class="news-header">
-      <span v-if="isRelatedToMonitored" class="related-badge">📌 监控股票</span>
-      <span v-if="isHighImpact" class="impact-badge">⚠️ 高影响</span>
-      <span v-if="isNew" class="new-badge">NEW</span>
-    </div>
-    <div class="news-title">{{ news.title }}</div>
-    <div class="news-meta">
-      <span class="source">{{ news.source }}</span>
-      <span class="time">{{ formatTime(news.publish_time) }}</span>
-      <span v-if="news.related_stocks?.length" class="stocks">
-        相关: {{ news.related_stocks.map(s => s.name).join(', ') }}
-      </span>
-    </div>
-  </div>
-</template>
-```
+### 第三阶段：实时推送（2天）
+
+1. **WebSocket 服务**
+2. **通知分级系统**
+3. **前端通知组件**
+
+### 第四阶段：前端迁移（2天）
+
+1. **数据流页面迁移**
+2. **详情模态框迁移**
+3. **智能分析迁移**
+4. **统一新闻中心迁移**
 
 ---
 
-## 四、数据更新频率建议
-
-### 4.1 按数据类型分类
-
-| 数据类型 | 建议更新频率 | 原因 |
-|----------|--------------|------|
-| 财联社快讯 | 30秒 | 最快的财经快讯来源 |
-| 东方财富新闻 | 30秒 | 覆盖面广，更新快 |
-| 监控股票个股新闻 | 30秒 | 直接相关，需要高时效 |
-| 巨潮公告（监控股票） | 60秒 | 权威来源，影响大 |
-| 新浪/同花顺/富途 | 2分钟 | 补充数据源 |
-| 全市场公告 | 5分钟 | 数据量大，非直接相关 |
-| 微博热议 | 10分钟 | 舆情参考，非实时需求 |
-| 财经早餐/新闻联播 | 1小时 | 按日更新的内容 |
-
-### 4.2 按数据重要性分类
-
-| 重要性 | 数据类型 | 更新频率 | 通知方式 |
-|--------|----------|----------|----------|
-| 紧急 | 停牌/退市/立案公告 | 实时 | 弹窗+声音+推送 |
-| 高 | 业绩预告/重组/增减持 | 30秒 | 弹窗+推送 |
-| 中 | 一般新闻/行业动态 | 2分钟 | 列表高亮 |
-| 低 | 舆情/热搜 | 10分钟 | 静默更新 |
-
----
-
-## 五、实施计划
-
-### 第一阶段：基础优化（1-2天）
-1. 添加前端刷新频率设置
-2. 实现静默刷新机制
-3. 统一新闻数据源
-
-### 第二阶段：增量监控（2-3天）
-1. 实现增量新闻检测
-2. 添加新闻指纹去重
-3. 实现股票关联分析
-
-### 第三阶段：实时推送（2-3天）
-1. 实现 WebSocket 实时推送
-2. 添加浏览器通知
-3. 实现影响评估引擎
-
-### 第四阶段：智能通知（1-2天）
-1. 实现通知分级
-2. 添加声音提醒
-3. 优化通知展示
-
----
-
-## 六、技术实现要点
-
-### 6.1 30秒内通知的实现路径
-
-```
-新闻发布 → 数据源API → 后端轮询(30秒) → 增量检测 → 关联分析 → 影响评估 → WebSocket推送 → 前端通知
-   0秒        1-5秒         30秒           <1秒        <1秒        <1秒         <1秒          <1秒
-
-总延迟: 约 30-35 秒
-```
-
-### 6.2 关键优化点
-
-1. **并行获取**: 多数据源并行请求，减少总耗时
-2. **增量检测**: 只处理新新闻，减少计算量
-3. **WebSocket**: 服务端主动推送，无需轮询
-4. **本地缓存**: 前端缓存已读新闻，减少重复通知
-
-### 6.3 性能考虑
-
-- 后端轮询间隔: 30秒
-- 单次请求超时: 10秒
-- 最大并发请求: 5个
-- 新闻指纹缓存: 最近1000条
-- WebSocket 心跳: 30秒
-
----
-
-## 七、监控效果评估指标
+## 八、性能指标
 
 | 指标 | 目标值 | 测量方法 |
 |------|--------|----------|
-| 新闻延迟 | <30秒 | 对比新闻发布时间和通知时间 |
-| 公告延迟 | <60秒 | 对比公告发布时间和通知时间 |
-| 关联准确率 | >90% | 人工抽检 |
-| 误报率 | <5% | 统计无关通知比例 |
-| 漏报率 | <1% | 对比全量新闻和通知 |
-| 系统可用性 | >99.9% | 监控服务状态 |
+| 新闻延迟 | <30秒 | 发布时间 vs 通知时间 |
+| 公告延迟 | <60秒 | 发布时间 vs 通知时间 |
+| API响应 | <200ms | 接口响应时间 |
+| 内存占用 | <500MB | 新闻缓存内存 |
+| CPU占用 | <10% | 后台任务CPU |
+
+---
+
+## 九、文件结构
+
+```
+backend/
+├── services/
+│   └── news_monitor_center.py      # 统一新闻监控中心 (新建)
+├── dataflows/
+│   ├── news/
+│   │   ├── sentiment_engine.py     # 情绪分析引擎 (复用)
+│   │   ├── stock_relation.py       # 股票关联分析 (新建)
+│   │   └── impact_assessor.py      # 影响评估引擎 (新建)
+│   └── announcement/
+│       └── cninfo_crawler.py       # 巨潮爬虫 (激活)
+├── api/
+│   └── news_center_api.py          # 统一新闻API (新建)
+└── websocket/
+    └── news_realtime.py            # WebSocket推送 (新建)
+```
