@@ -4,12 +4,11 @@
 基于 webapi.cninfo.com.cn 官方接口
 
 认证方式：
-- Access Key: 用户标识
-- Access Secret: 用于签名
-- Access Token: 直接用于API调用的令牌
+- 使用 Access Key 和 Access Secret 通过 OAuth2 获取 access_token
+- 然后在请求中携带 access_token 参数
 
 使用方式：
-1. 在 .env 中配置 CNINFO_ACCESS_KEY, CNINFO_ACCESS_SECRET, CNINFO_ACCESS_TOKEN
+1. 在 .env 中配置 CNINFO_ACCESS_KEY, CNINFO_ACCESS_SECRET
 2. 或在 backend/config/cninfo_config.json 中配置
 """
 
@@ -34,6 +33,7 @@ CONFIG_FILE_PATH = Path(__file__).parent.parent.parent / 'config' / 'cninfo_conf
 
 # API基础URL
 API_BASE_URL = "http://webapi.cninfo.com.cn"
+TOKEN_URL = "http://webapi.cninfo.com.cn/api-cloud-platform/oauth2/token"
 
 
 class CninfoConfig:
@@ -92,24 +92,9 @@ class CninfoConfig:
             return False
 
     @classmethod
-    @property
-    def ACCESS_KEY(cls) -> str:
-        return cls._get_config('CNINFO_ACCESS_KEY', '')
-
-    @classmethod
-    @property
-    def ACCESS_SECRET(cls) -> str:
-        return cls._get_config('CNINFO_ACCESS_SECRET', '')
-
-    @classmethod
-    @property
-    def ACCESS_TOKEN(cls) -> str:
-        return cls._get_config('CNINFO_ACCESS_TOKEN', '')
-
-    @classmethod
     def is_configured(cls) -> bool:
         """检查是否已配置"""
-        return bool(cls._get_config('CNINFO_ACCESS_TOKEN', ''))
+        return bool(cls._get_config('CNINFO_ACCESS_KEY', '') and cls._get_config('CNINFO_ACCESS_SECRET', ''))
 
     @classmethod
     def get_all_config(cls) -> Dict[str, Any]:
@@ -117,7 +102,6 @@ class CninfoConfig:
         return {
             'CNINFO_ACCESS_KEY': cls._get_config('CNINFO_ACCESS_KEY', '')[:8] + '***' if cls._get_config('CNINFO_ACCESS_KEY', '') else '',
             'CNINFO_ACCESS_SECRET': '******' if cls._get_config('CNINFO_ACCESS_SECRET', '') else '',
-            'CNINFO_ACCESS_TOKEN': cls._get_config('CNINFO_ACCESS_TOKEN', '')[:8] + '***' if cls._get_config('CNINFO_ACCESS_TOKEN', '') else '',
             'configured': cls.is_configured()
         }
 
@@ -129,6 +113,8 @@ class CninfoApiClient:
         self.base_url = API_BASE_URL
         self.config = CninfoConfig
         self._client: Optional[httpx.AsyncClient] = None
+        self._access_token: Optional[str] = None
+        self._token_expires: Optional[datetime] = None
 
     async def _get_client(self) -> httpx.AsyncClient:
         """获取HTTP客户端"""
@@ -142,39 +128,57 @@ class CninfoApiClient:
             await self._client.aclose()
             self._client = None
 
-    def _get_headers(self) -> Dict[str, str]:
-        """获取请求头"""
-        headers = {
-            'Accept': 'application/json',
-            'User-Agent': 'InvestMindPro/1.0'
+    async def _get_access_token(self) -> str:
+        """获取OAuth2 access_token"""
+        # 检查缓存的token是否有效
+        if self._access_token and self._token_expires and datetime.now() < self._token_expires:
+            return self._access_token
+
+        access_key = self.config._get_config('CNINFO_ACCESS_KEY', '')
+        access_secret = self.config._get_config('CNINFO_ACCESS_SECRET', '')
+
+        if not access_key or not access_secret:
+            raise ValueError("巨潮API未配置Access Key或Access Secret")
+
+        client = await self._get_client()
+        post_data = {
+            'grant_type': 'client_credentials',
+            'client_id': access_key,
+            'client_secret': access_secret
         }
-        return headers
+
+        response = await client.post(TOKEN_URL, data=post_data)
+        if response.status_code == 200:
+            result = response.json()
+            self._access_token = result.get('access_token', '')
+            # Token有效期通常是7200秒(2小时)，我们设置为1.5小时后过期
+            self._token_expires = datetime.now() + timedelta(hours=1, minutes=30)
+            logger.info("巨潮API Token获取成功")
+            return self._access_token
+        else:
+            raise ValueError(f"获取巨潮API Token失败: {response.text}")
 
     async def _request(self, endpoint: str, params: Optional[Dict] = None) -> Dict[str, Any]:
         """发送API请求"""
         if not self.config.is_configured():
-            return {'success': False, 'error': '巨潮API未配置，请先配置 CNINFO_ACCESS_TOKEN'}
-
-        url = f"{self.base_url}{endpoint}"
-        headers = self._get_headers()
+            return {'success': False, 'error': '巨潮API未配置，请先配置 CNINFO_ACCESS_KEY 和 CNINFO_ACCESS_SECRET'}
 
         try:
+            # 获取access_token
+            access_token = await self._get_access_token()
+
+            url = f"{self.base_url}{endpoint}"
             client = await self._get_client()
 
             # 构建请求参数
             request_params = params.copy() if params else {}
+            request_params['access_token'] = access_token
 
-            # 添加mcode认证参数
-            access_token = self.config._get_config('CNINFO_ACCESS_TOKEN', '')
-            if access_token:
-                request_params['mcode'] = access_token
-
-            # 巨潮API使用GET请求
-            response = await client.get(url, params=request_params, headers=headers)
+            # 发送GET请求
+            response = await client.get(url, params=request_params)
 
             if response.status_code == 200:
                 result = response.json()
-                # 巨潮API返回格式: {"resultcode": 200, "resultmsg": "success", "records": [...]}
                 if result.get('resultcode') == 200:
                     return {
                         'success': True,
@@ -206,7 +210,7 @@ class CninfoApiClient:
         market: str = 'SZ'
     ) -> Dict[str, Any]:
         """
-        获取交易日历
+        获取交易日历 [免费可用]
 
         Args:
             start_date: 开始日期 YYYY-MM-DD
@@ -225,7 +229,7 @@ class CninfoApiClient:
         ind_type: str = '137004'  # 默认申万行业
     ) -> Dict[str, Any]:
         """
-        获取行业分类
+        获取行业分类 [免费可用]
 
         Args:
             ind_code: 行业代码
@@ -236,7 +240,28 @@ class CninfoApiClient:
             'indtype': ind_type
         })
 
-    # ==================== 股票数据接口 ====================
+    # ==================== 公告信息接口 (免费可用) ====================
+
+    async def get_announcement_categories(
+        self,
+        sort_code: str = '',
+        parent_code: str = '01'
+    ) -> Dict[str, Any]:
+        """
+        获取公告分类信息 [免费可用]
+
+        Args:
+            sort_code: 分类编码
+            parent_code: 父类编码，顶级分类为01
+        """
+        params = {}
+        if sort_code:
+            params['sortcode'] = sort_code
+        if parent_code:
+            params['parentcode'] = parent_code
+        return await self._request('/api/info/p_info3005', params)
+
+    # ==================== 股票数据接口 (需要付费权限) ====================
 
     async def get_stock_info(
         self,

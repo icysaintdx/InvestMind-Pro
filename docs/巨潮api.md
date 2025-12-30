@@ -384,3 +384,122 @@ if __name__ == "__main__":
 ---
 
 *文档整理完成于 2025-12-30*
+
+
+
+
+
+
+
+
+# 示例
+
+接口英文名称：	p_info3005
+接口中文名称：	公告分类信息
+URL用例：	https://webapi.cninfo.com.cn/api/info/p_info3005
+接口说明：	函数说明：取公告分类内容。 请求方式：GET 和 POST
+最大记录数：	20000
+输入参数值
+英文名称	中文名称	类型	是否必填	说明
+sortcode	分类编码	string	否	只能查询一个分类代码
+parentcode	父类编码	string	否	传入父类编码，可以查询对应的所属分类编码，顶级分类为01
+format	结果集格式	string	否	设置结果返回的格式，可选的有xml、json、csv、dbf
+@column	结果列选择	string	否	选择结果集中所需要的字段，多列用逗号分隔，如@column=a,b
+@limit	结果条数限制	int	否	设置结果返回的条数
+@orderby	结果集排序	string	否	设置结果集的格式，如 @orderby=id:desc @orderby=id:asc
+输出参数值
+英文名称	中文名称	类型	单位	说明
+SORTCODE	类目编码	VARCHAR		
+PARENTCODE	父类编码	VARCHAR		
+SORTNAME	类目名称	VARCHAR		
+F001D	启用时间	DATE		
+F002D	停用时间	DATE		
+错误码示例
+错误码	错误信息	说明
+-1	系统繁忙，此时请开发者稍候再试	系统繁忙，此时请开发者稍候再试
+200	success	success
+401	未经授权的访问	未经授权的访问
+402	不合法的参数	不合法的参数
+403	脚本服务器异常	脚本服务器异常
+404	token 无效	token 无效
+405	token过期	token过期
+406	用户已被禁用	用户已被禁用
+407	免费试用次数已用完	免费试用次数已用完
+408	用户没有余额	用户没有余额
+409	验证权限错误	验证权限错误
+410	验证权限异常	验证权限异常
+411	获取用户信息失败	获取用户信息失败
+412	包时长已超期	包时长已超期
+
+
+## 代码示例
+
+### Web Api
+
+#-*- coding: UTF-8 -*-
+
+import json
+import urllib
+import requests
+import datetime
+
+####用于获取token
+def gettoken(client_id,client_secret):
+    url='http://webapi.cninfo.com.cn/api-cloud-platform/oauth2/token'
+    post_data="grant_type=client_credentials&client_id=%s&client_secret=%s"%(client_id,client_secret)
+    post_data={"grant_type":"client_credentials",
+               "client_id":client_id,
+               "client_secret":client_secret
+               }
+    req = requests.post(url, data=post_data)
+    tokendic = json.loads(req.text)
+    return tokendic['access_token']
+
+####用于解析接口返回内容
+def getPage(url):
+    response = urllib.request.urlopen(url)
+    return response.read().decode('utf-8')
+
+token = gettoken('xxxxxxxxx','xxxxxxxxx') ##请在平台注册后并填入个人中心-我的凭证中的Access Key，Access Secret
+url = 'http://webapi.cninfo.com.cn/api/public/p_public0005?subtype=002&access_token='+token
+print(url)
+result = json.loads(getPage(url))
+for i in range(len(result['records'])):
+    print (result['records'][i]['PARENTCODE'],result['records'][i]['SORTCODE'],result['records'][i]['SORTNAME'],result['records'][i]['F002V'])
+
+
+#### Python
+
+#-*- coding: UTF-8 -*-
+
+import json
+import urllib
+import requests
+import datetime
+
+####用于获取token
+def gettoken(client_id,client_secret):
+    url='http://webapi.cninfo.com.cn/api-cloud-platform/oauth2/token'
+    post_data="grant_type=client_credentials&client_id=%s&client_secret=%s"%(client_id,client_secret)
+    post_data={"grant_type":"client_credentials",
+               "client_id":client_id,
+               "client_secret":client_secret
+               }
+    req = requests.post(url, data=post_data)
+    tokendic = json.loads(req.text)
+    return tokendic['access_token']
+
+####用于解析接口返回内容
+def getPage(url):
+    response = urllib.request.urlopen(url)
+    return response.read().decode('utf-8')
+
+token = gettoken('xxxxxxxxx','xxxxxxxxx') ##请在平台注册后并填入个人中心-我的凭证中的Access Key，Access Secret
+url = 'http://webapi.cninfo.com.cn/api/public/p_public0005?subtype=002&access_token='+token
+print(url)
+result = json.loads(getPage(url))
+for i in range(len(result['records'])):
+    print (result['records'][i]['PARENTCODE'],result['records'][i]['SORTCODE'],result['records'][i]['SORTNAME'],result['records'][i]['F002V'])
+
+
+    

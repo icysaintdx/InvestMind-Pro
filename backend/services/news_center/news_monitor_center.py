@@ -180,7 +180,7 @@ class NewsMonitorCenter:
             return []
 
     async def _fetch_cninfo(self) -> List[Dict]:
-        """获取巨潮资讯网数据（使用官方API）"""
+        """获取巨潮资讯网数据（使用官方API - 免费接口）"""
         try:
             from backend.dataflows.announcement.cninfo_api import get_cninfo_api_client, CninfoConfig
 
@@ -190,90 +190,56 @@ class NewsMonitorCenter:
                 return []
 
             client = get_cninfo_api_client()
-            monitored_stocks = self._get_monitored_stocks()
             news_list = []
 
-            # 1. 获取业绩预告（重要公告）
-            try:
-                # 转换股票代码格式：600519.SH -> 600519
-                clean_codes = [c.split('.')[0] for c in monitored_stocks[:10]]
-                forecast_result = await client.get_performance_forecast(clean_codes)
-                if forecast_result.get('success') and forecast_result.get('data'):
-                    for item in forecast_result['data'][:10]:
-                        forecast_type = item.get('FORECASTTYPE', '')
-                        content = item.get('FORECASTCONTENT', '')[:500]
-                        news_list.append({
-                            "title": f"[业绩预告] {item.get('SECNAME', '')} {forecast_type}",
-                            "content": content,
-                            "pub_time": item.get('NOTICEDATE', ''),
-                            "source": "巨潮业绩预告",
-                            "url": "",
-                            "stock_code": item.get('SECCODE', ''),
-                            "announcement_type": "forecast",
-                            "importance": "high" if forecast_type in ['预增', '扭亏', '首亏', '预减'] else "medium"
-                        })
-            except Exception as e:
-                logger.warning(f"获取业绩预告失败: {e}")
-
-            # 2. 获取业绩快报
-            try:
-                express_result = await client.get_performance_express(clean_codes)
-                if express_result.get('success') and express_result.get('data'):
-                    for item in express_result['data'][:10]:
-                        news_list.append({
-                            "title": f"[业绩快报] {item.get('SECNAME', '')} 净利润{item.get('NETPROFIT', 0)/100000000:.2f}亿",
-                            "content": f"营业收入: {item.get('REVENUE', 0)/100000000:.2f}亿, ROE: {item.get('ROE', 0):.2f}%",
-                            "pub_time": item.get('NOTICEDATE', ''),
-                            "source": "巨潮业绩快报",
-                            "url": "",
-                            "stock_code": item.get('SECCODE', ''),
-                            "announcement_type": "express",
-                            "importance": "high"
-                        })
-            except Exception as e:
-                logger.warning(f"获取业绩快报失败: {e}")
-
-            # 3. 获取停复牌信息
+            # 1. 获取交易日历（检查今天是否交易日）
             try:
                 from datetime import datetime, timedelta
-                end_date = datetime.now().strftime('%Y-%m-%d')
-                start_date = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
-                suspend_result = await client.get_suspend_resume(clean_codes, start_date, end_date)
-                if suspend_result.get('success') and suspend_result.get('data'):
-                    for item in suspend_result['data'][:5]:
-                        news_list.append({
-                            "title": f"[停复牌] {item.get('SECNAME', '')} {item.get('SUSPENDTYPE', '')}",
-                            "content": item.get('SUSPENDREASON', '')[:200],
-                            "pub_time": item.get('SUSPENDDATE', ''),
-                            "source": "巨潮停复牌",
-                            "url": "",
-                            "stock_code": item.get('SECCODE', ''),
-                            "announcement_type": "suspend",
-                            "importance": "critical"
-                        })
+                today = datetime.now().strftime('%Y-%m-%d')
+                calendar_result = await client.get_trade_calendar(today, today, 'SZ')
+                if calendar_result.get('success') and calendar_result.get('data'):
+                    # 检查今天是否是交易日
+                    for item in calendar_result['data']:
+                        trade_date = item.get('F001D', '')
+                        is_open = item.get('F004C', '0')
+                        if trade_date == today and is_open == '1':
+                            news_list.append({
+                                "title": f"[交易日历] 今日({today})为交易日",
+                                "content": "深圳/上海证券交易所正常开市",
+                                "pub_time": today,
+                                "source": "巨潮交易日历",
+                                "url": "",
+                                "announcement_type": "calendar",
+                                "importance": "low"
+                            })
+                        elif trade_date == today and is_open == '0':
+                            news_list.append({
+                                "title": f"[交易日历] 今日({today})休市",
+                                "content": "深圳/上海证券交易所休市",
+                                "pub_time": today,
+                                "source": "巨潮交易日历",
+                                "url": "",
+                                "announcement_type": "calendar",
+                                "importance": "medium"
+                            })
             except Exception as e:
-                logger.warning(f"获取停复牌信息失败: {e}")
+                logger.warning(f"获取交易日历失败: {e}")
 
-            # 4. 获取涨跌停统计
+            # 2. 获取公告分类信息（免费可用）
             try:
-                limit_result = await client.get_limit_stats(clean_codes, start_date, end_date)
-                if limit_result.get('success') and limit_result.get('data'):
-                    for item in limit_result['data'][:5]:
-                        limit_type = item.get('LIMITTYPE', '')
-                        news_list.append({
-                            "title": f"[涨跌停] {item.get('SECNAME', '')} {limit_type}",
-                            "content": f"连续{item.get('LIMITDAYS', 1)}天{limit_type}，原因: {item.get('LIMITREASON', '未知')}",
-                            "pub_time": item.get('TRADEDATE', ''),
-                            "source": "巨潮涨跌停",
-                            "url": "",
-                            "stock_code": item.get('SECCODE', ''),
-                            "announcement_type": "limit",
-                            "importance": "high" if item.get('LIMITDAYS', 1) >= 2 else "medium"
-                        })
+                categories_result = await client.get_announcement_categories('', '01')
+                if categories_result.get('success') and categories_result.get('data'):
+                    # 记录公告分类数量作为系统状态
+                    category_count = len(categories_result['data'])
+                    logger.debug(f"巨潮公告分类数量: {category_count}")
             except Exception as e:
-                logger.warning(f"获取涨跌停统计失败: {e}")
+                logger.warning(f"获取公告分类失败: {e}")
 
-            logger.info(f"从巨潮官方API获取 {len(news_list)} 条数据")
+            # 注意：股票数据接口(p_stock*)需要付费权限，免费账户无法使用
+            # 如需使用业绩预告、业绩快报、停复牌等数据，请升级巨潮账户
+
+            if news_list:
+                logger.info(f"从巨潮官方API获取 {len(news_list)} 条数据")
             return news_list
 
         except Exception as e:
