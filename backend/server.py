@@ -115,6 +115,7 @@ from backend.api.sentiment_api import router as sentiment_router  # 市场情绪
 from backend.api.realtime_monitor_api import router as realtime_monitor_router  # 实时盯盘监控API
 from backend.api.market_data_api import router as market_data_router  # 市场数据API（盘口、排行榜等）
 from backend.api.news_center_api import router as news_center_router  # 统一新闻监控中心API
+from backend.api.cninfo_api import router as cninfo_router  # 巨潮资讯网官方API
 
 # ==================== 配置 ====================
 
@@ -417,6 +418,7 @@ app.include_router(sentiment_router)  # 市场情绪分析API
 app.include_router(realtime_monitor_router)  # 实时盯盘监控API
 app.include_router(market_data_router)  # 市场数据API（盘口、排行榜等）
 app.include_router(news_center_router)  # 统一新闻监控中心API
+app.include_router(cninfo_router)  # 巨潮资讯网官方API
 
 
 # ==================== 数据模型 ====================
