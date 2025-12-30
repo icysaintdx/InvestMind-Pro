@@ -1,4 +1,18 @@
-# 数据流监控模块优化方案 v2.0
+# 数据流监控模块优化方案 v2.1
+
+## 实施状态
+
+| 组件 | 状态 | 文件位置 |
+|------|------|----------|
+| NewsCache | ✅ 已完成 | `backend/services/news_center/news_cache.py` |
+| StockRelationAnalyzer | ✅ 已完成 | `backend/services/news_center/stock_relation_analyzer.py` |
+| ImpactAssessor | ✅ 已完成 | `backend/services/news_center/impact_assessor.py` |
+| NewsMonitorCenter | ✅ 已完成 | `backend/services/news_center/news_monitor_center.py` |
+| 统一新闻API | ✅ 已完成 | `backend/api/news_center_api.py` |
+| WebSocket推送 | ✅ 已完成 | `backend/api/websocket_api.py` (扩展) |
+| 前端集成 | ✅ 已完成 | `frontend/src/views/DataFlowView.vue` |
+
+---
 
 ## 一、现状深度分析
 

@@ -23,6 +23,8 @@ class ConnectionManager:
         self.active_connections: Dict[str, WebSocket] = {}
         # 订阅关系: {ts_code: Set[client_id]}
         self.subscriptions: Dict[str, Set[str]] = {}
+        # 新闻订阅: Set[client_id] - 订阅新闻推送的客户端
+        self.news_subscribers: Set[str] = set()
         # 连接计数器
         self._connection_counter = 0
 
@@ -44,6 +46,8 @@ class ConnectionManager:
                 self.subscriptions[ts_code].discard(client_id)
                 if not self.subscriptions[ts_code]:
                     del self.subscriptions[ts_code]
+            # 清理新闻订阅
+            self.news_subscribers.discard(client_id)
             logger.info(f"[WebSocket] 断开连接: {client_id}, 剩余连接数: {len(self.active_connections)}")
 
     def subscribe(self, client_id: str, ts_code: str):
@@ -59,6 +63,15 @@ class ConnectionManager:
             self.subscriptions[ts_code].discard(client_id)
             if not self.subscriptions[ts_code]:
                 del self.subscriptions[ts_code]
+
+    def subscribe_news(self, client_id: str):
+        """订阅新闻推送"""
+        self.news_subscribers.add(client_id)
+        logger.debug(f"[WebSocket] {client_id} 订阅新闻推送")
+
+    def unsubscribe_news(self, client_id: str):
+        """取消新闻订阅"""
+        self.news_subscribers.discard(client_id)
 
     async def send_personal_message(self, message: dict, client_id: str):
         """发送消息给特定客户端"""
@@ -120,11 +133,46 @@ class ConnectionManager:
         """获取连接状态"""
         return {
             "active_connections": len(self.active_connections),
+            "news_subscribers": len(self.news_subscribers),
             "subscriptions": {
                 ts_code: len(clients)
                 for ts_code, clients in self.subscriptions.items()
             }
         }
+
+    async def notify_news(self, news_list: List[dict], urgency: str = "normal"):
+        """
+        推送新闻给订阅者
+
+        Args:
+            news_list: 新闻列表
+            urgency: 紧急程度 (critical/high/normal)
+        """
+        if not self.news_subscribers:
+            return
+
+        message = {
+            "type": "news_update",
+            "urgency": urgency,
+            "timestamp": datetime.now().isoformat(),
+            "count": len(news_list),
+            "news": news_list[:10]  # 最多推送10条
+        }
+
+        disconnected = []
+        for client_id in self.news_subscribers:
+            if client_id in self.active_connections:
+                try:
+                    await self.active_connections[client_id].send_json(message)
+                except Exception as e:
+                    logger.error(f"[WebSocket] 新闻推送失败: {client_id}, {e}")
+                    disconnected.append(client_id)
+
+        for client_id in disconnected:
+            self.disconnect(client_id)
+
+        if news_list:
+            logger.info(f"[WebSocket] 推送 {len(news_list)} 条新闻给 {len(self.news_subscribers)} 个订阅者")
 
 
 # 全局连接管理器
@@ -137,12 +185,15 @@ async def websocket_dataflow(websocket: WebSocket):
     数据流WebSocket端点
 
     消息格式:
-    - 订阅: {"action": "subscribe", "ts_code": "600519.SH"}
+    - 订阅股票: {"action": "subscribe", "ts_code": "600519.SH"}
     - 取消订阅: {"action": "unsubscribe", "ts_code": "600519.SH"}
+    - 订阅新闻: {"action": "subscribe_news"}
+    - 取消新闻订阅: {"action": "unsubscribe_news"}
     - 心跳: {"action": "ping"}
 
     服务端推送:
     - 数据更新: {"type": "stock_update", "event": "update_complete", "ts_code": "...", "data": {...}}
+    - 新闻更新: {"type": "news_update", "urgency": "...", "count": N, "news": [...]}
     - 心跳响应: {"type": "pong", "timestamp": "..."}
     """
     client_id = await manager.connect(websocket)
@@ -180,6 +231,20 @@ async def websocket_dataflow(websocket: WebSocket):
                             "type": "unsubscribed",
                             "ts_code": ts_code
                         }, client_id)
+
+                elif action == "subscribe_news":
+                    manager.subscribe_news(client_id)
+                    await manager.send_personal_message({
+                        "type": "subscribed_news",
+                        "message": "已订阅新闻推送"
+                    }, client_id)
+
+                elif action == "unsubscribe_news":
+                    manager.unsubscribe_news(client_id)
+                    await manager.send_personal_message({
+                        "type": "unsubscribed_news",
+                        "message": "已取消新闻订阅"
+                    }, client_id)
 
                 elif action == "ping":
                     await manager.send_personal_message({
@@ -258,3 +323,24 @@ async def notify_stock_update_error(ts_code: str, error: str):
 def get_connection_manager() -> ConnectionManager:
     """获取连接管理器实例"""
     return manager
+
+
+async def notify_news_update(news_list: List[dict], urgency: str = "normal"):
+    """
+    推送新闻更新（供其他模块调用）
+
+    Args:
+        news_list: 新闻列表
+        urgency: 紧急程度 (critical/high/normal)
+    """
+    await manager.notify_news(news_list, urgency)
+
+
+async def notify_urgent_news(news_list: List[dict]):
+    """
+    推送紧急新闻（供其他模块调用）
+
+    Args:
+        news_list: 紧急新闻列表
+    """
+    await manager.notify_news(news_list, "critical")

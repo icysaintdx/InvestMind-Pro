@@ -3389,20 +3389,51 @@ export default {
       switch (message.type) {
         case 'connected':
           console.log('WebSocket 连接确认:', message.client_id)
+          // 连接成功后订阅新闻推送
+          subscribeNews()
           break
 
         case 'subscribed':
           console.log('已订阅:', message.ts_code)
           break
 
+        case 'subscribed_news':
+          console.log('已订阅新闻推送')
+          break
+
         case 'stock_update':
           handleStockUpdate(message)
+          break
+
+        case 'news_update':
+          handleNewsUpdate(message)
           break
 
         case 'pong':
           // 心跳响应
           break
       }
+    }
+
+    // 订阅新闻推送
+    const subscribeNews = () => {
+      if (websocket && websocket.readyState === WebSocket.OPEN) {
+        websocket.send(JSON.stringify({ action: 'subscribe_news' }))
+      }
+    }
+
+    // 处理新闻推送
+    const handleNewsUpdate = (message) => {
+      const { urgency, count, news } = message
+      console.log(`📰 收到新闻推送: ${count}条, 紧急程度: ${urgency}`)
+
+      if (urgency === 'critical' || urgency === 'high') {
+        // 紧急新闻弹窗提醒
+        showToast(`紧急新闻: ${news[0]?.title || '有新的重要新闻'}`, 'warning')
+      }
+
+      // 静默刷新新闻列表
+      loadNews(true)
     }
 
     // 处理股票数据更新通知

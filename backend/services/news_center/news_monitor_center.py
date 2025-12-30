@@ -15,6 +15,21 @@ from .impact_assessor import ImpactAssessor, get_impact_assessor
 
 logger = logging.getLogger(__name__)
 
+# WebSocket 推送函数 (延迟导入避免循环依赖)
+_ws_notify_news = None
+_ws_notify_urgent = None
+
+def _get_ws_notifiers():
+    global _ws_notify_news, _ws_notify_urgent
+    if _ws_notify_news is None:
+        try:
+            from backend.api.websocket_api import notify_news_update, notify_urgent_news
+            _ws_notify_news = notify_news_update
+            _ws_notify_urgent = notify_urgent_news
+        except Exception as e:
+            logger.warning(f"Failed to import WebSocket notifiers: {e}")
+    return _ws_notify_news, _ws_notify_urgent
+
 class DataSourceType(str, Enum):
     CLS = "cls"
     EASTMONEY = "eastmoney"
@@ -204,3 +219,61 @@ class NewsMonitorCenter:
                     callback(urgent_news)
                 except:
                     pass
+            # WebSocket 推送紧急新闻
+            ws_notify, ws_urgent = _get_ws_notifiers()
+            if ws_urgent:
+                try:
+                    asyncio.create_task(ws_urgent(urgent_news))
+                except:
+                    pass
+
+    def get_latest_news(self, limit: int = 50, **filters) -> List[Dict]:
+        news_list = self._cache.get_latest_news(limit, **filters)
+        return [n.to_dict() for n in news_list]
+    
+    def get_urgent_news(self, limit: int = 20) -> List[Dict]:
+        news_list = self._cache.get_urgent_news(limit)
+        return [n.to_dict() for n in news_list]
+    
+    def get_news_for_stock(self, stock_code: str, limit: int = 30) -> List[Dict]:
+        news_list = self._cache.get_news_for_stock(stock_code, limit)
+        return [n.to_dict() for n in news_list]
+    
+    def get_stats(self) -> Dict[str, Any]:
+        cache_stats = self._cache.get_stats()
+        source_stats = {sid: {"name": cfg.name, "interval": cfg.interval, "enabled": cfg.enabled, "last_fetch": cfg.last_fetch, "fetch_count": cfg.fetch_count, "error_count": cfg.error_count} for sid, cfg in self._sources.items()}
+        return {**self._stats, "cache": cache_stats, "sources": source_stats, "running": self._running}
+    
+    def set_source_interval(self, source_id: str, interval: int):
+        if source_id in self._sources:
+            self._sources[source_id].interval = max(10, interval)
+            logger.info(f"Set {source_id} interval to {interval}s")
+    
+    def enable_source(self, source_id: str, enabled: bool = True):
+        if source_id in self._sources:
+            self._sources[source_id].enabled = enabled
+            logger.info(f"Set {source_id} enabled={enabled}")
+    
+    def on_new_news(self, callback: Callable):
+        self._on_new_news.append(callback)
+    
+    def on_urgent_news(self, callback: Callable):
+        self._on_urgent_news.append(callback)
+    
+    async def fetch_now(self, source_id: str = None):
+        if source_id:
+            await self._fetch_source(source_id)
+        else:
+            for sid in self._sources:
+                await self._fetch_source(sid)
+    
+    def cleanup(self):
+        return self._cache.cleanup_expired()
+
+_monitor_center = None
+
+def get_news_monitor_center() -> NewsMonitorCenter:
+    global _monitor_center
+    if _monitor_center is None:
+        _monitor_center = NewsMonitorCenter()
+    return _monitor_center
