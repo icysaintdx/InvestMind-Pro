@@ -1,0 +1,22 @@
+{
+  "data": {
+    "total_stocks": 5499,
+    "up_count": 2360,
+    "down_count": 2608,
+    "flat_count": 204,
+    "up_ratio": 42.92,
+    "limit_up": 74,
+    "limit_down": 11,
+    "up_5_pct": 208,
+    "up_3_pct": 204,
+    "down_3_pct": 221,
+    "down_5_pct": 73,
+    "sentiment_score": -4.51,
+    "sentiment_level": "偏空",
+    "shanghai_count": 2438,
+    "shenzhen_count": 3061,
+    "update_time": "2026-01-03 14:38:51"
+  },
+  "update_time": "2026-01-03T14:38:58.634938",
+  "cache_type": "market_stats"
+}

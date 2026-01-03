@@ -425,25 +425,26 @@ export default {
 
       isLoading.value = true
       try {
-        const response = await axios.post(`${API_BASE_URL}/api/unified-news/stock`, {
-          stock_code: searchQuery.value.trim(),
-          limit: 50
-        })
+        // 使用新的个股新闻API
+        const response = await axios.get(`${API_BASE_URL}/api/news-center/stock-news/${searchQuery.value.trim()}`)
 
         if (response.data.success && response.data.data) {
           const newsData = response.data.data
-          newsList.value = newsData.news.map(transformNewsItem)
-          
+          newsList.value = newsData.map(transformNewsItem)
+
           // 更新统计
           updateStatsFromList()
-          
+
           // 更新数据源统计
-          if (newsData.source_stats) {
-            sourceStats.value = Object.entries(newsData.source_stats).map(([name, count]) => ({
-              name,
-              count
-            }))
-          }
+          const sourceCounts = {}
+          newsData.forEach(n => {
+            const source = n.source || '未知'
+            sourceCounts[source] = (sourceCounts[source] || 0) + 1
+          })
+          sourceStats.value = Object.entries(sourceCounts).map(([name, count]) => ({
+            name,
+            count
+          }))
         }
       } catch (err) {
         console.error('搜索新闻失败:', err)
@@ -465,24 +466,28 @@ export default {
     const loadMarketNews = async () => {
       isLoading.value = true
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/unified-news/market`, {
+        // 使用新的市场新闻API
+        const response = await axios.get(`${API_BASE_URL}/api/news-center/market`, {
           params: { limit: 50 }
         })
 
-        if (response.data.success && response.data.data) {
-          const newsData = response.data.data
-          newsList.value = newsData.news.map(transformNewsItem)
-          
+        if (response.data.success) {
+          const newsData = response.data.news || response.data.data || []
+          newsList.value = newsData.map(transformNewsItem)
+
           // 更新统计
           updateStatsFromList()
-          
+
           // 更新数据源统计
-          if (newsData.source_stats) {
-            sourceStats.value = Object.entries(newsData.source_stats).map(([name, count]) => ({
-              name,
-              count
-            }))
-          }
+          const sourceCounts = {}
+          newsData.forEach(n => {
+            const source = n.source || '未知'
+            sourceCounts[source] = (sourceCounts[source] || 0) + 1
+          })
+          sourceStats.value = Object.entries(sourceCounts).map(([name, count]) => ({
+            name,
+            count
+          }))
         }
       } catch (err) {
         console.error('加载市场新闻失败:', err)

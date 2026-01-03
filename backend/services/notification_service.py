@@ -119,6 +119,7 @@ class NotificationConfig:
             'SMTP_PASSWORD': '******' if cls.SMTP_PASSWORD else '',
             'SMTP_FROM': cls.SMTP_FROM,
             'SMTP_USE_SSL': cls.SMTP_USE_SSL,
+            'EMAIL_RECIPIENTS': cls.EMAIL_RECIPIENTS,
             'WECHAT_WEBHOOK_URL': cls._mask_url(cls.WECHAT_WEBHOOK_URL),
             'DINGTALK_WEBHOOK_URL': cls._mask_url(cls.DINGTALK_WEBHOOK_URL),
             'DINGTALK_SECRET': '******' if cls.DINGTALK_SECRET else '',
@@ -165,6 +166,16 @@ class NotificationConfig:
         if isinstance(val, bool):
             return val
         return str(val).lower() == 'true'
+
+    # 邮件收件人列表
+    @classproperty
+    def EMAIL_RECIPIENTS(cls) -> List[str]:
+        """获取默认邮件收件人列表"""
+        recipients = cls._get_config('EMAIL_RECIPIENTS', [])
+        if isinstance(recipients, str):
+            # 支持逗号分隔的字符串格式
+            return [r.strip() for r in recipients.split(',') if r.strip()]
+        return recipients if isinstance(recipients, list) else []
 
     # 企业微信配置
     @classproperty

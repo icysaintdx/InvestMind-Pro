@@ -121,17 +121,17 @@ def get_kline_from_akshare(symbol: str, period: str, adjust: str = "qfq") -> pd.
 def get_kline_from_sina(symbol: str, period: str) -> pd.DataFrame:
     """
     从新浪获取K线数据
-    
+
     Args:
         symbol: 股票代码
         period: 周期
-    
+
     Returns:
         K线数据DataFrame
     """
     try:
         import akshare as ak
-        
+
         # 新浪接口通过AKShare调用
         if period in ['1', '5', '15', '30', '60']:
             df = ak.stock_zh_a_minute(
@@ -144,11 +144,142 @@ def get_kline_from_sina(symbol: str, period: str) -> pd.DataFrame:
                 symbol=symbol,
                 adjust="qfq"
             )
-        
+
         return df
 
     except Exception as e:
         logger.error(f"新浪获取K线失败: {e}")
+        raise
+
+
+def get_kline_from_juhe(symbol: str, period: str = "daily") -> pd.DataFrame:
+    """
+    从聚合数据获取K线数据（仅支持日线）
+
+    Args:
+        symbol: 股票代码
+        period: 周期（聚合数据仅支持日线）
+
+    Returns:
+        K线数据DataFrame
+    """
+    try:
+        import requests
+        import os
+
+        api_key = os.getenv("JUHE_API_KEY")
+        if not api_key:
+            raise ValueError("聚合数据API Key未配置")
+
+        # 格式化股票代码
+        if symbol.startswith('6'):
+            juhe_code = 'sh' + symbol
+        elif symbol.startswith(('0', '3')):
+            juhe_code = 'sz' + symbol
+        else:
+            juhe_code = 'sz' + symbol
+
+        # 聚合数据K线接口
+        url = "http://web.juhe.cn/finance/stock/hs"
+        params = {
+            'key': api_key,
+            'gid': juhe_code,
+            'type': ''
+        }
+
+        resp = requests.get(url, params=params, timeout=10)
+        if resp.status_code == 200:
+            data = resp.json()
+            if data.get('error_code') == 0 and data.get('result'):
+                result_data = data['result'][0] if isinstance(data['result'], list) else data['result']
+                dapandata = result_data.get('dapandata', {})
+
+                # 聚合数据只返回当日数据，构造单条记录
+                df = pd.DataFrame([{
+                    'time': datetime.now().strftime('%Y-%m-%d'),
+                    'open': float(dapandata.get('todayOpenPrice', 0) or 0),
+                    'high': float(dapandata.get('todayMax', 0) or 0),
+                    'low': float(dapandata.get('todayMin', 0) or 0),
+                    'close': float(dapandata.get('nowPrice', 0) or 0),
+                    'volume': float(dapandata.get('tradenumber', 0) or 0),
+                    'amount': float(dapandata.get('tradeamount', 0) or 0)
+                }])
+
+                logger.info(f"聚合数据获取K线成功: {symbol}")
+                return df
+            else:
+                raise ValueError(f"聚合数据返回错误: {data.get('reason', 'Unknown error')}")
+        else:
+            raise ValueError(f"聚合数据请求失败: HTTP {resp.status_code}")
+
+    except Exception as e:
+        logger.error(f"聚合数据获取K线失败: {e}")
+        raise
+
+
+def get_kline_from_tushare(symbol: str, period: str, limit: int = 200) -> pd.DataFrame:
+    """
+    从Tushare获取K线数据
+
+    Args:
+        symbol: 股票代码
+        period: 周期 (daily/weekly/monthly)
+        limit: 返回条数
+
+    Returns:
+        K线数据DataFrame
+    """
+    try:
+        import tushare as ts
+        import os
+
+        token = os.getenv("TUSHARE_TOKEN")
+        if not token:
+            raise ValueError("Tushare Token未配置")
+
+        pro = ts.pro_api(token)
+
+        # 格式化股票代码为Tushare格式
+        if symbol.startswith('6'):
+            ts_code = symbol + '.SH'
+        else:
+            ts_code = symbol + '.SZ'
+
+        # 计算日期范围
+        end_date = datetime.now().strftime('%Y%m%d')
+        start_date = (datetime.now() - timedelta(days=limit * 2)).strftime('%Y%m%d')
+
+        # 根据周期选择接口
+        if period == 'daily':
+            df = pro.daily(ts_code=ts_code, start_date=start_date, end_date=end_date)
+        elif period == 'weekly':
+            df = pro.weekly(ts_code=ts_code, start_date=start_date, end_date=end_date)
+        elif period == 'monthly':
+            df = pro.monthly(ts_code=ts_code, start_date=start_date, end_date=end_date)
+        else:
+            raise ValueError(f"Tushare不支持的周期: {period}")
+
+        if df is None or df.empty:
+            raise ValueError(f"Tushare未返回数据: {symbol}")
+
+        # 统一列名
+        df = df.rename(columns={
+            'trade_date': 'time',
+            'vol': 'volume'
+        })
+
+        # 按时间排序
+        df = df.sort_values('time')
+
+        # 限制返回条数
+        if len(df) > limit:
+            df = df.tail(limit)
+
+        logger.info(f"Tushare获取K线成功: {symbol} {period} {len(df)}条")
+        return df
+
+    except Exception as e:
+        logger.error(f"Tushare获取K线失败: {e}")
         raise
 
 
@@ -267,14 +398,18 @@ async def get_kline_data(
         df = None
         used_source = source
 
-        # 数据源优先级: TDX > AKShare > Sina
+        # 数据源优先级: TDX > Tushare > AKShare > Sina > Juhe
         if source == "auto":
             # 自动模式：按优先级尝试各数据源
             data_sources = [
                 ("tdx", lambda: get_kline_from_tdx(symbol, period, limit)),
+                ("tushare", lambda: get_kline_from_tushare(symbol, period, limit)),
                 ("akshare", lambda: get_kline_from_akshare(symbol, period, adjust)),
-                ("sina", lambda: get_kline_from_sina(symbol, period))
+                ("sina", lambda: get_kline_from_sina(symbol, period)),
             ]
+            # 聚合数据仅支持日线
+            if period == "daily":
+                data_sources.append(("juhe", lambda: get_kline_from_juhe(symbol, period)))
 
             for src_name, src_func in data_sources:
                 try:
@@ -294,10 +429,14 @@ async def get_kline_data(
             # 指定数据源模式
             if source == "tdx":
                 df = get_kline_from_tdx(symbol, period, limit)
+            elif source == "tushare":
+                df = get_kline_from_tushare(symbol, period, limit)
             elif source == "akshare":
                 df = get_kline_from_akshare(symbol, period, adjust)
             elif source == "sina":
                 df = get_kline_from_sina(symbol, period)
+            elif source == "juhe":
+                df = get_kline_from_juhe(symbol, period)
             else:
                 raise ValueError(f"不支持的数据源: {source}")
 
@@ -747,6 +886,7 @@ async def get_data_sources_status():
     Returns:
         数据源状态列表
     """
+    import os
     sources = []
 
     # 检查TDX
@@ -770,6 +910,17 @@ async def get_data_sources_status():
             "error": str(e)
         })
 
+    # 检查Tushare
+    tushare_token = os.getenv("TUSHARE_TOKEN")
+    sources.append({
+        "name": "tushare",
+        "label": "Tushare",
+        "available": bool(tushare_token),
+        "priority": 2,
+        "description": "专业金融数据，财务数据首选",
+        "requires_token": True
+    })
+
     # 检查AKShare
     try:
         import akshare
@@ -777,7 +928,7 @@ async def get_data_sources_status():
             "name": "akshare",
             "label": "AKShare",
             "available": True,
-            "priority": 2,
+            "priority": 3,
             "description": "开源金融数据接口，数据全面"
         })
     except ImportError:
@@ -785,7 +936,7 @@ async def get_data_sources_status():
             "name": "akshare",
             "label": "AKShare",
             "available": False,
-            "priority": 2,
+            "priority": 3,
             "error": "akshare库未安装"
         })
 
@@ -794,8 +945,28 @@ async def get_data_sources_status():
         "name": "sina",
         "label": "新浪财经",
         "available": True,
-        "priority": 3,
-        "description": "新浪财经数据接口"
+        "priority": 4,
+        "description": "实时行情免费接口"
+    })
+
+    # 检查聚合数据
+    juhe_key = os.getenv("JUHE_API_KEY")
+    sources.append({
+        "name": "juhe",
+        "label": "聚合数据",
+        "available": bool(juhe_key),
+        "priority": 5,
+        "description": "付费API，稳定可靠",
+        "requires_token": True
+    })
+
+    # 检查腾讯
+    sources.append({
+        "name": "tencent",
+        "label": "腾讯财经",
+        "available": True,
+        "priority": 6,
+        "description": "腾讯财经数据接口"
     })
 
     return {

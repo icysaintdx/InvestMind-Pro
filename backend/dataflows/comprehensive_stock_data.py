@@ -14,6 +14,20 @@ from backend.dataflows.comprehensive_stock_data_additions import generate_interf
 logger = get_logger("dataflows.comprehensive")
 
 
+def extract_pure_symbol(ts_code: str) -> str:
+    """
+    从各种格式的股票代码中提取纯数字代码
+    支持格式: 600519.SH, SH600519, 600519
+    返回: 600519
+    """
+    # 先去除后缀（如 600519.SH -> 600519）
+    symbol = ts_code.split('.')[0]
+    # 再去除前缀（如 SH600519 -> 600519）
+    if symbol.upper().startswith(('SH', 'SZ')):
+        symbol = symbol[2:]
+    return symbol
+
+
 class ComprehensiveStockDataService:
     """综合股票数据服务 - 整合所有接口"""
     
@@ -323,10 +337,11 @@ class ComprehensiveStockDataService:
                 data['pledge_ratio'] = 0
 
         return result
-    
+
     def _get_realtime_quote(self, ts_code: str) -> Dict:
         """获取实时行情（优先TDX，降级到AKShare单股票API）"""
-        symbol = ts_code.split('.')[0]
+        # 提取纯数字股票代码
+        symbol = extract_pure_symbol(ts_code)
 
         # 优先使用TDX（最快最可靠）
         try:
@@ -489,15 +504,15 @@ class ComprehensiveStockDataService:
         """检查ST状态"""
         try:
             import akshare as ak
-            
+
             # 使用AKShare的ST风险警示板接口
             df = ak.stock_zh_a_st_em()
-            
+
             if df is None or df.empty:
                 return {'status': 'normal', 'is_st': False, 'message': '非ST股票'}
-            
+
             # 检查是否在ST列表中
-            stock_code = ts_code.split('.')[0]
+            stock_code = extract_pure_symbol(ts_code)
             is_st = stock_code in df['代码'].values
             
             if is_st:
@@ -841,7 +856,7 @@ class ComprehensiveStockDataService:
 
     def _get_top_inst(self, ts_code: str) -> Dict:
         """获取龙虎榜机构明细（优先Tushare，备选AKShare）"""
-        symbol = ts_code.split('.')[0]
+        symbol = extract_pure_symbol(ts_code)
 
         # 1. 尝试 Tushare
         if self.tushare_api:
@@ -956,40 +971,59 @@ class ComprehensiveStockDataService:
         """获取大宗交易数据（AKShare）"""
         try:
             import akshare as ak
+            from datetime import datetime, timedelta
 
             # 获取全市场大宗交易数据，然后筛选
-            symbol = ts_code.split('.')[0]
+            symbol = extract_pure_symbol(ts_code)
 
-            # 使用stock_dzjy_sctj获取大宗交易统计
+            # 使用stock_dzjy_mrmx获取大宗交易每日明细（这是正确的API）
             try:
-                df = ak.stock_dzjy_sctj()
-                if df is not None and not df.empty:
-                    # 筛选当前股票
-                    stock_data = df[df['证券代码'].astype(str) == symbol]
-                    if not stock_data.empty:
-                        records = stock_data.head(20).to_dict('records')
-                        return {
-                            'status': 'success',
-                            'count': len(records),
-                            'data': records,
-                            'description': '大宗交易统计'
-                        }
-            except Exception as e1:
-                logger.debug(f"stock_dzjy_sctj失败: {e1}")
+                end_date = datetime.now().strftime('%Y%m%d')
+                start_date = (datetime.now() - timedelta(days=90)).strftime('%Y%m%d')
 
-            # 备选：获取每日明细
+                df = ak.stock_dzjy_mrmx(symbol='A股', start_date=start_date, end_date=end_date)
+                if df is not None and not df.empty:
+                    # 找到证券代码列
+                    code_col = None
+                    for col in df.columns:
+                        if '证券代码' in str(col) or '代码' in str(col):
+                            code_col = col
+                            break
+
+                    if code_col:
+                        stock_data = df[df[code_col].astype(str) == symbol]
+                        if not stock_data.empty:
+                            records = stock_data.head(20).to_dict('records')
+                            return {
+                                'status': 'success',
+                                'count': len(records),
+                                'data': records,
+                                'description': '大宗交易明细'
+                            }
+            except Exception as e1:
+                logger.debug(f"stock_dzjy_mrmx失败: {e1}")
+
+            # 备选：获取每日统计
             try:
                 df = ak.stock_dzjy_mrtj()
                 if df is not None and not df.empty:
-                    stock_data = df[df['证券代码'].astype(str) == symbol]
-                    if not stock_data.empty:
-                        records = stock_data.head(20).to_dict('records')
-                        return {
-                            'status': 'success',
-                            'count': len(records),
-                            'data': records,
-                            'description': '大宗交易每日统计'
-                        }
+                    # 找到证券代码列
+                    code_col = None
+                    for col in df.columns:
+                        if '证券代码' in str(col) or '代码' in str(col):
+                            code_col = col
+                            break
+
+                    if code_col:
+                        stock_data = df[df[code_col].astype(str) == symbol]
+                        if not stock_data.empty:
+                            records = stock_data.head(20).to_dict('records')
+                            return {
+                                'status': 'success',
+                                'count': len(records),
+                                'data': records,
+                                'description': '大宗交易每日统计'
+                            }
             except Exception as e2:
                 logger.debug(f"stock_dzjy_mrtj失败: {e2}")
 
@@ -1007,7 +1041,7 @@ class ComprehensiveStockDataService:
         try:
             import akshare as ak
 
-            symbol = ts_code.split('.')[0]
+            symbol = extract_pure_symbol(ts_code)
 
             # 方法1: 使用巨潮资讯公告查询
             try:
@@ -1065,15 +1099,16 @@ class ComprehensiveStockDataService:
         """获取个股新闻（使用东方财富）"""
         try:
             import akshare as ak
+            from backend.dataflows.stock.akshare_utils import get_stock_news_em
 
-            symbol = ts_code.split('.')[0]
+            symbol = extract_pure_symbol(ts_code)
 
-            # 方法1: 使用东方财富个股新闻
+            # 方法1: 使用修复版东方财富个股新闻函数
             try:
-                df = ak.stock_news_em(symbol=symbol)
+                df = get_stock_news_em(symbol=symbol, max_news=20)
                 if df is not None and not df.empty:
                     records = []
-                    for _, row in df.head(20).iterrows():
+                    for _, row in df.iterrows():
                         records.append({
                             'title': str(row.get('新闻标题', '')),
                             'content': str(row.get('新闻内容', ''))[:200],
@@ -1087,11 +1122,11 @@ class ComprehensiveStockDataService:
                         'data': records
                     }
             except Exception as e1:
-                logger.debug(f"stock_news_em失败: {e1}")
+                logger.debug(f"get_stock_news_em失败: {e1}")
 
-            # 方法2: 使用财联社电报
+            # 方法2: 使用财联社电报 (stock_telegraph_cls已改名为stock_info_global_cls)
             try:
-                df = ak.stock_telegraph_cls()
+                df = ak.stock_info_global_cls()
                 if df is not None and not df.empty:
                     records = []
                     for _, row in df.head(20).iterrows():
@@ -1108,7 +1143,7 @@ class ComprehensiveStockDataService:
                         'data': records
                     }
             except Exception as e2:
-                logger.debug(f"stock_telegraph_cls失败: {e2}")
+                logger.debug(f"stock_info_global_cls失败: {e2}")
 
             return {'status': 'no_data', 'message': '无新闻数据'}
 
@@ -1173,9 +1208,9 @@ class ComprehensiveStockDataService:
             except Exception as e1:
                 logger.debug(f"stock_gsgg_em失败: {e1}")
 
-            # 方法2: 使用财联社电报作为替代
+            # 方法2: 使用财联社电报作为替代 (stock_telegraph_cls已改名为stock_info_global_cls)
             try:
-                df = ak.stock_telegraph_cls()
+                df = ak.stock_info_global_cls()
                 if df is not None and not df.empty:
                     records = []
                     for _, row in df.head(50).iterrows():
@@ -1193,7 +1228,7 @@ class ComprehensiveStockDataService:
                         'data': records
                     }
             except Exception as e2:
-                logger.debug(f"stock_telegraph_cls失败: {e2}")
+                logger.debug(f"stock_info_global_cls失败: {e2}")
 
             return {'status': 'no_data', 'message': '无公告快讯'}
 
@@ -1208,9 +1243,9 @@ class ComprehensiveStockDataService:
 
             all_news = []
 
-            # 1. 尝试获取财联社电报（实时财经新闻，包含政策信息）
+            # 1. 尝试获取财联社电报（实时财经新闻，包含政策信息）(stock_telegraph_cls已改名为stock_info_global_cls)
             try:
-                df_cls = ak.stock_telegraph_cls()
+                df_cls = ak.stock_info_global_cls()
                 if df_cls is not None and not df_cls.empty:
                     for _, row in df_cls.head(30).iterrows():
                         title = str(row.get('标题', ''))
@@ -1229,22 +1264,27 @@ class ComprehensiveStockDataService:
             except Exception as e:
                 logger.debug(f"财联社电报获取失败: {e}")
 
-            # 2. 尝试获取东方财富财经新闻
+            # 2. 尝试获取东方财富全球资讯（不使用个股新闻API，避免混淆）
             try:
-                df_em = ak.stock_news_em(symbol="财经")
+                df_em = ak.stock_info_global_em()
                 if df_em is not None and not df_em.empty:
                     for _, row in df_em.head(20).iterrows():
-                        title = str(row.get('新闻标题', ''))
-                        all_news.append({
-                            'time': str(row.get('发布时间', '')),
-                            'title': title,
-                            'content': str(row.get('新闻内容', ''))[:200],
-                            'source': '东方财富',
-                            'url': str(row.get('新闻链接', '')),
-                            'type': 'financial_news'
-                        })
+                        title = str(row.get('标题', row.get('title', '')))
+                        content = str(row.get('内容', row.get('content', '')))
+                        # 筛选政策相关新闻
+                        policy_keywords = ['政策', '监管', '央行', '证监会', '发改委', '国务院',
+                                         '部委', '法规', '条例', '意见', '通知', '规定']
+                        if any(kw in title or kw in content for kw in policy_keywords):
+                            all_news.append({
+                                'time': str(row.get('发布时间', row.get('time', ''))),
+                                'title': title,
+                                'content': content[:200] if len(content) > 200 else content,
+                                'source': '东方财富',
+                                'url': str(row.get('链接', row.get('url', ''))),
+                                'type': 'financial_news'
+                            })
             except Exception as e:
-                logger.debug(f"东方财富新闻获取失败: {e}")
+                logger.debug(f"东方财富全球资讯获取失败: {e}")
 
             if all_news:
                 return {
@@ -1264,7 +1304,7 @@ class ComprehensiveStockDataService:
         """获取ST股票详细信息（AKShare）"""
         try:
             import akshare as ak
-            symbol = ts_code.split('.')[0]
+            symbol = extract_pure_symbol(ts_code)
             
             # ST股票统计
             df = ak.stock_zh_a_st_em()
@@ -1284,7 +1324,7 @@ class ComprehensiveStockDataService:
         """获取停复牌信息（AKShare）"""
         try:
             import akshare as ak
-            symbol = ts_code.split('.')[0]
+            symbol = extract_pure_symbol(ts_code)
             
             # 停复牌信息
             df = ak.stock_zh_a_stop_em()
@@ -1305,7 +1345,7 @@ class ComprehensiveStockDataService:
         """获取股权质押详情（AKShare）"""
         try:
             import akshare as ak
-            symbol = ts_code.split('.')[0]
+            symbol = extract_pure_symbol(ts_code)
 
             # 方法1: 使用股权质押市场概况
             try:
@@ -1341,20 +1381,43 @@ class ComprehensiveStockDataService:
             return {'status': 'no_data', 'message': '质押详情暂不可用'}
     
     def _get_restricted_shares_ak(self, ts_code: str) -> Dict:
-        """获取限售股解禁（AKShare）"""
+        """获取限售股解禁（AKShare）- 多接口降级"""
         try:
             import akshare as ak
-            symbol = ts_code.split('.')[0]
-            
-            # 限售股解禁
-            df = ak.stock_restricted_release_queue_sina(symbol=symbol)
-            if df is not None and not df.empty:
-                return {
-                    'status': 'success',
-                    'count': len(df),
-                    'data': df.to_dict('records')
-                }
-            return {'status': 'no_data', 'message': '无解禁数据'}
+            symbol = extract_pure_symbol(ts_code)
+            market = ts_code.split('.')[1] if '.' in ts_code else 'SH'
+
+            # 方法1: 尝试新浪限售解禁接口
+            try:
+                sina_symbol = f"sh{symbol}" if market == 'SH' or symbol.startswith('6') else f"sz{symbol}"
+                df = ak.stock_restricted_release_queue_sina(symbol=sina_symbol)
+                if df is not None and not df.empty:
+                    return {
+                        'status': 'success',
+                        'count': len(df),
+                        'data': df.to_dict('records'),
+                        'source': 'sina'
+                    }
+            except Exception as e1:
+                logger.debug(f"新浪限售解禁接口失败: {e1}")
+
+            # 方法2: 尝试东财限售解禁接口
+            try:
+                df = ak.stock_restricted_release_summary_em()
+                if df is not None and not df.empty:
+                    # 筛选当前股票
+                    stock_data = df[df['代码'].astype(str) == symbol]
+                    if not stock_data.empty:
+                        return {
+                            'status': 'success',
+                            'count': len(stock_data),
+                            'data': stock_data.to_dict('records'),
+                            'source': 'eastmoney'
+                        }
+            except Exception as e2:
+                logger.debug(f"东财限售解禁接口失败: {e2}")
+
+            return {'status': 'no_data', 'message': '无解禁数据（接口暂不可用）'}
         except Exception as e:
             logger.warning(f"⚠️ 限售股获取失败: {e}")
             return {'status': 'no_data', 'message': '限售股暂不可用'}
@@ -1363,7 +1426,7 @@ class ComprehensiveStockDataService:
         """获取股东增减持（AKShare）- 使用股东人数变化数据"""
         try:
             import akshare as ak
-            symbol = ts_code.split('.')[0]
+            symbol = extract_pure_symbol(ts_code)
 
             # 使用stock_zh_a_gdhs获取股东户数变化（这是正确的接口）
             # 股东户数变化可以反映筹码集中度
@@ -1394,7 +1457,7 @@ class ComprehensiveStockDataService:
         """获取龙虎榜（AKShare）"""
         try:
             import akshare as ak
-            symbol = ts_code.split('.')[0]
+            symbol = extract_pure_symbol(ts_code)
 
             # 方法1: 获取龙虎榜每日详情（不需要symbol参数）
             try:
@@ -1438,7 +1501,7 @@ class ComprehensiveStockDataService:
         """获取业绩预告（AKShare）"""
         try:
             import akshare as ak
-            symbol = ts_code.split('.')[0]
+            symbol = extract_pure_symbol(ts_code)
 
             # 方法1: 获取业绩预告汇总
             try:
@@ -1479,7 +1542,7 @@ class ComprehensiveStockDataService:
         """获取审计意见（AKShare）"""
         try:
             import akshare as ak
-            symbol = ts_code.split('.')[0]
+            symbol = extract_pure_symbol(ts_code)
 
             # 方法1: 使用财务审计意见汇总
             try:
@@ -1518,7 +1581,7 @@ class ComprehensiveStockDataService:
         """获取融资融券（AKShare）"""
         try:
             import akshare as ak
-            symbol = ts_code.split('.')[0]
+            symbol = extract_pure_symbol(ts_code)
 
             # 方法1: 使用融资融券明细
             try:
@@ -1568,14 +1631,20 @@ class ComprehensiveStockDataService:
     
     def _get_realtime_tick(self, ts_code: str) -> Dict:
         """获取实时成交数据（优先使用AKShare）"""
-        symbol = ts_code.split('.')[0]
+        symbol = extract_pure_symbol(ts_code)
+
+        # 构建带市场前缀的代码（stock_zh_a_tick_tx_js 需要 sh600187 或 sz000001 格式）
+        if symbol.startswith('6'):
+            ak_symbol = f'sh{symbol}'
+        else:
+            ak_symbol = f'sz{symbol}'
 
         # 方法1: 使用AKShare获取分时数据
         try:
             import akshare as ak
 
-            # 获取分时成交数据
-            df = ak.stock_zh_a_tick_tx_js(symbol=symbol)
+            # 获取分时成交数据（需要带市场前缀）
+            df = ak.stock_zh_a_tick_tx_js(symbol=ak_symbol)
             if df is not None and not df.empty:
                 records = df.tail(20).to_dict('records')
                 return {
@@ -1588,11 +1657,11 @@ class ComprehensiveStockDataService:
         except Exception as e:
             logger.debug(f"AKShare分时数据获取失败: {e}")
 
-        # 方法2: 使用AKShare获取分钟K线
+        # 方法2: 使用AKShare获取分钟K线（也需要带市场前缀）
         try:
             import akshare as ak
 
-            df = ak.stock_zh_a_minute(symbol=symbol, period='5', adjust="qfq")
+            df = ak.stock_zh_a_minute(symbol=ak_symbol, period='5', adjust="qfq")
             if df is not None and not df.empty:
                 records = df.tail(20).to_dict('records')
                 return {
@@ -1631,7 +1700,7 @@ class ComprehensiveStockDataService:
     
     def _get_limit_list(self, ts_code: str) -> Dict:
         """获取涨跌停数据（优先Tushare，备选AKShare）"""
-        symbol = ts_code.split('.')[0]
+        symbol = extract_pure_symbol(ts_code)
 
         # 1. 尝试 Tushare
         if self.tushare_api:
@@ -1719,7 +1788,7 @@ class ComprehensiveStockDataService:
     
     def _get_margin_data(self, ts_code: str) -> Dict:
         """获取融资融券数据（优先Tushare，备选AKShare）"""
-        symbol = ts_code.split('.')[0]
+        symbol = extract_pure_symbol(ts_code)
         exchange = 'SH' if ts_code.endswith('.SH') else 'SZ'
 
         # 1. 尝试 Tushare
@@ -1897,7 +1966,7 @@ class ComprehensiveStockDataService:
             return {'status': 'error', 'error': str(e)}
     
     def _get_main_business(self, ts_code: str) -> Dict:
-        """获取主营业务构成（优先Tushare，备选AKShare）"""
+        """获取主营业务构成（优先Tushare，备选AKShare多接口降级）"""
         # 1. 尝试Tushare
         if self.tushare_api:
             try:
@@ -1918,28 +1987,55 @@ class ComprehensiveStockDataService:
                         'source': 'tushare'
                     }
             except Exception as e:
-                logger.warning(f"⚠️ Tushare主营业务获取失败: {e}")
+                logger.debug(f"Tushare主营业务获取失败: {e}")
 
         # 2. 备选：使用AKShare获取主营业务
-        try:
-            import akshare as ak
-            # 转换股票代码格式：600519.SH -> 600519
-            stock_code = ts_code.split('.')[0]
+        import akshare as ak
+        stock_code = extract_pure_symbol(ts_code)
+        # 获取市场标识
+        if '.' in ts_code:
+            market = ts_code.split('.')[1]
+        elif ts_code.upper().startswith('SH'):
+            market = 'SH'
+        elif ts_code.upper().startswith('SZ'):
+            market = 'SZ'
+        else:
+            # 根据股票代码推断市场
+            market = 'SH' if stock_code.startswith(('6', '9')) else 'SZ'
 
-            # 使用AKShare的主营业务接口
-            df = ak.stock_zygc_ym(symbol=stock_code)
+        # 方法2a: 尝试 stock_zygc_em 接口
+        try:
+            symbol = f"{market}{stock_code}"
+            df = ak.stock_zygc_em(symbol=symbol)
 
             if df is not None and not df.empty:
                 # 转换列名以匹配前端期望
+                # 新版AKShare列名: ['股票代码', '报告日期', '分类类型', '主营构成', '主营收入', '收入比例', '主营成本', '成本比例', '主营利润', '利润比例', '毛利率']
                 records = []
-                for _, row in df.head(10).iterrows():
+                for _, row in df.head(20).iterrows():
+                    # 收入比例已经是小数形式（如0.86），不需要除以100
+                    sales_ratio = row.get('收入比例', 0)
+                    profit_ratio = row.get('利润比例', 0)
+                    cost_ratio = row.get('成本比例', 0)
+
+                    # 如果比例大于1，说明是百分比形式，需要除以100
+                    if sales_ratio and sales_ratio > 1:
+                        sales_ratio = sales_ratio / 100
+                    if profit_ratio and profit_ratio > 1:
+                        profit_ratio = profit_ratio / 100
+                    if cost_ratio and cost_ratio > 1:
+                        cost_ratio = cost_ratio / 100
+
                     records.append({
-                        'bz_item': row.get('主营构成', row.get('分类', '')),
+                        'bz_item': row.get('主营构成', ''),
+                        'bz_type': row.get('分类类型', ''),
                         'bz_sales': row.get('主营收入', 0),
-                        'bz_sales_ratio': row.get('收入比例', 0) / 100 if row.get('收入比例', 0) else 0,
-                        'bz_profit': row.get('主营利润', 0),
-                        'bz_profit_ratio': row.get('利润比例', 0) / 100 if row.get('利润比例', 0) else 0,
-                        'bz_cost': row.get('主营成本', 0),
+                        'bz_sales_ratio': sales_ratio if pd.notna(sales_ratio) else 0,
+                        'bz_profit': row.get('主营利润', 0) if pd.notna(row.get('主营利润')) else 0,
+                        'bz_profit_ratio': profit_ratio if pd.notna(profit_ratio) else 0,
+                        'bz_cost': row.get('主营成本', 0) if pd.notna(row.get('主营成本')) else 0,
+                        'bz_cost_ratio': cost_ratio if pd.notna(cost_ratio) else 0,
+                        'gross_margin': row.get('毛利率', 0) if pd.notna(row.get('毛利率')) else 0,
                         'report_date': str(row.get('报告日期', ''))
                     })
 
@@ -1947,49 +2043,109 @@ class ComprehensiveStockDataService:
                     'status': 'success',
                     'count': len(records),
                     'data': records,
-                    'source': 'akshare'
+                    'source': 'akshare_zygc_em'
                 }
+        except KeyError as e:
+            # stock_zygc_em 已知bug：东财API返回格式变更导致KeyError
+            logger.debug(f"AKShare stock_zygc_em KeyError: {e}")
         except Exception as e:
-            logger.warning(f"⚠️ AKShare主营业务获取失败: {e}")
+            logger.debug(f"AKShare stock_zygc_em 失败: {e}")
+
+        # 方法2b: 尝试从财务指标中获取主营业务相关数据
+        try:
+            df = ak.stock_financial_analysis_indicator(symbol=stock_code, start_year="2023")
+            if df is not None and not df.empty:
+                # 提取主营业务相关指标
+                records = []
+                for _, row in df.head(4).iterrows():
+                    records.append({
+                        'bz_item': '主营业务',
+                        'bz_sales': row.get('营业总收入', 0),
+                        'bz_sales_ratio': 1.0,
+                        'bz_profit': row.get('净利润', 0),
+                        'bz_profit_ratio': row.get('净利润率', 0) / 100 if row.get('净利润率', 0) else 0,
+                        'bz_cost': row.get('营业总成本', 0),
+                        'report_date': str(row.get('日期', ''))
+                    })
+                if records:
+                    return {
+                        'status': 'success',
+                        'count': len(records),
+                        'data': records,
+                        'source': 'akshare_financial',
+                        'note': '从财务指标提取，非详细主营构成'
+                    }
+        except Exception as e:
+            logger.debug(f"AKShare财务指标获取失败: {e}")
 
         return {
             'status': 'no_data',
-            'message': '无主营业务数据（Tushare和AKShare均不可用）'
+            'message': '无主营业务数据（接口暂不可用）'
         }
-    
+
     def _get_hsgt_holding(self, ts_code: str) -> Dict:
         """获取沪深港通持股数据"""
+        symbol = extract_pure_symbol(ts_code)
+
+        # 方法1: 使用AKShare获取港股通持股数据
         try:
-            if not self.tushare_api:
-                return {'status': 'error', 'error': 'Tushare API未初始化'}
-            
-            # 获取最近30天的数据
-            end_date = datetime.now().strftime('%Y%m%d')
-            start_date = (datetime.now() - timedelta(days=30)).strftime('%Y%m%d')
-            
-            df = self.tushare_api.hsgt_top10(
-                ts_code=ts_code,
-                start_date=start_date,
-                end_date=end_date
-            )
-            
+            import akshare as ak
+
+            # 判断市场
+            market = '沪股通' if symbol.startswith('6') else '深股通'
+            df = ak.stock_hsgt_hold_stock_em(market=market)
+
             if df is not None and not df.empty:
-                records = df.to_dict('records')
-                return {
-                    'status': 'success',
-                    'count': len(records),
-                    'data': records,
-                    'latest': records[0] if records else None
-                }
-            else:
-                return {
-                    'status': 'no_data',
-                    'message': '无港股通持股数据'
-                }
-                
+                # 找到代码列
+                code_col = None
+                for col in df.columns:
+                    if '代码' in str(col):
+                        code_col = col
+                        break
+
+                if code_col:
+                    stock_data = df[df[code_col].astype(str) == symbol]
+                    if not stock_data.empty:
+                        records = stock_data.to_dict('records')
+                        return {
+                            'status': 'success',
+                            'count': len(records),
+                            'data': records,
+                            'latest': records[0] if records else None,
+                            'source': 'akshare'
+                        }
         except Exception as e:
-            logger.warning(f"⚠️ 港股通持股数据获取失败: {e}")
-            return {'status': 'error', 'error': str(e)}
+            logger.debug(f"AKShare港股通持股获取失败: {e}")
+
+        # 方法2: 使用Tushare
+        try:
+            if self.tushare_api:
+                # 获取最近30天的数据
+                end_date = datetime.now().strftime('%Y%m%d')
+                start_date = (datetime.now() - timedelta(days=30)).strftime('%Y%m%d')
+
+                df = self.tushare_api.hsgt_top10(
+                    ts_code=ts_code,
+                    start_date=start_date,
+                    end_date=end_date
+                )
+
+                if df is not None and not df.empty:
+                    records = df.to_dict('records')
+                    return {
+                        'status': 'success',
+                        'count': len(records),
+                        'data': records,
+                        'latest': records[0] if records else None,
+                        'source': 'tushare'
+                    }
+        except Exception as e:
+            logger.debug(f"Tushare港股通持股获取失败: {e}")
+
+        return {
+            'status': 'no_data',
+            'message': '无港股通持股数据'
+        }
     
     def _get_announcements(self, ts_code: str) -> Dict:
         """获取上市公司公告（暂无可用接口）"""
@@ -2275,16 +2431,16 @@ class ComprehensiveStockDataService:
     # ==================== 缺失的AKShare接口补充 ====================
 
     def _get_stock_news_em(self, ts_code: str) -> Dict:
-        """获取东方财富个股新闻（AKShare stock_news_em）"""
+        """获取东方财富个股新闻（使用修复版函数）"""
         try:
-            import akshare as ak
-            symbol = ts_code.split('.')[0]
+            from backend.dataflows.stock.akshare_utils import get_stock_news_em
+            symbol = extract_pure_symbol(ts_code)
 
-            df = ak.stock_news_em(symbol=symbol)
+            df = get_stock_news_em(symbol=symbol, max_news=30)
 
             if df is not None and not df.empty:
                 records = []
-                for _, row in df.head(30).iterrows():
+                for _, row in df.iterrows():
                     records.append({
                         'title': str(row.get('新闻标题', '')),
                         'content': str(row.get('新闻内容', ''))[:300],

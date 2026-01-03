@@ -3413,19 +3413,20 @@ export default {
 
 .floating-timer {
   position: fixed;
-  top: 5rem;
-  right: 2rem;
-  z-index: 100;
-  padding: 1rem 1.5rem;
+  top: 9rem;
+  right: 1rem;
+  z-index: 90;
+  padding: 0.75rem 1rem;
   background: rgba(15, 23, 42, 0.95);
   border: 2px solid rgba(59, 130, 246, 0.5);
   border-radius: 0.75rem;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(12px);
   animation: pulse-border 2s ease-in-out infinite;
+  font-size: 0.875rem;
 }
 
 @keyframes pulse-border {

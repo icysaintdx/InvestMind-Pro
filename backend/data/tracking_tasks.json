@@ -281,5 +281,67 @@
     "decisions": [],
     "duration_days": 30,
     "end_date": "2026-01-27T21:22:00.869022"
+  },
+  "TK20260102014618": {
+    "task_id": "TK20260102014618",
+    "stock_code": "600121",
+    "analysis_id": null,
+    "strategy_id": "sentiment_resonance",
+    "auto_trading_task_id": "AT20260102014349",
+    "initial_analysis": {
+      "stock_code": "600121",
+      "stock_name": "郑州煤电",
+      "analysis_summary": "新闻舆情分析师：【核心观点】：当前舆情偏空，情绪评分-3.5，建议短期观望，关注政策与行业周期变化。  【关键事件分析】：  1. **行业动态**：      近期煤炭行业整...\n社交媒体分析师：【InvestMindPro深度分析】   当前郑州煤电（600121）价格4.17元，单日跌幅-0.95%，成交量26.3万手，较前日略有缩量。结合平台情绪数...\n中国市场专家：【A股大盘当前趋势】   当前A股处于震荡格局，指数在3000点附近反复横跳，缺乏明确方向性突破。市场情绪偏谨慎，资金观望情绪浓厚，成交量维持在较低水平，显示投...\n行业轮动分析师：**行业周期判断**：   煤炭行业当前处于**衰退初期阶段**，政策压制与需求疲软形成双重压力。发改委持续强化监管，叠加“双碳”目标推进，行业景气度持续走低，...",
+      "technical_score": null,
+      "fundamental_score": null,
+      "sentiment_score": null,
+      "risk_level": "未评估",
+      "investment_advice": ""
+    },
+    "trigger_condition": {
+      "price_change_threshold": 5.0,
+      "volume_change_threshold": 50.0,
+      "check_news": true,
+      "check_interval_hours": 24
+    },
+    "status": "active",
+    "created_at": "2026-01-02T01:46:18.609650",
+    "last_check_at": null,
+    "check_count": 0,
+    "trigger_count": 0,
+    "decisions": [],
+    "duration_days": 30,
+    "end_date": "2026-02-01T01:46:18.609650"
+  },
+  "TK20260103002027": {
+    "task_id": "TK20260103002027",
+    "stock_code": "000532",
+    "analysis_id": null,
+    "strategy_id": "vegas_adx",
+    "auto_trading_task_id": null,
+    "initial_analysis": {
+      "stock_code": "000532",
+      "stock_name": "华金资本",
+      "analysis_summary": "新闻舆情分析师：【华金资本（000532）投资价值分析】   当前价格16.12元，跌0.98%，成交量1417万，较前日略有放大，但未见明显放量信号。结合近期市场动态与舆情分...\n社交媒体分析师：当前华金资本（000532）价格16.12元，单日跌幅0.98%，成交额1417万，量能较前日略有萎缩，但仍在中等水平。结合雪球、股吧等平台的情绪数据，短期市场...\n中国市场专家：1. **A股大盘当前趋势**：当前A股处于震荡格局，主要指数如沪深300、上证50等呈现窄幅波动，缺乏明确方向性突破。市场情绪偏谨慎，资金观望情绪浓厚，短期难...\n行业轮动分析师：**行业周期判断**：当前房地产开发板块处于**结构性调整期**，政策调控尚未完全退出，市场信心仍处修复阶段。从行业数据看，政策端对地产融资、销售端的限制仍在，...",
+      "technical_score": null,
+      "fundamental_score": null,
+      "sentiment_score": null,
+      "risk_level": "未评估",
+      "investment_advice": ""
+    },
+    "trigger_condition": {
+      "price_change_threshold": 5.0,
+      "volume_change_threshold": 50.0,
+      "check_news": true,
+      "check_interval_hours": 24
+    },
+    "status": "active",
+    "created_at": "2026-01-03T00:20:27.144307",
+    "last_check_at": null,
+    "check_count": 0,
+    "trigger_count": 0,
+    "decisions": [],
+    "duration_days": 30,
+    "end_date": "2026-02-02T00:20:27.144307"
   }
 }

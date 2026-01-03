@@ -59,6 +59,11 @@
             </div>
           </div>
           <div class="config-item full-width">
+            <label>默认收件人地址</label>
+            <input v-model="config.EMAIL_RECIPIENTS" placeholder="多个邮箱用逗号分隔，如: a@qq.com, b@163.com" />
+            <span class="input-hint">预警通知将发送到这些邮箱</span>
+          </div>
+          <div class="config-item full-width">
             <label>测试收件人</label>
             <input v-model="testEmail" placeholder="输入测试邮箱地址" />
           </div>
@@ -178,6 +183,7 @@ export default {
       SMTP_PASSWORD: '',
       SMTP_FROM: '',
       SMTP_USE_SSL: true,
+      EMAIL_RECIPIENTS: '',
       WECHAT_WEBHOOK_URL: '',
       DINGTALK_WEBHOOK_URL: '',
       DINGTALK_SECRET: '',
@@ -540,6 +546,12 @@ export default {
 
 .config-tip a:hover {
   text-decoration: underline;
+}
+
+.input-hint {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 0.25rem;
 }
 
 .test-btn {

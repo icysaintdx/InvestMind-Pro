@@ -177,24 +177,29 @@ class MarketDataService:
     def _get_quote_fast_fallback(self, code: str) -> Dict[str, Any]:
         """
         快速降级获取实时行情
-        优先级：新浪(0.37s) > Tushare(0.24s) > 腾讯(1.1s) > AKShare(98s)
+        优先级：新浪(0.37s) > 聚合数据(0.08s) > Tushare(0.24s) > 腾讯(1.1s) > AKShare(98s)
         """
         # 1. 新浪财经（最快的HTTP接口）
         result = self._get_quote_from_sina(code)
         if result and result.get('current_price', 0) > 0:
             return result
 
-        # 2. Tushare（免费接口）
+        # 2. 聚合数据（付费API，稳定快速）
+        result = self._get_quote_from_juhe(code)
+        if result and result.get('current_price', 0) > 0:
+            return result
+
+        # 3. Tushare（免费接口）
         result = self._get_quote_from_tushare(code)
         if result and result.get('current_price', 0) > 0:
             return result
 
-        # 3. 腾讯财经
+        # 4. 腾讯财经
         result = self._get_quote_from_tencent(code)
         if result and result.get('current_price', 0) > 0:
             return result
 
-        # 4. 最后使用AKShare（最慢）
+        # 5. 最后使用AKShare（最慢）
         return self._get_quote_from_akshare(code)
 
     def _get_quote_from_sina(self, code: str) -> Dict[str, Any]:
@@ -252,6 +257,83 @@ class MarketDataService:
                     return result
         except Exception as e:
             logger.debug(f"新浪财经获取失败: {code}, {e}")
+        return None
+
+    def _get_quote_from_juhe(self, code: str) -> Dict[str, Any]:
+        """从聚合数据获取实时行情（约0.08秒，需要API Key）"""
+        try:
+            import requests
+            import os
+
+            api_key = os.getenv("JUHE_API_KEY")
+            if not api_key:
+                logger.debug("聚合数据API Key未配置")
+                return None
+
+            # 格式化股票代码：聚合数据格式为 sh601009 或 sz000001
+            if code.startswith('6'):
+                juhe_code = 'sh' + code
+            elif code.startswith(('0', '3')):
+                juhe_code = 'sz' + code
+            else:
+                juhe_code = 'sz' + code
+
+            url = "http://web.juhe.cn/finance/stock/hs"
+            params = {
+                'key': api_key,
+                'gid': juhe_code,
+                'type': ''
+            }
+
+            resp = requests.get(url, params=params, timeout=5)
+            if resp.status_code == 200:
+                data = resp.json()
+                if data.get('error_code') == 0 and data.get('result'):
+                    result_data = data['result'][0] if isinstance(data['result'], list) else data['result']
+                    dapandata = result_data.get('dapandata', {})
+
+                    # 安全转换函数
+                    def safe_float(val, default=0):
+                        if val is None or val == '' or val == '-':
+                            return default
+                        try:
+                            return float(val)
+                        except (ValueError, TypeError):
+                            return default
+
+                    pre_close = safe_float(dapandata.get('yestodayClosePrice'))
+                    current_price = safe_float(dapandata.get('nowPrice'))
+                    change = current_price - pre_close if pre_close > 0 else 0
+                    change_rate = (change / pre_close * 100) if pre_close > 0 else 0
+
+                    result = {
+                        "stock_code": code,
+                        "stock_name": result_data.get('name', code),
+                        "current_price": current_price,
+                        "open_price": safe_float(dapandata.get('todayOpenPrice')),
+                        "high_price": safe_float(dapandata.get('todayMax')),
+                        "low_price": safe_float(dapandata.get('todayMin')),
+                        "pre_close": pre_close,
+                        "change": change,
+                        "change_rate": round(change_rate, 2),
+                        "volume": safe_float(dapandata.get('tradenumber')),
+                        "amount": safe_float(dapandata.get('tradeamount')),
+                        "turnover_rate": safe_float(dapandata.get('turnoverRate')),
+                        "pe_ratio": 0,
+                        "pb_ratio": 0,
+                        "total_market_cap": 0,
+                        "timestamp": datetime.now().isoformat(),
+                        "source": "juhe"
+                    }
+
+                    cache_key = f"quote_{code}"
+                    self._set_cache(cache_key, result)
+                    logger.info(f"获取实时行情成功(聚合数据): {code} @ {result['current_price']}")
+                    return result
+                else:
+                    logger.debug(f"聚合数据返回错误: {data.get('reason', 'Unknown error')}")
+        except Exception as e:
+            logger.debug(f"聚合数据获取失败: {code}, {e}")
         return None
 
     def _get_quote_from_tushare(self, code: str) -> Dict[str, Any]:

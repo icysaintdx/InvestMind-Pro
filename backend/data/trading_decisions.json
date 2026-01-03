@@ -472,5 +472,110 @@
         "status": "EXECUTED"
       }
     }
+  },
+  {
+    "record_id": "DR20251231222101",
+    "task_id": "AT20251231222049",
+    "timestamp": "2025-12-31T22:21:01.313961",
+    "market_data": {
+      "stock_code": "600121",
+      "current_price": 4.17,
+      "change_rate": -0.95,
+      "volume": 26310700.0,
+      "news_summary": "【数据揭秘】融资客看好个股一览; 两融余额增加35.50亿元 杠杆资金大幅加仓283股; 解密主力资金出逃股 连续5日净流出466股"
+    },
+    "decision": {
+      "action": "hold",
+      "quantity": 0,
+      "reason": "当前郑州煤电（600121）处于行业衰退初期阶段，政策压制与需求疲软形成双重压力，且今日价格下跌0.95%，成交量略有缩量，显示市场情绪偏谨慎。尽管融资客加仓，但整体市场缺乏明确方向性突破，且舆情偏空，情绪评分-3.5，不建议在此时积极建仓。",
+      "confidence": 0.75,
+      "risk_level": "medium",
+      "stop_loss": 95.0,
+      "take_profit": 110.0
+    },
+    "executed": true,
+    "execution_result": {
+      "success": true,
+      "action": "hold",
+      "message": "持有观望"
+    }
+  },
+  {
+    "record_id": "DR20260102014406",
+    "task_id": "AT20260102014349",
+    "timestamp": "2026-01-02T01:44:06.276339",
+    "market_data": {
+      "stock_code": "600121",
+      "current_price": 4.17,
+      "change_rate": -0.95,
+      "volume": 26310700.0,
+      "news_summary": "无最新新闻"
+    },
+    "decision": {
+      "action": "buy",
+      "quantity": 300,
+      "reason": "当前无持仓，且市场处于震荡格局，郑州煤电（600121）今日价格下跌0.95%，成交量略有缩量，显示市场情绪偏谨慎。但根据行业轮动分析师的判断，煤炭行业处于衰退初期阶段，政策压制与需求疲软形成双重压力，短期存在回调可能。结合建议买入数量为300-500股，小仓位试探是合理策略。因此决定买入300股。",
+      "confidence": 0.75,
+      "risk_level": "medium",
+      "stop_loss": 95.0,
+      "take_profit": 110.0
+    },
+    "executed": true,
+    "execution_result": {
+      "success": true,
+      "trade_id": "T20260102014405",
+      "message": "交易成功: BUY 300股 @ 4.17",
+      "trade": {
+        "trade_id": "T20260102014405",
+        "timestamp": "2026-01-02T01:44:05.558659",
+        "stock_code": "600121",
+        "stock_name": "郑州煤电",
+        "action": "BUY",
+        "quantity": 300,
+        "price": 4.17,
+        "amount": 1251.0,
+        "commission": 5.0,
+        "status": "EXECUTED"
+      }
+    }
+  },
+  {
+    "record_id": "DR20260103002034",
+    "task_id": "AT20260103002023",
+    "timestamp": "2026-01-03T00:20:34.922680",
+    "market_data": {
+      "stock_code": "000532",
+      "current_price": 16.12,
+      "change_rate": -0.98,
+      "volume": 14172659.0,
+      "news_summary": "【数据揭秘】融资客看好个股一览; 两融余额增加35.50亿元 杠杆资金大幅加仓283股; 解密主力资金出逃股 连续5日净流出466股"
+    },
+    "decision": {
+      "action": "buy",
+      "quantity": 300,
+      "reason": "当前无持仓，且股票处于结构性调整期，融资客加仓显示市场信心有所恢复。虽然今日价格下跌0.98%，但成交量未明显放大，表明下跌可能为短期调整。结合市场整体震荡格局，建议小仓位试探性买入，以观察后续走势。",
+      "confidence": 0.75,
+      "risk_level": "medium",
+      "stop_loss": 15.5,
+      "take_profit": 17.5
+    },
+    "executed": true,
+    "execution_result": {
+      "success": true,
+      "trade_id": "T20260103002034",
+      "message": "交易成功: BUY 300股 @ 16.12",
+      "trade": {
+        "trade_id": "T20260103002034",
+        "timestamp": "2026-01-03T00:20:34.263437",
+        "stock_code": "000532",
+        "stock_name": "华金资本",
+        "action": "BUY",
+        "quantity": 300,
+        "price": 16.12,
+        "amount": 4836.0,
+        "commission": 5.0,
+        "status": "EXECUTED"
+      }
+    }
   }
 ]

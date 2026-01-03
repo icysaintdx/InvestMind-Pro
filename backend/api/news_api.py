@@ -51,7 +51,7 @@ class NewsListRequest(BaseModel):
     stock_code: str
     start_date: Optional[str] = None
     end_date: Optional[str] = None
-    limit: int = Field(20, ge=1, le=100)
+    limit: int = Field(5000, ge=1, le=10000, description="返回数量限制，默认5000")
     source: Optional[str] = Field(None, description="新闻源筛选")
     
 class NewsItem(BaseModel):
@@ -334,7 +334,7 @@ async def test_news_api():
 @router.get("/data/latest")
 async def get_latest_news_data(
     ts_code: Optional[str] = Query(None, description="股票代码"),
-    limit: int = Query(20, description="返回数量", ge=1, le=100),
+    limit: int = Query(5000, description="返回数量", ge=1, le=10000),
     hours_back: int = Query(24, description="时间范围（小时）", ge=1, le=168)
 ):
     """
@@ -375,7 +375,7 @@ async def get_latest_news_data(
 async def search_news_data(
     query: str = Query(..., description="搜索关键词"),
     ts_code: Optional[str] = Query(None, description="股票代码"),
-    limit: int = Query(50, description="返回数量", ge=1, le=100)
+    limit: int = Query(5000, description="返回数量", ge=1, le=10000)
 ):
     """
     全文搜索新闻

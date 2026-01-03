@@ -123,18 +123,18 @@ async def get_market_news(
 
 @router.get("/realtime", response_model=dict)
 async def get_realtime_news(
-    limit: int = Query(20, ge=1, le=100, description="返回数量限制")
+    limit: int = Query(5000, ge=1, le=10000, description="返回数量限制，默认5000")
 ):
     """
     获取实时新闻流
-    
+
     返回最新的新闻，不使用缓存
     """
     try:
         service = get_unified_news_service()
         response = await service.get_realtime_news(limit)
         return response.to_dict()
-        
+
     except Exception as e:
         logger.error(f"获取实时新闻失败: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -143,7 +143,7 @@ async def get_realtime_news(
 @router.get("/search", response_model=dict)
 async def search_news(
     keyword: str = Query(..., description="搜索关键词"),
-    limit: int = Query(50, ge=1, le=200, description="返回数量限制")
+    limit: int = Query(5000, ge=1, le=10000, description="返回数量限制，默认5000")
 ):
     """
     全文搜索新闻
@@ -286,11 +286,11 @@ async def health_check():
 
 @router.get("/hot", response_model=dict)
 async def get_hot_news(
-    limit: int = Query(20, ge=1, le=100, description="返回数量限制")
+    limit: int = Query(5000, ge=1, le=10000, description="返回数量限制，默认5000")
 ):
     """
     获取热点新闻
-    
+
     返回当前热门新闻
     """
     try:
@@ -301,7 +301,7 @@ async def get_hot_news(
             sort_order="desc"
         )
         return response.to_dict()
-        
+
     except Exception as e:
         logger.error(f"获取热点新闻失败: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -309,11 +309,11 @@ async def get_hot_news(
 
 @router.get("/positive", response_model=dict)
 async def get_positive_news(
-    limit: int = Query(20, ge=1, le=100, description="返回数量限制")
+    limit: int = Query(5000, ge=1, le=10000, description="返回数量限制，默认5000")
 ):
     """
     获取利好新闻
-    
+
     返回情绪积极的新闻
     """
     try:
@@ -325,7 +325,7 @@ async def get_positive_news(
             sort_order="desc"
         )
         return response.to_dict()
-        
+
     except Exception as e:
         logger.error(f"获取利好新闻失败: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -333,7 +333,7 @@ async def get_positive_news(
 
 @router.get("/negative", response_model=dict)
 async def get_negative_news(
-    limit: int = Query(20, ge=1, le=100, description="返回数量限制")
+    limit: int = Query(5000, ge=1, le=10000, description="返回数量限制，默认5000")
 ):
     """
     获取利空新闻
@@ -358,7 +358,7 @@ async def get_negative_news(
 @router.get("/announcements", response_model=dict)
 async def get_announcements(
     stock_code: Optional[str] = Query(None, description="股票代码"),
-    limit: int = Query(50, ge=1, le=200, description="返回数量限制")
+    limit: int = Query(5000, ge=1, le=10000, description="返回数量限制，默认5000")
 ):
     """
     获取公告

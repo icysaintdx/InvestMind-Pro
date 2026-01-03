@@ -1163,6 +1163,10 @@ class DataSourceManager:
             # 去除后缀（如 600252.SH -> 600252）
             pure_symbol = symbol.split('.')[0] if '.' in symbol else symbol
 
+            # 去除前缀（如 SH600252 -> 600252）
+            if pure_symbol.upper().startswith(('SH', 'SZ')):
+                pure_symbol = pure_symbol[2:]
+
             # 尝试获取个股信息
             stock_info = ak.stock_individual_info_em(symbol=pure_symbol)
 
@@ -1198,6 +1202,10 @@ class DataSourceManager:
 
             # 去除后缀（如 600252.SH -> 600252）
             pure_symbol = symbol.split('.')[0] if '.' in symbol else symbol
+
+            # 去除前缀（如 SH600252 -> 600252）
+            if pure_symbol.upper().startswith(('SH', 'SZ')):
+                pure_symbol = pure_symbol[2:]
 
             # 转换股票代码格式
             if pure_symbol.startswith('6'):

@@ -187,6 +187,33 @@
           </div>
         </div>
 
+        <!-- 导航菜单样式 -->
+        <div class="config-section">
+          <h3 class="section-title">导航菜单样式</h3>
+
+          <div class="config-item">
+            <label class="config-label">菜单模式</label>
+            <div class="menu-mode-selector">
+              <button
+                @click="localStyles.menuMode = 'dropdown'"
+                :class="['mode-btn', { active: localStyles.menuMode === 'dropdown' }]"
+              >
+                <span class="mode-icon">📂</span>
+                <span class="mode-name">折叠式</span>
+                <span class="mode-desc">分组下拉菜单</span>
+              </button>
+              <button
+                @click="localStyles.menuMode = 'classic'"
+                :class="['mode-btn', { active: localStyles.menuMode === 'classic' }]"
+              >
+                <span class="mode-icon">📋</span>
+                <span class="mode-name">经典式</span>
+                <span class="mode-desc">平铺选项卡</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- 预设主题 -->
         <div class="config-section">
           <h3 class="section-title">预设主题</h3>
@@ -247,7 +274,8 @@ export default {
       particlesEnabled: true,
       particleCount: 80,
       particleSpeed: 1,
-      particleColor: '#3b82f6'
+      particleColor: '#3b82f6',
+      menuMode: 'dropdown'  // 'dropdown' 折叠式 | 'classic' 经典式
     }
 
     const localStyles = ref({ ...defaultStyles, ...props.styles })
@@ -335,6 +363,22 @@ export default {
     }
 
     const saveStyles = () => {
+      // 保存到 localStorage
+      localStorage.setItem('styleSettings', JSON.stringify(localStyles.value))
+
+      // 触发样式更新事件
+      window.dispatchEvent(new CustomEvent('updateStyles', { detail: localStyles.value }))
+
+      // 触发粒子更新事件
+      window.dispatchEvent(new CustomEvent('updateParticles', {
+        detail: {
+          enabled: localStyles.value.particlesEnabled,
+          count: localStyles.value.particleCount,
+          speed: localStyles.value.particleSpeed,
+          color: localStyles.value.particleColor
+        }
+      }))
+
       emit('save', localStyles.value)
       emit('close')
     }
@@ -676,6 +720,61 @@ input:checked + .toggle-slider:before {
   color: #e2e8f0;
   font-size: 0.75rem;
   font-weight: 500;
+}
+
+/* 菜单模式选择器 */
+.menu-mode-selector {
+  display: flex;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.mode-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 1rem 0.75rem;
+  background: #1e293b;
+  border: 2px solid #334155;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mode-btn:hover {
+  background: #334155;
+  border-color: #475569;
+}
+
+.mode-btn.active {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.mode-icon {
+  font-size: 1.5rem;
+}
+
+.mode-name {
+  color: #e2e8f0;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.mode-desc {
+  color: #64748b;
+  font-size: 0.75rem;
+}
+
+.mode-btn.active .mode-name {
+  color: #60a5fa;
+}
+
+.mode-btn.active .mode-desc {
+  color: #94a3b8;
 }
 
 /* 底部 */

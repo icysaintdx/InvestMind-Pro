@@ -1,9 +1,17 @@
 """
 AKShare统一数据提供器
 基于AKShare SDK的统一数据同步方案，提供标准化的数据接口
+
+优化说明：
+1. curl_cffi 超时优化：快速接口5秒，慢速接口15秒
+2. 快速回退机制：curl_cffi失败后立即回退到requests
+3. 请求频率控制：东方财富网请求间隔0.5-1秒
+4. 智能重试：SSL错误自动重试，其他错误快速失败
 """
 import asyncio
 import logging
+import random
+import time
 from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, List, Optional, Union
 import pandas as pd
@@ -11,6 +19,59 @@ import pandas as pd
 from ..base_provider import BaseStockDataProvider
 
 logger = logging.getLogger(__name__)
+
+# 接口超时配置（秒）
+TIMEOUT_CONFIG = {
+    # 快速接口（通常响应较快）
+    'fast': 5,
+    # 标准接口
+    'normal': 10,
+    # 慢速接口（数据量大或服务器响应慢）
+    'slow': 20,
+    # 超慢接口（如龙虎榜、大宗交易等）
+    'very_slow': 30,
+}
+
+# 慢速接口列表（需要更长超时时间）
+SLOW_INTERFACES = {
+    'stock_zh_a_spot_em',  # A股实时行情（数据量大）
+    'stock_zh_a_spot',  # 新浪A股实时行情
+    'stock_lhb_detail_em',  # 龙虎榜详情
+    'stock_lhb_jgmmtj_em',  # 机构龙虎榜
+    'stock_dzjy_mrmx',  # 大宗交易
+    'stock_hsgt_fund_flow_summary_em',  # 沪深港通资金流向（替换废弃接口）
+    'stock_hsgt_hist_em',  # 沪深港通历史
+    'stock_ggcg_em',  # 管理层信息
+    'stock_fhps_em',  # 分红送股
+    'stock_gpzy_pledge_ratio_em',  # 股权质押
+    'stock_lhb_hyyyb_em',  # 游资统计
+    'stock_zt_pool_em',  # 涨停池
+    'stock_rank_cxg_ths',  # 涨幅榜
+    'stock_notice_report',  # 公告
+    'stock_yysj_em',  # 业绩预告
+    'stock_yjyg_em',  # 业绩预告
+    'stock_zygc_em',  # 主营构成（替换废弃的stock_zygc_ym）
+}
+
+# 超慢接口列表
+VERY_SLOW_INTERFACES = {
+    'stock_lhb_jgmmtj_em',  # 机构龙虎榜（数据量非常大）
+    'stock_yysj_em',  # 业绩预告（数据量大）
+}
+
+# User-Agent 轮换列表（模拟不同浏览器）
+USER_AGENTS = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edge/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15',
+]
+
+def get_random_user_agent() -> str:
+    """获取随机User-Agent"""
+    return random.choice(USER_AGENTS)
 
 
 class AKShareProvider(BaseStockDataProvider):
@@ -31,8 +92,18 @@ class AKShareProvider(BaseStockDataProvider):
         self.connected = False
         self._stock_list_cache = None  # 缓存股票列表，避免重复获取
         self._cache_time = None  # 缓存时间
+        self._failed_interfaces = {}  # 记录失败的接口和时间，用于临时禁用
         self._initialize_akshare()
-    
+
+    def _get_timeout_for_interface(self, interface_name: str) -> int:
+        """根据接口名称获取合适的超时时间"""
+        if interface_name in VERY_SLOW_INTERFACES:
+            return TIMEOUT_CONFIG['very_slow']
+        elif interface_name in SLOW_INTERFACES:
+            return TIMEOUT_CONFIG['slow']
+        else:
+            return TIMEOUT_CONFIG['normal']
+
     def _initialize_akshare(self):
         """初始化AKShare连接"""
         try:
@@ -61,23 +132,31 @@ class AKShareProvider(BaseStockDataProvider):
                     包装requests.get方法，自动添加必要的headers和请求延迟
                     修复AKShare stock_news_em()函数缺少headers的问题
                     如果可用，使用 curl_cffi 模拟真实浏览器 TLS 指纹
+
+                    优化：
+                    1. curl_cffi 超时减少到5秒，快速回退
+                    2. 添加随机延迟（0.5-1秒）避免被识别为爬虫
+                    3. 超时后立即回退，不等待
                     """
                     # 添加请求延迟，避免被反爬虫封禁
-                    # 只对东方财富网的请求添加延迟
-                    if 'eastmoney.com' in url:
+                    # 对东方财富网和新浪的请求添加延迟
+                    if 'eastmoney.com' in url or 'sina.com' in url:
                         current_time = time.time()
                         time_since_last_request = current_time - last_request_time['time']
-                        if time_since_last_request < 0.5:  # 至少间隔0.5秒
-                            time.sleep(0.5 - time_since_last_request)
+                        # 随机延迟0.5-1秒，避免固定间隔被识别
+                        min_interval = 0.5 + random.random() * 0.5
+                        if time_since_last_request < min_interval:
+                            time.sleep(min_interval - time_since_last_request)
                         last_request_time['time'] = time.time()
 
                     # 如果是东方财富网的请求，且 curl_cffi 可用，使用它来绕过反爬虫
                     if use_curl_cffi and 'eastmoney.com' in url:
                         try:
                             # 使用 curl_cffi 模拟 Chrome 120 的 TLS 指纹
-                            # 注意：使用 impersonate 时，不要传递自定义 headers，让 curl_cffi 自动设置
+                            # 优化：减少超时时间到5秒，快速回退
+                            curl_timeout = min(kwargs.get('timeout', 5), 5)  # 最多5秒
                             curl_kwargs = {
-                                'timeout': kwargs.get('timeout', 10),
+                                'timeout': curl_timeout,
                                 'impersonate': "chrome120"  # 模拟 Chrome 120
                             }
 
@@ -94,17 +173,18 @@ class AKShareProvider(BaseStockDataProvider):
                             # curl_cffi 的响应对象已经兼容 requests.Response
                             return response
                         except Exception as e:
-                            # curl_cffi 失败，回退到标准 requests
+                            # curl_cffi 失败，立即回退到标准 requests（不等待）
                             error_msg = str(e)
-                            # 忽略 TLS 库错误和 400 错误的详细日志（这是 Docker 环境的已知问题）
-                            if 'invalid library' not in error_msg and '400' not in error_msg:
-                                logger.warning(f"⚠️ curl_cffi 请求失败，回退到标准 requests: {e}")
+                            # 只记录非常见错误
+                            if 'timeout' not in error_msg.lower() and 'invalid library' not in error_msg and '400' not in error_msg:
+                                logger.debug(f"curl_cffi 回退: {error_msg[:100]}")
 
                     # 标准 requests 请求（非东方财富网，或 curl_cffi 不可用/失败）
-                    # 设置浏览器请求头
+                    # 设置浏览器请求头（使用随机User-Agent）
+                    random_ua = get_random_user_agent()
                     if 'headers' not in kwargs or kwargs['headers'] is None:
                         kwargs['headers'] = {
-                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                            'User-Agent': random_ua,
                             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
                             'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
                             'Accept-Encoding': 'gzip, deflate, br',
@@ -112,9 +192,9 @@ class AKShareProvider(BaseStockDataProvider):
                             'Connection': 'keep-alive',
                         }
                     elif isinstance(kwargs['headers'], dict):
-                        # 如果已有headers，确保包含必要的字段
+                        # 如果已有headers，确保包含必要的字段（使用随机User-Agent）
                         if 'User-Agent' not in kwargs['headers']:
-                            kwargs['headers']['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                            kwargs['headers']['User-Agent'] = random_ua
                         if 'Referer' not in kwargs['headers']:
                             kwargs['headers']['Referer'] = 'https://www.eastmoney.com/'
                         if 'Accept' not in kwargs['headers']:
@@ -122,20 +202,25 @@ class AKShareProvider(BaseStockDataProvider):
                         if 'Accept-Language' not in kwargs['headers']:
                             kwargs['headers']['Accept-Language'] = 'zh-CN,zh;q=0.9,en;q=0.8'
 
-                    # 添加重试机制（最多3次）
-                    max_retries = 3
+                    # 设置默认超时（如果未指定）
+                    if 'timeout' not in kwargs:
+                        kwargs['timeout'] = TIMEOUT_CONFIG['normal']
+
+                    # 添加重试机制（最多2次，减少等待时间）
+                    max_retries = 2
                     for attempt in range(max_retries):
                         try:
                             return original_get(url, **kwargs)
                         except Exception as e:
-                            # 检查是否是SSL错误
+                            # 检查是否是SSL错误或超时
                             error_str = str(e)
                             is_ssl_error = ('SSL' in error_str or 'ssl' in error_str or
                                           'UNEXPECTED_EOF_WHILE_READING' in error_str)
+                            is_timeout = 'timeout' in error_str.lower() or 'timed out' in error_str.lower()
 
-                            if is_ssl_error and attempt < max_retries - 1:
-                                # SSL错误，等待后重试
-                                wait_time = 0.5 * (attempt + 1)  # 递增等待时间
+                            if (is_ssl_error or is_timeout) and attempt < max_retries - 1:
+                                # SSL错误或超时，短暂等待后重试
+                                wait_time = 0.3 * (attempt + 1)  # 减少等待时间
                                 time.sleep(wait_time)
                                 continue
                             else:
@@ -268,11 +353,40 @@ class AKShareProvider(BaseStockDataProvider):
         """配置AKShare的超时设置"""
         try:
             import socket
-            socket.setdefaulttimeout(60)  # 60秒超时
-            logger.info("🔧 AKShare超时配置完成: 60秒")
+            # 设置全局socket超时为30秒（比之前的60秒更合理）
+            socket.setdefaulttimeout(30)
+            logger.info(f"🔧 AKShare超时配置完成: 全局30秒, 快速接口{TIMEOUT_CONFIG['fast']}秒, 慢速接口{TIMEOUT_CONFIG['slow']}秒")
         except Exception as e:
             logger.warning(f"⚠️ AKShare超时配置失败: {e}")
-    
+
+    def _is_interface_disabled(self, interface_name: str) -> bool:
+        """检查接口是否被临时禁用（连续失败后禁用5分钟）"""
+        if interface_name not in self._failed_interfaces:
+            return False
+        fail_time, fail_count = self._failed_interfaces[interface_name]
+        # 如果连续失败3次以上，禁用5分钟
+        if fail_count >= 3:
+            elapsed = (datetime.now() - fail_time).total_seconds()
+            if elapsed < 300:  # 5分钟
+                return True
+            else:
+                # 禁用时间已过，重置
+                del self._failed_interfaces[interface_name]
+        return False
+
+    def _record_interface_failure(self, interface_name: str):
+        """记录接口失败"""
+        if interface_name in self._failed_interfaces:
+            fail_time, fail_count = self._failed_interfaces[interface_name]
+            self._failed_interfaces[interface_name] = (datetime.now(), fail_count + 1)
+        else:
+            self._failed_interfaces[interface_name] = (datetime.now(), 1)
+
+    def _record_interface_success(self, interface_name: str):
+        """记录接口成功，重置失败计数"""
+        if interface_name in self._failed_interfaces:
+            del self._failed_interfaces[interface_name]
+
     async def connect(self) -> bool:
         """连接到AKShare数据源"""
         return await self.test_connection()

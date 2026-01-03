@@ -258,7 +258,9 @@ class MultiSourceNewsAggregator:
 
             # 方法4: 使用百度财经新闻 (关键词过滤)
             try:
-                df = ak.news_economic_baidu()
+                from datetime import datetime
+                date_str = datetime.now().strftime("%Y%m%d")
+                df = ak.news_economic_baidu(date=date_str)
                 if df is not None and not df.empty:
                     keywords = [symbol]
                     if stock_name:
@@ -530,7 +532,8 @@ class MultiSourceNewsAggregator:
 
             # 方法4: 百度财经新闻
             try:
-                df = ak.news_economic_baidu()
+                date_str = datetime.now().strftime("%Y%m%d")
+                df = ak.news_economic_baidu(date=date_str)
                 if df is not None and not df.empty:
                     for _, row in df.head(limit).iterrows():
                         title = str(row.get('标题', ''))

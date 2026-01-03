@@ -64,24 +64,10 @@
     <div class="filter-section">
       <div class="filter-row">
         <div class="filter-group">
-          <label class="filter-label">市场</label>
-          <div class="filter-buttons">
-            <button 
-              v-for="market in markets" 
-              :key="market.value"
-              @click="filters.market = market.value"
-              :class="['filter-btn', { active: filters.market === market.value }]"
-            >
-              {{ market.label }}
-            </button>
-          </div>
-        </div>
-
-        <div class="filter-group">
           <label class="filter-label">类型</label>
           <div class="filter-buttons">
-            <button 
-              v-for="type in newsTypes" 
+            <button
+              v-for="type in newsTypes"
               :key="type.value"
               @click="filters.news_type = type.value"
               :class="['filter-btn', { active: filters.news_type === type.value }]"
@@ -94,8 +80,8 @@
         <div class="filter-group">
           <label class="filter-label">情绪</label>
           <div class="filter-buttons">
-            <button 
-              v-for="sentiment in sentiments" 
+            <button
+              v-for="sentiment in sentiments"
               :key="sentiment.value"
               @click="filters.sentiment = sentiment.value"
               :class="['filter-btn', sentiment.class, { active: filters.sentiment === sentiment.value }]"
@@ -104,48 +90,24 @@
             </button>
           </div>
         </div>
-      </div>
-
-      <div class="filter-row">
-        <div class="filter-group">
-          <label class="filter-label">数据源</label>
-          <div class="filter-buttons source-buttons">
-            <button 
-              @click="filters.source = null"
-              :class="['filter-btn', { active: !filters.source }]"
-            >
-              全部 ({{ statistics.total_count || 0 }})
-            </button>
-            <button 
-              v-for="source in availableSources" 
-              :key="source.id"
-              @click="filters.source = source.id"
-              :class="['filter-btn', { active: filters.source === source.id }]"
-            >
-              <span class="source-status" :class="source.status"></span>
-              {{ source.name }} ({{ getSourceCount(source.name) }})
-            </button>
-          </div>
-        </div>
 
         <div class="filter-group search-group">
           <label class="filter-label">搜索</label>
           <div class="search-input-wrapper">
-            <input 
+            <input
               v-model="filters.keyword"
               type="text"
               placeholder="输入关键词搜索..."
               class="search-input"
               @keyup.enter="searchNews"
             />
-            <button @click="searchNews" class="search-btn">🔍</button>
           </div>
         </div>
 
         <div class="filter-group stock-group">
           <label class="filter-label">股票</label>
           <div class="search-input-wrapper">
-            <input 
+            <input
               v-model="filters.stock_code"
               type="text"
               placeholder="输入股票代码..."
@@ -153,6 +115,29 @@
               @keyup.enter="fetchStockNews"
             />
             <button @click="fetchStockNews" class="search-btn">📈</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="filter-row">
+        <div class="filter-group source-filter-group">
+          <label class="filter-label">数据源</label>
+          <div class="filter-buttons source-buttons">
+            <button
+              @click="filters.source = null"
+              :class="['filter-btn', { active: !filters.source }]"
+            >
+              全部 ({{ statistics.total_count || 0 }})
+            </button>
+            <button
+              v-for="source in availableSources"
+              :key="source.id"
+              @click="filters.source = source.id"
+              :class="['filter-btn', { active: filters.source === source.id }]"
+            >
+              <span class="source-status" :class="source.status"></span>
+              {{ source.name }} ({{ getSourceCount(source.name) }})
+            </button>
           </div>
         </div>
       </div>
@@ -422,9 +407,9 @@ export default defineComponent({
         if (filters.news_type) params.append('news_type', filters.news_type)
         if (filters.sentiment) params.append('sentiment', filters.sentiment)
         if (filters.source) params.append('source', filters.source)
-        params.append('limit', '1000')  // 增加到1000条以加载更多数据
+        params.append('limit', '5000')  // 不限制数量，获取全部新闻
 
-        const response = await fetch(`${API_BASE_URL}/api/unified-news/list?${params}`)
+        const response = await fetch(`${API_BASE_URL}/api/news-center/list?${params}`)
         const data = await response.json()
         if (data.success) {
           newsList.value = data.data || []
@@ -441,7 +426,7 @@ export default defineComponent({
       if (!filters.stock_code) return
       loading.value = true
       try {
-        const response = await fetch(`${API_BASE_URL}/api/unified-news/stock/${filters.stock_code}`)
+        const response = await fetch(`${API_BASE_URL}/api/news-center/stock-news/${filters.stock_code}`)
         const data = await response.json()
         if (data.success) {
           newsList.value = data.data || []
@@ -461,7 +446,7 @@ export default defineComponent({
       }
       loading.value = true
       try {
-        const response = await fetch(`${API_BASE_URL}/api/unified-news/search?keyword=${encodeURIComponent(filters.keyword)}`)
+        const response = await fetch(`${API_BASE_URL}/api/news-center/search?keyword=${encodeURIComponent(filters.keyword)}`)
         const data = await response.json()
         if (data.success) newsList.value = data.data || []
       } catch (error) {
@@ -474,7 +459,7 @@ export default defineComponent({
     const refreshAllNews = async () => {
       loading.value = true
       try {
-        await fetch(`${API_BASE_URL}/api/unified-news/refresh`, { method: 'POST' })
+        await fetch(`${API_BASE_URL}/api/news-center/refresh`, { method: 'POST' })
         await fetchNews()
         await fetchStatistics()
         await fetchSourceStatus()
@@ -487,7 +472,7 @@ export default defineComponent({
 
     const fetchStatistics = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/unified-news/statistics`)
+        const response = await fetch(`${API_BASE_URL}/api/news-center/statistics`)
         const data = await response.json()
         if (data.success) statistics.value = data.data || data
       } catch (error) {
@@ -497,7 +482,7 @@ export default defineComponent({
 
     const fetchSourceStatus = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/unified-news/sources`)
+        const response = await fetch(`${API_BASE_URL}/api/news-center/sources`)
         const data = await response.json()
         if (data.success) {
           sourceStatus.value = data.data || {}
@@ -522,7 +507,7 @@ export default defineComponent({
     const testAllSources = async () => {
       testingSource.value = true
       try {
-        const response = await fetch(`${API_BASE_URL}/api/unified-news/health`)
+        const response = await fetch(`${API_BASE_URL}/api/news-center/health`)
         const data = await response.json()
         if (data.success) {
           Object.entries(data.sources || {}).forEach(([id, info]) => {

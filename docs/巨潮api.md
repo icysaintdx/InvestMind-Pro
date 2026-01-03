@@ -2,9 +2,54 @@
 
 本文档整理自巨潮资讯网 WebAPI 接口文档。
 
-**数据来源:** http://webapi.cninfo.com.cn  
-**文档更新时间:** 2025-12-30  
+**数据来源:** http://webapi.cninfo.com.cn
+**文档更新时间:** 2025-12-30
 **API总数:** 56个
+
+---
+
+## 免费API测试结果 (2025-12-30)
+
+### 可用的免费API (11个)
+
+| API Code | 名称 | 记录数示例 | 说明 |
+|----------|------|-----------|------|
+| p_stock2100 | 公司基本信息 | 1 | 机构名称、法人代表、注册地址、主营业务等 |
+| p_stock2101 | 股票基本信息 | 1 | 证券代码、上市日期、交易市场、面值等 |
+| p_stock0004 | 股票所属板块 | 100 | 市场分类、行业分类、概念板块等 |
+| p_stock2102 | 管理人员任职情况 | 14 | 高管姓名、职务、任职日期、个人简历等 |
+| p_stock2117 | 上市状态变动情况 | 12568 | 上市、退市、暂停上市等状态变动 |
+| p_stock2107 | 公司员工情况 | 2 | 员工总数、学历分布、职能分布等 |
+| p_info3005 | 公告分类信息 | 31 | 公告类目编码和名称 |
+| p_info3015 | 公告基本信息 | 1824 | 公告标题、日期、PDF地址等 |
+| p_public0005 | 公共编码数据 | 33 | 各类编码定义 |
+| p_public0006 | 人民币汇率中间价 | 4529 | 历史汇率数据 |
+| p_public0007 | 机构信息数据 | 20000 | 机构基本信息 |
+
+### 需要VIP权限的API
+
+| API Code | 名称 | 错误码 | 说明 |
+|----------|------|--------|------|
+| p_stock2108 | 机构基本信息变更 | 416 | 需升级为VIP用户 |
+| p_stock2109 | 证券简称变更 | 416 | 需升级为VIP用户 |
+| p_stock2110 | 行业归属变动 | 416 | 需升级为VIP用户 |
+| p_company3201 | 股票背景资料 | 415 | 需购买包时长服务 |
+
+### 返回502错误的API
+
+| API Code | 名称 | 说明 |
+|----------|------|------|
+| p_public0001 | 交易日历数据 | 可能需要特定参数或权限 |
+| p_public0002 | 行业分类数据 | 可能需要特定参数或权限 |
+| p_public0003 | 地区分类数据 | 可能需要特定参数或权限 |
+| p_public0004 | 板块成份股数据 | 可能需要特定参数或权限 |
+
+### 频率限制测试结果
+
+- **无明显频率限制**: 连续10次快速请求全部成功
+- **并发请求**: 5个并发请求全部成功
+- **响应时间**: 约0.07-0.16秒/请求
+- **建议间隔**: 0.3秒 (保守估计)
 
 ---
 
@@ -502,4 +547,802 @@ for i in range(len(result['records'])):
     print (result['records'][i]['PARENTCODE'],result['records'][i]['SORTCODE'],result['records'][i]['SORTNAME'],result['records'][i]['F002V'])
 
 
-    
+
+
+应该是免费的服务接口 如下
+
+
+股票-基本信息
+45
+上架时间：2024-08-06供应商：深证信
+AB股沪深北市场公司行为基本信息基础服务VIP服务
+包含上市公司机构名称、证券简称、法人代表、注册地址、办公地址、主营业务、经营范围、中介结构、董秘、证代等机构信息、以及证券类别、交易市场、上市日期等证券基本信息。
+
+包含接口: 
+公司基本信息
+API Code: p_stock2100
+接口说明: 公司基本信息数据。 请求方式：GET 和 POST
+输入参数值:
+英文名称	中文名称	类型	是否必填	说明
+scode	股票代码	string	是	输入不超过50只股票代码，用逗号分隔；如： 000001,600000
+输出参数值:
+英文名称	中文名称	类型	是否必填	说明
+ORGID	机构ID	varchar(11)	否	
+ORGNAME	机构名称	varchar(100)	否	
+SECCODE	证券代码	varchar(10)	否	
+SECNAME	证券简称	varchar(40)	否	
+F001V	英文名称	varchar(100)	否	
+F002V	英文简称	varchar(40)	否	
+F003V	法人代表	varchar(40)	否	
+F004V	注册地址	varchar(100)	否	
+F005V	办公地址	varchar(150)	否	
+F006V	邮政编码	varchar(10)	否	
+F007N	注册资金	numeric(14,4)	否	
+F008V	货币编码	varchar(12)	否	
+F009V	货币名称	varchar(60)	否	
+F010D	成立日期	DATE	否	
+F011V	机构网址	varchar(80)	否	
+F012V	电子信箱	varchar(80)	否	
+F013V	联系电话	varchar(60)	否	
+F014V	联系传真	varchar(60)	否	
+F015V	主营业务	varchar(500)	否	
+F016V	经营范围	varchar(4000)	否	
+F017V	机构简介/公司成立概况	varchar(2000)	否	
+F018V	董事会秘书	varchar(40)	否	
+F019V	董秘联系电话	varchar(60)	否	
+F020V	董秘联系传真	varchar(60)	否	
+F021V	董秘电子邮箱	varchar(80)	否	
+F022V	证券事务代表	varchar(40)	否	
+F023V	上市状态编码	varchar(12)	否	
+F024V	上市状态	varchar(60)	否	
+F025V	所属省份编码	varchar(12)	否	
+F026V	所属省份	varchar(60)	否	
+F027V	所属城市编码	varchar(12)	否	
+F028V	所属城市	varchar(60)	否	
+F029V	中上协一级行业编码	varchar(12)	否	
+F030V	中上协一级行业名称	varchar(60)	否	
+F031V	中上协二级行业编码	varchar(60)	否	
+F032V	中上协二级行业名称	varchar(60)	否	
+F033V	申万行业分类一级编码	varchar(60)	否	
+F034V	申万行业分类一级名称	varchar(60)	否	
+F035V	申万行业分类二级编码	varchar(60)	否	
+F036V	申万行业分类二级名称	varchar(60)	否	
+F037V	申万行业分类三级编码	varchar(60)	否	
+F038V	申万行业分类三级名称	varchar(60)	否	
+F039V	会计师事务所	varchar(200)	否	
+F040V	律师事务所	varchar(200)	否	
+F041V	董事长	varchar(60)	否	
+F042V	总经理	varchar(60)	否	
+F043V	公司独立董事(现任)	varchar(100)	否	多名
+F044V	入选指数	varchar(1000)	否	多个
+F045V	最新报告预约日期	varchar(50)	否	
+F046V	保荐机构	varchar(500)	否	多个
+F047V	主承销商	varchar(500)	否	
+F048V	PEVC标记	varchar(12)	否	
+F049V	注册国家	varchar(200)	否	
+F050V	统一社会信用代码	varchar(60)	否	
+F051V	工商ID	varchar(60)	否	
+F052V	可转债	varchar(100)	否	
+F053V	CDR	varchar(100)	否	
+F054V	企业规模	varchar(20)	否	
+股票基本信息
+API Code: p_stock2101
+接口说明: 取股票基本信息表 请求方式：GET 和 POST
+输入参数值:
+英文名称	中文名称	类型	是否必填	说明
+scode	股票代码	string	否	输入不超过50只股票代码，用逗号分隔；如： 000001,600000
+输出参数值:
+英文名称	中文名称	类型	是否必填	说明
+ORGNAME	机构名称	varchar	否	
+SECCODE	证券代码	varchar	否	
+SECNAME	证券简称	varchar	否	
+F001V	拼音简称	varchar	否	
+F002V	证券类别编码	varchar	否	
+F003V	证券类别	varchar	否	
+F004V	交易市场编码	varchar	否	
+F005V	交易市场	varchar	否	
+F006D	上市日期	datetime	否	
+F007N	初始上市数量	decimal	否	单位：股
+F008V	代码属性编码	varchar	否	
+F009V	代码属性	varchar	否	
+F010V	上市状态编码	varchar	否	
+F011V	上市状态	varchar	否	
+F012N	面值	decimal	否	单位：元
+F013V	ISIN	varchar	否	
+股票所属板块
+API Code: p_stock0004
+接口说明:
+输入参数值:
+英文名称	中文名称	类型	是否必填	说明
+scode	股票代码	string	是	输入不超过300只股票代码，用逗号分隔；如： 000001,600000
+typecode	类别代码	string	否	可以传入多个类别代码，用逗号分隔， 编码：137001 市场分类 137002 中上协行业分类 137004 申银万国行业分类 137005 新财富行业分类 137006 地区省市分类 137007 指数成份股 137008 概念板块
+输出参数值:
+英文名称	中文名称	类型	是否必填	说明
+SECCODE	证券代码	varchar	否	
+SECNAME	证券简称	varchar	否	
+F001V	分类标准编码	varchar	否	
+F002V	分类标准	varchar	否	
+F003V	板块编码	varchar	否	
+F004V	板块一类名称	varchar	否	
+F005V	板块二类名称	varchar	否	
+F006V	板块三类名称	varchar	否	
+F007V	板块四类名称	varchar	否	
+F008V	板块五类名称	varchar	否	
+F009V	板块一类编码	varchar	否	
+F010V	板块二类编码	varchar	否	
+F011V	板块三类编码	varchar	否	
+F012V	板块四类编码	varchar	否	
+F013V	板块五类编码	varchar	否	
+板块成份股数据
+API Code: p_public0004
+接口说明: 取板块的成份股列表 返回指定属于板块的所有证券列表,板块包括地区分类，行业分类，指数分类,市场分类等 请求方式：GET 和 POST
+输入参数值:
+英文名称	中文名称	类型	是否必填	说明
+platetype	分类代码类型	string	是	137001 市场分类 137002 中上协行业分类 137003 巨潮行业分类 137004 申银万国行业分类 137005 新财富行业分类 137006 地区省市分类 137007 指数成份股 137008 概念板块 不允许多选，一次只能查一种类型的分类 不允许为空
+platecode	板块代码	string	否	行业代码、地区代码、指数代码请查询上面分类数据查询API获得 市板代码定义： 沪市：012001 深市主板：012002 深市创：012015 不允许多选 只能传同一种类型的代码，不能地区、行业、指数、市场混着传；
+abtype	AB股类型	string	否	A：A 股，B：B股
+输出参数值:
+英文名称	中文名称	类型	是否必填	说明
+SECCODE	证券代码	varchar	否	
+SECNAME	证券简称	varchar	否	
+F001V	分类标准编码	varchar	否	
+F002V	分类标准	varchar	否	
+F003V	板块编码	varchar	否	
+F004V	板块一类名称	varchar	否	
+F005V	板块二类名称	varchar	否	
+F006V	板块三类名称	varchar	否	
+F007V	板块四类名称	varchar	否	
+F008V	板块五类名称	varchar	否	
+F009V	板块一类编码	varchar	否	
+F010V	板块二类编码	varchar	否	
+F011V	板块三类编码	varchar	否	
+F012V	板块四类编码	varchar	否	
+F013V	板块五类编码	varchar	否	
+STARTDATE	生效日期	date	否	
+股票背景资料
+API Code: p_company3201
+接口说明: 股票背景资料
+输入参数值:
+英文名称	中文名称	类型	是否必填	说明
+scode	股票代码	string	否	为空取所有公司背景
+page	page	int	否	
+pagesize	pagesize	int	否	
+输出参数值:
+英文名称	中文名称	类型	是否必填	说明
+SECCODE	证券代码	VARCHAR(20)	否	
+SECNAME	证券简称	VARCHAR(60)	否	
+F001V	公司背景	VARCHAR(2000)	否	
+RECTIME	数据时间	DATETIME	否	
+F002V	资讯标题	VARCHAR(100)	否	
+公司管理人员任职情况
+API Code: p_stock2102
+接口说明: 取公司管理人员任职情况和部份个人简介 请求方式：GET 和 POST
+输入参数值:
+英文名称	中文名称	类型	是否必填	说明
+scode	股票代码	string	是	输入不超过50只股票代码，用逗号分隔；如： 000001,600000
+state	状态	int	否	为空则取数有数据，输入1则取最新一任期管理人员
+输出参数值:
+英文名称	中文名称	类型	是否必填	说明
+ORGNAME	机构名称	VARCHAR	否	
+SECCODE	证券代码	VARCHAR	否	
+SECNAME	证券简称	VARCHAR	否	
+DECLAREDATE	公告日期	DATE	否	
+F001V	个人ID	VARCHAR	否	
+F002V	姓名	VARCHAR	否	
+F007D	任职日期	DATE	否	
+F008D	离职日期	DATE	否	
+F009V	职务名称	VARCHAR	否	
+F010V	性别	VARCHAR	否	
+F011V	教育程度	VARCHAR	否	
+F012V	出生年份	VARCHAR	否	
+F013V	国籍	VARCHAR	否	
+F014V	职务类别编码	VARCHAR	否	
+F015V	职务类别	VARCHAR	否	
+F016V	职务编码	VARCHAR	否	
+F017V	最高学历	VARCHAR	否	
+F019V	个人简历	VARCHAR	否	
+F020C	是否在职	char	否	0-否，1-是
+机构基本信息变更情况
+API Code: p_stock2108
+接口说明: 机构基本信息变更情况
+输入参数值:
+英文名称	中文名称	类型	是否必填	说明
+scode	股票代码	string	是	示例：scode=000002
+sdate	开始公布日期	string	否	支持格式：20161101 或2016-11-01 或2016/11/01
+edate	结束公布日期	int	否	支持格式：20161101 或2016-11-01 或2016/11/01
+输出参数值:
+英文名称	中文名称	类型	是否必填	说明
+SECCODE	证券代码	varchar(10)	否	
+SECNAME	证券简称	varchar(40)	否	
+VARYDATE	公布日期	DATE	否	
+TYPENAME	变更事项	VARCHAR(60)	否	对应公共编码0116，机构名称、注册地址、联系方式等
+TYPECODE	变更事项编码	VARCHAR(12)	否	
+F001V	变更后（中文名称）	VARCHAR(100)	否	
+F002V	变更后（英文名称）	VARCHAR(150)	否	
+F003V	变更前（中文名称）	VARCHAR(100)	否	
+F004V	变更前（英文名称）	VARCHAR(150)	否	
+F005V	变更原因	VARCHAR(255)	否	
+F006D	生效日期	date	否	
+证券简称变更情况
+API Code: p_stock2109
+接口说明:
+输入参数值:
+英文名称	中文名称	类型	是否必填	说明
+scode	股票代码	string	是	示例：scode=000002
+sdate	开始日期	string	否	STARTDATE
+edate	结束日期	string	否	STARTDATE
+输出参数值:
+英文名称	中文名称	类型	是否必填	说明
+暂无数据
+上市公司行业归属的变动情况
+API Code: p_stock2110
+接口说明: 上市公司行业归属的变动情况
+输入参数值:
+英文名称	中文名称	类型	是否必填	说明
+scode	股票代码	string	是	示例：000002
+sdate	开始变动日期	string	否	支持格式：20161101 或2016-11-01 或2016/11/01
+edate	结束变动日期	string	否	支持格式：20161101 或2016-11-01 或2016/11/01
+输出参数值:
+英文名称	中文名称	类型	是否必填	说明
+ORGNAME	机构名称	VARCHAR(100)	否	
+SECCODE	证券代码	VARCHAR(10)	否	
+SECNAME	新证券简称	VARCHAR(40)	否	通过公共编码表选择采集；对应的总类编码为‘008’
+VARYDATE	变更日期	DATE	否	
+F001V	分类标准编码	VARCHAR(12)	否	
+F002V	分类标准	VARCHAR(60)	否	
+F003V	行业编码	VARCHAR(12)	否	
+F004V	行业门类	VARCHAR(60)	否	
+F005V	行业次类	VARCHAR(60)	否	
+F006V	行业大类	VARCHAR(60)	否	
+F007V	行业中类	VARCHAR(60)	否	
+F008C	最新记录标识	CHAR(1)	否	
+公司上市状态变动情况表
+API Code: p_stock2117
+接口说明:
+输入参数值:
+英文名称	中文名称	类型	是否必填	说明
+scode	股票代码	string	否	股票代码
+sign	上市状态	string	否	上市状态，须先访问公共信息中的公共编码数据（p_public0006）接口，令subtype=013，获取相应的上市状态编码
+type	变更类型	string	否	变更类型，须先访问公共信息中的公共编码数据（p_public0006）接口，令subtype=031，获取变更类型编码
+输出参数值:
+英文名称	中文名称	类型	是否必填	说明
+SECCODE	证券代码	varchar(10)	否	
+SECNAME	证券简称	varchar(40)	否	
+ORGNAME	机构名称	varchar(100)	否	
+DECLAREDATE	公告日期	datetime	否	
+VARYDATE	变更日期	date	否	
+F002V	上市状态	varchar(60)	否	
+F004V	变更原因	varchar(500)	否	
+F006V	变更类型	varchar(60)	否	
+公司员工情况表
+API Code: p_stock2107
+接口说明: 公司员工情况表
+输入参数值:
+英文名称	中文名称	类型	是否必填	说明
+scode	股票代码	string	是	输入不超过50只股票代码，用逗号分隔；如： 000001,600000
+sdate	开始日期	string	否	支持格式示例：20181101 或2018-11-01 或2018/11/01
+edate	结束日期	string	否	支持格式示例：20181101 或2018-11-01 或2018/11/01
+state	最新标识	string	否	当state=1取最新标识的所有数据
+输出参数值:
+英文名称	中文名称	类型	是否必填	说明
+ORGID	公司ID	varchar(11)	否	
+ORGNAME	公司名称	varchar(100)	否	
+SECCODE	证券代码	varchar(10)	否	
+SECNAME	证券简称	varchar(40)	否	
+ENDDATE	截止日期	datetime	否	
+DECLAREDATE	公告日期	datetime	否	程序自动默认为录入当日，可修改
+STAFFNUM	员工总数	decimal(8)	否	单位:人;在职员工
+F006C	最新记录标识	char(1)	否	0-否,1-是;程序自动根据截止日期判断,将最新一期记录设为1,其余设为0
+F003N	博士人数	int	否	
+F004N	硕士人数	int	否	
+F005N	本科人数	int	否	
+F007N	大专人数	int	否	
+F008N	高中及以下人数(其他)	int	否	采集单独披露的高中及以下人数和其他分类，高中、中专、初中等分别披露时，加总采集
+F009N	生产人员	int	否	
+F010N	销售人员	int	否	
+F011N	技术人员	int	否	
+F012N	财务人员	int	否	
+F013N	行政人员	int	否	
+F014N	其他人员	int	否	
+股票-公司公告
+47
+上架时间：2021-09-25供应商：深证信
+AB股沪深北市场公告资讯基础服务
+巨潮网上市公司相关公告PDF全文，权威、实时、高效。
+
+包含接口: 
+公告分类信息
+API Code: p_info3005
+接口说明: 函数说明：取公告分类内容。 请求方式：GET 和 POST
+输入参数值:
+英文名称	中文名称	类型	是否必填	说明
+sortcode	分类编码	string	否	只能查询一个分类代码
+parentcode	父类编码	string	否	传入父类编码，可以查询对应的所属分类编码，顶级分类为01
+输出参数值:
+英文名称	中文名称	类型	是否必填	说明
+SORTCODE	类目编码	VARCHAR	否	
+PARENTCODE	父类编码	VARCHAR	否	
+SORTNAME	类目名称	VARCHAR	否	
+F001D	启用时间	DATE	否	
+F002D	停用时间	DATE	否	
+公告基本信息
+API Code: p_info3015
+接口说明: 获取公告信息 请求方式：GET 和 POST 注意事项：为保证响应时间，暂定API的每次返回记录数最多为20000条，请使用者注意 因公告数量较多，同一个类别的公告一次只能请求一天的数据，以保证API的响应时间 如果当天公告数量超出20000条记录，想实现增量的多次提取，可以先通过查询结果集，保存该结果集中最大一个OBJECTID,用于下次调用时通过参数maxID传入该值，这样实现增量提取
+输入参数值:
+英文名称	中文名称	类型	是否必填	说明
+scode	股票代码	string	否	输入1个股票， scode和edate同时为空情况下，默认返回最近100条记录
+sdate	开始查询时间	string	否	支持格式示例：20161101 或2016-11-01 或2016/11/01
+edate	结束查询时间	string	否	scode和edate同时为空情况下，默认返回最近100条记录 scode为空,edate不为空时，取edate日期这一天数据
+market	市场	string	否	上交所:012001 科创板:012029 深交所主板:012002 深交所创业板:012015
+maxid	增量起始ID	int	否	用于增量提取数据使用
+textid	正文ID	string	否	
+page	page	int	否	
+pagesize	pagesize	int	否	
+输出参数值:
+英文名称	中文名称	类型	是否必填	说明
+TEXTID	正文ID	VARCHAR	否	
+RECID	主体ID	VARCHAR	否	
+SECCODE	证券代码	VARCHAR	否	
+SECNAME	证券简称	VARCHAR	否	
+F001D	公告日期	DATE	否	
+F002V	公告标题	VARCHAR	否	
+F003V	公告地址	VARCHAR	否	
+F004V	公告格式	VARCHAR	否	
+F005N	公告大小	DECIMAL	否	
+F006V	信息分类	VARCHAR	否	
+F007V	证券类别编码	VARCHAR	否	
+F008V	证券类别名称	VARCHAR	否	
+F009V	证券市场编码	VARCHAR	否	
+F010V	证券市场名称	VARCHAR	否	
+OBJECTID	OBJECTID	BIGINT	否	
+RECTIME	发布时间	DATETIME	否
+
+
+
+
+
+公司基本信息
+API接口名称: p_stock2100
+URL接口名称: http://webapi.cninfo.com.cn/api/stock/p_stock2100
+请求方式方法: get,post
+最大记录数: 20000
+输入参数 :
+英文名称	中文名称	类型	是否必填	说明
+scode	股票代码	string	是	输入不超过50只股票代码，用逗号分隔；如： 000001,600000
+format	结果集格式	string	否	设置结果返回的格式，可选的有xml、json、csv、dbf
+@column	结果列选择	string	否	选择结果集中所需要的字段，多列用逗号分隔，如@column=a,b
+@limit	结果条数限制	int	否	设置结果返回的条数
+@orderby	结果集排序	string	否	设置结果集的格式，如 @orderby=id:desc @orderby=id:asc
+输出参数 :
+英文名称	中文名称	类型	单位	说明
+ORGID	机构ID	varchar(11)		
+ORGNAME	机构名称	varchar(100)		
+SECCODE	证券代码	varchar(10)		
+SECNAME	证券简称	varchar(40)		
+F001V	英文名称	varchar(100)		
+F002V	英文简称	varchar(40)		
+F003V	法人代表	varchar(40)		
+F004V	注册地址	varchar(100)		
+F005V	办公地址	varchar(150)		
+F006V	邮政编码	varchar(10)		
+F007N	注册资金	numeric(14,4)		
+F008V	货币编码	varchar(12)		
+F009V	货币名称	varchar(60)		
+F010D	成立日期	DATE		
+F011V	机构网址	varchar(80)		
+F012V	电子信箱	varchar(80)		
+F013V	联系电话	varchar(60)		
+F014V	联系传真	varchar(60)		
+F015V	主营业务	varchar(500)		
+F016V	经营范围	varchar(4000)		
+F017V	机构简介/公司成立概况	varchar(2000)		
+F018V	董事会秘书	varchar(40)		
+F019V	董秘联系电话	varchar(60)		
+F020V	董秘联系传真	varchar(60)		
+F021V	董秘电子邮箱	varchar(80)		
+F022V	证券事务代表	varchar(40)		
+F023V	上市状态编码	varchar(12)		
+F024V	上市状态	varchar(60)		
+F025V	所属省份编码	varchar(12)		
+F026V	所属省份	varchar(60)		
+F027V	所属城市编码	varchar(12)		
+F028V	所属城市	varchar(60)		
+F029V	中上协一级行业编码	varchar(12)		
+F030V	中上协一级行业名称	varchar(60)		
+F031V	中上协二级行业编码	varchar(60)		
+F032V	中上协二级行业名称	varchar(60)		
+F033V	申万行业分类一级编码	varchar(60)		
+F034V	申万行业分类一级名称	varchar(60)		
+F035V	申万行业分类二级编码	varchar(60)		
+F036V	申万行业分类二级名称	varchar(60)		
+F037V	申万行业分类三级编码	varchar(60)		
+F038V	申万行业分类三级名称	varchar(60)		
+F039V	会计师事务所	varchar(200)		
+F040V	律师事务所	varchar(200)		
+F041V	董事长	varchar(60)		
+F042V	总经理	varchar(60)		
+F043V	公司独立董事(现任)	varchar(100)		多名
+F044V	入选指数	varchar(1000)		多个
+F045V	最新报告预约日期	varchar(50)		
+F046V	保荐机构	varchar(500)		多个
+F047V	主承销商	varchar(500)		
+F048V	PEVC标记	varchar(12)		
+F049V	注册国家	varchar(200)		
+F050V	统一社会信用代码	varchar(60)		
+F051V	工商ID	varchar(60)		
+F052V	可转债	varchar(100)		
+F053V	CDR	varchar(100)		
+F054V	企业规模	varchar(20)	
+
+
+新闻详情
+API接口名称: p_comnewsinfo
+URL接口名称: http://webapi.cninfo.com.cn/api/bigdata/p_comnewsinfo
+请求方式方法: get,post
+最大记录数: 20000
+输入参数 :
+英文名称	中文名称	类型	是否必填	说明
+id	新闻id	string	是	
+format	结果集格式	string	否	设置结果返回的格式，可选的有xml、json、csv、dbf
+输出参数 :
+英文名称	中文名称	类型	单位	说明
+requestId	请求编号	String		
+code	状态码	Number		
+description	状态码描述	String		
+timestamp	响应时间戳	String		
+response	响应的结果集	Object		
+page	页数	String		
+total_page	总页数	String		
+total	总数	String		
+title	标题	string		
+source	作者	varchar		
+polarity	正负面(-2:确定负面，-1：疑似负面，0：中性， 1：疑似正面，2：确定正面)	number		
+summary	摘要	string		
+create_time	发布时间	string		
+keywords	关键词	Object[]		
+info_flag	来源	string		
+url	原文url	string		
+content	正文	mediumtext		
+manager	相关人物	varchar		
+companyname	相关企业	varchar
+
+
+
+
+新闻列表
+API接口名称: p_comnewslist
+URL接口名称: http://webapi.cninfo.com.cn/api/bigdata/p_comnewslist
+请求方式方法: get,post
+最大记录数: 20000
+输入参数 :
+英文名称	中文名称	类型	是否必填	说明
+cid	公司id	int	否	
+sdate	开始日期	string	否	形如“2018-01-01”“”
+edate	结束日期	string	否	形如“2018-01-01”“”
+page	当前页码	int	否	
+rows	每页条数	int	否	
+cname	公司名	string	否	
+key	查询词	string	否	
+format	结果集格式	string	否	设置结果返回的格式，可选的有xml、json、csv、dbf
+输出参数 :
+英文名称	中文名称	类型	单位	说明
+requestId	String	请求编号		
+code	Number	状态码		
+description	String	状态码描述		
+timestamp	String	响应时间戳		
+response	Object	响应的结果集		
+page	String	页数		
+total_page	String	总页数		
+total	String	总数		
+list	Object[]	数组		
+id	number	新闻id		
+title	string	标题		
+polarity	number	正负面		(-2:确定负面，-1：疑似负面，0：中性， 1：疑似正面，2：确定正面)
+create_time	string	发布时间		
+keywords	Object[]	关键词		
+info_flag	string	来源		(01新闻，02论坛，03博客，04微博，0401新浪微博，0402腾讯微博，05平媒，06微信，07视频，08长微博，09APP手机，10评论回复，99搜索)
+
+
+
+
+
+新闻数据查询
+API接口名称: p_info3030
+URL接口名称: http://webapi.cninfo.com.cn/api/info/p_info3030
+请求方式方法: get,post
+最大记录数: 20000
+输入参数 :
+英文名称	中文名称	类型	是否必填	说明
+scode	证券代码	string	否	scode和edate同时为空情况下，默认返回最近100条记录 Scode为证券代码
+sdate	结束查询日期	string	否	支持格式示例：20230301 或2023-03-01 或2023/03/01
+edate	结束查询日期	string	否	scode和edate同时为空情况下，默认返回最近100条记录 scode为空
+stype	新闻分类编码	string	否	2701---证券；2702---公司； 2703---快讯；2704---产经
+format	结果集格式	string	否	设置结果返回的格式，可选的有xml、json、csv、dbf
+@column	结果列选择	string	否	选择结果集中所需要的字段，多列用逗号分隔，如@column=a,b
+@limit	结果条数限制	int	否	设置结果返回的条数
+@orderby	结果集排序	string	否	设置结果集的格式，如 @orderby=id:desc @orderby=id:asc
+输出参数 :
+英文名称	中文名称	类型	单位	说明
+DECLAREDATE	发布时间	datetime		
+TEXTID	新闻ID	numeric(12,0)		
+SECCODE	证券代码	varchar(10)		
+F001V	数据源	varchar(50)		
+F002V	关键字	varchar(200)		
+F003V	新闻分类	varchar(50)		
+F004V	新闻标题	varchar(255)		
+F005V	发布作者	varchar(255)		
+F006V	S3链接	varchar(200)		
+F007V	文件类型	varchar(20)		
+F008V	S3链接	varchar(200)
+
+
+
+新闻正文查询
+API接口名称: p_info3031
+URL接口名称: http://webapi.cninfo.com.cn/api/info/p_info3031
+请求方式方法: get,post
+最大记录数: 20000
+输入参数 :
+英文名称	中文名称	类型	是否必填	说明
+newid	新闻ID	int	是	
+format	结果集格式	string	否	设置结果返回的格式，可选的有xml、json、csv、dbf
+输出参数 :
+英文名称	中文名称	类型	单位	说明
+NEWID	新闻ID	int		
+CONTENT	正文	longtext
+
+
+
+
+个股研报摘要
+API接口名称: p_info3097_inc
+URL接口名称: http://webapi.cninfo.com.cn/api/load/p_info3097_inc
+请求方式方法: get,post
+最大记录数: 20000
+输入参数 :
+英文名称	中文名称	类型	是否必填	说明
+objectid	起始记录ID	int	是	每次下载数据时，都要记录最大的一个OBJECTID，下次调用时将保存的更新的最大OBJECTID传入取增量更新数据,第一次调用可以传入0
+rowcount	返回记录条数	int	否	每次获取条数不能超过2000,默认为1000
+format	结果集格式	string	否	设置结果返回的格式，可选的有xml、json、csv、dbf
+@column	结果列选择	string	否	选择结果集中所需要的字段，多列用逗号分隔，如@column=a,b
+@limit	结果条数限制	int	否	设置结果返回的条数
+@orderby	结果集排序	string	否	设置结果集的格式，如 @orderby=id:desc @orderby=id:asc
+输出参数 :
+英文名称	中文名称	类型	单位	说明
+SECCODE	证券代码	VARCHAR(10)		
+SECNAME	证券简称	VARCHAR(20)		
+F001D	资讯发布日期	DATETIME		
+F002V	资讯标题	VARCHAR（400）		
+F003V	资讯内容	VARCHAR（4000）		
+F004V	研报发布机构	VARCHAR(200)		
+F005D	研报发布日期	DATE		
+F007V	资讯分类名称	VARCHAR(50)		
+F009V	证券类别名称	VARCHAR(50)		
+F011V	证券市场名称	VARCHAR(50)		
+OBJECTID	OBJECTID	BIGINT		
+CHANGE_CODE	操作标识	INT		1表示插入,2表示删除,3表示修改。 通过 记录唯一标识列：ROWKEY 做增删改操作。
+ROWKEY	数据行键	VARCHAR(100)		数据唯一标识列，通过该值与目标表中记录比较做增删改操作
+
+
+
+股票基本信息
+API接口名称: p_stock2101
+URL接口名称: http://webapi.cninfo.com.cn/api/stock/p_stock2101
+请求方式方法: get,post
+最大记录数: 20000
+输入参数 :
+英文名称	中文名称	类型	是否必填	说明
+scode	股票代码	string	否	输入不超过50只股票代码，用逗号分隔；如： 000001,600000
+format	结果集格式	string	否	设置结果返回的格式，可选的有xml、json、csv、dbf
+@column	结果列选择	string	否	选择结果集中所需要的字段，多列用逗号分隔，如@column=a,b
+@limit	结果条数限制	int	否	设置结果返回的条数
+@orderby	结果集排序	string	否	设置结果集的格式，如 @orderby=id:desc @orderby=id:asc
+输出参数 :
+英文名称	中文名称	类型	单位	说明
+ORGNAME	机构名称	varchar		
+SECCODE	证券代码	varchar		
+SECNAME	证券简称	varchar		
+F001V	拼音简称	varchar		
+F002V	证券类别编码	varchar		
+F003V	证券类别	varchar		
+F004V	交易市场编码	varchar		
+F005V	交易市场	varchar		
+F006D	上市日期	datetime		
+F007N	初始上市数量	decimal		单位：股
+F008V	代码属性编码	varchar		
+F009V	代码属性	varchar		
+F010V	上市状态编码	varchar		
+F011V	上市状态	varchar		
+F012N	面值	decimal		单位：元
+F013V	ISIN	varchar		
+
+
+
+公司管理人员任职情况
+API接口名称: p_stock2102
+URL接口名称: http://webapi.cninfo.com.cn/api/stock/p_stock2102
+请求方式方法: get,post
+最大记录数: 20000
+输入参数 :
+英文名称	中文名称	类型	是否必填	说明
+scode	股票代码	string	是	输入不超过50只股票代码，用逗号分隔；如： 000001,600000
+state	状态	int	否	为空则取数有数据，输入1则取最新一任期管理人员
+format	结果集格式	string	否	设置结果返回的格式，可选的有xml、json、csv、dbf
+@column	结果列选择	string	否	选择结果集中所需要的字段，多列用逗号分隔，如@column=a,b
+@limit	结果条数限制	int	否	设置结果返回的条数
+@orderby	结果集排序	string	否	设置结果集的格式，如 @orderby=id:desc @orderby=id:asc
+输出参数 :
+英文名称	中文名称	类型	单位	说明
+ORGNAME	机构名称	VARCHAR		
+SECCODE	证券代码	VARCHAR		
+SECNAME	证券简称	VARCHAR		
+DECLAREDATE	公告日期	DATE		
+F001V	个人ID	VARCHAR		
+F002V	姓名	VARCHAR		
+F007D	任职日期	DATE		
+F008D	离职日期	DATE		
+F009V	职务名称	VARCHAR		
+F010V	性别	VARCHAR		
+F011V	教育程度	VARCHAR		
+F012V	出生年份	VARCHAR		
+F013V	国籍	VARCHAR		
+F014V	职务类别编码	VARCHAR		
+F015V	职务类别	VARCHAR		
+F016V	职务编码	VARCHAR		
+F017V	最高学历	VARCHAR		
+F019V	个人简历	VARCHAR		
+F020C	是否在职	char		0-否，1-是
+
+
+
+公司上市状态变动情况表
+API接口名称: p_stock2117
+URL接口名称: http://webapi.cninfo.com.cn/api/stock/p_stock2117
+请求方式方法: get,post
+最大记录数: 20000
+输入参数 :
+英文名称	中文名称	类型	是否必填	说明
+scode	股票代码	string	否	股票代码
+sign	上市状态	string	否	上市状态，须先访问公共信息中的公共编码数据（p_public0006）接口，令subtype=013，获取相应的上市状态编码
+type	变更类型	string	否	变更类型，须先访问公共信息中的公共编码数据（p_public0006）接口，令subtype=031，获取变更类型编码
+format	结果集格式	string	否	设置结果返回的格式，可选的有xml、json、csv、dbf
+@column	结果列选择	string	否	选择结果集中所需要的字段，多列用逗号分隔，如@column=a,b
+@limit	结果条数限制	int	否	设置结果返回的条数
+@orderby	结果集排序	string	否	设置结果集的格式，如 @orderby=id:desc @orderby=id:asc
+输出参数 :
+英文名称	中文名称	类型	单位	说明
+SECCODE	证券代码	varchar(10)		
+SECNAME	证券简称	varchar(40)		
+ORGNAME	机构名称	varchar(100)		
+DECLAREDATE	公告日期	datetime		
+VARYDATE	变更日期	date		
+F002V	上市状态	varchar(60)		
+F004V	变更原因	varchar(500)		
+F006V	变更类型	varchar(60)
+
+
+
+公司员工情况表
+API接口名称: p_stock2107
+URL接口名称: http://webapi.cninfo.com.cn/api/stock/p_stock2107
+请求方式方法: get,post
+最大记录数: 20000
+输入参数 :
+英文名称	中文名称	类型	是否必填	说明
+scode	股票代码	string	是	输入不超过50只股票代码，用逗号分隔；如： 000001,600000
+sdate	开始日期	string	否	支持格式示例：20181101 或2018-11-01 或2018/11/01
+edate	结束日期	string	否	支持格式示例：20181101 或2018-11-01 或2018/11/01
+state	最新标识	string	否	当state=1取最新标识的所有数据
+format	结果集格式	string	否	设置结果返回的格式，可选的有xml、json、csv、dbf
+@column	结果列选择	string	否	选择结果集中所需要的字段，多列用逗号分隔，如@column=a,b
+@limit	结果条数限制	int	否	设置结果返回的条数
+@orderby	结果集排序	string	否	设置结果集的格式，如 @orderby=id:desc @orderby=id:asc
+输出参数 :
+英文名称	中文名称	类型	单位	说明
+ORGID	公司ID	varchar(11)		
+ORGNAME	公司名称	varchar(100)		
+SECCODE	证券代码	varchar(10)		
+SECNAME	证券简称	varchar(40)		
+ENDDATE	截止日期	datetime		
+DECLAREDATE	公告日期	datetime		程序自动默认为录入当日，可修改
+STAFFNUM	员工总数	decimal(8)		单位:人;在职员工
+F006C	最新记录标识	char(1)		0-否,1-是;程序自动根据截止日期判断,将最新一期记录设为1,其余设为0
+F003N	博士人数	int		
+F004N	硕士人数	int		
+F005N	本科人数	int		
+F007N	大专人数	int		
+F008N	高中及以下人数(其他)	int		采集单独披露的高中及以下人数和其他分类，高中、中专、初中等分别披露时，加总采集
+F009N	生产人员	int		
+F010N	销售人员	int		
+F011N	技术人员	int		
+F012N	财务人员	int		
+F013N	行政人员	int		
+F014N	其他人员	int
+
+
+
+
+
+公告基本信息
+API接口名称: p_info3015
+URL接口名称: http://webapi.cninfo.com.cn/api/info/p_info3015
+请求方式方法: get,post
+最大记录数: 1
+输入参数 :
+英文名称	中文名称	类型	是否必填	说明
+scode	股票代码	string	否	输入1个股票， scode和edate同时为空情况下，默认返回最近100条记录
+sdate	开始查询时间	string	否	支持格式示例：20161101 或2016-11-01 或2016/11/01
+edate	结束查询时间	string	否	scode和edate同时为空情况下，默认返回最近100条记录 scode为空,edate不为空时，取edate日期这一天数据
+market	市场	string	否	上交所:012001 科创板:012029 深交所主板:012002 深交所创业板:012015
+maxid	增量起始ID	int	否	用于增量提取数据使用
+textid	正文ID	string	否	
+page	page	int	否	
+pagesize	pagesize	int	否	
+format	结果集格式	string	否	设置结果返回的格式，可选的有xml、json、csv、dbf
+@column	结果列选择	string	否	选择结果集中所需要的字段，多列用逗号分隔，如@column=a,b
+@limit	结果条数限制	int	否	设置结果返回的条数
+@orderby	结果集排序	string	否	设置结果集的格式，如 @orderby=id:desc @orderby=id:asc
+输出参数 :
+英文名称	中文名称	类型	单位	说明
+TEXTID	正文ID	VARCHAR		
+RECID	主体ID	VARCHAR		
+SECCODE	证券代码	VARCHAR		
+SECNAME	证券简称	VARCHAR		
+F001D	公告日期	DATE		
+F002V	公告标题	VARCHAR		
+F003V	公告地址	VARCHAR		
+F004V	公告格式	VARCHAR		
+F005N	公告大小	DECIMAL		
+F006V	信息分类	VARCHAR		
+F007V	证券类别编码	VARCHAR		
+F008V	证券类别名称	VARCHAR		
+F009V	证券市场编码	VARCHAR		
+F010V	证券市场名称	VARCHAR		
+OBJECTID	OBJECTID	BIGINT		
+RECTIME	发布时间	DATETIME
+
+
+
+公告基本信息
+API接口名称: p_info3015_client
+URL接口名称: http://webapi.cninfo.com.cn/api/info/p_info3015_client
+请求方式方法: get,post
+最大记录数: 1
+输入参数 :
+英文名称	中文名称	类型	是否必填	说明
+scode	股票代码	string	否	输入1个股票，为空时取结束日期当天的所有公告
+sdate	开始查询时间	string	否	支持格式示例：20161101 或2016-11-01 或2016/11/01
+edate	结束查询时间	string	否	股票代码参数为空时，取结束日期全部公告数据
+market	市场	string	否	可多选 012001 上交所 012002 深交所主板 012003 012015 深交所创业板
+maxid	增量起始ID	int	否	用于增量提取数据使用
+textid	正文ID	int	否	可为空
+page	page	int	否	
+pagesize	pagesize	int	否	
+format	结果集格式	string	否	设置结果返回的格式，可选的有xml、json、csv、dbf
+@column	结果列选择	string	否	选择结果集中所需要的字段，多列用逗号分隔，如@column=a,b
+@limit	结果条数限制	int	否	设置结果返回的条数
+@orderby	结果集排序	string	否	设置结果集的格式，如 @orderby=id:desc @orderby=id:asc
+输出参数 :
+英文名称	中文名称	类型	单位	说明
+TEXTID	正文ID	VARCHAR		
+RECID	主体ID	VARCHAR		
+SECCODE	证券代码	VARCHAR		
+SECNAME	证券简称	VARCHAR		
+F001D	公告日期	DATE		
+F002V	公告标题	VARCHAR		
+F003V	公告地址	VARCHAR		
+F004V	公告格式	VARCHAR		
+F005N	公告大小	DECIMAL		
+F006V	信息分类	VARCHAR		
+F007V	证券类别编码	VARCHAR		
+F008V	证券类别名称	VARCHAR		
+F009V	证券市场编码	VARCHAR		
+F010V	证券市场名称	VARCHAR		
+OBJECTID	OBJECTID	BIGINT		
+RECTIME	发布时间	DATETIME		
+F012V	ISIN	VARCHAR		
+F013V	证券全称（英文）	VARCHAR		
+F014V	证券全称（中文）	VARCHAR
+
+
+

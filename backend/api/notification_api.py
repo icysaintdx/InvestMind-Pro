@@ -60,6 +60,7 @@ class SaveNotificationConfigRequest(BaseModel):
     SMTP_PASSWORD: Optional[str] = Field(None, description="SMTP密码/授权码")
     SMTP_FROM: Optional[str] = Field(None, description="发件人地址")
     SMTP_USE_SSL: Optional[bool] = Field(None, description="是否使用SSL")
+    EMAIL_RECIPIENTS: Optional[List[str]] = Field(None, description="默认收件人列表")
     # 企业微信配置
     WECHAT_WEBHOOK_URL: Optional[str] = Field(None, description="企业微信Webhook地址")
     # 钉钉配置

@@ -141,13 +141,40 @@
                 AKShare
                 <span class="config-badge success">免费</span>
               </label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value="开源金融数据库（无需配置，直接可用）"
                 class="key-input"
                 disabled
               >
               <button @click="testApi('akshare')" class="test-btn">测试</button>
+            </div>
+
+            <div class="key-item">
+              <label class="key-label">
+                <span class="provider-icon">📰</span>
+                巨潮资讯 Access Key
+              </label>
+              <input
+                type="password"
+                v-model="localKeys.cninfo_access_key"
+                placeholder="巨潮资讯API Access Key"
+                class="key-input"
+              >
+              <button @click="testApi('cninfo')" class="test-btn">测试</button>
+            </div>
+
+            <div class="key-item">
+              <label class="key-label">
+                <span class="provider-icon">🔐</span>
+                巨潮资讯 Secret Key
+              </label>
+              <input
+                type="password"
+                v-model="localKeys.cninfo_secret_key"
+                placeholder="巨潮资讯API Secret Key"
+                class="key-input"
+              >
             </div>
           </div>
         </div>

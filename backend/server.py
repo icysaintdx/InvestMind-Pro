@@ -116,6 +116,9 @@ from backend.api.realtime_monitor_api import router as realtime_monitor_router  
 from backend.api.market_data_api import router as market_data_router  # 市场数据API（盘口、排行榜等）
 from backend.api.news_center_api import router as news_center_router  # 统一新闻监控中心API
 from backend.api.cninfo_api import router as cninfo_router  # 巨潮资讯网官方API
+from backend.api.system_api import router as system_router  # 系统设置API
+from backend.api.api_monitor_api import router as api_monitor_router  # API监控API
+from backend.api.datasource_api import router as datasource_router  # 数据源调度器API
 
 # ==================== 配置 ====================
 
@@ -127,7 +130,10 @@ API_KEYS = {
     "siliconflow": os.getenv("SILICONFLOW_API_KEY", ""),
     "juhe": os.getenv("JUHE_API_KEY", ""),
     "finnhub": os.getenv("FINNHUB_API_KEY", ""),
-    "tushare": os.getenv("TUSHARE_TOKEN", "")
+    "tushare": os.getenv("TUSHARE_TOKEN", ""),
+    "cninfo_access_key": os.getenv("CNINFO_ACCESS_KEY", ""),
+    "cninfo_access_secret": os.getenv("CNINFO_ACCESS_SECRET", ""),
+    "cninfo_access_token": os.getenv("CNINFO_ACCESS_TOKEN", "")
 }
 
 # API 端点
@@ -294,6 +300,18 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             print(f"⚠️ 统一新闻监控中心启动失败: {e}")
 
+    # 启动TDX数据缓存服务（默认启动）
+    # 该服务在后台定时获取TDX数据，缓存到服务器端文件
+    # 所有API请求直接读取缓存，不阻塞用户请求
+    if os.getenv("ENABLE_TDX_CACHE_SERVICE", "true").lower() == "true":
+        try:
+            from backend.services.tdx_cache_service import get_tdx_cache_service
+            tdx_cache = get_tdx_cache_service()
+            tdx_cache.start()
+            print("✅ TDX数据缓存服务已启动")
+        except Exception as e:
+            print(f"⚠️ TDX数据缓存服务启动失败: {e}")
+
     # yield 控制权给应用
     yield
 
@@ -345,6 +363,15 @@ async def lifespan(app: FastAPI):
         news_monitor = get_news_monitor_center()
         await news_monitor.stop()
         print("✅ 统一新闻监控中心已停止")
+    except:
+        pass
+
+    # 停止TDX数据缓存服务
+    try:
+        from backend.services.tdx_cache_service import get_tdx_cache_service
+        tdx_cache = get_tdx_cache_service()
+        tdx_cache.stop()
+        print("✅ TDX数据缓存服务已停止")
     except:
         pass
 
@@ -419,6 +446,9 @@ app.include_router(realtime_monitor_router)  # 实时盯盘监控API
 app.include_router(market_data_router)  # 市场数据API（盘口、排行榜等）
 app.include_router(news_center_router)  # 统一新闻监控中心API
 app.include_router(cninfo_router)  # 巨潮资讯网官方API
+app.include_router(system_router)  # 系统设置API
+app.include_router(api_monitor_router)  # API监控API
+app.include_router(datasource_router)  # 数据源调度器API
 
 
 # ==================== 数据模型 ====================
@@ -1994,7 +2024,18 @@ async def get_config():
     if API_KEYS.get("tushare"):
         config["api_keys"]["tushare"] = API_KEYS["tushare"]
         config["TUSHARE_TOKEN"] = API_KEYS["tushare"]
-    
+
+    # 添加巨潮API配置（使用官方命名：Access Key, Access Secret, Access Token）
+    if API_KEYS.get("cninfo_access_key"):
+        config["api_keys"]["cninfo_access_key"] = API_KEYS["cninfo_access_key"]
+        config["CNINFO_ACCESS_KEY"] = API_KEYS["cninfo_access_key"]
+    if API_KEYS.get("cninfo_access_secret"):
+        config["api_keys"]["cninfo_access_secret"] = API_KEYS["cninfo_access_secret"]
+        config["CNINFO_ACCESS_SECRET"] = API_KEYS["cninfo_access_secret"]
+    if API_KEYS.get("cninfo_access_token"):
+        config["api_keys"]["cninfo_access_token"] = API_KEYS["cninfo_access_token"]
+        config["CNINFO_ACCESS_TOKEN"] = API_KEYS["cninfo_access_token"]
+
     # 尝试从文件加载模型配置
     try:
         config_file = os.path.join(os.path.dirname(__file__), 'agent_configs.json')

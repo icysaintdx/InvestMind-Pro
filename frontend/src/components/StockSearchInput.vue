@@ -172,8 +172,9 @@ export default {
     }
 
     const selectStock = (stock) => {
-      searchQuery.value = stock.code.replace('SH', '').replace('SZ', '')
-      emit('update:modelValue', searchQuery.value)
+      // stock.code 已经是 600519.SH 格式，直接使用
+      searchQuery.value = stock.code
+      emit('update:modelValue', stock.code)
       emit('select', stock)
       searchResults.value = []
       showDropdown.value = false

@@ -207,6 +207,15 @@ data_sources_status = {
         "todayCalls": 0,
         "lastUpdate": None,
         "error": None
+    },
+    "cninfo": {
+        "id": "cninfo",
+        "name": "巨潮资讯",
+        "type": "公告/研报",
+        "status": "offline",
+        "todayCalls": 0,
+        "lastUpdate": None,
+        "error": None
     }
 }
 
@@ -508,6 +517,27 @@ async def _check_all_data_sources():
             data_sources_status["juhe"]["error"] = str(e)[:100]
         data_sources_status["juhe"]["lastUpdate"] = current_time
 
+        # 检测巨潮资讯
+        try:
+            from backend.dataflows.announcement.cninfo_api import CninfoConfig
+            if CninfoConfig.is_configured():
+                # 尝试调用一个简单的API来检测连接
+                import requests
+                response = requests.get("https://webapi.cninfo.com.cn/", timeout=5)
+                if response.status_code == 200:
+                    data_sources_status["cninfo"]["status"] = "online"
+                    data_sources_status["cninfo"]["error"] = None
+                else:
+                    data_sources_status["cninfo"]["status"] = "error"
+                    data_sources_status["cninfo"]["error"] = f"HTTP {response.status_code}"
+            else:
+                data_sources_status["cninfo"]["status"] = "offline"
+                data_sources_status["cninfo"]["error"] = "未配置CNINFO_ACCESS_KEY"
+        except Exception as e:
+            data_sources_status["cninfo"]["status"] = "error"
+            data_sources_status["cninfo"]["error"] = str(e)[:100]
+        data_sources_status["cninfo"]["lastUpdate"] = current_time
+
     except Exception as e:
         logger.error(f"检测数据源失败: {e}")
 
@@ -551,10 +581,130 @@ async def check_data_sources():
             "success": True,
             "message": "数据源检测完成"
         }
-        
+
     except Exception as e:
         logger.error(f"检测数据源失败: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/sources/check-single")
+@log_api_call("检测单个数据源")
+async def check_single_data_source(request: Dict[str, Any]):
+    """
+    检测单个数据源的连接状态
+    """
+    try:
+        source_id = request.get("source_id")
+        if not source_id or source_id not in data_sources_status:
+            return {"success": False, "error": "无效的数据源ID"}
+
+        current_time = datetime.now().isoformat()
+        status = "offline"
+        error = None
+
+        if source_id == "akshare":
+            try:
+                import akshare as ak
+                df = ak.tool_trade_date_hist_sina()
+                if df is not None and not df.empty:
+                    status = "online"
+                else:
+                    status = "error"
+                    error = "无法获取数据"
+            except Exception as e:
+                status = "error"
+                error = str(e)[:100]
+
+        elif source_id == "tushare":
+            try:
+                import tushare as ts
+                token = os.getenv('TUSHARE_TOKEN')
+                if token:
+                    ts.set_token(token)
+                    pro = ts.pro_api()
+                    df = pro.daily(ts_code='000001.SZ', start_date='20250101', end_date='20250102')
+                    if df is not None:
+                        status = "online"
+                    else:
+                        status = "error"
+                        error = "无法获取数据"
+                else:
+                    status = "offline"
+                    error = "未配置TUSHARE_TOKEN"
+            except Exception as e:
+                status = "error"
+                error = str(e)[:100]
+
+        elif source_id == "eastmoney":
+            try:
+                import requests
+                response = requests.get("https://push2.eastmoney.com/api/qt/stock/get", timeout=5)
+                if response.status_code == 200:
+                    status = "online"
+                else:
+                    status = "error"
+                    error = f"HTTP {response.status_code}"
+            except Exception as e:
+                status = "error"
+                error = str(e)[:100]
+
+        elif source_id == "juhe":
+            try:
+                import requests
+                juhe_key = os.getenv('JUHE_API_KEY')
+                if juhe_key:
+                    response = requests.get(f"http://web.juhe.cn/finance/stock/hs?gid=sh601006&key={juhe_key}", timeout=5)
+                    if response.status_code == 200:
+                        data = response.json()
+                        if data.get("error_code") == 0:
+                            status = "online"
+                        else:
+                            status = "error"
+                            error = data.get("reason", "API错误")
+                    else:
+                        status = "error"
+                        error = f"HTTP {response.status_code}"
+                else:
+                    status = "offline"
+                    error = "未配置JUHE_API_KEY"
+            except Exception as e:
+                status = "error"
+                error = str(e)[:100]
+
+        elif source_id == "cninfo":
+            try:
+                from backend.dataflows.announcement.cninfo_api import CninfoConfig
+                if CninfoConfig.is_configured():
+                    import requests
+                    response = requests.get("https://webapi.cninfo.com.cn/", timeout=5)
+                    if response.status_code == 200:
+                        status = "online"
+                    else:
+                        status = "error"
+                        error = f"HTTP {response.status_code}"
+                else:
+                    status = "offline"
+                    error = "未配置CNINFO_ACCESS_KEY"
+            except Exception as e:
+                status = "error"
+                error = str(e)[:100]
+
+        # 更新状态
+        data_sources_status[source_id]["status"] = status
+        data_sources_status[source_id]["lastUpdate"] = current_time
+        data_sources_status[source_id]["error"] = error
+
+        return {
+            "success": True,
+            "source_id": source_id,
+            "status": status,
+            "error": error,
+            "success_rate": 100 if status == "online" else 0
+        }
+
+    except Exception as e:
+        logger.error(f"检测单个数据源失败: {e}")
+        return {"success": False, "error": str(e)}
 
 
 @router.get("/news")
@@ -631,6 +781,7 @@ async def get_news(source: Optional[str] = None, limit: int = 50):
             logger.info("📰 新闻列表为空，正在获取市场新闻...")
             try:
                 import akshare as ak
+                from backend.dataflows.stock.akshare_utils import get_stock_news_em
 
                 # 尝试多个新闻源
                 news_sources = [
@@ -645,8 +796,8 @@ async def get_news(source: Optional[str] = None, limit: int = 50):
                         if api_name == 'stock_info_global_em':
                             df = ak.stock_info_global_em()
                         elif api_name == 'stock_news_em':
-                            # 获取热门股票新闻
-                            df = ak.stock_news_em(symbol="000001")
+                            # 使用修复版函数获取个股新闻
+                            df = get_stock_news_em(symbol="000001", max_news=50)
                         else:
                             continue
 

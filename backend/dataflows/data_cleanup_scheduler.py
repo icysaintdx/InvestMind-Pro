@@ -27,12 +27,22 @@ class DataCleanupScheduler:
         """清理任务"""
         try:
             logger.info("🧹 开始执行数据清理任务...")
-            
+
+            # 清理监控股票数据
             with get_db_context() as db:
                 result = DataPersistenceManager.batch_clean_all_stocks(db)
-                
-            logger.info(f"✅ 清理完成: 数据{result['data']}条, 新闻{result['news']}条")
-            
+
+            logger.info(f"✅ 监控数据清理完成: 数据{result['data']}条, 新闻{result['news']}条")
+
+            # 清理市场新闻（保留30天）
+            try:
+                from backend.services.news_center.news_storage import get_news_storage
+                storage = get_news_storage()
+                deleted = storage.cleanup_old_news(days=30)
+                logger.info(f"✅ 市场新闻清理完成: 删除{deleted}条")
+            except Exception as e:
+                logger.warning(f"市场新闻清理失败: {e}")
+
         except Exception as e:
             logger.error(f"❌ 清理任务失败: {e}")
             import traceback

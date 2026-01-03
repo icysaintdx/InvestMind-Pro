@@ -13,18 +13,6 @@ from backend.utils.logging_config import get_logger
 
 logger = get_logger("dataflows.sector_rotation")
 
-# TDX连接配置
-TDX_SERVERS = [
-    ('119.147.212.81', 7709),
-    ('112.74.214.43', 7727),
-    ('221.231.141.60', 7709),
-    ('101.227.73.20', 7709),
-    ('101.227.77.254', 7709),
-    ('14.215.128.18', 7709),
-    ('59.173.18.140', 7709),
-    ('180.153.39.51', 7709),
-]
-
 
 class SectorRotationDataFetcher:
     """板块轮动数据获取器"""
@@ -36,120 +24,58 @@ class SectorRotationDataFetcher:
         self._cache = {}
         self._cache_time = {}
         self._cache_ttl = 300  # 5分钟缓存
+        self._tdx_provider = None  # 延迟初始化TDX Provider
         logger.info("[板块轮动] 数据获取器初始化完成")
 
+    def _get_tdx_provider(self):
+        """获取TDX Native Provider（延迟初始化，复用全局实例）"""
+        if self._tdx_provider is None:
+            try:
+                from backend.dataflows.providers.tdx_native_provider import get_tdx_native_provider
+                self._tdx_provider = get_tdx_native_provider()
+                logger.info("[板块轮动] TDX Native Provider初始化成功")
+            except Exception as e:
+                logger.warning(f"[板块轮动] TDX Native Provider初始化失败: {e}")
+                self._tdx_provider = None
+        return self._tdx_provider
+
     def _get_market_stats_from_tdx(self) -> Optional[Dict[str, Any]]:
-        """使用TDX获取市场统计数据"""
+        """使用TDX缓存服务获取市场统计数据（优先读取服务器缓存）"""
         try:
-            from pytdx.hq import TdxHq_API
+            # 优先从服务器缓存读取
+            from backend.services.tdx_cache_service import read_market_stats
+            cached_stats = read_market_stats()
+            if cached_stats and cached_stats.get('total_stocks', 0) > 0:
+                logger.info(f"[板块轮动] 使用服务器缓存的市场统计 (更新时间: {cached_stats.get('update_time', 'N/A')})")
+                return cached_stats
+        except ImportError:
+            logger.debug("[板块轮动] TDX缓存服务未导入")
+        except Exception as e:
+            logger.debug(f"[板块轮动] 读取服务器缓存失败: {e}")
 
-            tdx = TdxHq_API()
-            connected = False
-
-            for host, port in TDX_SERVERS:
-                try:
-                    if tdx.connect(host, port):
-                        connected = True
-                        logger.info(f"[板块轮动] TDX连接成功: {host}:{port}")
-                        break
-                except Exception as e:
-                    logger.debug(f"[板块轮动] TDX连接失败 {host}:{port}: {e}")
-                    continue
-
-            if not connected:
-                logger.warning("[板块轮动] 所有TDX服务器连接失败")
+        # 缓存不可用时，实时获取
+        try:
+            provider = self._get_tdx_provider()
+            if provider is None:
+                logger.warning("[板块轮动] TDX Provider不可用")
                 return None
 
-            try:
-                all_stocks = []
+            # 检查TDX是否可用
+            if not provider.is_available():
+                logger.warning("[板块轮动] TDX服务不可用")
+                return None
 
-                # 深圳市场（A股在前面，从0开始）
-                for start in range(0, 6000, 1000):
-                    stocks = tdx.get_stock_list(0, start)
-                    if not stocks:
-                        break
-                    for s in stocks:
-                        code = s.get('code', '')
-                        if code.startswith(('00', '30')):
-                            all_stocks.append(('0', code))
+            # 使用TDX Native Provider的get_market_stats方法
+            stats = provider.get_market_stats()
+            if stats:
+                logger.info(f"[板块轮动] TDX市场统计: 总{stats.get('total_stocks', 0)}, "
+                           f"涨{stats.get('up_count', 0)}, 跌{stats.get('down_count', 0)}, "
+                           f"涨停{stats.get('limit_up', 0)}, 跌停{stats.get('limit_down', 0)}")
+                return stats
+            else:
+                logger.warning("[板块轮动] TDX获取市场统计返回空")
+                return None
 
-                # 上海市场（A股在后面，从20000开始）
-                for start in range(20000, 30000, 1000):
-                    stocks = tdx.get_stock_list(1, start)
-                    if not stocks:
-                        continue
-                    for s in stocks:
-                        code = s.get('code', '')
-                        if code.startswith(('60', '68')):
-                            all_stocks.append(('1', code))
-
-                logger.info(f"[板块轮动] TDX获取到 {len(all_stocks)} 只A股")
-
-                if len(all_stocks) < 1000:
-                    logger.warning(f"[板块轮动] TDX股票数量异常: {len(all_stocks)}")
-                    return None
-
-                # 批量获取行情
-                up_count = 0
-                down_count = 0
-                flat_count = 0
-                limit_up = 0
-                limit_down = 0
-
-                batch_size = 80
-                for i in range(0, len(all_stocks), batch_size):
-                    batch = all_stocks[i:i+batch_size]
-                    stock_list = [(int(m), c) for m, c in batch]
-
-                    quotes = tdx.get_security_quotes(stock_list)
-                    if quotes:
-                        for q in quotes:
-                            if q and q.get('last_close', 0) > 0:
-                                last_close = q['last_close']
-                                price = q.get('price', 0)
-                                if price > 0:
-                                    change_pct = (price - last_close) / last_close * 100
-
-                                    if change_pct > 0.01:
-                                        up_count += 1
-                                    elif change_pct < -0.01:
-                                        down_count += 1
-                                    else:
-                                        flat_count += 1
-
-                                    # 涨停跌停判断
-                                    code = q.get('code', '')
-                                    if code.startswith(('30', '68')):
-                                        limit_threshold = 19.5
-                                    else:
-                                        limit_threshold = 9.5
-
-                                    if change_pct >= limit_threshold:
-                                        limit_up += 1
-                                    elif change_pct <= -limit_threshold:
-                                        limit_down += 1
-
-                total_count = up_count + down_count + flat_count
-
-                result = {
-                    "total_stocks": total_count,
-                    "up_count": up_count,
-                    "down_count": down_count,
-                    "flat_count": flat_count,
-                    "up_ratio": round(up_count / total_count * 100, 2) if total_count > 0 else 0,
-                    "limit_up": limit_up,
-                    "limit_down": limit_down
-                }
-
-                logger.info(f"[板块轮动] TDX市场统计: 总{total_count}, 涨{up_count}, 跌{down_count}, 涨停{limit_up}, 跌停{limit_down}")
-                return result
-
-            finally:
-                tdx.disconnect()
-
-        except ImportError:
-            logger.warning("[板块轮动] pytdx未安装，无法使用TDX")
-            return None
         except Exception as e:
             logger.error(f"[板块轮动] TDX获取市场统计失败: {e}")
             return None

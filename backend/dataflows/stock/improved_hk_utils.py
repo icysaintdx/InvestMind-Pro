@@ -180,7 +180,7 @@ class ImprovedHKStockProvider:
 
                 # 优先尝试AKShare获取
                 try:
-                    from backend.dataflows.akshare_utils import get_hk_stock_info_akshare
+                    from backend.dataflows.stock.akshare_utils import get_hk_stock_info_akshare
                     logger.debug(f"📊 [港股API] 优先使用AKShare获取: {symbol}")
 
                     akshare_info = get_hk_stock_info_akshare(symbol)

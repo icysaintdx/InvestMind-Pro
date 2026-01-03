@@ -218,12 +218,19 @@ class AKShareNewsProvider(BaseNewsProvider):
             if not method:
                 logger.warning(f"AKShare方法不存在: {method_name}")
                 return []
-            
+
             # 使用线程池执行同步API调用
             loop = asyncio.get_event_loop()
-            
+
             if method_name == "news_cctv":
                 # 央视新闻需要日期参数
+                date_str = datetime.now().strftime("%Y%m%d")
+                df = await loop.run_in_executor(
+                    None,
+                    lambda: method(date=date_str)
+                )
+            elif method_name == "news_economic_baidu":
+                # 百度财经新闻需要日期参数
                 date_str = datetime.now().strftime("%Y%m%d")
                 df = await loop.run_in_executor(
                     None,

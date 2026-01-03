@@ -134,36 +134,92 @@
           <span class="collapse-icon">{{ dataSourcesCollapsed ? '▶' : '▼' }}</span>
           🔌 数据源状态
         </h2>
-        <button @click.stop="openInterfaceTest" class="btn-secondary">检测连接</button>
+        <div class="section-actions">
+          <button @click.stop="quickTestAllSources" class="btn-secondary" :disabled="isTestingAll">
+            <span v-if="!isTestingAll">⚡ 快速检测</span>
+            <span v-else>🔄 检测中...</span>
+          </button>
+          <button @click.stop="openInterfaceTest" class="btn-secondary">📊 详细测试</button>
+        </div>
       </div>
-      <div v-show="!dataSourcesCollapsed" class="data-sources-grid">
-        <div 
-          v-for="source in dataSources" 
-          :key="source.id"
-          :class="['source-card', source.status]"
-        >
-          <div class="source-header">
-            <span class="source-name">{{ source.name }}</span>
-            <span :class="['status-badge', source.status]">
-              {{ getStatusText(source.status) }}
-            </span>
+      <div v-show="!dataSourcesCollapsed" class="data-sources-new">
+        <!-- 数据源卡片网格 -->
+        <div class="sources-grid-new">
+          <div
+            v-for="source in enhancedDataSources"
+            :key="source.id"
+            :class="['source-card-new', source.status, { testing: source.testing }]"
+          >
+            <div class="source-card-header">
+              <div class="source-icon">{{ source.icon }}</div>
+              <div class="source-title">
+                <span class="source-name-new">{{ source.name }}</span>
+                <span class="source-type-new">{{ source.type }}</span>
+              </div>
+              <div :class="['status-indicator', source.status]">
+                <span class="status-dot"></span>
+                <span class="status-text">{{ getStatusText(source.status) }}</span>
+              </div>
+            </div>
+            <div class="source-card-body">
+              <div class="source-stats">
+                <div class="stat-item">
+                  <span class="stat-label">响应时间</span>
+                  <span :class="['stat-value', getLatencyClass(source.latency)]">
+                    {{ source.latency ? source.latency + 'ms' : '--' }}
+                  </span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">今日调用</span>
+                  <span class="stat-value">{{ source.todayCalls || 0 }}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">成功率</span>
+                  <span :class="['stat-value', getSuccessRateClass(source.successRate)]">
+                    {{ source.successRate ? source.successRate + '%' : '--' }}
+                  </span>
+                </div>
+              </div>
+              <div class="source-footer">
+                <span class="last-check">
+                  {{ source.lastUpdate ? '最后检测: ' + formatTime(source.lastUpdate) : '未检测' }}
+                </span>
+                <button
+                  @click="testSingleSource(source.id)"
+                  class="test-btn-small"
+                  :disabled="source.testing"
+                >
+                  {{ source.testing ? '...' : '测试' }}
+                </button>
+              </div>
+              <div v-if="source.error" class="source-error">
+                ⚠️ {{ source.error }}
+              </div>
+            </div>
           </div>
-          <div class="source-info">
-            <div class="info-row">
-              <span class="label">类型：</span>
-              <span>{{ source.type }}</span>
-            </div>
-            <div class="info-row">
-              <span class="label">今日调用：</span>
-              <span>{{ source.todayCalls }} 次</span>
-            </div>
-            <div class="info-row">
-              <span class="label">最后更新：</span>
-              <span>{{ formatTime(source.lastUpdate) }}</span>
-            </div>
-            <div v-if="source.error" class="error-message">
-              ⚠️ {{ source.error }}
-            </div>
+        </div>
+
+        <!-- 整体健康状态摘要 -->
+        <div class="health-summary">
+          <div class="health-item">
+            <span class="health-icon online">●</span>
+            <span class="health-label">在线</span>
+            <span class="health-count">{{ onlineSourcesCount }}</span>
+          </div>
+          <div class="health-item">
+            <span class="health-icon offline">●</span>
+            <span class="health-label">离线</span>
+            <span class="health-count">{{ offlineSourcesCount }}</span>
+          </div>
+          <div class="health-item">
+            <span class="health-icon error">●</span>
+            <span class="health-label">异常</span>
+            <span class="health-count">{{ errorSourcesCount }}</span>
+          </div>
+          <div class="health-divider"></div>
+          <div class="health-item">
+            <span class="health-label">平均响应</span>
+            <span class="health-value">{{ avgLatency }}ms</span>
           </div>
         </div>
       </div>
@@ -272,11 +328,16 @@
           </div>
           <select v-model="newsSource" class="news-source-select">
             <option value="all">全部来源</option>
-            <option value="东方财富">东方财富</option>
-            <option value="财联社">财联社</option>
-            <option value="央视新闻">央视新闻</option>
+            <option value="东方财富全球资讯">东方财富</option>
+            <option value="财联社电报">财联社</option>
+            <option value="新闻联播">央视新闻</option>
             <option value="同花顺">同花顺</option>
             <option value="富途牛牛">富途牛牛</option>
+            <option value="新浪财经">新浪财经</option>
+            <option value="微博热议">微博热议</option>
+            <option value="财经早餐">财经早餐</option>
+            <option value="百度财经">百度财经</option>
+            <option value="巨潮市场公告">巨潮公告</option>
           </select>
         </div>
       </div>
@@ -952,8 +1013,8 @@
                   <tbody>
                     <tr v-for="(item, idx) in safeArray(comprehensiveData.main_business, 10)" :key="idx">
                       <td>{{ item.bz_item }}</td>
-                      <td>{{ (item.bz_sales_ratio * 100).toFixed(2) }}%</td>
-                      <td>{{ (item.bz_profit_ratio * 100).toFixed(2) }}%</td>
+                      <td>{{ formatPercent(item.bz_sales_ratio) }}</td>
+                      <td>{{ formatPercent(item.gross_margin) }}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -1659,7 +1720,7 @@ export default {
     const monitoredStocks = ref([])
     const dataSources = ref([])
     const newsList = ref([])
-    const sentimentFilter = ref('non_neutral')  // 默认显示有情绪的新闻
+    const sentimentFilter = ref('all')  // 默认显示全部新闻
     const sentimentStats = ref({ positive: 0, negative: 0, neutral: 0 })
     const newsStats = ref({ total: 0, totalFetched: 0 })  // 新闻统计
     const selectedStock = ref(null)
@@ -1668,6 +1729,111 @@ export default {
     const stockRisk = ref({})
     const toasts = ref([])  // Toast通知列表
     const expandedNews = ref({})  // 新闻展开状态
+
+    // 数据源测试相关状态
+    const isTestingAll = ref(false)
+    const sourceTestResults = ref({})  // 单个数据源测试结果
+
+    // 数据源图标映射
+    const sourceIcons = {
+      tushare: '📊',
+      akshare: '📈',
+      eastmoney: '💹',
+      juhe: '📰',
+      cninfo: '📋'
+    }
+
+    // 增强的数据源列表（带图标和测试状态）
+    const enhancedDataSources = computed(() => {
+      return dataSources.value.map(source => ({
+        ...source,
+        icon: sourceIcons[source.id] || '📦',
+        testing: sourceTestResults.value[source.id]?.testing || false,
+        latency: sourceTestResults.value[source.id]?.latency || source.latency,
+        successRate: sourceTestResults.value[source.id]?.successRate || source.successRate || null
+      }))
+    })
+
+    // 统计数据
+    const onlineSourcesCount = computed(() =>
+      dataSources.value.filter(s => s.status === 'online').length
+    )
+    const offlineSourcesCount = computed(() =>
+      dataSources.value.filter(s => s.status === 'offline').length
+    )
+    const errorSourcesCount = computed(() =>
+      dataSources.value.filter(s => s.status === 'error').length
+    )
+    const avgLatency = computed(() => {
+      const sources = enhancedDataSources.value.filter(s => s.latency)
+      if (sources.length === 0) return '--'
+      const avg = sources.reduce((sum, s) => sum + s.latency, 0) / sources.length
+      return Math.round(avg)
+    })
+
+    // 响应时间等级
+    const getLatencyClass = (latency) => {
+      if (!latency) return ''
+      if (latency < 500) return 'fast'
+      if (latency < 1500) return 'medium'
+      return 'slow'
+    }
+
+    // 成功率等级
+    const getSuccessRateClass = (rate) => {
+      if (!rate) return ''
+      if (rate >= 95) return 'excellent'
+      if (rate >= 80) return 'good'
+      return 'poor'
+    }
+
+    // 快速检测所有数据源
+    const quickTestAllSources = async () => {
+      isTestingAll.value = true
+      try {
+        const response = await axios.post(`${API_BASE}/dataflow/sources/check`)
+        if (response.data.success) {
+          await loadDataSources()
+          showToast('数据源检测完成', 'success')
+        }
+      } catch (error) {
+        console.error('检测数据源失败:', error)
+        showToast('检测失败: ' + error.message, 'error')
+      } finally {
+        isTestingAll.value = false
+      }
+    }
+
+    // 测试单个数据源
+    const testSingleSource = async (sourceId) => {
+      sourceTestResults.value[sourceId] = { testing: true }
+      try {
+        const startTime = Date.now()
+        const response = await axios.post(`${API_BASE}/dataflow/sources/check-single`, { source_id: sourceId })
+        const latency = Date.now() - startTime
+
+        if (response.data.success) {
+          sourceTestResults.value[sourceId] = {
+            testing: false,
+            latency: latency,
+            successRate: response.data.success_rate || 100
+          }
+          // 更新数据源状态
+          const sourceIndex = dataSources.value.findIndex(s => s.id === sourceId)
+          if (sourceIndex !== -1) {
+            dataSources.value[sourceIndex].status = response.data.status || 'online'
+            dataSources.value[sourceIndex].latency = latency
+            dataSources.value[sourceIndex].lastUpdate = new Date().toISOString()
+            dataSources.value[sourceIndex].error = response.data.error || null
+          }
+        }
+      } catch (error) {
+        sourceTestResults.value[sourceId] = {
+          testing: false,
+          error: error.message
+        }
+      }
+    }
 
     // 接口测试相关状态
     const interfaceTestResults = ref({})  // 测试结果
@@ -2002,36 +2168,24 @@ export default {
       }
 
       try {
-        // 获取所有新闻（不在API层筛选，在前端筛选以便显示统计）
-        const response = await axios.get(`${API_BASE}/dataflow/news`, { params: { limit: 100 } })
+        // 使用新的市场新闻API，不限制数量
+        const response = await axios.get(`${API_BASE}/news-center/market`, { params: { limit: 5000 } })
         if (response.data.success) {
-          // 检查是否正在后台加载
-          if (response.data.loading) {
-            // 后台正在加载，3秒后重试（静默模式下也静默重试）
-            console.log('📰 新闻正在后台加载中，3秒后重试...')
-            if (!newsPollingTimer) {
-              newsPollingTimer = setTimeout(() => {
-                newsPollingTimer = null
-                loadNews(true)  // 静默轮询
-              }, 3000)
-            }
-          } else {
-            // 数据已就绪
-            if (!silent) {
-              newsLoading.value = false
-            }
-            newsList.value = response.data.news || []
-            // 更新情绪统计
-            if (response.data.sentiment_stats) {
-              sentimentStats.value = response.data.sentiment_stats
-            }
-            // 更新新闻统计
-            newsStats.value = {
-              total: response.data.total || newsList.value.length,
-              totalFetched: response.data.total_fetched || newsList.value.length
-            }
-            console.log(`📰 新闻加载完成: ${newsList.value.length}条`)
+          // 数据已就绪
+          if (!silent) {
+            newsLoading.value = false
           }
+          newsList.value = response.data.news || response.data.data || []
+          // 更新情绪统计
+          if (response.data.sentiment_stats) {
+            sentimentStats.value = response.data.sentiment_stats
+          }
+          // 更新新闻统计
+          newsStats.value = {
+            total: response.data.total || newsList.value.length,
+            totalFetched: response.data.total_fetched || newsList.value.length
+          }
+          console.log(`📰 新闻加载完成: ${newsList.value.length}条`)
         }
       } catch (error) {
         console.error('加载新闻失败:', error)
@@ -2782,7 +2936,18 @@ export default {
       if (num >= 10000) return (num / 10000).toFixed(2) + '万'
       return num.toFixed(2)
     }
-    
+
+    const formatPercent = (value) => {
+      // 检查是否为有效数值
+      if (value === null || value === undefined) return '-'
+      const num = parseFloat(value)
+      if (isNaN(num)) return '-'
+      // 如果值已经是小数形式（如0.86），乘以100转为百分比
+      // 如果值已经是百分比形式（如86），直接使用
+      const percent = num <= 1 && num >= -1 ? num * 100 : num
+      return percent.toFixed(2) + '%'
+    }
+
     const getSentimentLabel = (sentiment) => {
       if (!sentiment) return '中性'
       const map = {
@@ -3623,6 +3788,18 @@ export default {
       stockRisk,
       toasts,  // 添加toasts
       expandedNews,  // 新闻展开状态
+      // 数据源测试相关
+      isTestingAll,
+      sourceTestResults,
+      enhancedDataSources,
+      onlineSourcesCount,
+      offlineSourcesCount,
+      errorSourcesCount,
+      avgLatency,
+      getLatencyClass,
+      getSuccessRateClass,
+      quickTestAllSources,
+      testSingleSource,
       // 接口测试相关
       interfaceTestResults,
       interfaceTestRunning,
@@ -3679,6 +3856,7 @@ export default {
       highlightKeywords,  // 关键词高亮
       formatTime,
       formatMoney,  // 新增
+      formatPercent,  // 百分比格式化
       getStatusText,
       getRiskText,
       getRiskScoreClass,  // 风险评分样式
@@ -3874,6 +4052,45 @@ export default {
   color: #f1f5f9;
 }
 
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.title-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 0.5rem;
+}
+
+.info-btn {
+  cursor: pointer;
+  font-size: 1.25rem;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.info-btn:hover {
+  opacity: 1;
+}
+
+.version-btn {
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 0.25rem;
+  color: #60a5fa;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.version-btn:hover {
+  background: rgba(59, 130, 246, 0.3);
+}
+
 .subtitle {
   color: rgba(226, 232, 240, 0.7);
 }
@@ -3881,6 +4098,283 @@ export default {
 .header-actions {
   display: flex;
   gap: 0.75rem;
+}
+
+.section-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* ========================================
+   新版数据源状态区域样式
+   ======================================== */
+.data-sources-new {
+  padding: 1rem 0;
+}
+
+.sources-grid-new {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.source-card-new {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(51, 65, 85, 0.5);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.source-card-new:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.source-card-new.online {
+  border-left: 3px solid #10b981;
+}
+
+.source-card-new.offline {
+  border-left: 3px solid #6b7280;
+}
+
+.source-card-new.error {
+  border-left: 3px solid #ef4444;
+}
+
+.source-card-new.testing {
+  opacity: 0.7;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+.source-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: rgba(30, 41, 59, 0.5);
+  border-bottom: 1px solid rgba(51, 65, 85, 0.3);
+}
+
+.source-icon {
+  font-size: 1.5rem;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: 10px;
+}
+
+.source-title {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.source-name-new {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.source-type-new {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-indicator.online {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.status-indicator.offline {
+  background: rgba(107, 114, 128, 0.15);
+  color: #9ca3af;
+}
+
+.status-indicator.error {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.source-card-body {
+  padding: 1rem;
+}
+
+.source-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.stat-item .stat-label {
+  font-size: 0.6875rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-item .stat-value {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.stat-item .stat-value.fast {
+  color: #10b981;
+}
+
+.stat-item .stat-value.medium {
+  color: #f59e0b;
+}
+
+.stat-item .stat-value.slow {
+  color: #ef4444;
+}
+
+.stat-item .stat-value.excellent {
+  color: #10b981;
+}
+
+.stat-item .stat-value.good {
+  color: #60a5fa;
+}
+
+.stat-item .stat-value.poor {
+  color: #ef4444;
+}
+
+.source-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(51, 65, 85, 0.3);
+}
+
+.last-check {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.test-btn-small {
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 4px;
+  color: #818cf8;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.test-btn-small:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.25);
+}
+
+.test-btn-small:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.source-error {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  color: #fca5a5;
+}
+
+/* 健康状态摘要 */
+.health-summary {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 10px;
+  border: 1px solid rgba(51, 65, 85, 0.3);
+}
+
+.health-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.health-icon {
+  font-size: 0.75rem;
+}
+
+.health-icon.online {
+  color: #10b981;
+}
+
+.health-icon.offline {
+  color: #6b7280;
+}
+
+.health-icon.error {
+  color: #ef4444;
+}
+
+.health-label {
+  font-size: 0.8125rem;
+  color: #94a3b8;
+}
+
+.health-count {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.health-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #60a5fa;
+}
+
+.health-divider {
+  width: 1px;
+  height: 24px;
+  background: rgba(51, 65, 85, 0.5);
 }
 
 /* 统计卡片 */

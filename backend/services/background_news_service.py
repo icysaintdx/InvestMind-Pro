@@ -126,9 +126,9 @@ def _fetch_news_in_process(stock_code: str, timeout: int = 30) -> Dict:
                 logger.warning(f"[子进程] 东方财富新闻获取失败: {e}")
                 result["sources"]["eastmoney"] = f"error: {error_msg}"
 
-        # 2. 财联社电报 (替代不存在的stock_news_sina)
+        # 2. 财联社电报 (stock_telegraph_cls已改名为stock_info_global_cls)
         try:
-            df = ak.stock_telegraph_cls()
+            df = ak.stock_info_global_cls()
             if df is not None and not df.empty:
                 for _, row in df.head(15).iterrows():
                     title = str(row.get("标题", ""))

@@ -66,18 +66,33 @@ class TDXNativeProvider:
         ("117.184.140.157", 7709),  # 上海双线主站2
         ("221.194.181.176", 7709),  # 北京主站
         ("124.74.236.94", 7721),    # 上海主站
+        # 备用服务器
+        ("180.153.39.51", 7709),    # 上海备用1
+        ("101.227.73.20", 7709),    # 上海备用2
+        ("101.227.77.254", 7709),   # 上海备用3
+        ("14.215.128.18", 7709),    # 广州备用
+        ("59.173.18.140", 7709),    # 武汉备用
+        ("60.28.23.80", 7709),      # 天津备用
+        ("218.60.29.136", 7709),    # 大连备用
         ("119.147.171.206", 443),   # 深圳主站（443端口较慢）
         ("119.147.164.60", 443),    # 深圳主站2（443端口较慢）
     ]
 
-    # 连接超时设置（秒）
-    CONNECT_TIMEOUT = 3
+    # 连接超时设置（秒）- 增加到8秒以提高成功率
+    CONNECT_TIMEOUT = 8
 
     # 连接保活间隔（秒）- 每隔这么长时间发送一次心跳
     KEEPALIVE_INTERVAL = 30
 
-    # 可用性缓存时间（秒）- 避免频繁检测
-    AVAILABILITY_CACHE_SECONDS = 60
+    # 连接空闲超时（秒）- 超过此时间未使用则重新验证连接
+    IDLE_TIMEOUT = 120  # 从60秒增加到120秒
+
+    # 可用性缓存时间（秒）- 成功时缓存较长，失败时缓存较短
+    AVAILABILITY_CACHE_SUCCESS = 180  # 成功时缓存3分钟
+    AVAILABILITY_CACHE_FAIL = 5  # 失败时只缓存5秒，快速重试
+
+    # 最大重试次数
+    MAX_RETRY = 3
 
     def __init__(self):
         self._api = None
@@ -87,15 +102,21 @@ class TDXNativeProvider:
         self._last_check_time = None  # 上次检查时间
         self._last_use_time = None  # 上次使用时间
         self._current_host = None  # 当前连接的服务器
+        self._fail_count = 0  # 连续失败次数
+        self._last_success_host = None  # 上次成功的服务器
+        # 市场统计缓存
+        self._market_stats_cache = None
+        self._market_stats_cache_time = None
+        self._market_stats_cache_ttl = 300  # 5分钟缓存
 
     def _ensure_connection(self) -> bool:
-        """确保连接到通达信服务器（带重连机制）"""
+        """确保连接到通达信服务器（带重连机制和重试）"""
         now = datetime.now()
 
         # 先检查现有连接是否有效
         if self._connected and self._api:
-            # 检查连接是否超时（超过60秒未使用则重新验证）
-            if self._last_use_time and (now - self._last_use_time).total_seconds() > 60:
+            # 检查连接是否超时（超过IDLE_TIMEOUT秒未使用则重新验证）
+            if self._last_use_time and (now - self._last_use_time).total_seconds() > self.IDLE_TIMEOUT:
                 try:
                     # 发送一个简单请求测试连接是否有效
                     test_data = self._api.get_security_count(0)  # 获取深圳市场股票数量
@@ -106,6 +127,10 @@ class TDXNativeProvider:
                     # 连接已断开，需要重连
                     logger.debug("TDX连接已断开（超时），尝试重连...")
                     self._connected = False
+                    try:
+                        self._api.disconnect()
+                    except:
+                        pass
                     self._api = None
             else:
                 # 连接仍在活跃期内，直接返回
@@ -121,29 +146,48 @@ class TDXNativeProvider:
             try:
                 from pytdx.hq import TdxHq_API
 
-                self._api = TdxHq_API()
-
-                # 如果之前有成功连接的服务器，优先尝试
+                # 构建服务器列表，优先使用上次成功的服务器
                 hosts_to_try = list(self.HOSTS)
-                if self._current_host and self._current_host in hosts_to_try:
-                    hosts_to_try.remove(self._current_host)
-                    hosts_to_try.insert(0, self._current_host)
+                if self._last_success_host and self._last_success_host in hosts_to_try:
+                    hosts_to_try.remove(self._last_success_host)
+                    hosts_to_try.insert(0, self._last_success_host)
 
-                # 尝试连接服务器（带超时控制）
-                for host, port in hosts_to_try:
-                    try:
-                        # pytdx connect 支持 time_out 参数
-                        if self._api.connect(host, port, time_out=self.CONNECT_TIMEOUT):
-                            self._connected = True
-                            self._current_host = (host, port)
-                            self._last_use_time = now
-                            logger.info(f"TDX连接成功: {host}:{port}")
-                            return True
-                    except Exception as e:
-                        logger.debug(f"TDX连接失败 {host}:{port}: {e}")
-                        continue
+                # 多次重试
+                for retry in range(self.MAX_RETRY):
+                    self._api = TdxHq_API()
 
-                logger.warning("所有TDX服务器连接失败")
+                    # 尝试连接服务器（带超时控制）
+                    for host, port in hosts_to_try:
+                        try:
+                            # pytdx connect 支持 time_out 参数
+                            if self._api.connect(host, port, time_out=self.CONNECT_TIMEOUT):
+                                # 验证连接是否真正可用
+                                test_result = self._api.get_security_count(0)
+                                if test_result is not None and test_result > 0:
+                                    self._connected = True
+                                    self._current_host = (host, port)
+                                    self._last_success_host = (host, port)
+                                    self._last_use_time = now
+                                    self._fail_count = 0
+                                    logger.info(f"TDX连接成功: {host}:{port}")
+                                    return True
+                                else:
+                                    # 连接成功但数据无效，断开重试
+                                    try:
+                                        self._api.disconnect()
+                                    except:
+                                        pass
+                        except Exception as e:
+                            logger.debug(f"TDX连接失败 {host}:{port} (重试{retry+1}): {e}")
+                            continue
+
+                    # 本轮所有服务器都失败，等待一小段时间后重试
+                    if retry < self.MAX_RETRY - 1:
+                        import time
+                        time.sleep(0.5)
+
+                self._fail_count += 1
+                logger.warning(f"所有TDX服务器连接失败 (连续失败{self._fail_count}次)")
                 return False
 
             except ImportError:
@@ -154,13 +198,15 @@ class TDXNativeProvider:
                 return False
 
     def is_available(self) -> bool:
-        """检查 TDX 是否可用（带缓存，避免频繁检测）"""
+        """检查 TDX 是否可用（带缓存，成功和失败使用不同缓存时间）"""
         now = datetime.now()
 
         # 检查缓存是否有效
         if self._available is not None and self._last_check_time is not None:
             elapsed = (now - self._last_check_time).total_seconds()
-            if elapsed < self.AVAILABILITY_CACHE_SECONDS:
+            # 成功时缓存较长，失败时缓存较短以便快速重试
+            cache_time = self.AVAILABILITY_CACHE_SUCCESS if self._available else self.AVAILABILITY_CACHE_FAIL
+            if elapsed < cache_time:
                 # 缓存有效，直接返回
                 return self._available
 
@@ -194,7 +240,21 @@ class TDXNativeProvider:
             self._available = None
             self._last_check_time = None
             self._last_use_time = None
+            self._fail_count = 0
+            # 保留 _last_success_host 以便下次优先尝试
             logger.info("TDX连接已重置")
+
+    def get_connection_status(self) -> Dict:
+        """获取连接状态信息（用于调试和监控）"""
+        return {
+            'connected': self._connected,
+            'available': self._available,
+            'current_host': self._current_host,
+            'last_success_host': self._last_success_host,
+            'fail_count': self._fail_count,
+            'last_check_time': self._last_check_time.isoformat() if self._last_check_time else None,
+            'last_use_time': self._last_use_time.isoformat() if self._last_use_time else None,
+        }
 
     def _get_market(self, code: str) -> int:
         """根据股票代码判断市场（0=深圳，1=上海）"""
@@ -966,23 +1026,184 @@ class TDXNativeProvider:
 
         return results
 
-    def get_market_stats(self) -> Dict:
+    def get_market_stats(self, use_cache: bool = True) -> Dict:
         """
-        获取市场统计信息
+        获取市场统计信息（包含涨跌统计，带缓存）
+
+        Args:
+            use_cache: 是否使用缓存，默认True
 
         Returns:
-            市场统计数据
+            市场统计数据，包含涨跌家数、涨跌停等
         """
-        try:
-            sh_count = self.get_market_count(1)  # 上海
-            sz_count = self.get_market_count(0)  # 深圳
+        import time as time_module
 
-            return {
-                'shanghai_count': sh_count,
+        # 检查缓存
+        if use_cache and self._market_stats_cache is not None:
+            if self._market_stats_cache_time is not None:
+                elapsed = time_module.time() - self._market_stats_cache_time
+                if elapsed < self._market_stats_cache_ttl:
+                    logger.debug(f"TDX市场统计使用缓存 (剩余{int(self._market_stats_cache_ttl - elapsed)}秒)")
+                    return self._market_stats_cache
+
+        if not self._ensure_connection():
+            return {}
+
+        try:
+            start_time = time_module.time()
+
+            # 直接使用pytdx的底层API获取股票列表
+            all_stocks = []
+
+            # 深圳市场（A股在前面，从0开始）
+            for start in range(0, 6000, 1000):
+                try:
+                    stocks = self._api.get_security_list(0, start)
+                    if not stocks:
+                        break
+                    for s in stocks:
+                        code = s.get('code', '')
+                        if code.startswith(('00', '30')):
+                            all_stocks.append((0, code))
+                    if len(stocks) < 1000:
+                        break
+                except Exception:
+                    break
+
+            sz_count = len(all_stocks)
+
+            # 上海市场（A股在较后位置，从0开始遍历，但60/68开头的在后面）
+            # pytdx的上海市场股票列表中，A股（60/68开头）在较后的位置
+            for start in range(0, 6000, 1000):
+                try:
+                    stocks = self._api.get_security_list(1, start)
+                    if not stocks:
+                        break
+                    for s in stocks:
+                        code = s.get('code', '')
+                        if code.startswith(('60', '68')):
+                            all_stocks.append((1, code))
+                    if len(stocks) < 1000:
+                        break
+                except Exception:
+                    break
+
+            if not all_stocks or len(all_stocks) < 100:
+                logger.warning(f"TDX获取股票列表异常: {len(all_stocks)}")
+                return {}
+
+            logger.debug(f"TDX获取到 {len(all_stocks)} 只A股 (深圳:{sz_count}, 上海:{len(all_stocks)-sz_count})")
+
+            # 批量获取行情统计涨跌 - 直接使用底层API
+            up_count = 0
+            down_count = 0
+            flat_count = 0
+            limit_up = 0
+            limit_down = 0
+            up_5_pct = 0
+            up_3_pct = 0
+            down_3_pct = 0
+            down_5_pct = 0
+            total_count = 0
+
+            batch_size = 80  # pytdx最大支持80只
+            for i in range(0, len(all_stocks), batch_size):
+                batch = all_stocks[i:i+batch_size]
+                stock_list = [(m, c) for m, c in batch]
+
+                try:
+                    quotes = self._api.get_security_quotes(stock_list)
+                    if not quotes:
+                        continue
+
+                    for q in quotes:
+                        if not q or q.get('last_close', 0) <= 0:
+                            continue
+
+                        last_close = q['last_close']
+                        price = q.get('price', 0) or 0
+                        if price <= 0:
+                            continue
+
+                        change_pct = (price - last_close) / last_close * 100
+                        total_count += 1
+
+                        if change_pct > 0.01:
+                            up_count += 1
+                            if change_pct >= 5:
+                                up_5_pct += 1
+                            elif change_pct >= 3:
+                                up_3_pct += 1
+                        elif change_pct < -0.01:
+                            down_count += 1
+                            if change_pct <= -5:
+                                down_5_pct += 1
+                            elif change_pct <= -3:
+                                down_3_pct += 1
+                        else:
+                            flat_count += 1
+
+                        # 涨停跌停判断
+                        code = q.get('code', '')
+                        if code.startswith(('30', '68')):
+                            limit_threshold = 19.5
+                        else:
+                            limit_threshold = 9.5
+
+                        if change_pct >= limit_threshold:
+                            limit_up += 1
+                        elif change_pct <= -limit_threshold:
+                            limit_down += 1
+
+                except Exception as e:
+                    logger.debug(f"TDX批量获取行情失败: {e}")
+                    continue
+
+            if total_count == 0:
+                return {}
+
+            # 计算市场情绪得分
+            sentiment_score = round((up_count - down_count) / total_count * 100, 2)
+
+            # 解读市场情绪
+            if sentiment_score > 30:
+                sentiment_level = "极度乐观"
+            elif sentiment_score > 10:
+                sentiment_level = "偏多"
+            elif sentiment_score > -10:
+                sentiment_level = "中性"
+            elif sentiment_score > -30:
+                sentiment_level = "偏空"
+            else:
+                sentiment_level = "极度悲观"
+
+            result = {
+                'total_stocks': total_count,
+                'up_count': up_count,
+                'down_count': down_count,
+                'flat_count': flat_count,
+                'up_ratio': round(up_count / total_count * 100, 2) if total_count > 0 else 0,
+                'limit_up': limit_up,
+                'limit_down': limit_down,
+                'up_5_pct': up_5_pct,
+                'up_3_pct': up_3_pct,
+                'down_3_pct': down_3_pct,
+                'down_5_pct': down_5_pct,
+                'sentiment_score': sentiment_score,
+                'sentiment_level': sentiment_level,
+                'shanghai_count': len(all_stocks) - sz_count,
                 'shenzhen_count': sz_count,
-                'total_count': sh_count + sz_count,
                 'update_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             }
+
+            elapsed = time_module.time() - start_time
+            logger.info(f"TDX市场统计: 总{total_count}, 涨{up_count}, 跌{down_count}, 涨停{limit_up}, 跌停{limit_down} (耗时{elapsed:.1f}秒)")
+
+            # 更新缓存
+            self._market_stats_cache = result
+            self._market_stats_cache_time = time_module.time()
+
+            return result
 
         except Exception as e:
             logger.error(f"❌ TDX获取市场统计失败: {e}")

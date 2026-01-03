@@ -1,11 +1,11 @@
 {
   "portfolio": {
     "initial_capital": 1000000,
-    "cash_balance": 527096.02,
-    "total_value": 990251.02,
-    "positions_value": 463155.0,
+    "cash_balance": 520999.02,
+    "total_value": 982480.02,
+    "positions_value": 461481.0,
     "total_profit_loss": 0,
-    "total_profit_loss_rate": -0.9748979999999982
+    "total_profit_loss_rate": -1.751997999999998
   },
   "positions": {
     "600085": {
@@ -143,6 +143,40 @@
           "market": "CN"
         }
       ]
+    },
+    "600121": {
+      "stock_code": "600121",
+      "stock_name": "郑州煤电",
+      "quantity": 300,
+      "avg_cost": 4.17,
+      "open_date": "2026-01-02T01:44:05.558659",
+      "last_update": "2026-01-02T01:44:05.558659",
+      "market": "CN",
+      "trades": [
+        {
+          "date": "2026-01-02T01:44:05.558659",
+          "quantity": 300,
+          "price": 4.17,
+          "market": "CN"
+        }
+      ]
+    },
+    "000532": {
+      "stock_code": "000532",
+      "stock_name": "华金资本",
+      "quantity": 300,
+      "avg_cost": 16.12,
+      "open_date": "2026-01-03T00:20:34.263437",
+      "last_update": "2026-01-03T00:20:34.263437",
+      "market": "CN",
+      "trades": [
+        {
+          "date": "2026-01-03T00:20:34.263437",
+          "quantity": 300,
+          "price": 16.12,
+          "market": "CN"
+        }
+      ]
     }
   },
   "trade_history": [
@@ -241,7 +275,31 @@
       "amount": 2523.0,
       "commission": 5.0,
       "status": "EXECUTED"
+    },
+    {
+      "trade_id": "T20260102014405",
+      "timestamp": "2026-01-02T01:44:05.558659",
+      "stock_code": "600121",
+      "stock_name": "郑州煤电",
+      "action": "BUY",
+      "quantity": 300,
+      "price": 4.17,
+      "amount": 1251.0,
+      "commission": 5.0,
+      "status": "EXECUTED"
+    },
+    {
+      "trade_id": "T20260103002034",
+      "timestamp": "2026-01-03T00:20:34.263437",
+      "stock_code": "000532",
+      "stock_name": "华金资本",
+      "action": "BUY",
+      "quantity": 300,
+      "price": 16.12,
+      "amount": 4836.0,
+      "commission": 5.0,
+      "status": "EXECUTED"
     }
   ],
-  "last_update": "2025-12-29T23:17:03.974431"
+  "last_update": "2026-01-03T00:22:40.200296"
 }

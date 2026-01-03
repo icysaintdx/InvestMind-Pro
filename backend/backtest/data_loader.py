@@ -96,23 +96,28 @@ class DataLoader:
         try:
             # AKShare的stock_zh_a_hist不需要sh/sz前缀，只需要纯数字代码
             # 如果有前缀，去掉它
+            original_symbol = symbol
             if symbol.startswith(('sh', 'sz', 'bj')):
                 symbol = symbol[2:]  # 去掉前两个字符
-                
+
             # 确保日期格式为YYYYMMDD（去掉所有连字符）
             start_date = start_date.replace('-', '')
             end_date = end_date.replace('-', '')
-                
-            logger.info(f"加载AKShare数据: symbol={symbol}, start={start_date}, end={end_date}, adjust={adjust}")
-                
+
+            logger.info(f"加载AKShare数据: symbol={symbol} (原始: {original_symbol}), start={start_date}, end={end_date}, adjust={adjust}")
+
             # 获取历史行情数据
-            df = ak.stock_zh_a_hist(
-                symbol=symbol,
-                period="daily",
-                start_date=start_date,
-                end_date=end_date,
-                adjust=adjust
-            )
+            try:
+                df = ak.stock_zh_a_hist(
+                    symbol=symbol,
+                    period="daily",
+                    start_date=start_date,
+                    end_date=end_date,
+                    adjust=adjust
+                )
+            except Exception as inner_e:
+                logger.error(f"AKShare API调用失败: {inner_e}", exc_info=True)
+                raise
             
             if df is None or df.empty:
                 logger.warning(f"AKShare 未获取到数据: {symbol}")

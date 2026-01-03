@@ -376,6 +376,79 @@ class AlertHistory(Base):
         }
 
 
+class MarketNews(Base):
+    """市场新闻表 - 存储所有新闻数据（不依赖监控股票）"""
+    __tablename__ = 'market_news'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    # 新闻唯一标识（用标题+来源+发布时间的hash）
+    news_id = Column(String(64), unique=True, nullable=False, index=True)
+
+    # 基本信息
+    title = Column(String(500), nullable=False)
+    content = Column(Text)
+    summary = Column(String(1000))
+
+    # 来源信息
+    source = Column(String(50), nullable=False, index=True)  # cninfo/eastmoney/sina/cls/ths...
+    source_type = Column(String(30), index=True)  # market/stock/announcement/management
+    source_url = Column(String(500))
+
+    # 关联股票（可为空，市场新闻不关联具体股票）
+    stock_code = Column(String(20), index=True)
+    stock_name = Column(String(50))
+
+    # 时间
+    pub_time = Column(DateTime, index=True)  # 发布时间
+    fetch_time = Column(DateTime, default=datetime.utcnow)  # 抓取时间
+
+    # 情绪分析
+    sentiment = Column(String(20), index=True)  # positive/negative/neutral
+    sentiment_score = Column(Integer)  # 0-100
+
+    # 分类标签
+    category = Column(String(50))  # 新闻分类
+    keywords = Column(JSON)  # 关键词列表
+
+    # 额外数据（JSON，存储各数据源特有字段）
+    extra_data = Column(JSON)
+
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+    # 索引
+    __table_args__ = (
+        Index('idx_market_news_source_time', 'source', 'pub_time'),
+        Index('idx_market_news_stock_time', 'stock_code', 'pub_time'),
+        Index('idx_market_news_sentiment', 'sentiment', 'pub_time'),
+    )
+
+    def __repr__(self):
+        return f"<MarketNews(title='{self.title[:30]}...', source='{self.source}')>"
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'news_id': self.news_id,
+            'title': self.title,
+            'content': self.content,
+            'summary': self.summary,
+            'source': self.source,
+            'source_type': self.source_type,
+            'source_url': self.source_url,
+            'stock_code': self.stock_code,
+            'stock_name': self.stock_name,
+            'pub_time': self.pub_time.isoformat() if self.pub_time else None,
+            'fetch_time': self.fetch_time.isoformat() if self.fetch_time else None,
+            'sentiment': self.sentiment,
+            'sentiment_score': self.sentiment_score,
+            'category': self.category,
+            'keywords': self.keywords,
+            'extra_data': self.extra_data,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+
 class AlertRule(Base):
     """自定义预警规则表"""
     __tablename__ = 'alert_rules'

@@ -62,7 +62,7 @@ class NewsCache:
         self._cache = {}
         self._cache_lock = threading.RLock()
         self._fingerprints = set()
-        self._ttl_config = {NewsUrgency.CRITICAL: 120, NewsUrgency.HIGH: 90, NewsUrgency.MEDIUM: 60, NewsUrgency.LOW: 30}
+        self._ttl_config = {NewsUrgency.CRITICAL: 1440, NewsUrgency.HIGH: 720, NewsUrgency.MEDIUM: 360, NewsUrgency.LOW: 180}  # 分钟: 24h, 12h, 6h, 3h
         self._expiry = {}
         self._cache_dir = Path("data/news_center_cache")
         self._cache_dir.mkdir(parents=True, exist_ok=True)
@@ -113,7 +113,7 @@ class NewsCache:
                 skipped += 1
         return {"added": added, "skipped": skipped}
     
-    def get_latest_news(self, limit=50, urgency=None, source=None, stock_code=None, unpushed_only=False):
+    def get_latest_news(self, limit=0, urgency=None, source=None, stock_code=None, unpushed_only=False):
         with self._cache_lock:
             news_list = list(self._cache.values())
         if urgency:
@@ -125,13 +125,26 @@ class NewsCache:
         if unpushed_only:
             news_list = [n for n in news_list if not n.is_pushed]
         news_list.sort(key=lambda x: x.fetch_time, reverse=True)
-        return news_list[:limit]
+        return news_list if limit <= 0 else news_list[:limit]
     
     def get_urgent_news(self, limit=20):
         with self._cache_lock:
             urgent = [n for n in self._cache.values() if n.urgency in ["critical", "high"]]
         urgent.sort(key=lambda x: x.fetch_time, reverse=True)
         return urgent[:limit]
+
+    def get_news_for_stock(self, stock_code: str, limit: int = 30):
+        """获取与指定股票相关的新闻"""
+        with self._cache_lock:
+            # 标准化股票代码（去掉后缀）
+            code_base = stock_code.split('.')[0] if '.' in stock_code else stock_code
+            related = [n for n in self._cache.values()
+                      if code_base in n.related_stocks or
+                      any(code_base in s for s in n.related_stocks) or
+                      code_base in n.title or
+                      code_base in n.content]
+        related.sort(key=lambda x: x.fetch_time, reverse=True)
+        return related[:limit]
     
     def is_duplicate(self, title, pub_time=""):
         return self.generate_fingerprint(title, pub_time) in self._fingerprints

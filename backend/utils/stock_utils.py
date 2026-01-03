@@ -83,7 +83,20 @@ class StockUtils:
                 'currency_symbol': '¥'
             })
             return result
-        
+
+        # A股判断（带前缀，如 SH600519, SZ000001）
+        if re.match(r'^(SH|SZ)\d{6}$', ticker):
+            clean = ticker[2:]  # 去掉SH/SZ前缀
+            result.update({
+                'market': 'CN',
+                'market_name': '中国A股',
+                'is_china': True,
+                'clean_ticker': clean,
+                'currency_name': '人民币',
+                'currency_symbol': '¥'
+            })
+            return result
+
         # 美股判断（字母代码）
         if re.match(r'^[A-Z]+$', ticker):
             result.update({

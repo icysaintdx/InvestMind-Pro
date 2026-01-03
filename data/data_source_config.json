@@ -1,0 +1,336 @@
+{
+  "version": "1.0.0",
+  "updated_at": "2026-01-02T02:13:42.993194",
+  "data_sources": {
+    "tdx": {
+      "name": "通达信",
+      "enabled": true,
+      "priority": 1,
+      "timeout": 5000,
+      "retry": 3,
+      "description": "本地TDX服务，最快最稳定",
+      "avg_response_time": 60,
+      "servers": [
+        {
+          "host": "218.75.126.9",
+          "port": 7709
+        },
+        {
+          "host": "119.147.212.81",
+          "port": 7709
+        },
+        {
+          "host": "221.231.141.60",
+          "port": 7709
+        }
+      ]
+    },
+    "tushare": {
+      "name": "Tushare",
+      "enabled": true,
+      "priority": 2,
+      "timeout": 10000,
+      "retry": 2,
+      "description": "专业金融数据，财务数据首选",
+      "avg_response_time": 150,
+      "requires_token": true
+    },
+    "akshare": {
+      "name": "AKShare",
+      "enabled": true,
+      "priority": 3,
+      "timeout": 15000,
+      "retry": 2,
+      "description": "免费开源，接口丰富",
+      "avg_response_time": 300
+    },
+    "sina": {
+      "name": "新浪财经",
+      "enabled": true,
+      "priority": 4,
+      "timeout": 10000,
+      "retry": 2,
+      "description": "实时行情免费接口",
+      "avg_response_time": 100
+    },
+    "juhe": {
+      "name": "聚合数据",
+      "enabled": true,
+      "priority": 5,
+      "timeout": 10000,
+      "retry": 2,
+      "description": "付费API，稳定可靠",
+      "avg_response_time": 80,
+      "requires_token": true
+    },
+    "cninfo": {
+      "name": "巨潮资讯",
+      "enabled": true,
+      "priority": 6,
+      "timeout": 10000,
+      "retry": 2,
+      "description": "官方数据源，公告权威",
+      "avg_response_time": 120,
+      "base_url": "http://webapi.cninfo.com.cn/api"
+    },
+    "eastmoney": {
+      "name": "东方财富",
+      "enabled": true,
+      "priority": 7,
+      "timeout": 10000,
+      "retry": 2,
+      "description": "新闻资讯首选",
+      "avg_response_time": 200
+    }
+  },
+  "data_categories": {
+    "realtime_quote": {
+      "name": "实时行情",
+      "description": "股票实时价格、五档盘口",
+      "sources": [
+        "tdx",
+        "sina",
+        "juhe",
+        "tushare",
+        "akshare"
+      ],
+      "primary": "tdx",
+      "cache_ttl": 5,
+      "cache_level": "memory",
+      "interfaces": {
+        "tdx": "get_security_quotes",
+        "sina": "stock_zh_a_spot",
+        "juhe": "stock_realtime",
+        "tushare": "realtime_quote",
+        "akshare": "stock_zh_a_spot_em"
+      }
+    },
+    "kline_daily": {
+      "name": "日K线",
+      "description": "日/周/月K线历史数据",
+      "sources": [
+        "tdx",
+        "tushare",
+        "akshare",
+        "sina"
+      ],
+      "primary": "tdx",
+      "cache_ttl": 3600,
+      "cache_level": "file",
+      "interfaces": {
+        "tdx": "get_security_bars",
+        "tushare": "daily",
+        "akshare": "stock_zh_a_hist",
+        "sina": "stock_zh_a_daily"
+      }
+    },
+    "kline_minute": {
+      "name": "分钟K线",
+      "description": "分钟级K线数据",
+      "sources": [
+        "tdx",
+        "akshare"
+      ],
+      "primary": "tdx",
+      "cache_ttl": 60,
+      "cache_level": "memory",
+      "interfaces": {
+        "tdx": "get_security_bars",
+        "akshare": "stock_zh_a_hist_min_em"
+      }
+    },
+    "financial": {
+      "name": "财务数据",
+      "description": "利润表、资产负债表、现金流量表",
+      "sources": [
+        "tushare"
+      ],
+      "primary": "tushare",
+      "cache_ttl": 86400,
+      "cache_level": "database",
+      "interfaces": {
+        "tushare": [
+          "income",
+          "balancesheet",
+          "cashflow",
+          "fina_indicator"
+        ]
+      }
+    },
+    "fund_flow": {
+      "name": "资金流向",
+      "description": "个股/板块资金流向",
+      "sources": [
+        "tushare",
+        "akshare"
+      ],
+      "primary": "tushare",
+      "cache_ttl": 300,
+      "cache_level": "file",
+      "interfaces": {
+        "tushare": "moneyflow",
+        "akshare": "stock_individual_fund_flow"
+      }
+    },
+    "dragon_tiger": {
+      "name": "龙虎榜",
+      "description": "龙虎榜明细、机构买卖",
+      "sources": [
+        "tushare",
+        "akshare"
+      ],
+      "primary": "tushare",
+      "cache_ttl": 3600,
+      "cache_level": "file",
+      "interfaces": {
+        "tushare": "top_list",
+        "akshare": "stock_lhb_detail_em"
+      }
+    },
+    "news": {
+      "name": "新闻资讯",
+      "description": "财经新闻、公司公告",
+      "sources": [
+        "akshare",
+        "cninfo",
+        "eastmoney"
+      ],
+      "primary": "akshare",
+      "cache_ttl": 600,
+      "cache_level": "memory",
+      "interfaces": {
+        "akshare": "stock_info_global_em",
+        "cninfo": "p_info3030",
+        "eastmoney": "stock_news_em"
+      }
+    },
+    "announcement": {
+      "name": "公司公告",
+      "description": "上市公司公告",
+      "sources": [
+        "cninfo",
+        "akshare"
+      ],
+      "primary": "cninfo",
+      "cache_ttl": 1800,
+      "cache_level": "file",
+      "interfaces": {
+        "cninfo": "p_info3015",
+        "akshare": "stock_notice_report"
+      }
+    },
+    "company_info": {
+      "name": "公司信息",
+      "description": "公司基本信息、管理层",
+      "sources": [
+        "cninfo",
+        "akshare",
+        "tushare"
+      ],
+      "primary": "cninfo",
+      "cache_ttl": 604800,
+      "cache_level": "database",
+      "interfaces": {
+        "cninfo": "p_stock2100",
+        "akshare": "stock_individual_info_em",
+        "tushare": "stock_basic"
+      }
+    },
+    "sector_info": {
+      "name": "板块数据",
+      "description": "行业板块、概念板块",
+      "sources": [
+        "tdx",
+        "akshare"
+      ],
+      "primary": "tdx",
+      "cache_ttl": 300,
+      "cache_level": "file",
+      "interfaces": {
+        "tdx": "tdx_cache_service",
+        "akshare": [
+          "stock_board_industry_name_em",
+          "stock_board_concept_name_em"
+        ]
+      }
+    },
+    "market_stats": {
+      "name": "市场统计",
+      "description": "涨跌停统计、市场概况",
+      "sources": [
+        "tdx",
+        "akshare"
+      ],
+      "primary": "tdx",
+      "cache_ttl": 60,
+      "cache_level": "memory",
+      "interfaces": {
+        "tdx": "tdx_cache_service",
+        "akshare": "stock_zt_pool_em"
+      }
+    },
+    "margin": {
+      "name": "融资融券",
+      "description": "融资融券数据",
+      "sources": [
+        "tushare",
+        "akshare"
+      ],
+      "primary": "tushare",
+      "cache_ttl": 3600,
+      "cache_level": "file",
+      "interfaces": {
+        "tushare": "margin",
+        "akshare": "stock_margin_detail_sse"
+      }
+    },
+    "stock_list": {
+      "name": "股票列表",
+      "description": "A股股票列表",
+      "sources": [
+        "tdx",
+        "tushare"
+      ],
+      "primary": "tdx",
+      "cache_ttl": 86400,
+      "cache_level": "file",
+      "interfaces": {
+        "tdx": "get_security_list",
+        "tushare": "stock_basic"
+      }
+    }
+  },
+  "cache_config": {
+    "memory": {
+      "max_size_mb": 100,
+      "default_ttl": 60,
+      "cleanup_interval": 300
+    },
+    "file": {
+      "base_path": "data/cache",
+      "default_ttl": 3600,
+      "max_files": 1000
+    },
+    "database": {
+      "table_prefix": "cache_",
+      "default_ttl": 86400
+    }
+  },
+  "monitoring": {
+    "enabled": true,
+    "mode": "passive",
+    "log_requests": true,
+    "log_errors": true,
+    "metrics_retention_days": 7,
+    "alert_threshold": {
+      "response_time_ms": 5000,
+      "error_rate_percent": 20
+    }
+  },
+  "fallback": {
+    "enabled": true,
+    "max_retries": 3,
+    "retry_delay_ms": 1000,
+    "use_cache_on_failure": true
+  }
+}

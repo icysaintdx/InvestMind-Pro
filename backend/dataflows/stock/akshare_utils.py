@@ -541,9 +541,76 @@ def format_hk_stock_data_akshare(symbol: str, data: pd.DataFrame, start_date: st
         return f"❌ AKShare港股数据格式化失败: {symbol}"
 
 
+def _fetch_stock_news_em_fixed(symbol: str) -> pd.DataFrame:
+    """
+    修复版东方财富个股新闻获取函数
+
+    AKShare的stock_news_em存在bug，这里使用东财公告接口获取个股新闻
+
+    Args:
+        symbol: 股票代码，如 "000001" 或 "600519"
+
+    Returns:
+        pd.DataFrame: 个股新闻数据
+    """
+    import json
+    import requests
+
+    # 使用东财公告接口（更稳定）
+    url = "https://np-anotice-stock.eastmoney.com/api/security/ann"
+    params = {
+        "sr": "-1",
+        "page_size": "50",
+        "page_index": "1",
+        "ann_type": "A",
+        "stock_list": symbol,
+        "f_node": "0",
+        "s_node": "0"
+    }
+
+    headers = {
+        "accept": "*/*",
+        "accept-language": "zh-CN,zh;q=0.9,en;q=0.8",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+
+    r = requests.get(url, params=params, headers=headers, timeout=30)
+    data = r.json()
+
+    if not data.get("success") or "data" not in data or "list" not in data["data"]:
+        return pd.DataFrame()
+
+    items = data["data"]["list"]
+    if not items:
+        return pd.DataFrame()
+
+    records = []
+    for item in items:
+        # 获取股票信息
+        stock_info = item.get("codes", [{}])[0] if item.get("codes") else {}
+        stock_name = stock_info.get("short_name", "")
+
+        # 获取分类信息
+        columns = item.get("columns", [{}])
+        category = columns[0].get("column_name", "") if columns else ""
+
+        records.append({
+            "关键词": symbol,
+            "新闻标题": item.get("title", ""),
+            "新闻内容": f"[{category}] {stock_name}",
+            "发布时间": item.get("notice_date", "")[:10] if item.get("notice_date") else "",
+            "文章来源": "东方财富公告",
+            "新闻链接": f"https://data.eastmoney.com/notices/detail/{symbol}/{item.get('art_code', '')}.html"
+        })
+
+    return pd.DataFrame(records)
+
+
 def get_stock_news_em(symbol: str, max_news: int = 10) -> pd.DataFrame:
     """
-    使用AKShare获取东方财富个股新闻
+    使用修复版函数获取东方财富个股新闻
+
+    AKShare的stock_news_em存在bug（keyword硬编码），使用自定义修复版本
 
     Args:
         symbol: 股票代码，如 "600000" 或 "300059"
@@ -554,78 +621,62 @@ def get_stock_news_em(symbol: str, max_news: int = 10) -> pd.DataFrame:
     """
     start_time = datetime.now()
     logger.info(f"[东方财富新闻] 开始获取股票 {symbol} 的东方财富新闻数据")
-    
+
+    # 方法1: 使用修复版函数直接调用东财API
     try:
-        provider = get_akshare_provider()
-        if not provider.connected:
-            logger.error(f"[东方财富新闻] ❌ AKShare未连接，无法获取东方财富新闻")
-            return pd.DataFrame()
-
-        logger.info(f"[东方财富新闻] 📰 准备调用AKShare API获取个股新闻: {symbol}")
-
-        # 使用线程超时包装（兼容Windows）
-        import threading
-        import time
-
-        result = [None]
-        exception = [None]
-
-        def fetch_news():
-            try:
-                logger.debug(f"[东方财富新闻] 线程开始执行 stock_news_em API调用: {symbol}")
-                thread_start = time.time()
-                result[0] = provider.ak.stock_news_em(symbol=symbol)
-                thread_end = time.time()
-                logger.debug(f"[东方财富新闻] 线程执行完成，耗时: {thread_end - thread_start:.2f}秒")
-            except Exception as e:
-                logger.error(f"[东方财富新闻] 线程执行异常: {e}")
-                exception[0] = e
-
-        # 启动线程
-        thread = threading.Thread(target=fetch_news)
-        thread.daemon = True
-        logger.debug(f"[东方财富新闻] 启动线程获取新闻数据")
-        thread.start()
-
-        # 等待30秒
-        logger.debug(f"[东方财富新闻] 等待线程完成，最长等待30秒")
-        thread.join(timeout=30)
-
-        if thread.is_alive():
-            # 超时了
-            elapsed_time = (datetime.now() - start_time).total_seconds()
-            logger.warning(f"[东方财富新闻] ⚠️ 获取超时（30秒）: {symbol}，总耗时: {elapsed_time:.2f}秒")
-            raise Exception(f"东方财富个股新闻获取超时（30秒）: {symbol}")
-        elif exception[0]:
-            # 有异常
-            elapsed_time = (datetime.now() - start_time).total_seconds()
-            logger.error(f"[东方财富新闻] ❌ API调用异常: {exception[0]}，总耗时: {elapsed_time:.2f}秒")
-            raise exception[0]
-        else:
-            # 成功
-            news_df = result[0]
+        logger.info(f"[东方财富新闻] 📰 使用修复版函数获取个股新闻: {symbol}")
+        news_df = _fetch_stock_news_em_fixed(symbol)
 
         if news_df is not None and not news_df.empty:
-            # 限制新闻数量为最新的max_news条
             if len(news_df) > max_news:
                 news_df = news_df.head(max_news)
-                logger.info(f"[东方财富新闻] 📰 新闻数量限制: 从{len(news_df)}条限制为{max_news}条最新新闻")
-            
+
             news_count = len(news_df)
             elapsed_time = (datetime.now() - start_time).total_seconds()
-            
+
             # 记录一些新闻标题示例
-            sample_titles = [row.get('标题', '无标题') for _, row in news_df.head(3).iterrows()]
-            logger.info(f"[东方财富新闻] 新闻标题示例: {', '.join(sample_titles)}")
-            
+            if '新闻标题' in news_df.columns:
+                sample_titles = news_df['新闻标题'].head(3).tolist()
+                logger.info(f"[东方财富新闻] 新闻标题示例: {', '.join(str(t)[:30] for t in sample_titles)}")
+
             logger.info(f"[东方财富新闻] ✅ 获取成功: {symbol}, 共{news_count}条记录，耗时: {elapsed_time:.2f}秒")
             return news_df
-        else:
-            elapsed_time = (datetime.now() - start_time).total_seconds()
-            logger.warning(f"[东方财富新闻] ⚠️ 数据为空: {symbol}，API返回成功但无数据，耗时: {elapsed_time:.2f}秒")
-            return pd.DataFrame()
 
     except Exception as e:
-        elapsed_time = (datetime.now() - start_time).total_seconds()
-        logger.error(f"[东方财富新闻] ❌ 获取失败: {symbol}, 错误: {e}, 耗时: {elapsed_time:.2f}秒")
-        return pd.DataFrame()
+        logger.warning(f"[东方财富新闻] 修复版函数失败: {e}")
+
+    # 方法2: 降级到AKShare原版（可能失败）
+    try:
+        provider = get_akshare_provider()
+        if provider.connected:
+            news_df = provider.ak.stock_news_em(symbol=symbol)
+            if news_df is not None and not news_df.empty:
+                if len(news_df) > max_news:
+                    news_df = news_df.head(max_news)
+                logger.info(f"[东方财富新闻] ✅ AKShare原版获取成功: {len(news_df)}条")
+                return news_df
+    except Exception as e:
+        logger.warning(f"[东方财富新闻] AKShare原版失败: {e}")
+
+    # 方法3: 降级到财联社新闻
+    try:
+        provider = get_akshare_provider()
+        news_df = provider.ak.stock_info_global_cls()
+        if news_df is not None and not news_df.empty:
+            # 统一列名格式
+            news_df = news_df.rename(columns={
+                '标题': '新闻标题',
+                '内容': '新闻内容',
+                '发布时间': '发布时间'
+            })
+            if len(news_df) > max_news:
+                news_df = news_df.head(max_news)
+            logger.info(f"[东方财富新闻] ✅ 降级成功: 使用stock_info_global_cls获取{len(news_df)}条新闻")
+            return news_df
+    except Exception as e2:
+        logger.error(f"[东方财富新闻] 降级也失败: {e2}")
+
+    elapsed_time = (datetime.now() - start_time).total_seconds()
+    logger.error(f"[东方财富新闻] ❌ 所有方法均失败: {symbol}, 耗时: {elapsed_time:.2f}秒")
+    return pd.DataFrame()
+

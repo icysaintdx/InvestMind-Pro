@@ -153,16 +153,22 @@ async def quick_backtest(request: BacktestRequest):
             raise HTTPException(status_code=400, detail="必须提供 strategy_id 或 strategy_name")
         
         # 加载数据
-        logger.info(f"加载数据: {request.stock_code}")
+        logger.info(f"加载数据: {request.stock_code}, 日期范围: {request.start_date} - {request.end_date}")
         loader = DataLoader(DataSource.AKSHARE)
-        data = loader.load_stock_data(
-            request.stock_code,
-            request.start_date,
-            request.end_date
-        )
-        
+        try:
+            data = loader.load_stock_data(
+                request.stock_code,
+                request.start_date,
+                request.end_date
+            )
+            logger.info(f"数据加载结果: data is None={data is None}, empty={data.empty if data is not None else 'N/A'}")
+        except Exception as load_error:
+            logger.error(f"数据加载异常: {load_error}", exc_info=True)
+            raise HTTPException(status_code=500, detail=f"数据加载失败: {str(load_error)}")
+
         if data is None or data.empty:
-            raise HTTPException(status_code=404, detail="无法获取股票数据")
+            logger.warning(f"无法获取股票数据: {request.stock_code}")
+            raise HTTPException(status_code=404, detail=f"无法获取股票数据: {request.stock_code}")
         
         # 添加技术指标
         data = loader.add_technical_indicators(data)
@@ -226,6 +232,57 @@ async def quick_backtest(request: BacktestRequest):
 
 
 # 旧的list_strategies已删除，使用下面的get_strategies替代
+
+
+@router.get("/debug/akshare")
+async def debug_akshare(symbol: str = Query("600519", description="股票代码")):
+    """调试AKShare数据加载"""
+    import akshare as ak
+    import os
+    import sys
+
+    result = {
+        "cwd": os.getcwd(),
+        "python_path": sys.executable,
+        "akshare_version": ak.__version__,
+    }
+
+    try:
+        # 直接调用AKShare
+        df = ak.stock_zh_a_hist(
+            symbol=symbol,
+            period="daily",
+            start_date="20241201",
+            end_date="20241231",
+            adjust="qfq"
+        )
+        result["direct_akshare"] = {
+            "success": True,
+            "rows": len(df) if df is not None else 0,
+            "columns": list(df.columns) if df is not None else []
+        }
+    except Exception as e:
+        result["direct_akshare"] = {
+            "success": False,
+            "error": str(e)
+        }
+
+    try:
+        # 通过DataLoader调用
+        loader = DataLoader(DataSource.AKSHARE)
+        data = loader.load_stock_data(symbol, "2024-12-01", "2024-12-31")
+        result["data_loader"] = {
+            "success": data is not None and not data.empty,
+            "rows": len(data) if data is not None else 0,
+            "columns": list(data.columns) if data is not None else []
+        }
+    except Exception as e:
+        result["data_loader"] = {
+            "success": False,
+            "error": str(e)
+        }
+
+    return result
 
 
 @router.get("/data/preview")

@@ -3,10 +3,111 @@
  * 统一管理所有版本信息，避免硬编码
  */
 
-export const CURRENT_VERSION = '2.5.0'
-export const CURRENT_CODENAME = '多渠道通知与可视化版'
+export const CURRENT_VERSION = '2.6.0'
+export const CURRENT_CODENAME = '新闻中心与巨潮集成版'
 
 export const CHANGELOG_DATA = [
+  {
+    version: '2.6.0',
+    codename: '新闻中心与巨潮集成版',
+    date: '2025-12-30T19:00:00',
+    features: [
+      {
+        icon: '📰',
+        title: '新闻中心全面升级',
+        star: true,
+        description: '整合15个新闻数据源，支持情绪分析和多维度筛选。',
+        details: [
+          '📊 市场新闻12源 - 东财/财联社/富途/同花顺/新浪/微博/财经早餐/新闻联播/百度/巨潮公告/巨潮新闻/巨潮研报',
+          '📈 个股新闻3源 - 东财个股/巨潮个股公告/巨潮个股新闻',
+          '🎯 情绪分析 - 自动分析新闻情绪（积极/中性/消极）',
+          '🔍 多维筛选 - 按类型/情绪/数据源筛选'
+        ],
+        files: ['news_monitor_center.py', 'UnifiedNewsView.vue']
+      },
+      {
+        icon: '🏛️',
+        title: '巨潮资讯API深度集成',
+        star: true,
+        description: '接入巨潮资讯官方API，获取权威公告和研报数据。',
+        details: [
+          '📢 市场公告 - 全市场公告实时获取',
+          '📰 新闻数据 - p_info3030接口新闻',
+          '📊 研报摘要 - VIP接口研报数据',
+          '👔 高管变动 - 上市公司高管任免信息',
+          '🔑 API配置 - 系统设置中配置Access Key/Secret'
+        ],
+        files: ['cninfo_api.py', 'news_config.py']
+      },
+      {
+        icon: '⚙️',
+        title: '系统设置页面',
+        star: true,
+        description: '新增系统设置页面，集中管理数据存储和API配置。',
+        details: [
+          '📦 数据存储 - 配置新闻/分析/交易记录保留天数',
+          '🔌 API配置 - 巨潮API密钥配置和连接测试',
+          '📊 系统信息 - 数据库统计和服务状态',
+          '🧹 数据清理 - 手动触发过期数据清理'
+        ],
+        files: ['SystemSettingsView.vue', 'system_api.py']
+      },
+      {
+        icon: '🧭',
+        title: '导航菜单优化',
+        star: false,
+        description: '新增设置导航组，整合所有配置和帮助入口。',
+        details: [
+          '⚙️ 设置组 - API密钥/模型管理/智能体配置/系统设置',
+          '📚 帮助类 - 文档中心/项目介绍/更新日志',
+          '📱 移动端 - 同步更新移动端菜单'
+        ],
+        files: ['App.vue']
+      },
+      {
+        icon: '🎯',
+        title: '情绪分析修复',
+        star: false,
+        description: '修复新闻情绪分析不生效的问题。',
+        details: [
+          '🔧 修复 - 新闻保存前自动进行情绪分析',
+          '📊 词典 - 使用完整的中文金融情绪词典',
+          '💹 评分 - 0-100分情绪评分系统'
+        ],
+        files: ['news_monitor_center.py', 'sentiment_engine.py']
+      },
+      {
+        icon: '📈',
+        title: '微博热议数据修复',
+        star: false,
+        description: '修复微博热议数据显示问题，现在显示涨跌幅。',
+        details: [
+          '📊 格式 - [微博热议] 股票名称 +X.XX%',
+          '💹 涨跌幅 - 显示实时涨跌幅数据'
+        ],
+        files: ['news_monitor_center.py']
+      }
+    ],
+    improvements: [
+      '🔥 新闻中心 - 15个数据源全覆盖，新闻不遗漏',
+      '🔥 巨潮集成 - 官方API接入，数据更权威',
+      '🔥 情绪分析 - 自动分析新闻情绪倾向',
+      '📊 筛选优化 - 隐藏市场筛选，布局更合理',
+      '🛡️ 服务状态 - 右上角显示巨潮API状态'
+    ],
+    bugfixes: [
+      '🐛 修复新闻情绪分析不生效的问题',
+      '🐛 修复微博热议只显示股票名称的问题',
+      '🐛 修复新闻中心筛选按钮溢出的问题'
+    ],
+    technical: [
+      '🏛️ 新增页面：SystemSettingsView.vue',
+      '🏛️ 新增API：system_api.py (系统设置)',
+      '🏛️ 新增配置：news_config.py (新闻源配置)',
+      '🏛️ 导航重构：新增设置导航组',
+      '🏛️ 情绪修复：fetch_market_news/fetch_stock_news添加情绪分析'
+    ]
+  },
   {
     version: '2.5.0',
     codename: '多渠道通知与可视化版',

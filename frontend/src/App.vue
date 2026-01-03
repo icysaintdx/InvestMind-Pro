@@ -21,6 +21,8 @@
             <span class="logo-icon">🏅</span>
             <span class="logo-text">InvestMind Pro</span>
           </h1>
+          <span class="header-info-btn" @click="showProjectInfo = true" title="项目介绍">ℹ️</span>
+          <span class="header-version-btn" @click="showChangelog = true" title="更新日志">v{{ versionInfo.version }}</span>
         </div>
 
         <!-- 右侧控制按钮 -->
@@ -60,7 +62,7 @@
               <div class="popup-section">
                 <div class="popup-label">数据源</div>
                 <div class="popup-items">
-                  <span v-for="channel in ['juhe', 'finnhub', 'tushare', 'akshare']" :key="channel" :class="['popup-item', getStatusClass(dataChannelStatus[channel])]">
+                  <span v-for="channel in ['juhe', 'finnhub', 'tushare', 'akshare', 'cninfo']" :key="channel" :class="['popup-item', getStatusClass(dataChannelStatus[channel])]">
                     <span class="item-dot">●</span>
                     <span class="item-name">{{ getDataChannelName(channel) }}</span>
                   </span>
@@ -71,9 +73,9 @@
         </div>
       </div>
     </header>
-    
-    <!-- 分组下拉导航 -->
-    <nav class="nav-v2-menu">
+
+    <!-- 分组下拉导航 (折叠式) -->
+    <nav v-if="menuMode === 'dropdown'" class="nav-v2-menu">
       <!-- 分析组 -->
       <div class="nav-group" @mouseenter="activeNavGroup = 'analysis'" @mouseleave="activeNavGroup = null">
         <button :class="['nav-group-btn', { active: isGroupActive('analysis') }]">
@@ -82,12 +84,14 @@
           <span class="group-arrow">▼</span>
         </button>
         <div v-show="activeNavGroup === 'analysis'" class="nav-dropdown">
-          <button @click="currentView = 'analysis'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'analysis' }]">
-            <span class="item-icon">📊</span>智能分析
-          </button>
-          <button @click="currentView = 'analysis-summary'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'analysis-summary' }]">
-            <span class="item-icon">🧭</span>分析总结
-          </button>
+          <div class="nav-dropdown-inner">
+            <button @click="currentView = 'analysis'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'analysis' }]">
+              <span class="item-icon">📊</span>智能分析
+            </button>
+            <button @click="currentView = 'analysis-summary'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'analysis-summary' }]">
+              <span class="item-icon">🧭</span>分析总结
+            </button>
+          </div>
         </div>
       </div>
 
@@ -99,15 +103,17 @@
           <span class="group-arrow">▼</span>
         </button>
         <div v-show="activeNavGroup === 'trading'" class="nav-dropdown">
-          <button @click="currentView = 'backtest'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'backtest' }]">
-            <span class="item-icon">📈</span>策略回测
-          </button>
-          <button @click="currentView = 'paper-trading'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'paper-trading' }]">
-            <span class="item-icon">💼</span>模拟交易
-          </button>
-          <button @click="currentView = 'tracking-center'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'tracking-center' }]">
-            <span class="item-icon">🔄</span>跟踪验证
-          </button>
+          <div class="nav-dropdown-inner">
+            <button @click="currentView = 'backtest'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'backtest' }]">
+              <span class="item-icon">📈</span>策略回测
+            </button>
+            <button @click="currentView = 'paper-trading'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'paper-trading' }]">
+              <span class="item-icon">💼</span>模拟交易
+            </button>
+            <button @click="currentView = 'tracking-center'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'tracking-center' }]">
+              <span class="item-icon">🔄</span>跟踪验证
+            </button>
+          </div>
         </div>
       </div>
 
@@ -119,21 +125,23 @@
           <span class="group-arrow">▼</span>
         </button>
         <div v-show="activeNavGroup === 'market'" class="nav-dropdown">
-          <button @click="currentView = 'longhubang'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'longhubang' }]">
-            <span class="item-icon">🐉</span>龙虎榜
-          </button>
-          <button @click="currentView = 'sector-rotation'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'sector-rotation' }]">
-            <span class="item-icon">🔄</span>板块轮动
-          </button>
-          <button @click="currentView = 'sentiment'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'sentiment' }]">
-            <span class="item-icon">💹</span>市场情绪
-          </button>
-          <button @click="currentView = 'unified-news'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'unified-news' }]">
-            <span class="item-icon">📰</span>新闻中心
-          </button>
-          <button @click="currentView = 'market-data'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'market-data' }]">
-            <span class="item-icon">📈</span>市场数据
-          </button>
+          <div class="nav-dropdown-inner">
+            <button @click="currentView = 'longhubang'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'longhubang' }]">
+              <span class="item-icon">🐉</span>龙虎榜
+            </button>
+            <button @click="currentView = 'sector-rotation'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'sector-rotation' }]">
+              <span class="item-icon">🔄</span>板块轮动
+            </button>
+            <button @click="currentView = 'sentiment'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'sentiment' }]">
+              <span class="item-icon">💹</span>市场情绪
+            </button>
+            <button @click="currentView = 'unified-news'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'unified-news' }]">
+              <span class="item-icon">📰</span>新闻中心
+            </button>
+            <button @click="currentView = 'market-data'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'market-data' }]">
+              <span class="item-icon">📈</span>市场数据
+            </button>
+          </div>
         </div>
       </div>
 
@@ -145,15 +153,55 @@
           <span class="group-arrow">▼</span>
         </button>
         <div v-show="activeNavGroup === 'tools'" class="nav-dropdown">
-          <button @click="currentView = 'dataflow'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'dataflow' }]">
-            <span class="item-icon">📊</span>数据流
-          </button>
-          <button @click="currentView = 'llm-config'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'llm-config' }]">
-            <span class="item-icon">⚙️</span>LLM配置
-          </button>
-          <button @click="currentView = 'wencai'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'wencai' }]">
-            <span class="item-icon">🔍</span>问财选股
-          </button>
+          <div class="nav-dropdown-inner">
+            <button @click="currentView = 'dataflow'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'dataflow' }]">
+              <span class="item-icon">📊</span>数据流
+            </button>
+            <button @click="currentView = 'llm-config'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'llm-config' }]">
+              <span class="item-icon">⚙️</span>LLM配置
+            </button>
+            <button @click="currentView = 'wencai'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'wencai' }]">
+              <span class="item-icon">🔍</span>问财选股
+            </button>
+            <button @click="currentView = 'api-monitor'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'api-monitor' }]">
+              <span class="item-icon">📡</span>接口监控
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 设置组 -->
+      <div class="nav-group" @mouseenter="activeNavGroup = 'settings'" @mouseleave="activeNavGroup = null">
+        <button :class="['nav-group-btn', { active: isGroupActive('settings') }]">
+          <span class="group-icon">⚙️</span>
+          <span class="group-text">设置</span>
+          <span class="group-arrow">▼</span>
+        </button>
+        <div v-show="activeNavGroup === 'settings'" class="nav-dropdown">
+          <div class="nav-dropdown-inner">
+            <button @click="showApiConfig = true; activeNavGroup = null" class="dropdown-item">
+              <span class="item-icon">🔑</span>API密钥配置
+            </button>
+            <button @click="showModelManager = true; activeNavGroup = null" class="dropdown-item">
+              <span class="item-icon">🎯</span>模型管理
+            </button>
+            <button @click="showAgentConfig = true; activeNavGroup = null" class="dropdown-item">
+              <span class="item-icon">🤖</span>智能体配置
+            </button>
+            <button @click="currentView = 'system-settings'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'system-settings' }]">
+              <span class="item-icon">🔧</span>系统设置
+            </button>
+            <div class="dropdown-divider"></div>
+            <button @click="showDocuments = true; activeNavGroup = null" class="dropdown-item">
+              <span class="item-icon">📚</span>文档中心
+            </button>
+            <button @click="showProjectInfo = true; activeNavGroup = null" class="dropdown-item">
+              <span class="item-icon">ℹ️</span>项目介绍
+            </button>
+            <button @click="showChangelog = true; activeNavGroup = null" class="dropdown-item">
+              <span class="item-icon">📋</span>更新日志
+            </button>
+          </div>
         </div>
       </div>
 
@@ -162,6 +210,55 @@
         <span class="indicator-icon">{{ getCurrentPageIcon() }}</span>
         <span class="indicator-text">{{ getCurrentPageName() }}</span>
       </div>
+    </nav>
+
+    <!-- 经典式平铺导航 -->
+    <nav v-else class="nav-classic-menu">
+      <button @click="currentView = 'analysis'" :class="['classic-tab', { active: currentView === 'analysis' }]">
+        <span class="tab-icon">📊</span><span class="tab-text">智能分析</span>
+      </button>
+      <button @click="currentView = 'analysis-summary'" :class="['classic-tab', { active: currentView === 'analysis-summary' }]">
+        <span class="tab-icon">🧭</span><span class="tab-text">分析总结</span>
+      </button>
+      <button @click="currentView = 'backtest'" :class="['classic-tab', { active: currentView === 'backtest' }]">
+        <span class="tab-icon">📈</span><span class="tab-text">策略回测</span>
+      </button>
+      <button @click="currentView = 'paper-trading'" :class="['classic-tab', { active: currentView === 'paper-trading' }]">
+        <span class="tab-icon">💼</span><span class="tab-text">模拟交易</span>
+      </button>
+      <button @click="currentView = 'tracking-center'" :class="['classic-tab', { active: currentView === 'tracking-center' }]">
+        <span class="tab-icon">🔄</span><span class="tab-text">跟踪验证</span>
+      </button>
+      <button @click="currentView = 'longhubang'" :class="['classic-tab', { active: currentView === 'longhubang' }]">
+        <span class="tab-icon">🐉</span><span class="tab-text">龙虎榜</span>
+      </button>
+      <button @click="currentView = 'sector-rotation'" :class="['classic-tab', { active: currentView === 'sector-rotation' }]">
+        <span class="tab-icon">🔄</span><span class="tab-text">板块轮动</span>
+      </button>
+      <button @click="currentView = 'sentiment'" :class="['classic-tab', { active: currentView === 'sentiment' }]">
+        <span class="tab-icon">💹</span><span class="tab-text">市场情绪</span>
+      </button>
+      <button @click="currentView = 'unified-news'" :class="['classic-tab', { active: currentView === 'unified-news' }]">
+        <span class="tab-icon">📰</span><span class="tab-text">新闻中心</span>
+      </button>
+      <button @click="currentView = 'market-data'" :class="['classic-tab', { active: currentView === 'market-data' }]">
+        <span class="tab-icon">📈</span><span class="tab-text">市场数据</span>
+      </button>
+      <button @click="currentView = 'dataflow'" :class="['classic-tab', { active: currentView === 'dataflow' }]">
+        <span class="tab-icon">📊</span><span class="tab-text">数据流</span>
+      </button>
+      <button @click="currentView = 'llm-config'" :class="['classic-tab', { active: currentView === 'llm-config' }]">
+        <span class="tab-icon">⚙️</span><span class="tab-text">LLM配置</span>
+      </button>
+      <button @click="currentView = 'wencai'" :class="['classic-tab', { active: currentView === 'wencai' }]">
+        <span class="tab-icon">🔍</span><span class="tab-text">问财选股</span>
+      </button>
+      <button @click="currentView = 'api-monitor'" :class="['classic-tab', { active: currentView === 'api-monitor' }]">
+        <span class="tab-icon">📡</span><span class="tab-text">接口监控</span>
+      </button>
+      <button @click="currentView = 'system-settings'" :class="['classic-tab', { active: currentView === 'system-settings' }]">
+        <span class="tab-icon">🔧</span><span class="tab-text">系统设置</span>
+      </button>
     </nav>
 
     <!-- 智能分析页面专属工具栏 -->
@@ -220,6 +317,19 @@
             <button @click="currentView = 'dataflow'; showMobileMenu = false" :class="['mobile-menu-item', { active: currentView === 'dataflow' }]">数据流</button>
             <button @click="currentView = 'llm-config'; showMobileMenu = false" :class="['mobile-menu-item', { active: currentView === 'llm-config' }]">LLM配置</button>
             <button @click="currentView = 'wencai'; showMobileMenu = false" :class="['mobile-menu-item', { active: currentView === 'wencai' }]">问财选股</button>
+            <button @click="currentView = 'api-monitor'; showMobileMenu = false" :class="['mobile-menu-item', { active: currentView === 'api-monitor' }]">接口监控</button>
+          </div>
+          <!-- 设置 -->
+          <div class="mobile-menu-group">
+            <div class="mobile-group-title">⚙️ 设置</div>
+            <button @click="showApiConfig = true; showMobileMenu = false" class="mobile-menu-item">API密钥配置</button>
+            <button @click="showModelManager = true; showMobileMenu = false" class="mobile-menu-item">模型管理</button>
+            <button @click="showAgentConfig = true; showMobileMenu = false" class="mobile-menu-item">智能体配置</button>
+            <button @click="currentView = 'system-settings'; showMobileMenu = false" :class="['mobile-menu-item', { active: currentView === 'system-settings' }]">系统设置</button>
+            <div class="mobile-menu-divider"></div>
+            <button @click="showDocuments = true; showMobileMenu = false" class="mobile-menu-item">文档中心</button>
+            <button @click="showProjectInfo = true; showMobileMenu = false" class="mobile-menu-item">项目介绍</button>
+            <button @click="showChangelog = true; showMobileMenu = false" class="mobile-menu-item">更新日志</button>
           </div>
         </div>
       </div>
@@ -255,6 +365,8 @@
       <MarketSentimentView v-if="currentView === 'sentiment'" />
       <UnifiedNewsView v-if="currentView === 'unified-news'" />
       <MarketDataView v-if="currentView === 'market-data'" />
+      <SystemSettingsView v-if="currentView === 'system-settings'" @show-project-info="showProjectInfo = true" @show-changelog="showChangelog = true" />
+      <ApiMonitorView v-if="currentView === 'api-monitor'" />
     </main>
     
     <!-- 更新日志模态框 -->
@@ -298,6 +410,15 @@
     
     <!-- 智能体配置面板 -->
     <AgentConfigPanel :visible="showAgentConfig" @close="showAgentConfig = false" @save="handleAgentConfigSave" />
+
+    <!-- 模型管理面板 -->
+    <ModelManager :visible="showModelManager" @close="showModelManager = false" @save="handleModelSave" />
+
+    <!-- API配置面板 -->
+    <ApiConfig :visible="showApiConfig" :apiKeys="apiKeys" :apiStatus="apiStatus" @close="showApiConfig = false" @save="handleApiSave" @updateStatus="updateApiStatus" />
+
+    <!-- 样式配置面板 -->
+    <StyleConfig :visible="showStylePanel" :styles="styleSettings" @close="showStylePanel = false" @save="handleStyleSave" />
 
     <!-- 设置面板 -->
     <div v-if="showSettings" class="settings-overlay" @click.self="showSettings = false">
@@ -376,11 +497,16 @@ import SectorRotationView from './views/SectorRotationView.vue'
 import MarketSentimentView from './views/MarketSentimentView.vue'
 import UnifiedNewsView from './views/UnifiedNewsView.vue'
 import MarketDataView from './views/MarketDataView.vue'
+import SystemSettingsView from './views/SystemSettingsView.vue'
+import ApiMonitorView from './views/ApiMonitorView.vue'
 import ParticleBackground from './components/ParticleBackground.vue'
 import StockDataPanel from './components/StockDataPanel.vue'
 import NewsDataPanel from './components/NewsDataPanel.vue'
 import HotRankModal from './components/HotRankModal.vue'
 import AgentConfigPanel from './components/AgentConfigPanel.vue'
+import ModelManager from './components/ModelManager.vue'
+import ApiConfig from './components/ApiConfig.vue'
+import StyleConfig from './components/StyleConfig.vue'
 import { getVersionInfo } from './data/changelog.js'
 
 export default defineComponent({
@@ -403,11 +529,16 @@ export default defineComponent({
     MarketSentimentView,
     UnifiedNewsView,
     MarketDataView,
+    SystemSettingsView,
+    ApiMonitorView,
     ParticleBackground,
     StockDataPanel,
     NewsDataPanel,
     HotRankModal,
-    AgentConfigPanel
+    AgentConfigPanel,
+    ModelManager,
+    ApiConfig,
+    StyleConfig
   },
   setup() {
     const currentView = ref('analysis')  // 当前视图
@@ -453,7 +584,8 @@ export default defineComponent({
       juhe: 'unconfigured',
       finnhub: 'unconfigured',
       tushare: 'unconfigured',
-      akshare: 'configured'
+      akshare: 'configured',
+      cninfo: 'unconfigured'
     })
 
     const integrationContext = reactive({
@@ -484,6 +616,9 @@ export default defineComponent({
     const particleSpeed = ref(1)
     const particleColor = ref('#3b82f6')
 
+    // 菜单模式设置
+    const menuMode = ref('dropdown')  // 'dropdown' 折叠式 | 'classic' 经典式
+
     const toggleConfigMode = () => {
       configMode.value = !configMode.value
     }
@@ -503,7 +638,8 @@ export default defineComponent({
         analysis: ['analysis', 'analysis-summary'],
         trading: ['backtest', 'paper-trading', 'tracking-center'],
         market: ['longhubang', 'sector-rotation', 'sentiment', 'unified-news', 'market-data'],
-        tools: ['dataflow', 'llm-config', 'wencai']
+        tools: ['dataflow', 'llm-config', 'wencai', 'api-monitor'],
+        settings: ['system-settings']
       }
       return groupPages[group]?.includes(currentView.value)
     }
@@ -523,7 +659,9 @@ export default defineComponent({
         'market-data': '📈',
         'dataflow': '📊',
         'llm-config': '⚙️',
-        'wencai': '🔍'
+        'wencai': '🔍',
+        'api-monitor': '📡',
+        'system-settings': '🔧'
       }
       return icons[currentView.value] || '📊'
     }
@@ -543,7 +681,9 @@ export default defineComponent({
         'market-data': '市场数据',
         'dataflow': '数据流',
         'llm-config': 'LLM配置',
-        'wencai': '问财选股'
+        'wencai': '问财选股',
+        'api-monitor': '接口监控',
+        'system-settings': '系统设置'
       }
       return names[currentView.value] || '智能分析'
     }
@@ -578,7 +718,8 @@ export default defineComponent({
         juhe: '聚合数据',
         finnhub: 'FinnHub',
         tushare: 'Tushare',
-        akshare: 'AKShare'
+        akshare: 'AKShare',
+        cninfo: '巨潮资讯'
       }
       return names[key] || key
     }
@@ -588,7 +729,8 @@ export default defineComponent({
         juhe: 'JH',
         finnhub: 'FH',
         tushare: 'TS',
-        akshare: 'AK'
+        akshare: 'AK',
+        cninfo: 'CN'
       }
       return shorts[key] || key.toUpperCase().slice(0, 2)
     }
@@ -684,6 +826,10 @@ export default defineComponent({
             dataChannelKeys.value.tushare = data.TUSHARE_TOKEN
             dataChannelStatus.value.tushare = 'configured'
           }
+          // 检查巨潮API配置
+          if (data.CNINFO_ACCESS_KEY || data.api_keys?.cninfo_access_key) {
+            dataChannelStatus.value.cninfo = 'configured'
+          }
         } else {
           console.error('后端响应错误:', response.status)
           backendStatus.value = 'error'
@@ -714,6 +860,14 @@ export default defineComponent({
       particleColor.value = color
     }
 
+    // 监听样式更新事件（包括菜单模式）
+    const handleStyleUpdate = (event) => {
+      const styles = event.detail
+      if (styles.menuMode) {
+        menuMode.value = styles.menuMode
+      }
+    }
+
     // 组件挂载时加载配置
     onMounted(() => {
       loadBackendConfig()
@@ -736,7 +890,12 @@ export default defineComponent({
           particleSpeed.value = styles.particleSpeed || 1
           particleColor.value = styles.particleColor || '#3b82f6'
         }
-        
+
+        // 加载菜单模式
+        if (styles.menuMode) {
+          menuMode.value = styles.menuMode
+        }
+
         // 应用背景渐变
         const app = document.querySelector('#app')
         if (app && styles.gradientStart && styles.gradientEnd) {
@@ -746,11 +905,14 @@ export default defineComponent({
       
       // 监听粒子更新事件
       window.addEventListener('updateParticles', handleParticleUpdate)
+      // 监听样式更新事件
+      window.addEventListener('updateStyles', handleStyleUpdate)
     })
 
     // 组件卸载时移除监听器
     onUnmounted(() => {
       window.removeEventListener('updateParticles', handleParticleUpdate)
+      window.removeEventListener('updateStyles', handleStyleUpdate)
     })
 
     // 保存 API 配置
@@ -851,6 +1013,45 @@ export default defineComponent({
       // 这里可以添加额外的处理逻辑，比如显示成功提示
     }
 
+    // 样式设置
+    const styleSettings = ref({
+      cardOpacity: 95,
+      cardBlur: 10,
+      borderWidth: 1,
+      gradientStart: '#0f172a',
+      gradientEnd: '#1e293b',
+      gradientAngle: 135,
+      particlesEnabled: true,
+      particleCount: 80,
+      particleSpeed: 1,
+      particleColor: '#3b82f6',
+      menuMode: 'dropdown'
+    })
+
+    // 处理模型保存
+    const handleModelSave = (models) => {
+      console.log('模型配置已保存:', models)
+    }
+
+    // 处理API配置保存
+    const handleApiSave = async (keys) => {
+      await saveApiConfig(keys)
+    }
+
+    // 处理样式保存
+    const handleStyleSave = (styles) => {
+      styleSettings.value = { ...styles }
+      // 应用背景渐变
+      const app = document.querySelector('#app')
+      if (app && styles.gradientStart && styles.gradientEnd) {
+        app.style.background = `linear-gradient(${styles.gradientAngle || 135}deg, ${styles.gradientStart} 0%, ${styles.gradientEnd} 100%)`
+      }
+      // 更新菜单模式
+      if (styles.menuMode) {
+        menuMode.value = styles.menuMode
+      }
+    }
+
     return {
       currentView,
       configMode,
@@ -883,6 +1084,7 @@ export default defineComponent({
       particleCount,
       particleSpeed,
       particleColor,
+      menuMode,
       toggleConfigMode,
       toggleStylePanel,
       toggleLogWindow,
@@ -898,6 +1100,10 @@ export default defineComponent({
       saveApiConfig,
       updateApiStatus,
       handleAgentConfigSave,
+      handleModelSave,
+      handleApiSave,
+      handleStyleSave,
+      styleSettings,
       handleGotoBacktest,
       handleGotoPaperTrading,
       handleGotoTracking
@@ -1829,6 +2035,34 @@ export default defineComponent({
   gap: 0.75rem;
 }
 
+.header-info-btn {
+  cursor: pointer;
+  font-size: 1.125rem;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  margin-left: 0.25rem;
+}
+
+.header-info-btn:hover {
+  opacity: 1;
+}
+
+.header-version-btn {
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 0.25rem;
+  color: #60a5fa;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.header-version-btn:hover {
+  background: rgba(59, 130, 246, 0.3);
+}
+
 .mobile-menu-btn {
   display: none;
   padding: 0.5rem;
@@ -2135,14 +2369,40 @@ export default defineComponent({
   position: absolute;
   top: 100%;
   left: 0;
-  margin-top: 0.25rem;
+  padding-top: 4px; /* 用padding代替margin，保持鼠标悬停区域连续 */
   min-width: 160px;
+  z-index: 50;
+}
+
+.nav-dropdown > button,
+.nav-dropdown > div {
+  background: rgba(15, 23, 42, 0.98);
+}
+
+.nav-dropdown > button:first-child,
+.nav-dropdown > div:first-child {
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+}
+
+.nav-dropdown > button:last-child,
+.nav-dropdown > div:last-child {
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+}
+
+.nav-dropdown-inner {
   background: rgba(15, 23, 42, 0.98);
   border: 1px solid rgba(51, 65, 85, 0.8);
   border-radius: 0.5rem;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
   overflow: hidden;
-  z-index: 50;
+}
+
+.nav-dropdown-inner .dropdown-divider {
+  height: 1px;
+  margin: 0.5rem 0;
+  background: rgba(51, 65, 85, 0.5);
 }
 
 .dropdown-item {
@@ -2172,6 +2432,12 @@ export default defineComponent({
 
 .dropdown-item .item-icon {
   font-size: 1rem;
+}
+
+.dropdown-divider {
+  height: 1px;
+  margin: 0.5rem 0;
+  background: rgba(51, 65, 85, 0.5);
 }
 
 /* 当前页面指示器 */
@@ -2476,6 +2742,12 @@ export default defineComponent({
   color: #60a5fa;
 }
 
+.mobile-menu-divider {
+  height: 1px;
+  margin: 0.5rem 0;
+  background: rgba(51, 65, 85, 0.5);
+}
+
 /* 调整主内容区域 - 新版导航 */
 .pt-32 {
   padding-top: 7rem; /* 顶栏3.5rem + 导航栏2.75rem + 间距 */
@@ -2552,6 +2824,90 @@ export default defineComponent({
 
   .pt-32 {
     padding-top: 4rem;
+  }
+}
+
+/* ========================================
+   经典式平铺导航样式
+   ======================================== */
+.nav-classic-menu {
+  position: fixed;
+  top: 3.5rem;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  background: rgba(30, 41, 59, 0.95);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+  height: auto;
+  min-height: 2.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 0.375rem 1rem;
+  gap: 0.375rem;
+  overflow-x: auto;
+}
+
+.classic-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.875rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0.375rem;
+  color: #94a3b8;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.classic-tab:hover {
+  background: rgba(51, 65, 85, 0.3);
+  color: #e2e8f0;
+}
+
+.classic-tab.active {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border-color: #3b82f6;
+  color: white;
+}
+
+.classic-tab .tab-icon {
+  font-size: 0.9375rem;
+}
+
+.classic-tab .tab-text {
+  font-size: 0.8125rem;
+}
+
+/* 经典式菜单响应式 */
+@media (max-width: 1200px) {
+  .nav-classic-menu {
+    padding: 0.25rem 0.5rem;
+    gap: 0.25rem;
+  }
+
+  .classic-tab {
+    padding: 0.375rem 0.625rem;
+    font-size: 0.75rem;
+  }
+
+  .classic-tab .tab-icon {
+    font-size: 0.875rem;
+  }
+
+  .classic-tab .tab-text {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .nav-classic-menu {
+    display: none;
   }
 }
 </style>

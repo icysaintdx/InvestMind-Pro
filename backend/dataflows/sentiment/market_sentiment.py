@@ -104,20 +104,61 @@ class MarketSentimentFetcher:
         return sentiment_data
 
     def _get_market_stats(self) -> Dict[str, Any]:
-        """获取市场涨跌统计（优先TDX，降级到AKShare）"""
-        # 优先使用TDX（快得多，约2-3秒 vs AKShare的1分钟）
+        """获取市场涨跌统计（优先服务器缓存 → TDX → AKShare）"""
+        # 1. 优先从服务器缓存读取（最快，毫秒级）
+        try:
+            from backend.services.tdx_cache_service import read_market_stats
+            cached_stats = read_market_stats()
+            if cached_stats and cached_stats.get('total_stocks', 0) > 0:
+                logger.info(f"[市场情绪] 使用服务器缓存 (更新时间: {cached_stats.get('update_time', 'N/A')})")
+                # 转换字段名以匹配sentiment模块的格式
+                return {
+                    "total_count": cached_stats.get('total_stocks', 0),
+                    "up_count": cached_stats.get('up_count', 0),
+                    "down_count": cached_stats.get('down_count', 0),
+                    "flat_count": cached_stats.get('flat_count', 0),
+                    "up_ratio": cached_stats.get('up_ratio', 0),
+                    "down_ratio": round(cached_stats.get('down_count', 0) / cached_stats.get('total_stocks', 1) * 100, 2),
+                    "up_5_pct": cached_stats.get('up_5_pct', 0),
+                    "up_3_pct": cached_stats.get('up_3_pct', 0),
+                    "down_3_pct": cached_stats.get('down_3_pct', 0),
+                    "down_5_pct": cached_stats.get('down_5_pct', 0),
+                    "sentiment_score": cached_stats.get('sentiment_score', 0),
+                    "sentiment_level": cached_stats.get('sentiment_level', '中性'),
+                    "source": "cache"
+                }
+        except ImportError:
+            logger.debug("[市场情绪] TDX缓存服务未导入")
+        except Exception as e:
+            logger.debug(f"[市场情绪] 读取服务器缓存失败: {e}")
+
+        # 2. 缓存不可用时，尝试TDX实时获取
         try:
             from backend.dataflows.providers.tdx_native_provider import get_tdx_native_provider
             tdx = get_tdx_native_provider()
             if tdx and tdx.is_available():
-                result = self._get_market_stats_from_tdx(tdx)
-                if result:
+                stats = tdx.get_market_stats()
+                if stats and stats.get('total_stocks', 0) > 0:
                     logger.info("[市场情绪] TDX获取市场统计成功")
-                    return result
+                    return {
+                        "total_count": stats.get('total_stocks', 0),
+                        "up_count": stats.get('up_count', 0),
+                        "down_count": stats.get('down_count', 0),
+                        "flat_count": stats.get('flat_count', 0),
+                        "up_ratio": stats.get('up_ratio', 0),
+                        "down_ratio": round(stats.get('down_count', 0) / stats.get('total_stocks', 1) * 100, 2),
+                        "up_5_pct": stats.get('up_5_pct', 0),
+                        "up_3_pct": stats.get('up_3_pct', 0),
+                        "down_3_pct": stats.get('down_3_pct', 0),
+                        "down_5_pct": stats.get('down_5_pct', 0),
+                        "sentiment_score": stats.get('sentiment_score', 0),
+                        "sentiment_level": stats.get('sentiment_level', '中性'),
+                        "source": "tdx"
+                    }
         except Exception as e:
             logger.debug(f"[市场情绪] TDX获取市场统计失败: {e}")
 
-        # 降级到AKShare（慢，约1分钟）
+        # 3. 降级到AKShare（慢，约1分钟）
         logger.info("[市场情绪] 降级到AKShare获取市场统计...")
         return self._get_market_stats_from_akshare()
 

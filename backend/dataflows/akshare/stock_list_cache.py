@@ -109,21 +109,21 @@ class StockListCache:
                 df_sh = ak.stock_info_sh_name_code(symbol="主板A股")
                 for _, row in df_sh.iterrows():
                     stock_list.append({
-                        'code': f"SH{row['证券代码']}",
+                        'code': f"{row['证券代码']}.SH",
                         'name': row['证券简称'],
                         'market': '上交所'
                     })
                 self.logger.info(f"✅ 获取到{len(df_sh)}只沪市A股")
             except Exception as e:
                 self.logger.error(f"❌ 获取沪市A股失败: {e}")
-            
+
             # 获取深市A股
             self.logger.info("获取深市A股...")
             try:
                 df_sz = ak.stock_info_sz_name_code(symbol="A股列表")
                 for _, row in df_sz.iterrows():
                     stock_list.append({
-                        'code': f"SZ{row['A股代码']}",
+                        'code': f"{row['A股代码']}.SZ",
                         'name': row['A股简称'],
                         'market': '深交所'
                     })

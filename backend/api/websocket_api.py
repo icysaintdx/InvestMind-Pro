@@ -77,9 +77,15 @@ class ConnectionManager:
         """发送消息给特定客户端"""
         if client_id in self.active_connections:
             try:
-                await self.active_connections[client_id].send_json(message)
+                websocket = self.active_connections[client_id]
+                # 检查连接状态
+                if websocket.client_state.name == "CONNECTED":
+                    await websocket.send_json(message)
             except Exception as e:
-                logger.error(f"[WebSocket] 发送消息失败: {client_id}, {e}")
+                # 只记录非正常关闭的错误
+                error_msg = str(e)
+                if "close frame" not in error_msg.lower() and "disconnect" not in error_msg.lower():
+                    logger.warning(f"[WebSocket] 发送消息失败: {client_id}, {error_msg[:50]}")
                 self.disconnect(client_id)
 
     async def broadcast(self, message: dict):
@@ -87,9 +93,12 @@ class ConnectionManager:
         disconnected = []
         for client_id, connection in self.active_connections.items():
             try:
-                await connection.send_json(message)
+                if connection.client_state.name == "CONNECTED":
+                    await connection.send_json(message)
             except Exception as e:
-                logger.error(f"[WebSocket] 广播失败: {client_id}, {e}")
+                error_msg = str(e)
+                if "close frame" not in error_msg.lower() and "disconnect" not in error_msg.lower():
+                    logger.warning(f"[WebSocket] 广播失败: {client_id}, {error_msg[:50]}")
                 disconnected.append(client_id)
 
         # 清理断开的连接
@@ -120,9 +129,13 @@ class ConnectionManager:
         for client_id in self.subscriptions[ts_code]:
             if client_id in self.active_connections:
                 try:
-                    await self.active_connections[client_id].send_json(message)
+                    websocket = self.active_connections[client_id]
+                    if websocket.client_state.name == "CONNECTED":
+                        await websocket.send_json(message)
                 except Exception as e:
-                    logger.error(f"[WebSocket] 通知失败: {client_id}, {e}")
+                    error_msg = str(e)
+                    if "close frame" not in error_msg.lower() and "disconnect" not in error_msg.lower():
+                        logger.warning(f"[WebSocket] 通知失败: {client_id}, {error_msg[:50]}")
                     disconnected.append(client_id)
 
         # 清理断开的连接
@@ -163,9 +176,13 @@ class ConnectionManager:
         for client_id in self.news_subscribers:
             if client_id in self.active_connections:
                 try:
-                    await self.active_connections[client_id].send_json(message)
+                    websocket = self.active_connections[client_id]
+                    if websocket.client_state.name == "CONNECTED":
+                        await websocket.send_json(message)
                 except Exception as e:
-                    logger.error(f"[WebSocket] 新闻推送失败: {client_id}, {e}")
+                    error_msg = str(e)
+                    if "close frame" not in error_msg.lower() and "disconnect" not in error_msg.lower():
+                        logger.warning(f"[WebSocket] 新闻推送失败: {client_id}, {error_msg[:50]}")
                     disconnected.append(client_id)
 
         for client_id in disconnected:
