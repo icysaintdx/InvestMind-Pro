@@ -127,6 +127,47 @@
       </div>
     </div>
 
+    <!-- 实时预警面板 -->
+    <div v-if="realtimeAlerts.length > 0 || unreadAlertCount > 0" class="card section realtime-alerts-section">
+      <div class="section-header">
+        <h2>
+          🚨 实时预警
+          <span v-if="unreadAlertCount > 0" class="alert-badge">{{ unreadAlertCount }}</span>
+        </h2>
+        <div class="section-actions">
+          <button @click="loadAlerts" class="btn-secondary">🔄 刷新</button>
+          <button v-if="unreadAlertCount > 0" @click="markAllAlertsRead" class="btn-secondary">✓ 全部已读</button>
+        </div>
+      </div>
+      <div class="realtime-alerts-list">
+        <div
+          v-for="alert in realtimeAlerts.slice(0, 10)"
+          :key="alert.id"
+          :class="['realtime-alert-item', alert.alert_level, { 'is-new': alert.isNew, 'is-read': alert.is_read }]"
+          @click="markAlertRead(alert.id)"
+        >
+          <div class="alert-icon">
+            <span v-if="alert.alert_level === 'critical'">🚨</span>
+            <span v-else-if="alert.alert_level === 'high'">⚠️</span>
+            <span v-else-if="alert.alert_level === 'medium'">📢</span>
+            <span v-else>ℹ️</span>
+          </div>
+          <div class="alert-content">
+            <div class="alert-header">
+              <span class="alert-stock">{{ alert.stock_name || alert.ts_code }}</span>
+              <span :class="['alert-level-tag', alert.alert_level]">{{ getAlertLevelText(alert.alert_level) }}</span>
+              <span class="alert-time">{{ formatTime(alert.alert_time) }}</span>
+            </div>
+            <div class="alert-title">{{ alert.title }}</div>
+            <div v-if="alert.message" class="alert-message-preview">{{ alert.message.slice(0, 100) }}{{ alert.message.length > 100 ? '...' : '' }}</div>
+          </div>
+        </div>
+        <div v-if="realtimeAlerts.length === 0" class="no-alerts-message">
+          ✅ 暂无新预警
+        </div>
+      </div>
+    </div>
+
     <!-- 数据源状态 -->
     <div class="card section">
       <div class="section-header clickable" @click="dataSourcesCollapsed = !dataSourcesCollapsed">
@@ -1898,7 +1939,7 @@ export default {
         }
       }, 3000)
     }
-    
+
     // 每日统计数据
     const dailyStats = ref({
       monitoredStocks: 0,
@@ -1907,6 +1948,11 @@ export default {
       analysisTasks: 0,
       apiCalls: {}
     })
+
+    // 实时预警列表
+    const realtimeAlerts = ref([])
+    // 未读预警计数
+    const unreadAlertCount = ref(0)
 
     // 加载每日统计
     const loadDailyStats = async () => {
@@ -1917,6 +1963,54 @@ export default {
         }
       } catch (error) {
         console.error('加载每日统计失败:', error)
+      }
+    }
+
+    // 加载预警列表
+    const loadAlerts = async () => {
+      try {
+        const response = await axios.get(`${API_BASE}/alerts/unread`, {
+          params: { limit: 50 }
+        })
+        if (response.data.success) {
+          realtimeAlerts.value = response.data.alerts || []
+          unreadAlertCount.value = response.data.unread_count || 0
+          // 更新统计
+          dailyStats.value.riskAlerts = unreadAlertCount.value
+        }
+      } catch (error) {
+        console.error('加载预警列表失败:', error)
+      }
+    }
+
+    // 标记预警已读
+    const markAlertRead = async (alertId) => {
+      try {
+        await axios.post(`${API_BASE}/alerts/mark-read`, { alert_id: alertId })
+        // 更新本地状态
+        const alert = realtimeAlerts.value.find(a => a.id === alertId)
+        if (alert) {
+          alert.is_read = true
+          alert.isNew = false
+        }
+        unreadAlertCount.value = Math.max(0, unreadAlertCount.value - 1)
+      } catch (error) {
+        console.error('标记预警已读失败:', error)
+      }
+    }
+
+    // 标记所有预警已读
+    const markAllAlertsRead = async () => {
+      try {
+        await axios.post(`${API_BASE}/alerts/mark-all-read`, {})
+        realtimeAlerts.value.forEach(a => {
+          a.is_read = true
+          a.isNew = false
+        })
+        unreadAlertCount.value = 0
+        showToast('已标记所有预警为已读', 'success')
+      } catch (error) {
+        console.error('标记所有预警已读失败:', error)
       }
     }
 
@@ -3574,6 +3668,10 @@ export default {
           handleNewsUpdate(message)
           break
 
+        case 'stock_alert':
+          handleStockAlert(message)
+          break
+
         case 'pong':
           // 心跳响应
           break
@@ -3599,6 +3697,39 @@ export default {
 
       // 静默刷新新闻列表
       loadNews(true)
+    }
+
+    // 处理股票预警推送
+    const handleStockAlert = (message) => {
+      const { alert_level, alert } = message
+      console.log(`🚨 收到预警推送: [${alert_level}] ${alert?.title}`)
+
+      // 更新未读预警计数
+      unreadAlertCount.value++
+
+      // 添加到预警列表
+      if (alert) {
+        realtimeAlerts.value.unshift({
+          ...alert,
+          isNew: true
+        })
+        // 只保留最近50条
+        if (realtimeAlerts.value.length > 50) {
+          realtimeAlerts.value = realtimeAlerts.value.slice(0, 50)
+        }
+      }
+
+      // 根据预警级别显示不同的提示
+      if (alert_level === 'critical') {
+        showToast(`🚨 紧急预警: ${alert?.title || '有新的紧急预警'}`, 'error')
+      } else if (alert_level === 'high') {
+        showToast(`⚠️ 高级预警: ${alert?.title || '有新的高级预警'}`, 'warning')
+      } else {
+        showToast(`📢 新预警: ${alert?.title || '有新的预警'}`, 'info')
+      }
+
+      // 更新风险预警计数
+      dailyStats.value.riskAlerts = (dailyStats.value.riskAlerts || 0) + 1
     }
 
     // 处理股票数据更新通知
@@ -3720,6 +3851,8 @@ export default {
       loadNotificationChannels()
       loadConfigGuide()
       loadNotificationConfig()
+      // 加载预警列表
+      loadAlerts()
 
       // 设置自定义刷新定时器
       setupRefreshTimers()
@@ -3843,6 +3976,12 @@ export default {
       analysisTaskCount,
       filteredStocks,
       filteredStockNews,
+      // 预警相关
+      realtimeAlerts,
+      unreadAlertCount,
+      loadAlerts,
+      markAlertRead,
+      markAllAlertsRead,
       refreshAllData,
       checkDataSources,
       addMonitor,
@@ -5876,6 +6015,158 @@ export default {
   margin-bottom: 1rem;
   color: #86efac;
   text-align: center;
+}
+
+/* ========== 实时预警面板样式 ========== */
+.realtime-alerts-section {
+  border-left: 4px solid #f59e0b;
+}
+
+.alert-badge {
+  background: #ef4444;
+  color: white;
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 8px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.realtime-alerts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.realtime-alert-item {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 8px;
+  border-left: 4px solid #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.realtime-alert-item:hover {
+  background: rgba(30, 41, 59, 0.8);
+}
+
+.realtime-alert-item.is-new {
+  animation: highlight 2s ease-out;
+}
+
+@keyframes highlight {
+  0% { background: rgba(251, 191, 36, 0.3); }
+  100% { background: rgba(15, 23, 42, 0.5); }
+}
+
+.realtime-alert-item.is-read {
+  opacity: 0.7;
+}
+
+.realtime-alert-item.critical {
+  border-left-color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.realtime-alert-item.high {
+  border-left-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.realtime-alert-item.medium {
+  border-left-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.realtime-alert-item.low {
+  border-left-color: #64748b;
+}
+
+.alert-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.alert-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.alert-content .alert-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.alert-stock {
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.alert-level-tag {
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.alert-level-tag.critical {
+  background: #ef4444;
+  color: white;
+}
+
+.alert-level-tag.high {
+  background: #f59e0b;
+  color: #1e293b;
+}
+
+.alert-level-tag.medium {
+  background: #3b82f6;
+  color: white;
+}
+
+.alert-level-tag.low {
+  background: #64748b;
+  color: white;
+}
+
+.alert-time {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-left: auto;
+}
+
+.alert-content .alert-title {
+  font-size: 0.9rem;
+  color: #e2e8f0;
+  margin-bottom: 0.25rem;
+  line-height: 1.4;
+}
+
+.alert-message-preview {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+.no-alerts-message {
+  text-align: center;
+  padding: 2rem;
+  color: #86efac;
+  background: rgba(34, 197, 94, 0.1);
+  border-radius: 8px;
 }
 
 /* ========== 接口状态面板样式 ========== */
