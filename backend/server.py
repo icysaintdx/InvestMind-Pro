@@ -313,6 +313,29 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             print(f"⚠️ TDX数据缓存服务启动失败: {e}")
 
+    # 启动股票预警监控服务（默认启动）
+    # 包括：公告监控、行情异动检测
+    if os.getenv("ENABLE_ALERT_MONITOR", "true").lower() == "true":
+        try:
+            # 初始化预警服务
+            from backend.services.alert_service import get_alert_service
+            alert_service = get_alert_service()
+            print("✅ 预警服务已初始化")
+
+            # 启动公告监控服务
+            from backend.services.announcement_monitor_service import get_announcement_monitor_service
+            announcement_monitor = get_announcement_monitor_service()
+            await announcement_monitor.start()
+            print("✅ 公告监控服务已启动")
+
+            # 启动行情异动检测服务
+            from backend.services.price_monitor_service import get_price_monitor_service
+            price_monitor = get_price_monitor_service()
+            await price_monitor.start()
+            print("✅ 行情异动检测服务已启动")
+        except Exception as e:
+            print(f"⚠️ 预警监控服务启动失败: {e}")
+
     # yield 控制权给应用
     yield
 
@@ -373,6 +396,23 @@ async def lifespan(app: FastAPI):
         tdx_cache = get_tdx_cache_service()
         tdx_cache.stop()
         print("✅ TDX数据缓存服务已停止")
+    except:
+        pass
+
+    # 停止预警监控服务
+    try:
+        from backend.services.announcement_monitor_service import get_announcement_monitor_service
+        announcement_monitor = get_announcement_monitor_service()
+        await announcement_monitor.stop()
+        print("✅ 公告监控服务已停止")
+    except:
+        pass
+
+    try:
+        from backend.services.price_monitor_service import get_price_monitor_service
+        price_monitor = get_price_monitor_service()
+        await price_monitor.stop()
+        print("✅ 行情异动检测服务已停止")
     except:
         pass
 
