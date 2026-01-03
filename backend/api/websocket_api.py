@@ -361,3 +361,75 @@ async def notify_urgent_news(news_list: List[dict]):
         news_list: 紧急新闻列表
     """
     await manager.notify_news(news_list, "critical")
+
+
+async def notify_stock_alert(alert: dict):
+    """
+    推送股票预警（供其他模块调用）
+
+    Args:
+        alert: 预警信息字典，包含:
+            - ts_code: 股票代码
+            - stock_name: 股票名称
+            - alert_type: 预警类型
+            - alert_level: 预警级别 (critical/high/medium/low)
+            - title: 预警标题
+            - message: 预警详情
+            - alert_time: 预警时间
+    """
+    ts_code = alert.get('ts_code', '')
+
+    # 构建推送消息
+    message = {
+        "type": "stock_alert",
+        "alert_level": alert.get('alert_level', 'medium'),
+        "timestamp": datetime.now().isoformat(),
+        "alert": {
+            "id": alert.get('id'),
+            "ts_code": ts_code,
+            "stock_name": alert.get('stock_name', ''),
+            "alert_type": alert.get('alert_type', ''),
+            "alert_level": alert.get('alert_level', 'medium'),
+            "title": alert.get('title', ''),
+            "message": alert.get('message', '')[:200],
+            "alert_time": alert.get('alert_time', '')
+        }
+    }
+
+    # 1. 推送给订阅了该股票的客户端
+    if ts_code and ts_code in manager.subscriptions:
+        disconnected = []
+        for client_id in manager.subscriptions[ts_code]:
+            if client_id in manager.active_connections:
+                try:
+                    websocket = manager.active_connections[client_id]
+                    if websocket.client_state.name == "CONNECTED":
+                        await websocket.send_json(message)
+                except Exception as e:
+                    error_msg = str(e)
+                    if "close frame" not in error_msg.lower() and "disconnect" not in error_msg.lower():
+                        logger.warning(f"[WebSocket] 预警推送失败: {client_id}, {error_msg[:50]}")
+                    disconnected.append(client_id)
+
+        for client_id in disconnected:
+            manager.disconnect(client_id)
+
+    # 2. 高级别预警广播给所有新闻订阅者
+    if alert.get('alert_level') in ['critical', 'high']:
+        disconnected = []
+        for client_id in manager.news_subscribers:
+            if client_id in manager.active_connections:
+                try:
+                    websocket = manager.active_connections[client_id]
+                    if websocket.client_state.name == "CONNECTED":
+                        await websocket.send_json(message)
+                except Exception as e:
+                    error_msg = str(e)
+                    if "close frame" not in error_msg.lower() and "disconnect" not in error_msg.lower():
+                        logger.warning(f"[WebSocket] 预警广播失败: {client_id}, {error_msg[:50]}")
+                    disconnected.append(client_id)
+
+        for client_id in disconnected:
+            manager.disconnect(client_id)
+
+    logger.info(f"[WebSocket] 推送预警: [{alert.get('alert_level')}] {ts_code} - {alert.get('title', '')[:30]}")

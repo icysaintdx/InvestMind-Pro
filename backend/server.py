@@ -119,6 +119,7 @@ from backend.api.cninfo_api import router as cninfo_router  # 巨潮资讯网官
 from backend.api.system_api import router as system_router  # 系统设置API
 from backend.api.api_monitor_api import router as api_monitor_router  # API监控API
 from backend.api.datasource_api import router as datasource_router  # 数据源调度器API
+from backend.api.alert_api import router as alert_router  # 预警服务API
 
 # ==================== 配置 ====================
 
@@ -449,6 +450,7 @@ app.include_router(cninfo_router)  # 巨潮资讯网官方API
 app.include_router(system_router)  # 系统设置API
 app.include_router(api_monitor_router)  # API监控API
 app.include_router(datasource_router)  # 数据源调度器API
+app.include_router(alert_router)  # 预警服务API
 
 
 # ==================== 数据模型 ====================

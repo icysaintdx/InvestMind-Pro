@@ -642,12 +642,81 @@ class NewsMonitorCenter:
             pass
         # 默认返回一些热门股票
         return ["600519.SH", "000858.SZ", "601318.SH", "000001.SZ", "600036.SH"]
+
+    def _get_monitored_stock_codes(self) -> Dict[str, str]:
+        """获取监控股票代码映射 {纯代码: ts_code}"""
+        try:
+            from backend.services.alert_service import get_alert_service
+            alert_service = get_alert_service()
+            monitored = alert_service.get_monitored_stocks()
+            # 构建映射: 600519 -> 600519.SH
+            code_map = {}
+            for ts_code, info in monitored.items():
+                pure_code = ts_code.split('.')[0]
+                code_map[pure_code] = ts_code
+                # 也添加股票名称映射
+                if info.get('name'):
+                    code_map[info['name']] = ts_code
+            return code_map
+        except Exception as e:
+            logger.debug(f"Failed to get monitored stock codes: {e}")
+            return {}
+
+    def _match_monitored_stocks(self, related_stocks: List[str], monitored_codes: Dict[str, str]) -> List[Dict]:
+        """匹配新闻关联的股票与监控股票"""
+        matched = []
+        for stock in related_stocks:
+            # 清理股票代码
+            clean_code = str(stock).replace('.SH', '').replace('.SZ', '').replace('.BJ', '')
+            clean_code = clean_code.replace('SH', '').replace('SZ', '').replace('BJ', '')
+
+            if clean_code in monitored_codes:
+                ts_code = monitored_codes[clean_code]
+                matched.append({
+                    'ts_code': ts_code,
+                    'code': clean_code
+                })
+        return matched
+
+    async def _create_alerts_for_monitored_stocks(self, news_list: List[Dict]):
+        """为监控股票创建预警"""
+        try:
+            from backend.services.alert_service import get_alert_service
+            alert_service = get_alert_service()
+
+            for news in news_list:
+                matched_stocks = news.get('matched_monitored_stocks', [])
+                urgency = news.get('urgency', 'low')
+
+                # 只为中等以上紧急程度的新闻创建预警
+                if urgency not in ['critical', 'high', 'medium']:
+                    continue
+
+                for stock_info in matched_stocks:
+                    ts_code = stock_info.get('ts_code', '')
+                    stock_data = alert_service.get_stock_info(ts_code)
+                    stock_name = stock_data.get('name', '') if stock_data else ''
+
+                    await alert_service.create_alert_from_news(
+                        news=news,
+                        stock_code=ts_code,
+                        stock_name=stock_name
+                    )
+
+            logger.info(f"Created alerts for {len(news_list)} monitored stock news")
+
+        except Exception as e:
+            logger.error(f"Failed to create alerts for monitored stocks: {e}")
     
     async def _process_news(self, news_list: List[Dict], source_id: str):
         """处理新闻列表 - 将CPU密集型操作移到线程池避免阻塞"""
         new_count = 0
         urgent_news = []
+        monitored_stock_news = []  # 与监控股票相关的新闻
         loop = asyncio.get_event_loop()
+
+        # 获取监控股票列表
+        monitored_codes = self._get_monitored_stock_codes()
 
         for news_data in news_list:
             title = news_data.get("title", "")
@@ -679,6 +748,14 @@ class NewsMonitorCenter:
                 self._stats["total_processed"] += 1
                 if impact.urgency in ["critical", "high"]:
                     urgent_news.append(enriched_news)
+
+                # 检查是否与监控股票相关
+                if monitored_codes and related_stocks:
+                    matched_codes = self._match_monitored_stocks(related_stocks, monitored_codes)
+                    if matched_codes:
+                        enriched_news['matched_monitored_stocks'] = matched_codes
+                        monitored_stock_news.append(enriched_news)
+
         self._stats["total_fetched"] += len(news_list)
         self._stats["last_fetch_time"] = datetime.now().isoformat()
         if new_count > 0:
@@ -707,6 +784,11 @@ class NewsMonitorCenter:
                 asyncio.create_task(self._send_urgent_notification(urgent_news))
             except:
                 pass
+
+        # 处理与监控股票相关的新闻 - 创建预警
+        if monitored_stock_news:
+            logger.info(f"[{source_id}] Found {len(monitored_stock_news)} news related to monitored stocks")
+            asyncio.create_task(self._create_alerts_for_monitored_stocks(monitored_stock_news))
 
     def _analyze_news_sync(self, title: str, content: str):
         """同步分析新闻（在线程池中执行）"""
