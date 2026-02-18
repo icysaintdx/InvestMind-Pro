@@ -172,10 +172,11 @@ export default {
     }
 
     const selectStock = (stock) => {
-      // stock.code 已经是 600519.SH 格式，直接使用
-      searchQuery.value = stock.code
-      emit('update:modelValue', stock.code)
-      emit('select', stock)
+      // 提取纯数字股票代码（移除.SH/.SZ/.BJ后缀）
+      const pureCode = (stock.code || '').replace(/\.(SH|SZ|BJ)$/i, '').replace(/^(SH|SZ|BJ)/i, '').trim()
+      searchQuery.value = pureCode
+      emit('update:modelValue', pureCode)
+      emit('select', { ...stock, code: pureCode, originalCode: stock.code })
       searchResults.value = []
       showDropdown.value = false
     }

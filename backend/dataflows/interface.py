@@ -1447,17 +1447,18 @@ def get_china_stock_info_tushare(
         str: 格式化的股票基本信息
     """
     try:
-        from .data_source_manager import get_data_source_manager
+        from .tushare_adapter import get_tushare_adapter
 
-        logger.debug(f"📊 [Tushare] 获取{ticker}股票信息...")
-        logger.info(f"🔍 [股票代码追踪] get_china_stock_info_tushare 接收到的股票代码: '{ticker}' (类型: {type(ticker)})")
-        logger.info(f"🔍 [股票代码追踪] 直接调用 Tushare 适配器")
+        logger.debug(f"[Tushare] 获取{ticker}股票信息...")
+        logger.info(f"[股票代码追踪] get_china_stock_info_tushare 接收到的股票代码: '{ticker}' (类型: {type(ticker)})")
+        logger.info(f"[股票代码追踪] 直接调用 Tushare 适配器")
 
-        manager = get_data_source_manager()
+        # 直接使用 Tushare 适配器，避免循环调用
+        adapter = get_tushare_adapter()
+        if adapter is None:
+            return f"[FAIL] Tushare适配器不可用"
 
-        # 🔥 直接调用 _get_tushare_stock_info()，避免循环调用
-        # 不要调用 get_stock_info()，因为它会再次调用 get_china_stock_info_tushare()
-        info = manager._get_tushare_stock_info(ticker)
+        info = adapter.get_stock_info(ticker)
 
         # 格式化返回字符串
         if info and isinstance(info, dict):
@@ -1467,11 +1468,11 @@ def get_china_stock_info_tushare(
 上市日期: {info.get('list_date', '未知')}
 交易所: {info.get('exchange', '未知')}"""
         else:
-            return f"❌ 未找到{ticker}的股票信息"
+            return f"[FAIL] 未找到{ticker}的股票信息"
 
     except Exception as e:
-        logger.error(f"❌ [Tushare] 获取股票信息失败: {e}")
-        return f"❌ 获取{ticker}股票信息失败: {e}"
+        logger.error(f"[FAIL] [Tushare] 获取股票信息失败: {e}")
+        return f"[FAIL] 获取{ticker}股票信息失败: {e}"
 
 
 def get_china_stock_fundamentals_tushare(

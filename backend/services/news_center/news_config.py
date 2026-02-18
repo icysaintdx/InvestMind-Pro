@@ -3,6 +3,7 @@
 新闻获取配置模块
 支持前端动态配置各数据源参数
 """
+
 import json
 import os
 import threading
@@ -12,45 +13,70 @@ from datetime import datetime
 from enum import Enum
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
 class NewsSourceType(str, Enum):
     """新闻数据源类型"""
+
     # 市场新闻源（不需要个股参数）
-    EASTMONEY_GLOBAL = "eastmoney_global"      # 东方财富全球资讯
-    CLS_GLOBAL = "cls_global"                  # 财联社全球资讯
-    FUTU_GLOBAL = "futu_global"                # 富途牛牛
-    THS_GLOBAL = "ths_global"                  # 同花顺
-    SINA_GLOBAL = "sina_global"                # 新浪财经
-    WEIBO_HOT = "weibo_hot"                    # 微博热议
-    CJZC = "cjzc"                              # 财经早餐
-    CCTV = "cctv"                              # 新闻联播
-    BAIDU = "baidu"                            # 百度财经
-    CNINFO_MARKET = "cninfo_market"            # 巨潮市场公告（不带个股）
-    CNINFO_NEWS = "cninfo_news"                # 巨潮新闻数据（p_info3030）- VIP
-    CNINFO_RESEARCH = "cninfo_research"        # 巨潮研报摘要（p_info3097_inc）- VIP
-    CNINFO_MANAGEMENT = "cninfo_management"    # 巨潮高管变动（p_stock2102）
+    EASTMONEY_GLOBAL = "eastmoney_global"  # 东方财富全球资讯
+    CLS_GLOBAL = "cls_global"  # 财联社全球资讯
+    FUTU_GLOBAL = "futu_global"  # 富途牛牛
+    THS_GLOBAL = "ths_global"  # 同花顺
+    SINA_GLOBAL = "sina_global"  # 新浪财经
+    WEIBO_HOT = "weibo_hot"  # 微博热议
+    CJZC = "cjzc"  # 财经早餐
+    CCTV = "cctv"  # 新闻联播
+    BAIDU = "baidu"  # 百度财经
+    CNINFO_MARKET = "cninfo_market"  # 巨潮市场公告（不带个股）
+    CNINFO_NEWS = "cninfo_news"  # 巨潮新闻数据（p_info3030）- VIP
+    CNINFO_RESEARCH = "cninfo_research"  # 巨潮研报摘要（p_info3097_inc）- VIP
+    CNINFO_MANAGEMENT = "cninfo_management"  # 巨潮高管变动（p_stock2102）
+
+    # ★★★ Tushare 新闻聚合源（major_news接口）
+    TUSHARE_NEWS_ALL = "tushare_news_all"  # Tushare全平台聚合（major_news）
+    TUSHARE_EASTMONEY = "tushare_eastmoney"  # Tushare-东方财富
+    TUSHARE_CLS = "tushare_cls"  # Tushare-财联社
+    TUSHARE_THS = "tushare_ths"  # Tushare-同花顺
+    TUSHARE_SINA = "tushare_sina"  # Tushare-新浪财经
+    TUSHARE_XUEQIU = "tushare_xueqiu"  # Tushare-雪球
+    TUSHARE_YICAI = "tushare_yicai"  # Tushare-第一财经
+    TUSHARE_WALLSTREET = "tushare_wallstreet"  # Tushare-华尔街见闻
+
+    # ★★ Tushare 付费接口（需要单独开权限）
+    TUSHARE_NEWS = "tushare_news"  # Tushare新闻快讯（付费）
+    TUSHARE_MAJOR_NEWS = "tushare_major_news"  # Tushare新闻通讯（付费）
+    TUSHARE_CCTV = "tushare_cctv"  # Tushare新闻联播（付费）
+    TUSHARE_NPR = "tushare_npr"  # Tushare国家政策法规（付费）
+    TUSHARE_ANNS = "tushare_anns"  # Tushare上市公司公告（付费）
 
     # 个股新闻源（需要股票代码参数）
-    STOCK_NEWS_EM = "stock_news_em"            # 东方财富个股新闻
-    CNINFO_STOCK = "cninfo_stock"              # 巨潮个股公告
-    CNINFO_STOCK_NEWS = "cninfo_stock_news"    # 巨潮个股新闻（p_info3030带股票代码）- VIP
+    STOCK_NEWS_EM = "stock_news_em"  # 东方财富个股新闻
+    CNINFO_STOCK = "cninfo_stock"  # 巨潮个股公告
+    CNINFO_STOCK_NEWS = "cninfo_stock_news"  # 巨潮个股新闻（p_info3030带股票代码）- VIP
+    TUSHARE_STOCK_ANNS = "tushare_stock_anns"  # Tushare个股公告（付费）
+    TUSHARE_IRM_SH = "tushare_irm_sh"  # Tushare上证E互动（付费）
+    TUSHARE_IRM_SZ = "tushare_irm_sz"  # Tushare深证互动易（付费）
 
 
 @dataclass
 class SourceConfig:
     """单个数据源配置"""
+
     source_type: str
     name: str
     enabled: bool = True
-    interval: int = 60          # 刷新间隔（秒）
-    priority: int = 5           # 优先级 1-10
+    interval: int = 60  # 刷新间隔（秒）
+    priority: int = 5  # 优先级 1-10
     # 可配置参数
-    limit: int = 0              # 返回数量限制，0表示不限制
-    days_back: int = 1          # 获取多少天的数据
+    limit: int = 0  # 返回数量限制，0表示不限制
+    days_back: int = 1  # 获取多少天的数据
     # 个股相关
-    stock_codes: List[str] = field(default_factory=list)  # 监控的股票列表（用于个股新闻源）
+    stock_codes: List[str] = field(
+        default_factory=list
+    )  # 监控的股票列表（用于个股新闻源）
 
     def to_dict(self) -> Dict:
         return asdict(self)
@@ -59,15 +85,16 @@ class SourceConfig:
 @dataclass
 class CninfoConfig:
     """巨潮API专用配置"""
+
     enabled: bool = True
     # 公告配置
     announcement_enabled: bool = True
-    announcement_days_back: int = 1      # 获取多少天的公告
-    announcement_page_size: int = 1000   # 每页数量
+    announcement_days_back: int = 1  # 获取多少天的公告
+    announcement_page_size: int = 1000  # 每页数量
     announcement_markets: List[str] = field(default_factory=list)  # 市场筛选
     # 状态变动配置
     status_change_enabled: bool = True
-    status_change_limit: int = 100       # 状态变动获取数量
+    status_change_limit: int = 100  # 状态变动获取数量
 
     def to_dict(self) -> Dict:
         return asdict(self)
@@ -76,6 +103,7 @@ class CninfoConfig:
 @dataclass
 class NewsConfig:
     """新闻获取总配置"""
+
     # 市场新闻配置（用于新闻中心/实时新闻流）
     market_sources: Dict[str, SourceConfig] = field(default_factory=dict)
 
@@ -89,25 +117,26 @@ class NewsConfig:
     hot_stocks: List[str] = field(default_factory=list)
 
     # 全局配置
-    max_news_per_fetch: int = 5000       # 单次获取最大新闻数
-    dedup_enabled: bool = True           # 是否启用去重
-    sentiment_enabled: bool = True       # 是否启用情感分析
+    max_news_per_fetch: int = 5000  # 单次获取最大新闻数
+    dedup_enabled: bool = True  # 是否启用去重
+    sentiment_enabled: bool = True  # 是否启用情感分析
 
     def to_dict(self) -> Dict:
         result = {
-            'market_sources': {k: v.to_dict() for k, v in self.market_sources.items()},
-            'stock_sources': {k: v.to_dict() for k, v in self.stock_sources.items()},
-            'cninfo': self.cninfo.to_dict(),
-            'hot_stocks': self.hot_stocks,
-            'max_news_per_fetch': self.max_news_per_fetch,
-            'dedup_enabled': self.dedup_enabled,
-            'sentiment_enabled': self.sentiment_enabled,
+            "market_sources": {k: v.to_dict() for k, v in self.market_sources.items()},
+            "stock_sources": {k: v.to_dict() for k, v in self.stock_sources.items()},
+            "cninfo": self.cninfo.to_dict(),
+            "hot_stocks": self.hot_stocks,
+            "max_news_per_fetch": self.max_news_per_fetch,
+            "dedup_enabled": self.dedup_enabled,
+            "sentiment_enabled": self.sentiment_enabled,
         }
         return result
 
 
 class NewsConfigManager:
     """新闻配置管理器（单例）"""
+
     _instance = None
     _lock = threading.Lock()
 
@@ -124,7 +153,12 @@ class NewsConfigManager:
         self._initialized = True
         self._config_file = os.path.join(
             os.path.dirname(__file__),
-            '..', '..', '..', 'data', 'news_center_cache', 'news_config.json'
+            "..",
+            "..",
+            "..",
+            "data",
+            "news_center_cache",
+            "news_config.json",
         )
         self._config: NewsConfig = self._load_default_config()
         self._load_from_file()
@@ -230,6 +264,80 @@ class NewsConfigManager:
                 priority=7,
                 limit=100,  # 获取最近100条
             ),
+            # ★★★ Tushare 新闻聚合源（major_news接口，推荐启用）
+            NewsSourceType.TUSHARE_NEWS_ALL.value: SourceConfig(
+                source_type=NewsSourceType.TUSHARE_NEWS_ALL.value,
+                name="Tushare全平台聚合(免费)",
+                enabled=True,
+                interval=60,
+                priority=9,  # 高优先级
+                limit=50,
+            ),
+            NewsSourceType.TUSHARE_XUEQIU.value: SourceConfig(
+                source_type=NewsSourceType.TUSHARE_XUEQIU.value,
+                name="Tushare-雪球(免费)",
+                enabled=True,  # 启用
+                interval=120,
+                priority=8,
+                limit=20,
+            ),
+            NewsSourceType.TUSHARE_WALLSTREET.value: SourceConfig(
+                source_type=NewsSourceType.TUSHARE_WALLSTREET.value,
+                name="Tushare-华尔街见闻(免费)",
+                enabled=True,
+                interval=120,
+                priority=8,
+                limit=20,
+            ),
+            NewsSourceType.TUSHARE_YICAI.value: SourceConfig(
+                source_type=NewsSourceType.TUSHARE_YICAI.value,
+                name="Tushare-第一财经(免费)",
+                enabled=True,  # 启用
+                interval=120,
+                priority=7,
+                limit=20,
+            ),
+            # ★★ Tushare 付费接口（需要单独开权限，默认禁用）
+            NewsSourceType.TUSHARE_NEWS.value: SourceConfig(
+                source_type=NewsSourceType.TUSHARE_NEWS.value,
+                name="Tushare新闻快讯(付费)",
+                enabled=False,  # 付费接口，默认禁用（有频率限制）
+                interval=60,
+                priority=8,
+                limit=50,
+            ),
+            NewsSourceType.TUSHARE_MAJOR_NEWS.value: SourceConfig(
+                source_type=NewsSourceType.TUSHARE_MAJOR_NEWS.value,
+                name="Tushare新闻通讯(付费)",
+                enabled=False,  # 付费接口，默认禁用（已通过全平台聚合获取）
+                interval=120,
+                priority=7,
+                limit=30,
+            ),
+            NewsSourceType.TUSHARE_CCTV.value: SourceConfig(
+                source_type=NewsSourceType.TUSHARE_CCTV.value,
+                name="Tushare新闻联播(付费)",
+                enabled=True,  # 启用 - 5000积分可用
+                interval=600,
+                priority=6,
+                limit=20,
+            ),
+            NewsSourceType.TUSHARE_NPR.value: SourceConfig(
+                source_type=NewsSourceType.TUSHARE_NPR.value,
+                name="Tushare国家政策法规(付费)",
+                enabled=False,  # 付费接口，默认禁用（需要更高权限）
+                interval=300,
+                priority=7,
+                limit=50,
+            ),
+            NewsSourceType.TUSHARE_ANNS.value: SourceConfig(
+                source_type=NewsSourceType.TUSHARE_ANNS.value,
+                name="Tushare上市公司公告(付费)",
+                enabled=False,  # 付费接口，默认禁用（需要更高权限）
+                interval=300,
+                priority=8,
+                limit=100,
+            ),
         }
 
         # 个股新闻源配置
@@ -258,6 +366,31 @@ class NewsConfigManager:
                 priority=8,
                 days_back=7,  # 获取7天的新闻
             ),
+            # ★★ Tushare 个股新闻源（付费接口）
+            NewsSourceType.TUSHARE_STOCK_ANNS.value: SourceConfig(
+                source_type=NewsSourceType.TUSHARE_STOCK_ANNS.value,
+                name="Tushare个股公告(付费)",
+                enabled=False,  # 付费接口，默认禁用
+                interval=300,
+                priority=8,
+                days_back=30,
+            ),
+            NewsSourceType.TUSHARE_IRM_SH.value: SourceConfig(
+                source_type=NewsSourceType.TUSHARE_IRM_SH.value,
+                name="Tushare上证E互动(付费)",
+                enabled=False,  # 付费接口，默认禁用
+                interval=300,
+                priority=7,
+                limit=20,
+            ),
+            NewsSourceType.TUSHARE_IRM_SZ.value: SourceConfig(
+                source_type=NewsSourceType.TUSHARE_IRM_SZ.value,
+                name="Tushare深证互动易(付费)",
+                enabled=False,  # 付费接口，默认禁用
+                interval=300,
+                priority=7,
+                limit=20,
+            ),
         }
 
         # 巨潮配置
@@ -272,10 +405,36 @@ class NewsConfigManager:
 
         # 热门股票列表（用于市场新闻采集时获取个股新闻）
         config.hot_stocks = [
-            "000001", "600519", "000858", "601318", "600036", "000333", "002594", "300750",
-            "600000", "601166", "000002", "600030", "601398", "600016", "601288", "000651",
-            "600276", "000725", "601012", "600887", "000568", "002415", "600309", "601888",
-            "002304", "000063", "601601", "600900", "000100", "002475"
+            "000001",
+            "600519",
+            "000858",
+            "601318",
+            "600036",
+            "000333",
+            "002594",
+            "300750",
+            "600000",
+            "601166",
+            "000002",
+            "600030",
+            "601398",
+            "600016",
+            "601288",
+            "000651",
+            "600276",
+            "000725",
+            "601012",
+            "600887",
+            "000568",
+            "002415",
+            "600309",
+            "601888",
+            "002304",
+            "000063",
+            "601601",
+            "600900",
+            "000100",
+            "002475",
         ]
 
         return config
@@ -284,7 +443,7 @@ class NewsConfigManager:
         """从文件加载配置"""
         try:
             if os.path.exists(self._config_file):
-                with open(self._config_file, 'r', encoding='utf-8') as f:
+                with open(self._config_file, "r", encoding="utf-8") as f:
                     data = json.load(f)
                     self._apply_config_data(data)
                 logger.info(f"Loaded news config from {self._config_file}")
@@ -293,29 +452,29 @@ class NewsConfigManager:
 
     def _apply_config_data(self, data: Dict):
         """应用配置数据"""
-        if 'market_sources' in data:
-            for key, value in data['market_sources'].items():
+        if "market_sources" in data:
+            for key, value in data["market_sources"].items():
                 if key in self._config.market_sources:
                     for k, v in value.items():
                         if hasattr(self._config.market_sources[key], k):
                             setattr(self._config.market_sources[key], k, v)
 
-        if 'stock_sources' in data:
-            for key, value in data['stock_sources'].items():
+        if "stock_sources" in data:
+            for key, value in data["stock_sources"].items():
                 if key in self._config.stock_sources:
                     for k, v in value.items():
                         if hasattr(self._config.stock_sources[key], k):
                             setattr(self._config.stock_sources[key], k, v)
 
-        if 'cninfo' in data:
-            for k, v in data['cninfo'].items():
+        if "cninfo" in data:
+            for k, v in data["cninfo"].items():
                 if hasattr(self._config.cninfo, k):
                     setattr(self._config.cninfo, k, v)
 
-        if 'hot_stocks' in data:
-            self._config.hot_stocks = data['hot_stocks']
+        if "hot_stocks" in data:
+            self._config.hot_stocks = data["hot_stocks"]
 
-        for key in ['max_news_per_fetch', 'dedup_enabled', 'sentiment_enabled']:
+        for key in ["max_news_per_fetch", "dedup_enabled", "sentiment_enabled"]:
             if key in data:
                 setattr(self._config, key, data[key])
 
@@ -323,7 +482,7 @@ class NewsConfigManager:
         """保存配置到文件"""
         try:
             os.makedirs(os.path.dirname(self._config_file), exist_ok=True)
-            with open(self._config_file, 'w', encoding='utf-8') as f:
+            with open(self._config_file, "w", encoding="utf-8") as f:
                 json.dump(self._config.to_dict(), f, ensure_ascii=False, indent=2)
             logger.info(f"Saved news config to {self._config_file}")
         except Exception as e:
@@ -398,6 +557,7 @@ class NewsConfigManager:
 
 # 全局实例
 _config_manager = None
+
 
 def get_news_config_manager() -> NewsConfigManager:
     global _config_manager

@@ -527,7 +527,37 @@ export default defineComponent({
 
     const formatTime = (time) => {
       if (!time) return ''
-      const date = new Date(time)
+      
+      // 尝试解析多种时间格式
+      let date
+      const timeStr = String(time).trim()
+      
+      // 格式1: YYYYMMDD (如 20260113)
+      if (/^\d{8}$/.test(timeStr)) {
+        const year = timeStr.slice(0, 4)
+        const month = timeStr.slice(4, 6)
+        const day = timeStr.slice(6, 8)
+        date = new Date(`${year}-${month}-${day}T00:00:00`)
+      }
+      // 格式2: YYYY-MM-DD (如 2026-01-13)
+      else if (/^\d{4}-\d{2}-\d{2}$/.test(timeStr)) {
+        date = new Date(timeStr + 'T00:00:00')
+      }
+      // 格式3: HH:MM 或 HH:MM:SS (只有时间，补全今天日期)
+      else if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(timeStr)) {
+        const today = new Date().toISOString().split('T')[0]
+        date = new Date(`${today}T${timeStr}`)
+      }
+      // 格式4: 标准格式或其他格式
+      else {
+        date = new Date(time)
+      }
+      
+      // 检查日期是否有效
+      if (isNaN(date.getTime())) {
+        return timeStr // 无法解析时返回原始字符串
+      }
+      
       const now = new Date()
       const diff = now - date
       if (diff < 60000) return '刚刚'

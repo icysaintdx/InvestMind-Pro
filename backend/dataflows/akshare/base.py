@@ -47,20 +47,34 @@ class AKShareBase:
     def df_to_dict(self, df, orient='records'):
         """
         DataFrame转字典
-        
+
         Args:
             df: pandas DataFrame
             orient: 转换方向
-            
+
         Returns:
             字典列表
         """
         if df is None:
             return []
-        
+
         try:
+            import pandas as pd
+            from datetime import date, datetime
+
             # 处理NaN值
             df = df.fillna('')
+
+            # 处理日期类型列，转换为字符串
+            for col in df.columns:
+                if pd.api.types.is_datetime64_any_dtype(df[col]):
+                    df[col] = df[col].astype(str)
+                elif df[col].dtype == 'object':
+                    # 检查是否包含date或datetime对象
+                    df[col] = df[col].apply(
+                        lambda x: str(x) if isinstance(x, (date, datetime)) else x
+                    )
+
             # 转换为字典
             return df.to_dict(orient=orient)
         except Exception as e:

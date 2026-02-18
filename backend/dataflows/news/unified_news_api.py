@@ -35,7 +35,7 @@ class NewsCache:
         self._cache: Dict[str, Dict[str, Any]] = {}
         self._ttl = ttl_seconds
         self._lock = threading.Lock()
-        logger.info(f"📦 新闻缓存初始化完成，TTL={ttl_seconds}秒")
+        logger.info(f"[CACHE] 新闻缓存初始化完成，TTL={ttl_seconds}秒")
     
     def _get_cache_key(self, ticker: str) -> str:
         """生成缓存键"""
@@ -70,7 +70,7 @@ class NewsCache:
             
             # 缓存有效
             remaining_ttl = self._ttl - (current_time - cached_time)
-            logger.info(f"✅ 命中缓存: {ticker} (剩余{remaining_ttl:.1f}秒)")
+            logger.info(f"[OK] 命中缓存: {ticker} (剩余{remaining_ttl:.1f}秒)")
             return cache_entry.get('data')
     
     def set(self, ticker: str, data: Dict[str, Any]) -> None:
@@ -207,13 +207,13 @@ class UnifiedNewsAPI:
                     'count': news_count,
                     'source': '实时新闻聚合器（东方财富）'
                 }
-                logger.info(f"✅ 实时新闻聚合器成功: {news_count}条")
+                logger.info(f"[OK] 实时新闻聚合器成功: {news_count}条")
             else:
                 result['sources']['realtime_news'] = {
                     'status': 'no_data',
                     'message': '未获取到数据'
                 }
-                logger.warning(f"⚠️ 实时新闻聚合器无数据")
+                logger.warning(f"[WARN] 实时新闻聚合器无数据")
                 
         except Exception as e:
             logger.error(f"❌ 实时新闻聚合器失败: {e}")
@@ -234,13 +234,13 @@ class UnifiedNewsAPI:
                     'count': len(akshare_news),
                     'source': 'AKShare（东方财富）'
                 }
-                logger.info(f"✅ AKShare个股新闻成功: {len(akshare_news)}条")
+                logger.info(f"[OK] AKShare个股新闻成功: {len(akshare_news)}条")
             else:
                 result['sources']['akshare_stock_news'] = {
                     'status': 'no_data',
                     'message': '未获取到数据'
                 }
-                logger.warning(f"⚠️ AKShare个股新闻无数据")
+                logger.warning(f"[WARN] AKShare个股新闻无数据")
                 
         except Exception as e:
             logger.error(f"❌ AKShare个股新闻失败: {e}")
@@ -261,13 +261,13 @@ class UnifiedNewsAPI:
                     'count': len(cls_news),
                     'source': '财联社'
                 }
-                logger.info(f"✅ 财联社快讯成功: {len(cls_news)}条")
+                logger.info(f"[OK] 财联社快讯成功: {len(cls_news)}条")
             else:
                 result['sources']['cls_telegraph'] = {
                     'status': 'no_data',
                     'message': '未获取到数据'
                 }
-                logger.warning(f"⚠️ 财联社快讯无数据")
+                logger.warning(f"[WARN] 财联社快讯无数据")
                 
         except Exception as e:
             logger.error(f"❌ 财联社快讯失败: {e}")
@@ -276,26 +276,47 @@ class UnifiedNewsAPI:
                 'message': str(e)
             }
         
-        # 数据源4: 微博热议（已验证可用）
+        # 数据源4: 微博热议（按股票筛选）
+        # 注意：微博热议是全市场数据，需要按股票代码/名称筛选
         try:
             logger.info(f"[数据源4] 微博热议...")
             weibo_hot = self.akshare_api.get_weibo_stock_hot()
-            
+
             if weibo_hot:
-                result['sources']['weibo_hot'] = {
-                    'status': 'success',
-                    'data': weibo_hot,
-                    'count': len(weibo_hot),
-                    'source': '微博热议'
-                }
-                logger.info(f"✅ 微博热议成功: {len(weibo_hot)}条")
+                # 筛选与当前股票相关的微博热议
+                # 微博热议数据格式: {'name': '股票名称', 'rate': 涨跌幅, ...}
+                clean_ticker = ticker.replace('.SH', '').replace('.SZ', '').replace('.HK', '')
+                filtered_weibo = []
+                for item in weibo_hot:
+                    stock_name = str(item.get('name', ''))
+                    stock_code = str(item.get('code', ''))
+                    # 按股票代码或名称筛选
+                    if clean_ticker in stock_code or clean_ticker in stock_name:
+                        filtered_weibo.append(item)
+
+                if filtered_weibo:
+                    result['sources']['weibo_hot'] = {
+                        'status': 'success',
+                        'data': filtered_weibo,
+                        'count': len(filtered_weibo),
+                        'source': '微博热议',
+                        'note': f'从{len(weibo_hot)}条全市场数据中筛选出{len(filtered_weibo)}条相关数据'
+                    }
+                    logger.info(f"[OK] 微博热议成功: {len(filtered_weibo)}条 (从{len(weibo_hot)}条筛选)")
+                else:
+                    result['sources']['weibo_hot'] = {
+                        'status': 'no_data',
+                        'message': f'{ticker}不在微博热议榜中',
+                        'total_market': len(weibo_hot)
+                    }
+                    logger.info(f"[INFO] {ticker}不在微博热议榜中 (全市场共{len(weibo_hot)}条)")
             else:
                 result['sources']['weibo_hot'] = {
                     'status': 'no_data',
                     'message': '未获取到数据'
                 }
-                logger.warning(f"⚠️ 微博热议无数据")
-                
+                logger.warning(f"[WARN] 微博热议无数据")
+
         except Exception as e:
             logger.error(f"❌ 微博热议失败: {e}")
             result['sources']['weibo_hot'] = {
@@ -315,13 +336,13 @@ class UnifiedNewsAPI:
                     'count': len(morning_news),
                     'source': '东方财富财经早餐'
                 }
-                logger.info(f"✅ 财经早餐成功: {len(morning_news)}条")
+                logger.info(f"[OK] 财经早餐成功: {len(morning_news)}条")
             else:
                 result['sources']['morning_news'] = {
                     'status': 'no_data',
                     'message': '未获取到数据'
                 }
-                logger.warning(f"⚠️ 财经早餐无数据")
+                logger.warning(f"[WARN] 财经早餐无数据")
         except Exception as e:
             logger.error(f"❌ 财经早餐失败: {e}")
             result['sources']['morning_news'] = {'status': 'error', 'message': str(e)}
@@ -338,7 +359,7 @@ class UnifiedNewsAPI:
                     'count': len(global_news),
                     'source': '东方财富全球新闻'
                 }
-                logger.info(f"✅ 全球财经新闻成功: {len(global_news)}条")
+                logger.info(f"[OK] 全球财经新闻成功: {len(global_news)}条")
             else:
                 result['sources']['global_news_em'] = {'status': 'no_data', 'message': '未获取到数据'}
         except Exception as e:
@@ -357,7 +378,7 @@ class UnifiedNewsAPI:
                     'count': len(sina_news),
                     'source': '新浪财经'
                 }
-                logger.info(f"✅ 新浪财经成功: {len(sina_news)}条")
+                logger.info(f"[OK] 新浪财经成功: {len(sina_news)}条")
             else:
                 result['sources']['global_news_sina'] = {'status': 'no_data', 'message': '未获取到数据'}
         except Exception as e:
@@ -376,7 +397,7 @@ class UnifiedNewsAPI:
                     'count': len(futu_news),
                     'source': '富途牛牛'
                 }
-                logger.info(f"✅ 富途牛牛成功: {len(futu_news)}条")
+                logger.info(f"[OK] 富途牛牛成功: {len(futu_news)}条")
             else:
                 result['sources']['futu_news'] = {'status': 'no_data', 'message': '未获取到数据'}
         except Exception as e:
@@ -395,7 +416,7 @@ class UnifiedNewsAPI:
                     'count': len(ths_news),
                     'source': '同花顺'
                 }
-                logger.info(f"✅ 同花顺成功: {len(ths_news)}条")
+                logger.info(f"[OK] 同花顺成功: {len(ths_news)}条")
             else:
                 result['sources']['ths_news'] = {'status': 'no_data', 'message': '未获取到数据'}
         except Exception as e:
@@ -417,7 +438,7 @@ class UnifiedNewsAPI:
             if all_news:
                 sentiment = self.sentiment_analyzer.analyze_news_sentiment(all_news)
                 result['summary']['sentiment'] = sentiment
-                logger.info(f"✅ 情绪分析完成: {sentiment.get('sentiment_label')}")
+                logger.info(f"[OK] 情绪分析完成: {sentiment.get('sentiment_label')}")
                 
                 # 智能过滤：优先显示非中性新闻，但不少于30篇
                 filtered_news = self._filter_news_by_sentiment(all_news)
@@ -430,14 +451,14 @@ class UnifiedNewsAPI:
                     'neutral_count': filtered_news['neutral_count'],
                     'filter_strategy': filtered_news['strategy']
                 }
-                logger.info(f"✅ 新闻过滤完成: {len(all_news)}条 -> {len(filtered_news['news'])}条 ({filtered_news['strategy']})")
+                logger.info(f"[OK] 新闻过滤完成: {len(all_news)}条 -> {len(filtered_news['news'])}条 ({filtered_news['strategy']})")
             else:
                 result['summary']['sentiment'] = {
                     'sentiment_score': 0.0,
                     'sentiment_label': '无数据',
                     'confidence': 0.0
                 }
-                logger.warning(f"⚠️ 情绪分析无数据")
+                logger.warning(f"[WARN] 情绪分析无数据")
                 
         except Exception as e:
             logger.error(f"❌ 情绪分析失败: {e}")
@@ -455,7 +476,7 @@ class UnifiedNewsAPI:
             'success_rate': f"{success_count/total_count*100:.1f}%"
         }
         
-        logger.info(f"✅ 综合新闻数据获取完成: {success_count}/{total_count} 个数据源成功")
+        logger.info(f"[OK] 综合新闻数据获取完成: {success_count}/{total_count} 个数据源成功")
         
         # ==================== 存入缓存 ====================
         if use_cache:
@@ -562,7 +583,7 @@ class UnifiedNewsAPI:
                     'count': len(morning_news),
                     'source': '东方财富财经早餐'
                 }
-                logger.info(f"✅ 财经早餐成功: {len(morning_news)}条")
+                logger.info(f"[OK] 财经早餐成功: {len(morning_news)}条")
         except Exception as e:
             logger.error(f"❌ 财经早餐失败: {e}")
             result['sources']['morning_news'] = {'status': 'error', 'message': str(e)}
@@ -577,7 +598,7 @@ class UnifiedNewsAPI:
                     'count': len(global_news),
                     'source': '东方财富全球新闻'
                 }
-                logger.info(f"✅ 全球新闻成功: {len(global_news)}条")
+                logger.info(f"[OK] 全球新闻成功: {len(global_news)}条")
         except Exception as e:
             logger.error(f"❌ 全球新闻失败: {e}")
             result['sources']['global_news'] = {'status': 'error', 'message': str(e)}

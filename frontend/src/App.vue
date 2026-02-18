@@ -113,6 +113,9 @@
             <button @click="currentView = 'tracking-center'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'tracking-center' }]">
               <span class="item-icon">🔄</span>跟踪验证
             </button>
+            <button @click="currentView = 'strategy-center'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'strategy-center' }]">
+              <span class="item-icon">🎯</span>策略中心
+            </button>
           </div>
         </div>
       </div>
@@ -229,6 +232,9 @@
       <button @click="currentView = 'tracking-center'" :class="['classic-tab', { active: currentView === 'tracking-center' }]">
         <span class="tab-icon">🔄</span><span class="tab-text">跟踪验证</span>
       </button>
+      <button @click="currentView = 'strategy-center'" :class="['classic-tab', { active: currentView === 'strategy-center' }]">
+        <span class="tab-icon">🎯</span><span class="tab-text">策略中心</span>
+      </button>
       <button @click="currentView = 'longhubang'" :class="['classic-tab', { active: currentView === 'longhubang' }]">
         <span class="tab-icon">🐉</span><span class="tab-text">龙虎榜</span>
       </button>
@@ -301,6 +307,7 @@
             <button @click="currentView = 'backtest'; showMobileMenu = false" :class="['mobile-menu-item', { active: currentView === 'backtest' }]">策略回测</button>
             <button @click="currentView = 'paper-trading'; showMobileMenu = false" :class="['mobile-menu-item', { active: currentView === 'paper-trading' }]">模拟交易</button>
             <button @click="currentView = 'tracking-center'; showMobileMenu = false" :class="['mobile-menu-item', { active: currentView === 'tracking-center' }]">跟踪验证</button>
+            <button @click="currentView = 'strategy-center'; showMobileMenu = false" :class="['mobile-menu-item', { active: currentView === 'strategy-center' }]">策略中心</button>
           </div>
           <!-- 市场 -->
           <div class="mobile-menu-group">
@@ -367,6 +374,7 @@
       <MarketDataView v-if="currentView === 'market-data'" />
       <SystemSettingsView v-if="currentView === 'system-settings'" @show-project-info="showProjectInfo = true" @show-changelog="showChangelog = true" />
       <ApiMonitorView v-if="currentView === 'api-monitor'" />
+      <StrategyCenterView v-if="currentView === 'strategy-center'" />
     </main>
     
     <!-- 更新日志模态框 -->
@@ -419,6 +427,9 @@
 
     <!-- 样式配置面板 -->
     <StyleConfig :visible="showStylePanel" :styles="styleSettings" @close="showStylePanel = false" @save="handleStyleSave" />
+
+    <!-- 全局预警通知系统 -->
+    <AlertNotification ref="alertNotification" @view-detail="handleAlertViewDetail" />
 
     <!-- 设置面板 -->
     <div v-if="showSettings" class="settings-overlay" @click.self="showSettings = false">
@@ -499,6 +510,7 @@ import UnifiedNewsView from './views/UnifiedNewsView.vue'
 import MarketDataView from './views/MarketDataView.vue'
 import SystemSettingsView from './views/SystemSettingsView.vue'
 import ApiMonitorView from './views/ApiMonitorView.vue'
+import StrategyCenterView from './views/StrategyCenterView.vue'
 import ParticleBackground from './components/ParticleBackground.vue'
 import StockDataPanel from './components/StockDataPanel.vue'
 import NewsDataPanel from './components/NewsDataPanel.vue'
@@ -507,6 +519,7 @@ import AgentConfigPanel from './components/AgentConfigPanel.vue'
 import ModelManager from './components/ModelManager.vue'
 import ApiConfig from './components/ApiConfig.vue'
 import StyleConfig from './components/StyleConfig.vue'
+import AlertNotification from './components/AlertNotification.vue'
 import { getVersionInfo } from './data/changelog.js'
 
 export default defineComponent({
@@ -531,6 +544,7 @@ export default defineComponent({
     MarketDataView,
     SystemSettingsView,
     ApiMonitorView,
+    StrategyCenterView,
     ParticleBackground,
     StockDataPanel,
     NewsDataPanel,
@@ -538,7 +552,8 @@ export default defineComponent({
     AgentConfigPanel,
     ModelManager,
     ApiConfig,
-    StyleConfig
+    StyleConfig,
+    AlertNotification
   },
   setup() {
     const currentView = ref('analysis')  // 当前视图
@@ -609,6 +624,9 @@ export default defineComponent({
     const currentStockData = ref(null)
     const stockDataPanel = ref(null)
     const newsDataPanel = ref(null)
+
+    // 全局预警通知
+    const alertNotification = ref(null)
     
     // 粒子背景设置
     const particlesEnabled = ref(true)
@@ -636,7 +654,7 @@ export default defineComponent({
     const isGroupActive = (group) => {
       const groupPages = {
         analysis: ['analysis', 'analysis-summary'],
-        trading: ['backtest', 'paper-trading', 'tracking-center'],
+        trading: ['backtest', 'paper-trading', 'tracking-center', 'strategy-center'],
         market: ['longhubang', 'sector-rotation', 'sentiment', 'unified-news', 'market-data'],
         tools: ['dataflow', 'llm-config', 'wencai', 'api-monitor'],
         settings: ['system-settings']
@@ -652,6 +670,7 @@ export default defineComponent({
         'backtest': '📈',
         'paper-trading': '💼',
         'tracking-center': '🔄',
+        'strategy-center': '🎯',
         'longhubang': '🐉',
         'sector-rotation': '🔄',
         'sentiment': '💹',
@@ -674,6 +693,7 @@ export default defineComponent({
         'backtest': '策略回测',
         'paper-trading': '模拟交易',
         'tracking-center': '跟踪验证',
+        'strategy-center': '策略中心',
         'longhubang': '龙虎榜',
         'sector-rotation': '板块轮动',
         'sentiment': '市场情绪',
@@ -1052,6 +1072,39 @@ export default defineComponent({
       }
     }
 
+    // 处理预警详情查看
+    const handleAlertViewDetail = (alertData) => {
+      console.log('查看预警详情:', alertData)
+      // 跳转到数据流页面
+      currentView.value = 'dataflow'
+    }
+
+    // 全局预警触发方法
+    const triggerGlobalAlert = (alert) => {
+      if (alertNotification.value) {
+        alertNotification.value.handleAlert(alert)
+      }
+    }
+
+    // 全局吐司通知方法
+    const showGlobalToast = (options) => {
+      if (alertNotification.value) {
+        alertNotification.value.showToast(options)
+      }
+    }
+
+    // 全局边框闪动方法
+    const triggerGlobalBorderFlash = (type, duration) => {
+      if (alertNotification.value) {
+        alertNotification.value.triggerBorderFlash(type, duration)
+      }
+    }
+
+    // 提供全局预警方法给子组件
+    provide('triggerGlobalAlert', triggerGlobalAlert)
+    provide('showGlobalToast', showGlobalToast)
+    provide('triggerGlobalBorderFlash', triggerGlobalBorderFlash)
+
     return {
       currentView,
       configMode,
@@ -1080,6 +1133,7 @@ export default defineComponent({
       currentStockData,
       stockDataPanel,
       newsDataPanel,
+      alertNotification,
       particlesEnabled,
       particleCount,
       particleSpeed,
@@ -1104,6 +1158,10 @@ export default defineComponent({
       handleApiSave,
       handleStyleSave,
       styleSettings,
+      handleAlertViewDetail,
+      triggerGlobalAlert,
+      showGlobalToast,
+      triggerGlobalBorderFlash,
       handleGotoBacktest,
       handleGotoPaperTrading,
       handleGotoTracking

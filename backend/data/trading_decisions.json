@@ -577,5 +577,71 @@
         "status": "EXECUTED"
       }
     }
+  },
+  {
+    "record_id": "DR20260106041753",
+    "task_id": "AT20260106041739",
+    "timestamp": "2026-01-06T04:17:53.355888",
+    "market_data": {
+      "stock_code": "600025",
+      "current_price": 9.1,
+      "change_rate": 0.22,
+      "volume": 17518597.0,
+      "news_summary": "【数据揭秘】融资客看好个股一览; 两融余额增加35.50亿元 杠杆资金大幅加仓283股; 解密主力资金出逃股 连续5日净流出466股"
+    },
+    "decision": {
+      "action": "buy",
+      "quantity": 300,
+      "reason": "当前华能水电（600025）无持仓，且市场情绪中性，情绪评分约+1，显示投资者情绪未明显偏向负面。最新新闻提到融资客加仓，显示市场对部分个股存在乐观预期，可能为建仓机会。考虑到水电行业处于萧条期末段，但融资客加仓可能暗示短期资金看好该股，结合建议买入数量为300-500股，选择小仓位试探买入。技术面未提供具体评分，但成交量稳定，市场波动较小，适合小仓位操作。",
+      "confidence": 0.75,
+      "risk_level": "medium",
+      "stop_loss": 95.0,
+      "take_profit": 110.0
+    },
+    "executed": true,
+    "execution_result": {
+      "success": true,
+      "trade_id": "T20260106041752",
+      "message": "交易成功: BUY 300股 @ 9.1",
+      "trade": {
+        "trade_id": "T20260106041752",
+        "timestamp": "2026-01-06T04:17:52.608073",
+        "stock_code": "600025",
+        "stock_name": "华能水电",
+        "action": "BUY",
+        "quantity": 300,
+        "price": 9.1,
+        "amount": 2730.0,
+        "commission": 5.0,
+        "status": "EXECUTED"
+      }
+    }
+  },
+  {
+    "record_id": "DR20260107061230",
+    "task_id": "AT20260107061217",
+    "timestamp": "2026-01-07T06:12:30.546244",
+    "market_data": {
+      "stock_code": "600025",
+      "current_price": 9.12,
+      "change_rate": 0.22,
+      "volume": 186145.0,
+      "news_summary": "无最新新闻"
+    },
+    "decision": {
+      "action": "hold",
+      "quantity": 0,
+      "reason": "当前市场处于震荡格局，华能水电（600025）的舆情偏中性，情绪评分约+1，建议观望。同时，水电行业处于萧条期末段，复苏预期较弱，且当前持仓已接近成本价，短期波动风险较大，需等待更明确的信号再调整仓位。",
+      "confidence": 0.75,
+      "risk_level": "medium",
+      "stop_loss": 9.5,
+      "take_profit": 11.0
+    },
+    "executed": true,
+    "execution_result": {
+      "success": true,
+      "action": "hold",
+      "message": "持有观望"
+    }
   }
 ]

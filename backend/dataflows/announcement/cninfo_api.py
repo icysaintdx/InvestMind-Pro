@@ -52,6 +52,7 @@ import time
 import hashlib
 import hmac
 import base64
+import asyncio
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from pathlib import Path
@@ -153,7 +154,12 @@ class CninfoApiClient:
     async def _get_client(self) -> httpx.AsyncClient:
         """获取HTTP客户端"""
         if self._client is None or self._client.is_closed:
-            self._client = httpx.AsyncClient(timeout=30.0)
+            # 配置更宽松的超时和连接参数
+            self._client = httpx.AsyncClient(
+                timeout=httpx.Timeout(30.0, connect=10.0),
+                limits=httpx.Limits(max_keepalive_connections=5, max_connections=10),
+                follow_redirects=True
+            )
         return self._client
 
     async def close(self):
@@ -192,48 +198,66 @@ class CninfoApiClient:
         else:
             raise ValueError(f"获取巨潮API Token失败: {response.text}")
 
-    async def _request(self, endpoint: str, params: Optional[Dict] = None) -> Dict[str, Any]:
-        """发送API请求"""
+    async def _request(self, endpoint: str, params: Optional[Dict] = None, max_retries: int = 3) -> Dict[str, Any]:
+        """发送API请求（带重试机制）"""
         if not self.config.is_configured():
             return {'success': False, 'error': '巨潮API未配置，请先配置 CNINFO_ACCESS_KEY 和 CNINFO_ACCESS_SECRET'}
 
-        try:
-            # 获取access_token
-            access_token = await self._get_access_token()
+        last_error = None
+        for attempt in range(max_retries):
+            try:
+                # 获取access_token
+                access_token = await self._get_access_token()
 
-            url = f"{self.base_url}{endpoint}"
-            client = await self._get_client()
+                url = f"{self.base_url}{endpoint}"
+                client = await self._get_client()
 
-            # 构建请求参数
-            request_params = params.copy() if params else {}
-            request_params['access_token'] = access_token
+                # 构建请求参数
+                request_params = params.copy() if params else {}
+                request_params['access_token'] = access_token
 
-            # 发送GET请求
-            response = await client.get(url, params=request_params)
+                # 发送GET请求
+                response = await client.get(url, params=request_params)
 
-            if response.status_code == 200:
-                result = response.json()
-                if result.get('resultcode') == 200:
-                    return {
-                        'success': True,
-                        'data': result.get('records', []),
-                        'total': len(result.get('records', []))
-                    }
+                if response.status_code == 200:
+                    result = response.json()
+                    if result.get('resultcode') == 200:
+                        return {
+                            'success': True,
+                            'data': result.get('records', []),
+                            'total': len(result.get('records', []))
+                        }
+                    else:
+                        return {
+                            'success': False,
+                            'error': result.get('resultmsg', '未知错误'),
+                            'code': result.get('resultcode')
+                        }
                 else:
                     return {
                         'success': False,
-                        'error': result.get('resultmsg', '未知错误'),
-                        'code': result.get('resultcode')
+                        'error': f'HTTP错误: {response.status_code}',
+                        'status_code': response.status_code
                     }
-            else:
-                return {
-                    'success': False,
-                    'error': f'HTTP错误: {response.status_code}',
-                    'status_code': response.status_code
-                }
-        except Exception as e:
-            logger.error(f"巨潮API请求失败: {e}")
-            return {'success': False, 'error': str(e)}
+            except httpx.ConnectError as e:
+                last_error = e
+                logger.warning(f"巨潮API连接失败 (尝试 {attempt + 1}/{max_retries}): {e}")
+                if attempt < max_retries - 1:
+                    # 关闭旧客户端，下次重新创建
+                    await self.close()
+                    await asyncio.sleep(1 * (attempt + 1))  # 递增等待时间
+            except httpx.TimeoutException as e:
+                last_error = e
+                logger.warning(f"巨潮API超时 (尝试 {attempt + 1}/{max_retries}): {e}")
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(1 * (attempt + 1))
+            except Exception as e:
+                last_error = e
+                logger.error(f"巨潮API请求失败: {e}")
+                break  # 其他错误不重试
+
+        logger.error(f"巨潮API请求失败（已重试{max_retries}次）: {last_error}")
+        return {'success': False, 'error': str(last_error)}
 
     # ==================== 公共数据接口 ====================
 
@@ -912,6 +936,182 @@ async def test_cninfo_api():
 
     await client.close()
     print("\n测试完成!")
+
+
+# ==================== 同步辅助函数 ====================
+
+# Token缓存
+_sync_token_cache: Dict[str, Any] = {
+    'token': None,
+    'expires': None
+}
+
+
+def get_cninfo_token() -> Optional[str]:
+    """
+    同步获取巨潮API Token（用于数据源检测等同步场景）
+
+    Returns:
+        access_token 或 None（如果获取失败）
+    """
+    import requests
+
+    # 检查缓存
+    if _sync_token_cache['token'] and _sync_token_cache['expires']:
+        if datetime.now() < _sync_token_cache['expires']:
+            return _sync_token_cache['token']
+
+    if not CninfoConfig.is_configured():
+        return None
+
+    access_key = CninfoConfig._get_config('CNINFO_ACCESS_KEY', '')
+    access_secret = CninfoConfig._get_config('CNINFO_ACCESS_SECRET', '')
+
+    if not access_key or not access_secret:
+        return None
+
+    try:
+        post_data = {
+            'grant_type': 'client_credentials',
+            'client_id': access_key,
+            'client_secret': access_secret
+        }
+
+        response = requests.post(TOKEN_URL, data=post_data, timeout=10)
+        if response.status_code == 200:
+            result = response.json()
+            token = result.get('access_token', '')
+            if token:
+                # 缓存token，1.5小时后过期
+                _sync_token_cache['token'] = token
+                _sync_token_cache['expires'] = datetime.now() + timedelta(hours=1, minutes=30)
+                logger.info("巨潮API Token获取成功")
+                return token
+        return None
+    except Exception as e:
+        logger.error(f"同步获取巨潮API Token失败: {e}")
+        return None
+
+
+def _sync_request(endpoint: str, params: Optional[Dict] = None) -> Dict[str, Any]:
+    """
+    同步发送API请求（用于在已有事件循环中调用）
+    """
+    import requests
+
+    if not CninfoConfig.is_configured():
+        return {'success': False, 'error': '巨潮API未配置'}
+
+    try:
+        token = get_cninfo_token()
+        if not token:
+            return {'success': False, 'error': '获取Token失败'}
+
+        url = f"{API_BASE_URL}{endpoint}"
+        request_params = params.copy() if params else {}
+        request_params['access_token'] = token
+
+        response = requests.get(url, params=request_params, timeout=30)
+
+        if response.status_code == 200:
+            result = response.json()
+            if result.get('resultcode') == 200:
+                return {
+                    'success': True,
+                    'data': result.get('records', []),
+                    'total': len(result.get('records', []))
+                }
+            else:
+                return {
+                    'success': False,
+                    'error': result.get('resultmsg', '未知错误'),
+                    'code': result.get('resultcode')
+                }
+        else:
+            return {
+                'success': False,
+                'error': f'HTTP错误: {response.status_code}',
+                'status_code': response.status_code
+            }
+    except Exception as e:
+        logger.error(f"巨潮API同步请求失败: {e}")
+        return {'success': False, 'error': str(e)}
+
+
+def get_announcement_info_sync(
+    stock_code: str = '',
+    start_date: str = '',
+    end_date: str = '',
+    page_size: int = 50
+) -> Dict[str, Any]:
+    """
+    同步获取公告基本信息 [免费可用]
+
+    Args:
+        stock_code: 股票代码（单个）
+        start_date: 开始查询时间 YYYY-MM-DD
+        end_date: 结束查询时间 YYYY-MM-DD
+        page_size: 每页大小
+    """
+    params = {}
+    if stock_code:
+        params['scode'] = stock_code
+    if start_date:
+        params['sdate'] = start_date
+    if end_date:
+        params['edate'] = end_date
+    if page_size:
+        params['pagesize'] = page_size
+    return _sync_request('/api/info/p_info3015', params)
+
+
+def get_news_list_sync(
+    stock_code: str = '',
+    start_date: str = '',
+    end_date: str = '',
+    news_type: str = '',
+    limit: int = 50
+) -> Dict[str, Any]:
+    """
+    同步获取新闻数据查询 - p_info3030
+
+    Args:
+        stock_code: 证券代码
+        start_date: 开始查询日期 YYYY-MM-DD
+        end_date: 结束查询日期 YYYY-MM-DD
+        news_type: 新闻分类编码 (2701-证券, 2702-公司, 2703-快讯, 2704-产经)
+        limit: 返回条数限制
+    """
+    params = {}
+    if stock_code:
+        params['scode'] = stock_code
+    if start_date:
+        params['sdate'] = start_date
+    if end_date:
+        params['edate'] = end_date
+    if news_type:
+        params['stype'] = news_type
+    if limit:
+        params['@limit'] = limit
+    return _sync_request('/api/info/p_info3030', params)
+
+
+def get_research_report_summary_sync(
+    object_id: int = 0,
+    row_count: int = 500
+) -> Dict[str, Any]:
+    """
+    同步获取个股研报摘要 - p_info3097_inc
+
+    Args:
+        object_id: 起始记录ID，用于增量获取
+        row_count: 返回记录条数，最大2000
+    """
+    params = {
+        'objectid': object_id,
+        'rowcount': min(row_count, 2000)
+    }
+    return _sync_request('/api/load/p_info3097_inc', params)
 
 
 if __name__ == "__main__":

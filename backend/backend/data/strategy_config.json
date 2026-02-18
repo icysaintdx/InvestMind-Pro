@@ -1,0 +1,39 @@
+{
+  "active": [
+    "trident",
+    "scalping_blade",
+    "vegas_adx",
+    "turtle_trading",
+    "macd_crossover",
+    "graham_margin",
+    "bollinger_breakout",
+    "limit_up_trading",
+    "volume_price_surge",
+    "debate_weighted",
+    "lynch_growth",
+    "martingale_refined",
+    "ema_breakout",
+    "sentiment_resonance",
+    "buffett_value",
+    "dragon_leader"
+  ],
+  "weights": {
+    "vegas_adx": 0.8,
+    "ema_breakout": 0.7,
+    "macd_crossover": 0.7,
+    "bollinger_breakout": 0.7,
+    "turtle_trading": 0.8,
+    "trident": 0.6,
+    "buffett_value": 0.9,
+    "lynch_growth": 0.85,
+    "graham_margin": 0.85,
+    "martingale_refined": 0.5,
+    "dragon_leader": 0.6,
+    "scalping_blade": 0.5,
+    "limit_up_trading": 0.6,
+    "volume_price_surge": 0.6,
+    "sentiment_resonance": 0.75,
+    "debate_weighted": 0.8
+  },
+  "updated_at": "2026-01-09T04:10:01.102877"
+}

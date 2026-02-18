@@ -224,6 +224,27 @@ class StockListCache:
         conn.close()
         return results
     
+    def get_stock_list(self) -> List[Dict[str, Any]]:
+        """获取所有股票列表"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute("SELECT code, name, market FROM stock_list")
+        results = []
+        for row in cursor.fetchall():
+            # 提取纯代码（去掉.SH/.SZ后缀）
+            code_with_suffix = row[0]
+            pure_code = code_with_suffix.split('.')[0]
+            results.append({
+                '代码': pure_code,
+                '名称': row[1],
+                'code': pure_code,
+                'name': row[1],
+                'ts_code': code_with_suffix,
+                'market': row[2]
+            })
+        conn.close()
+        return results
+
     def get_stock_count(self) -> int:
         """获取股票总数"""
         conn = sqlite3.connect(self.db_path)

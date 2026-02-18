@@ -406,13 +406,49 @@ export default {
         summary: item.content?.substring(0, 150) || '',
         source: item.source || '未知来源',
         sourceKey: item.source_key || '',
-        time: item.pub_time ? new Date(item.pub_time).toLocaleString('zh-CN') : '',
+        time: formatPubTime(item.pub_time),
         sentiment: sentiment,
         score: sentiment === 'positive' ? 75 : (sentiment === 'negative' ? 25 : 50),
         urgency: null,
         tags: [],
         url: item.url
       }
+    }
+
+    // 格式化发布时间，支持多种格式
+    const formatPubTime = (pubTime) => {
+      if (!pubTime) return ''
+      
+      const timeStr = String(pubTime).trim()
+      let date
+      
+      // 格式1: YYYYMMDD (如 20260113)
+      if (/^\d{8}$/.test(timeStr)) {
+        const year = timeStr.slice(0, 4)
+        const month = timeStr.slice(4, 6)
+        const day = timeStr.slice(6, 8)
+        date = new Date(`${year}-${month}-${day}T00:00:00`)
+      }
+      // 格式2: YYYY-MM-DD (如 2026-01-13)
+      else if (/^\d{4}-\d{2}-\d{2}$/.test(timeStr)) {
+        date = new Date(timeStr + 'T00:00:00')
+      }
+      // 格式3: HH:MM 或 HH:MM:SS (只有时间，补全今天日期)
+      else if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(timeStr)) {
+        const today = new Date().toISOString().split('T')[0]
+        date = new Date(`${today}T${timeStr}`)
+      }
+      // 格式4: 标准格式或其他格式
+      else {
+        date = new Date(pubTime)
+      }
+      
+      // 检查日期是否有效
+      if (isNaN(date.getTime())) {
+        return timeStr // 无法解析时返回原始字符串
+      }
+      
+      return date.toLocaleString('zh-CN')
     }
 
     // 搜索新闻（按股票代码）

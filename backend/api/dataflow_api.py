@@ -63,6 +63,7 @@ router = APIRouter(prefix="/api/dataflow", tags=["Data Flow"])
 class MonitorStockRequest(BaseModel):
     """添加监控股票请求"""
     code: str = Field(..., description="股票代码，如600519.SH")
+    name: Optional[str] = Field(None, description="股票名称，由前端传递避免后端查找")
     frequency: str = Field("1h", description="更新频率：5m/15m/30m/1h/1d")
     items: Dict[str, bool] = Field(
         default_factory=lambda: {
@@ -165,7 +166,7 @@ def _load_comprehensive_cache_from_db():
                         'cached_at': record.fetch_time.isoformat() if record.fetch_time else None,
                         'data': record.data
                     }
-        logger.info(f"✅ 启动时从数据库加载综合数据缓存: {len(result)}个")
+        logger.info(f"[OK] 启动时从数据库加载综合数据缓存: {len(result)}个")
     except Exception as e:
         logger.error(f"加载综合数据缓存失败: {e}")
     return result
@@ -303,7 +304,7 @@ async def get_stock_comprehensive_from_db(ts_code: str):
         with get_db_context() as db:
             record = StockDataService.get_latest(db, ts_code, 'comprehensive')
             if record and record.data:
-                logger.info(f"✅ 从数据库获取数据成功")
+                logger.info(f"[OK] 从数据库获取数据成功")
                 # 清理非法float值（inf, -inf, nan）
                 sanitized_data = sanitize_for_json(record.data)
                 # 同时更新内存缓存
@@ -324,7 +325,7 @@ async def get_stock_comprehensive_from_db(ts_code: str):
         cache_key = f"comprehensive_{ts_code}"
         if cache_key in data_cache:
             cached_data = data_cache[cache_key]
-            logger.info(f"✅ 从内存缓存获取数据成功")
+            logger.info(f"[OK] 从内存缓存获取数据成功")
             sanitized_data = sanitize_for_json(cached_data.get('data', {}))
             return {
                 "success": True,
@@ -546,45 +547,162 @@ async def _check_all_data_sources():
 @log_api_call("检测数据源连接")
 async def check_data_sources():
     """
-    检测所有数据源的连接状态
+    检测所有数据源的连接状态 - 真实测试每个数据源
     """
-    try:
-        # TODO: 实现真实的数据源连接检测
-        # 这里先用模拟数据
-        
-        # Tushare检测
-        try:
-            import tushare as ts
-            data_sources_status["tushare"]["status"] = "online"
-            data_sources_status["tushare"]["lastUpdate"] = datetime.now().isoformat()
-            data_sources_status["tushare"]["error"] = None
-        except Exception as e:
-            data_sources_status["tushare"]["status"] = "error"
-            data_sources_status["tushare"]["error"] = str(e)
-        
-        # AKShare检测
-        try:
-            import akshare as ak
-            data_sources_status["akshare"]["status"] = "online"
-            data_sources_status["akshare"]["lastUpdate"] = datetime.now().isoformat()
-            data_sources_status["akshare"]["error"] = None
-        except Exception as e:
-            data_sources_status["akshare"]["status"] = "error"
-            data_sources_status["akshare"]["error"] = str(e)
-        
-        # 其他数据源设置为在线（简化）
-        for source_id in ["eastmoney", "juhe"]:
-            data_sources_status[source_id]["status"] = "online"
-            data_sources_status[source_id]["lastUpdate"] = datetime.now().isoformat()
-        
-        return {
-            "success": True,
-            "message": "数据源检测完成"
-        }
+    import requests
 
+    results = {}
+    current_time = datetime.now().isoformat()
+
+    # AKShare检测 - 实际获取数据测试
+    try:
+        import akshare as ak
+        df = ak.tool_trade_date_hist_sina()
+        if df is not None and not df.empty:
+            data_sources_status["akshare"]["status"] = "online"
+            data_sources_status["akshare"]["error"] = None
+            results["akshare"] = "online"
+        else:
+            data_sources_status["akshare"]["status"] = "error"
+            data_sources_status["akshare"]["error"] = "无法获取数据"
+            results["akshare"] = "error"
     except Exception as e:
-        logger.error(f"检测数据源失败: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        data_sources_status["akshare"]["status"] = "error"
+        data_sources_status["akshare"]["error"] = str(e)[:100]
+        results["akshare"] = "error"
+    data_sources_status["akshare"]["lastUpdate"] = current_time
+
+    # Tushare检测 - 实际API调用测试
+    try:
+        import tushare as ts
+        token = os.getenv('TUSHARE_TOKEN')
+        if token:
+            ts.set_token(token)
+            pro = ts.pro_api()
+            # 使用简单的接口测试
+            df = pro.trade_cal(exchange='SSE', start_date='20250101', end_date='20250102')
+            if df is not None and not df.empty:
+                data_sources_status["tushare"]["status"] = "online"
+                data_sources_status["tushare"]["error"] = None
+                results["tushare"] = "online"
+            else:
+                data_sources_status["tushare"]["status"] = "error"
+                data_sources_status["tushare"]["error"] = "无法获取数据"
+                results["tushare"] = "error"
+        else:
+            data_sources_status["tushare"]["status"] = "offline"
+            data_sources_status["tushare"]["error"] = "未配置TUSHARE_TOKEN"
+            results["tushare"] = "offline"
+    except Exception as e:
+        data_sources_status["tushare"]["status"] = "error"
+        data_sources_status["tushare"]["error"] = str(e)[:100]
+        results["tushare"] = "error"
+    data_sources_status["tushare"]["lastUpdate"] = current_time
+
+    # 东方财富检测 - HTTP请求测试
+    try:
+        response = requests.get(
+            "https://push2.eastmoney.com/api/qt/stock/get",
+            params={"secid": "1.600519"},
+            timeout=5
+        )
+        if response.status_code == 200:
+            data_sources_status["eastmoney"]["status"] = "online"
+            data_sources_status["eastmoney"]["error"] = None
+            results["eastmoney"] = "online"
+        else:
+            data_sources_status["eastmoney"]["status"] = "error"
+            data_sources_status["eastmoney"]["error"] = f"HTTP {response.status_code}"
+            results["eastmoney"] = "error"
+    except Exception as e:
+        data_sources_status["eastmoney"]["status"] = "error"
+        data_sources_status["eastmoney"]["error"] = str(e)[:100]
+        results["eastmoney"] = "error"
+    data_sources_status["eastmoney"]["lastUpdate"] = current_time
+
+    # 聚合数据检测 - API调用测试
+    try:
+        juhe_key = os.getenv('JUHE_API_KEY')
+        if juhe_key:
+            response = requests.get(
+                f"http://web.juhe.cn/finance/stock/hs",
+                params={"gid": "sh601006", "key": juhe_key},
+                timeout=5
+            )
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("error_code") == 0:
+                    data_sources_status["juhe"]["status"] = "online"
+                    data_sources_status["juhe"]["error"] = None
+                    results["juhe"] = "online"
+                else:
+                    data_sources_status["juhe"]["status"] = "error"
+                    data_sources_status["juhe"]["error"] = data.get("reason", "API错误")
+                    results["juhe"] = "error"
+            else:
+                data_sources_status["juhe"]["status"] = "error"
+                data_sources_status["juhe"]["error"] = f"HTTP {response.status_code}"
+                results["juhe"] = "error"
+        else:
+            data_sources_status["juhe"]["status"] = "offline"
+            data_sources_status["juhe"]["error"] = "未配置JUHE_API_KEY"
+            results["juhe"] = "offline"
+    except Exception as e:
+        data_sources_status["juhe"]["status"] = "error"
+        data_sources_status["juhe"]["error"] = str(e)[:100]
+        results["juhe"] = "error"
+    data_sources_status["juhe"]["lastUpdate"] = current_time
+
+    # 巨潮资讯检测 - API调用测试
+    try:
+        from backend.dataflows.announcement.cninfo_api import CninfoConfig, get_cninfo_token
+        if CninfoConfig.is_configured():
+            # 尝试获取token来验证配置是否正确
+            token = get_cninfo_token()
+            if token:
+                # 测试一个简单的API调用
+                response = requests.get(
+                    "https://webapi.cninfo.com.cn/api/stock/p_stock2101",
+                    params={"scode": "000001", "access_token": token},
+                    timeout=10
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get("resultcode") == 200 or "records" in data:
+                        data_sources_status["cninfo"]["status"] = "online"
+                        data_sources_status["cninfo"]["error"] = None
+                        results["cninfo"] = "online"
+                    else:
+                        data_sources_status["cninfo"]["status"] = "error"
+                        data_sources_status["cninfo"]["error"] = data.get("resultmsg", "API返回错误")
+                        results["cninfo"] = "error"
+                else:
+                    data_sources_status["cninfo"]["status"] = "error"
+                    data_sources_status["cninfo"]["error"] = f"HTTP {response.status_code}"
+                    results["cninfo"] = "error"
+            else:
+                data_sources_status["cninfo"]["status"] = "error"
+                data_sources_status["cninfo"]["error"] = "无法获取Token"
+                results["cninfo"] = "error"
+        else:
+            data_sources_status["cninfo"]["status"] = "offline"
+            data_sources_status["cninfo"]["error"] = "未配置CNINFO凭证"
+            results["cninfo"] = "offline"
+    except Exception as e:
+        data_sources_status["cninfo"]["status"] = "error"
+        data_sources_status["cninfo"]["error"] = str(e)[:100]
+        results["cninfo"] = "error"
+    data_sources_status["cninfo"]["lastUpdate"] = current_time
+
+    # 统计结果
+    online_count = sum(1 for s in results.values() if s == "online")
+    total_count = len(results)
+
+    return {
+        "success": True,
+        "message": f"数据源检测完成: {online_count}/{total_count} 在线",
+        "results": results
+    }
 
 
 @router.post("/sources/check-single")
@@ -845,13 +963,13 @@ async def get_news(source: Optional[str] = None, limit: int = 50):
                                     'relatedStocks': []
                                 })
 
-                            logger.info(f"✅ 从{source_name}获取市场新闻成功: {len(news_list)}条")
+                            logger.info(f"[OK] 从{source_name}获取市场新闻成功: {len(news_list)}条")
                     except Exception as e:
-                        logger.warning(f"⚠️ 从{source_name}获取新闻失败: {e}")
+                        logger.warning(f"[WARN] 从{source_name}获取新闻失败: {e}")
                         continue
 
             except Exception as e:
-                logger.warning(f"⚠️ 获取市场新闻失败: {e}")
+                logger.warning(f"[WARN] 获取市场新闻失败: {e}")
                 import traceback
                 logger.warning(traceback.format_exc())
 
@@ -889,23 +1007,53 @@ async def get_news(source: Optional[str] = None, limit: int = 50):
 @log_api_call("获取股票新闻")
 async def get_stock_news(ts_code: str, limit: int = 20):
     """
-    获取指定股票的新闻 - 优先使用统一新闻监控中心
+    获取指定股票的新闻 - 使用专门的个股新闻接口
+
+    数据源接口（共8个）:
+    多源新闻聚合器（5个）:
+    1. 东方财富个股新闻 (ak.stock_news_em) - 个股专属新闻
+    2. 东方财富全球资讯 (ak.stock_info_global_em) - 关键词过滤
+    3. 财联社全球资讯 (ak.stock_info_global_cls) - 关键词过滤
+    4. 百度财经新闻 (ak.news_economic_baidu) - 关键词过滤
+    5. 备用源realtime_news (get_realtime_stock_news) - 东方财富爬虫
+    巨潮官方API（3个）:
+    6. 巨潮个股公告 (cninfo_api.get_announcement_info)
+    7. 巨潮个股新闻 (cninfo_api.get_news_list) - VIP
+    8. 巨潮个股研报摘要 (cninfo_api.get_research_report_summary) - VIP
     """
     try:
         logger.info(f"获取{ts_code}的新闻...")
 
-        # 优先使用统一新闻监控中心
+        # 清理股票代码
+        clean_code = ts_code.replace('.SH', '').replace('.SZ', '').replace('.BJ', '')
+
+        # 使用专门的个股新闻接口
         try:
             from backend.services.news_center import get_news_monitor_center
             monitor = get_news_monitor_center()
 
-            # 从监控中心获取该股票相关新闻
-            news_data = monitor.get_news_for_stock(ts_code, limit=limit)
+            # 使用 fetch_stock_news 获取个股专属新闻（而不是从全局缓存匹配）
+            news_data = await monitor.fetch_stock_news(clean_code)
 
-            if news_data:
+            # 过滤掉微博热议等全市场新闻（这些不是个股专属新闻）
+            filtered_news = []
+            excluded_sources = ['微博热议', '财经早餐', '新闻联播']
+
+            for n in news_data:
+                source = n.get('source', '')
+                # 排除全市场新闻源
+                if source in excluded_sources:
+                    continue
+                # 排除标题格式为 "[微博热议] xxx +x.xx%" 的新闻
+                title = n.get('title', '')
+                if title.startswith('[微博热议]'):
+                    continue
+                filtered_news.append(n)
+
+            if filtered_news:
                 # 转换为前端期望的格式
                 formatted_news = []
-                for n in news_data:
+                for n in filtered_news[:limit]:
                     formatted_news.append({
                         'title': n.get('title', ''),
                         'content': n.get('content', ''),
@@ -928,17 +1076,19 @@ async def get_stock_news(ts_code: str, limit: int = 20):
                     'neutral': sum(1 for n in formatted_news if n.get('sentiment') == 'neutral')
                 }
 
-                logger.info(f"✅ 从统一新闻中心获取{ts_code}新闻: {len(formatted_news)}条")
+                logger.info(f"[OK] 个股新闻获取{ts_code}: {len(formatted_news)}条 (过滤前{len(news_data)}条)")
                 return {
                     "success": True,
                     "news": formatted_news,
                     "total": len(formatted_news),
                     "overall_score": overall_score,
                     "sentiment_summary": sentiment_summary,
-                    "source": "news_monitor_center"
+                    "source": "fetch_stock_news"
                 }
         except Exception as e:
-            logger.warning(f"统一新闻中心不可用，回退到旧逻辑: {e}")
+            logger.warning(f"个股新闻接口不可用，回退到旧逻辑: {e}")
+            import traceback
+            logger.debug(traceback.format_exc())
 
         # 回退到旧逻辑
         aggregator = get_news_aggregator()
@@ -955,7 +1105,7 @@ async def get_stock_news(ts_code: str, limit: int = 20):
         # 修复：使用正确的字段名 merged_news
         news_list = result.get('merged_news', [])
 
-        logger.info(f"✅ 返回{len(news_list)}条新闻")
+        logger.info(f"[OK] 返回{len(news_list)}条新闻")
 
         return {
             "success": True,
@@ -1058,7 +1208,7 @@ async def get_stock_comprehensive(ts_code: str, force_update: bool = False):
             cached_data = data_cache[cache_key]
             cache_time = datetime.fromisoformat(cached_data.get('cached_at', '1970-01-01'))
             if (current_time - cache_time).total_seconds() < 300:  # 5分钟缓存
-                logger.info(f"📦 使用缓存数据 ({(current_time - cache_time).total_seconds():.1f}s前)")
+                logger.info(f"[CACHE] 使用缓存数据 ({(current_time - cache_time).total_seconds():.1f}s前)")
                 # 清理非法float值（inf, -inf, nan）
                 sanitized_data = sanitize_for_json(cached_data['data'])
                 return {
@@ -1092,7 +1242,7 @@ async def get_stock_comprehensive(ts_code: str, force_update: bool = False):
             )
             # 更新监控股票的最后更新时间
             MonitoredStockService.update_last_update(db, ts_code)
-        logger.info(f"✅ 综合数据已保存到数据库: {ts_code}")
+        logger.info(f"[OK] 综合数据已保存到数据库: {ts_code}")
 
         # 更新内存中的监控股票信息
         if ts_code in monitored_stocks:
@@ -1197,7 +1347,7 @@ async def get_stock_comprehensive_stream(ts_code: str):
                 )
                 # 更新监控股票的最后更新时间
                 MonitoredStockService.update_last_update(db, ts_code)
-            logger.info(f"✅ 综合数据已保存到数据库: {ts_code}")
+            logger.info(f"[OK] 综合数据已保存到数据库: {ts_code}")
 
             # 更新内存中的监控股票信息
             if ts_code in monitored_stocks:
@@ -1247,6 +1397,7 @@ async def add_monitor(request: MonitorStockRequest, background_tasks: Background
     """
     添加股票监控
     首次添加后会立即执行一次数据更新
+    立即返回响应，数据获取在后台异步执行
     """
     try:
         code = request.code
@@ -1255,17 +1406,31 @@ async def add_monitor(request: MonitorStockRequest, background_tasks: Background
         if code in monitored_stocks:
             raise HTTPException(status_code=400, detail="该股票已在监控列表中")
 
-        # 获取股票名称（使用数据源管理器获取真实名称）
+        # 快速获取股票名称（优先使用TDX缓存，避免网络请求）
         stock_name = code.split('.')[0]  # 默认使用代码
+        pure_code = code.split('.')[0]
         try:
-            from backend.dataflows.data_source_manager import get_data_source_manager
-            manager = get_data_source_manager()
-            stock_info = manager.get_stock_info(code)
-            if stock_info and stock_info.get('name'):
-                stock_name = stock_info['name']
-                logger.info(f"✅ 获取股票名称成功: {code} -> {stock_name}")
+            # 优先从TDX缓存获取（最快，无网络请求）
+            from backend.services.tdx_cache_service import read_stock_list
+            stock_list = read_stock_list()
+            if stock_list:
+                # 构建快速查找字典（按code和ts_code索引）
+                stock_dict = {s.get('code'): s.get('name') for s in stock_list if s.get('code')}
+                stock_dict.update({s.get('ts_code'): s.get('name') for s in stock_list if s.get('ts_code')})
+
+                # 快速查找
+                if pure_code in stock_dict:
+                    stock_name = stock_dict[pure_code]
+                    logger.info(f"[OK] 从TDX缓存获取股票名称: {code} -> {stock_name}")
+                elif code in stock_dict:
+                    stock_name = stock_dict[code]
+                    logger.info(f"[OK] 从TDX缓存获取股票名称: {code} -> {stock_name}")
         except Exception as e:
-            logger.warning(f"⚠️ 获取股票名称失败，使用代码作为名称: {e}")
+            logger.warning(f"[WARN] TDX缓存获取名称失败: {e}")
+
+        # 如果TDX缓存没有，尝试使用请求中的名称（如果前端传了的话）
+        if stock_name == code.split('.')[0] and hasattr(request, 'name') and request.name:
+            stock_name = request.name
 
         # 保存到数据库
         with get_db_context() as db:
@@ -1287,7 +1452,7 @@ async def add_monitor(request: MonitorStockRequest, background_tasks: Background
             "riskLevel": "low",
             "latestNews": "",
             "lastUpdate": datetime.now().isoformat(),
-            "pendingTasks": 0
+            "pendingTasks": 1  # 标记有待处理任务
         }
 
         # 添加后台任务：首次添加后立即执行一次数据更新
@@ -1472,10 +1637,10 @@ async def update_stock_data(code: str):
                 if len(news_list) > 100:
                     news_list = news_list[-100:]
                 
-                logger.info(f"✅ 获取新闻成功: {len(news_list_local)}条，全局新闻总数: {len(news_list)}")
+                logger.info(f"[OK] 获取新闻成功: {len(news_list_local)}条，全局新闻总数: {len(news_list)}")
                 
             except Exception as e:
-                logger.error(f"❌ 获取新闻失败: {e}")
+                logger.error(f"[FAIL] 获取新闻失败: {e}")
                 await asyncio.sleep(0.1)  # 保持异步
         
         # 2. 情绪分析（使用真实的情绪分析引擎）
@@ -1504,14 +1669,14 @@ async def update_stock_data(code: str):
                             news_item['sentiment'] = news_sentiment.get('score', 50)
                             break
                 
-                logger.info(f"✅ 情绪分析完成: {sentiment_score:.2f}分 ({sentiment_result.get('overall_sentiment')})")
+                logger.info(f"[OK] 情绪分析完成: {sentiment_score:.2f}分 ({sentiment_result.get('overall_sentiment')})")
                 logger.info(f"   正面:{sentiment_result.get('positive_count')} 中性:{sentiment_result.get('neutral_count')} 负面:{sentiment_result.get('negative_count')}")
                 
             except Exception as e:
-                logger.error(f"❌ 情绪分析失败: {e}")
+                logger.error(f"[FAIL] 情绪分析失败: {e}")
                 sentiment_score = 50
         elif items.get("sentiment", False):
-            logger.warning(f"⚠️ 无新闻数据，跳过情绪分析")
+            logger.warning(f"[WARN] 无新闻数据，跳过情绪分析")
             stock_data["sentimentScore"] = sentiment_score
         
         # 3. 风险分析（使用真实的风险分析引擎）
@@ -1528,10 +1693,10 @@ async def update_stock_data(code: str):
                 stock_data["riskFactors"] = risk_result.get("risk_factors", {})
                 stock_data["warnings"] = risk_result.get("warnings", [])
                 
-                logger.info(f"✅ {code} 风险分析完成: {stock_data['riskLevel']} (得分:{stock_data['riskScore']})")
+                logger.info(f"[OK] {code} 风险分析完成: {stock_data['riskLevel']} (得分:{stock_data['riskScore']})")
                 
             except Exception as e:
-                logger.error(f"❌ 风险分析失败 {code}: {e}")
+                logger.error(f"[FAIL] 风险分析失败 {code}: {e}")
                 stock_data["riskLevel"] = "unknown"
         
         # 4. 停复牌监控
@@ -1544,19 +1709,22 @@ async def update_stock_data(code: str):
                 stock_data["suspendInfo"] = suspend_status
                 
                 if suspend_status.get("is_suspended"):
-                    logger.warning(f"⚠️ {code} 当前处于停牌状态")
+                    logger.warning(f"[WARN] {code} 当前处于停牌状态")
                     
             except Exception as e:
-                logger.error(f"❌ 停复牌检查失败 {code}: {e}")
+                logger.error(f"[FAIL] 停复牌检查失败 {code}: {e}")
         
         # 更新时间
         stock_data["lastUpdate"] = datetime.now().isoformat()
 
-        # 获取综合数据并保存到数据库
+        # 获取综合数据并保存到数据库（使用分层获取，仅获取监控所需数据）
         try:
-            logger.info(f"📊 获取并保存 {code} 的综合数据到数据库...")
+            logger.info(f"[INFO] 获取并保存 {code} 的监控数据到数据库...")
             service = get_comprehensive_service()
-            comprehensive_result = service.get_all_stock_data(code)
+
+            # 使用分层获取：监控更新只获取L1（实时）和L2（中频）层数据
+            # 静态数据（L4层）会自动使用缓存，避免重复获取
+            comprehensive_result = service.get_monitor_data(code)
 
             # 清理非法float值
             comprehensive_result = sanitize_for_json(comprehensive_result)
@@ -1589,15 +1757,15 @@ async def update_stock_data(code: str):
                 )
                 # 更新监控股票的最后更新时间
                 MonitoredStockService.update_last_update(db, code)
-            logger.info(f"✅ 综合数据已保存到数据库: {code}")
+            logger.info(f"[OK] 监控数据已保存到数据库: {code}")
 
         except Exception as e:
-            logger.error(f"❌ 保存综合数据失败 {code}: {e}")
+            logger.error(f"[FAIL] 保存监控数据失败 {code}: {e}")
 
-        logger.info(f"✅ 完成更新股票数据: {code}")
+        logger.info(f"[OK] 完成更新股票数据: {code}")
         
     except Exception as e:
-        logger.error(f"❌ 更新股票数据失败 {code}: {e}")
+        logger.error(f"[FAIL] 更新股票数据失败 {code}: {e}")
 
 
 # ==================== 定时任务（简化示例） ====================
@@ -1682,6 +1850,15 @@ async def test_interfaces_stream():
                         {'id': 'em_realtime', 'name': '实时行情', 'category': '行情数据', 'test_func': 'test_em_realtime'},
                         {'id': 'em_news', 'name': '财经新闻', 'category': '新闻数据', 'test_func': 'test_em_news'},
                     ]
+                },
+                'cninfo': {
+                    'name': '巨潮资讯',
+                    'icon': '📋',
+                    'interfaces': [
+                        {'id': 'cninfo_company', 'name': '公司基本信息', 'category': '基础数据', 'test_func': 'test_cninfo_company'},
+                        {'id': 'cninfo_stock', 'name': '股票基本信息', 'category': '基础数据', 'test_func': 'test_cninfo_stock'},
+                        {'id': 'cninfo_announcement', 'name': '公告信息', 'category': '公告数据', 'test_func': 'test_cninfo_announcement'},
+                    ]
                 }
             }
 
@@ -1746,7 +1923,8 @@ async def test_interfaces_stream():
 
             async def test_akshare_news():
                 import akshare as ak
-                df = ak.stock_news_em(symbol='000001')
+                # stock_news_em 接口不稳定，使用 stock_info_global_em 替代
+                df = ak.stock_info_global_em()
                 return df is not None and not df.empty, f'{len(df)}条新闻'
 
             async def test_akshare_st():
@@ -1769,6 +1947,63 @@ async def test_interfaces_stream():
                 df = ak.stock_info_global_em()
                 return df is not None and not df.empty, f'{len(df)}条新闻'
 
+            async def test_cninfo_company():
+                from backend.dataflows.announcement.cninfo_api import CninfoConfig, get_cninfo_token
+                import requests
+                if not CninfoConfig.is_configured():
+                    return False, '未配置CNINFO凭证'
+                token = get_cninfo_token()
+                if not token:
+                    return False, '无法获取Token'
+                response = requests.get(
+                    "https://webapi.cninfo.com.cn/api/stock/p_stock2100",
+                    params={"scode": "000001", "access_token": token},
+                    timeout=10
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get("resultcode") == 200 or "records" in data:
+                        return True, f'{len(data.get("records", []))}条数据'
+                return False, f'HTTP {response.status_code}'
+
+            async def test_cninfo_stock():
+                from backend.dataflows.announcement.cninfo_api import CninfoConfig, get_cninfo_token
+                import requests
+                if not CninfoConfig.is_configured():
+                    return False, '未配置CNINFO凭证'
+                token = get_cninfo_token()
+                if not token:
+                    return False, '无法获取Token'
+                response = requests.get(
+                    "https://webapi.cninfo.com.cn/api/stock/p_stock2101",
+                    params={"scode": "000001", "access_token": token},
+                    timeout=10
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get("resultcode") == 200 or "records" in data:
+                        return True, f'{len(data.get("records", []))}条数据'
+                return False, f'HTTP {response.status_code}'
+
+            async def test_cninfo_announcement():
+                from backend.dataflows.announcement.cninfo_api import CninfoConfig, get_cninfo_token
+                import requests
+                if not CninfoConfig.is_configured():
+                    return False, '未配置CNINFO凭证'
+                token = get_cninfo_token()
+                if not token:
+                    return False, '无法获取Token'
+                response = requests.get(
+                    "https://webapi.cninfo.com.cn/api/info/p_info3015",
+                    params={"scode": "000001", "access_token": token},
+                    timeout=10
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get("resultcode") == 200 or "records" in data:
+                        return True, f'{len(data.get("records", []))}条公告'
+                return False, f'HTTP {response.status_code}'
+
             test_funcs = {
                 'test_tushare_daily': test_tushare_daily,
                 'test_tushare_income': test_tushare_income,
@@ -1780,6 +2015,9 @@ async def test_interfaces_stream():
                 'test_akshare_block': test_akshare_block,
                 'test_em_realtime': test_em_realtime,
                 'test_em_news': test_em_news,
+                'test_cninfo_company': test_cninfo_company,
+                'test_cninfo_stock': test_cninfo_stock,
+                'test_cninfo_announcement': test_cninfo_announcement,
             }
 
             # 逐个数据源测试

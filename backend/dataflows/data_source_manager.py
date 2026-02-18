@@ -386,10 +386,10 @@ class DataSourceManager:
     def _get_akshare_adapter(self):
         """获取AKShare适配器"""
         try:
-            from .akshare_utils import get_akshare_provider
+            from .stock.akshare_utils import get_akshare_provider
             return get_akshare_provider()
         except ImportError as e:
-            logger.error(f"❌ AKShare适配器导入失败: {e}")
+            logger.error(f"[FAIL] AKShare适配器导入失败: {e}")
             return None
     
     def _get_baostock_adapter(self):

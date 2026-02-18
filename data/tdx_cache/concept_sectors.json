@@ -1,0 +1,3975 @@
+{
+  "data": [
+    {
+      "name": "Kimi概念",
+      "code": "BK1169",
+      "change_pct": 11.63,
+      "turnover": 10.1,
+      "top_stock": "博瑞传播",
+      "up_count": 24,
+      "down_count": 0
+    },
+    {
+      "name": "AI语料",
+      "code": "BK1172",
+      "change_pct": 10.45,
+      "turnover": 9.45,
+      "top_stock": "视觉中国",
+      "up_count": 31,
+      "down_count": 0
+    },
+    {
+      "name": "Sora概念",
+      "code": "BK1159",
+      "change_pct": 10.33,
+      "turnover": 15.79,
+      "top_stock": "视觉中国",
+      "up_count": 41,
+      "down_count": 0
+    },
+    {
+      "name": "智谱AI",
+      "code": "BK1182",
+      "change_pct": 9.38,
+      "turnover": 15.59,
+      "top_stock": "视觉中国",
+      "up_count": 35,
+      "down_count": 1
+    },
+    {
+      "name": "Web3.0",
+      "code": "BK1110",
+      "change_pct": 9.0,
+      "turnover": 12.8,
+      "top_stock": "浙文互联",
+      "up_count": 47,
+      "down_count": 1
+    },
+    {
+      "name": "MLOps概念",
+      "code": "BK1132",
+      "change_pct": 8.97,
+      "turnover": 7.07,
+      "top_stock": "新炬网络",
+      "up_count": 10,
+      "down_count": 0
+    },
+    {
+      "name": "华为欧拉",
+      "code": "BK1013",
+      "change_pct": 8.88,
+      "turnover": 10.34,
+      "top_stock": "普元信息",
+      "up_count": 15,
+      "down_count": 0
+    },
+    {
+      "name": "多模态AI",
+      "code": "BK1153",
+      "change_pct": 8.79,
+      "turnover": 11.16,
+      "top_stock": "视觉中国",
+      "up_count": 59,
+      "down_count": 2
+    },
+    {
+      "name": "短剧互动游戏",
+      "code": "BK1151",
+      "change_pct": 8.75,
+      "turnover": 11.45,
+      "top_stock": "博瑞传播",
+      "up_count": 32,
+      "down_count": 1
+    },
+    {
+      "name": "AI智能体",
+      "code": "BK0809",
+      "change_pct": 8.67,
+      "turnover": 10.87,
+      "top_stock": "视觉中国",
+      "up_count": 105,
+      "down_count": 3
+    },
+    {
+      "name": "AIGC概念",
+      "code": "BK1111",
+      "change_pct": 8.65,
+      "turnover": 9.58,
+      "top_stock": "视觉中国",
+      "up_count": 116,
+      "down_count": 8
+    },
+    {
+      "name": "ChatGPT概念",
+      "code": "BK1126",
+      "change_pct": 8.57,
+      "turnover": 9.24,
+      "top_stock": "易点天下",
+      "up_count": 66,
+      "down_count": 5
+    },
+    {
+      "name": "拼多多概念",
+      "code": "BK0957",
+      "change_pct": 8.38,
+      "turnover": 8.56,
+      "top_stock": "引力传媒",
+      "up_count": 27,
+      "down_count": 2
+    },
+    {
+      "name": "快手概念",
+      "code": "BK0972",
+      "change_pct": 8.23,
+      "turnover": 13.42,
+      "top_stock": "利欧股份",
+      "up_count": 30,
+      "down_count": 1
+    },
+    {
+      "name": "空间站概念",
+      "code": "BK0994",
+      "change_pct": 7.9,
+      "turnover": 14.99,
+      "top_stock": "天奥电子",
+      "up_count": 19,
+      "down_count": 2
+    },
+    {
+      "name": "卫星互联网",
+      "code": "BK0921",
+      "change_pct": 7.75,
+      "turnover": 9.32,
+      "top_stock": "通宇通讯",
+      "up_count": 71,
+      "down_count": 3
+    },
+    {
+      "name": "虚拟数字人",
+      "code": "BK1055",
+      "change_pct": 7.62,
+      "turnover": 9.41,
+      "top_stock": "利欧股份",
+      "up_count": 78,
+      "down_count": 5
+    },
+    {
+      "name": "DRG/DIP",
+      "code": "BK1054",
+      "change_pct": 7.61,
+      "turnover": 10.63,
+      "top_stock": "迪安诊断",
+      "up_count": 18,
+      "down_count": 0
+    },
+    {
+      "name": "北斗导航",
+      "code": "BK0629",
+      "change_pct": 7.56,
+      "turnover": 9.01,
+      "top_stock": "电科芯片",
+      "up_count": 78,
+      "down_count": 3
+    },
+    {
+      "name": "财税数字化",
+      "code": "BK1176",
+      "change_pct": 7.41,
+      "turnover": 10.15,
+      "top_stock": "税友股份",
+      "up_count": 40,
+      "down_count": 0
+    },
+    {
+      "name": "ERP概念",
+      "code": "BK1133",
+      "change_pct": 7.35,
+      "turnover": 7.44,
+      "top_stock": "光云科技",
+      "up_count": 23,
+      "down_count": 0
+    },
+    {
+      "name": "抖音概念(字节概念)",
+      "code": "BK0923",
+      "change_pct": 7.31,
+      "turnover": 11.42,
+      "top_stock": "利欧股份",
+      "up_count": 80,
+      "down_count": 8
+    },
+    {
+      "name": "数据要素",
+      "code": "BK1135",
+      "change_pct": 7.22,
+      "turnover": 7.27,
+      "top_stock": "视觉中国",
+      "up_count": 154,
+      "down_count": 5
+    },
+    {
+      "name": "数据确权",
+      "code": "BK1118",
+      "change_pct": 7.2,
+      "turnover": 8.39,
+      "top_stock": "视觉中国",
+      "up_count": 33,
+      "down_count": 1
+    },
+    {
+      "name": "时空大数据",
+      "code": "BK1130",
+      "change_pct": 7.16,
+      "turnover": 12.77,
+      "top_stock": "中国卫星",
+      "up_count": 26,
+      "down_count": 1
+    },
+    {
+      "name": "智慧政务",
+      "code": "BK0886",
+      "change_pct": 7.16,
+      "turnover": 8.79,
+      "top_stock": "直真科技",
+      "up_count": 85,
+      "down_count": 2
+    },
+    {
+      "name": "昨日连板_含一字",
+      "code": "BK1051",
+      "change_pct": 7.16,
+      "turnover": 7.0,
+      "top_stock": "巨力索具",
+      "up_count": 23,
+      "down_count": 3
+    },
+    {
+      "name": "昨日连板",
+      "code": "BK0816",
+      "change_pct": 7.08,
+      "turnover": 8.06,
+      "top_stock": "直真科技",
+      "up_count": 13,
+      "down_count": 2
+    },
+    {
+      "name": "小红书概念",
+      "code": "BK1187",
+      "change_pct": 7.07,
+      "turnover": 10.54,
+      "top_stock": "视觉中国",
+      "up_count": 69,
+      "down_count": 5
+    },
+    {
+      "name": "6G概念",
+      "code": "BK0964",
+      "change_pct": 6.95,
+      "turnover": 10.47,
+      "top_stock": "通宇通讯",
+      "up_count": 35,
+      "down_count": 2
+    },
+    {
+      "name": "商业航天",
+      "code": "BK0963",
+      "change_pct": 6.9,
+      "turnover": 9.62,
+      "top_stock": "巨力索具",
+      "up_count": 251,
+      "down_count": 11
+    },
+    {
+      "name": "信创",
+      "code": "BK1104",
+      "change_pct": 6.81,
+      "turnover": 9.19,
+      "top_stock": "直真科技",
+      "up_count": 236,
+      "down_count": 10
+    },
+    {
+      "name": "国产软件",
+      "code": "BK0696",
+      "change_pct": 6.62,
+      "turnover": 8.9,
+      "top_stock": "直真科技",
+      "up_count": 225,
+      "down_count": 12
+    },
+    {
+      "name": "知识产权",
+      "code": "BK0839",
+      "change_pct": 6.57,
+      "turnover": 8.2,
+      "top_stock": "视觉中国",
+      "up_count": 39,
+      "down_count": 4
+    },
+    {
+      "name": "远程办公",
+      "code": "BK0912",
+      "change_pct": 6.55,
+      "turnover": 9.03,
+      "top_stock": "直真科技",
+      "up_count": 36,
+      "down_count": 2
+    },
+    {
+      "name": "昨日涨停_含一字",
+      "code": "BK1050",
+      "change_pct": 6.42,
+      "turnover": 9.34,
+      "top_stock": "美年健康",
+      "up_count": 90,
+      "down_count": 19
+    },
+    {
+      "name": "在线教育",
+      "code": "BK0662",
+      "change_pct": 6.39,
+      "turnover": 9.29,
+      "top_stock": "博瑞传播",
+      "up_count": 109,
+      "down_count": 6
+    },
+    {
+      "name": "虚拟机器人",
+      "code": "BK1190",
+      "change_pct": 6.39,
+      "turnover": 6.81,
+      "top_stock": "易点天下",
+      "up_count": 15,
+      "down_count": 1
+    },
+    {
+      "name": "华为昇腾",
+      "code": "BK0995",
+      "change_pct": 6.38,
+      "turnover": 9.57,
+      "top_stock": "直真科技",
+      "up_count": 40,
+      "down_count": 3
+    },
+    {
+      "name": "数据安全",
+      "code": "BK1047",
+      "change_pct": 6.37,
+      "turnover": 6.12,
+      "top_stock": "恒为科技",
+      "up_count": 78,
+      "down_count": 6
+    },
+    {
+      "name": "昨日涨停",
+      "code": "BK0815",
+      "change_pct": 6.31,
+      "turnover": 9.73,
+      "top_stock": "美年健康",
+      "up_count": 80,
+      "down_count": 18
+    },
+    {
+      "name": "DeepSeek概念",
+      "code": "BK1188",
+      "change_pct": 6.29,
+      "turnover": 7.88,
+      "top_stock": "博瑞传播",
+      "up_count": 226,
+      "down_count": 16
+    },
+    {
+      "name": "百度概念",
+      "code": "BK0845",
+      "change_pct": 6.24,
+      "turnover": 7.17,
+      "top_stock": "视觉中国",
+      "up_count": 138,
+      "down_count": 11
+    },
+    {
+      "name": "空间计算",
+      "code": "BK1143",
+      "change_pct": 6.23,
+      "turnover": 7.27,
+      "top_stock": "国脉文化",
+      "up_count": 23,
+      "down_count": 1
+    },
+    {
+      "name": "大数据",
+      "code": "BK0634",
+      "change_pct": 6.22,
+      "turnover": 7.02,
+      "top_stock": "美年健康",
+      "up_count": 280,
+      "down_count": 15
+    },
+    {
+      "name": "元宇宙概念",
+      "code": "BK1009",
+      "change_pct": 6.13,
+      "turnover": 8.07,
+      "top_stock": "引力传媒",
+      "up_count": 127,
+      "down_count": 16
+    },
+    {
+      "name": "云计算",
+      "code": "BK0579",
+      "change_pct": 6.0,
+      "turnover": 5.39,
+      "top_stock": "恒为科技",
+      "up_count": 214,
+      "down_count": 16
+    },
+    {
+      "name": "量子科技",
+      "code": "BK0710",
+      "change_pct": 5.95,
+      "turnover": 4.8,
+      "top_stock": "志特新材",
+      "up_count": 48,
+      "down_count": 4
+    },
+    {
+      "name": "数字水印",
+      "code": "BK1129",
+      "change_pct": 5.89,
+      "turnover": 8.86,
+      "top_stock": "视觉中国",
+      "up_count": 17,
+      "down_count": 1
+    },
+    {
+      "name": "数字阅读",
+      "code": "BK0959",
+      "change_pct": 5.89,
+      "turnover": 4.59,
+      "top_stock": "南方传媒",
+      "up_count": 18,
+      "down_count": 1
+    },
+    {
+      "name": "盲盒经济",
+      "code": "BK0954",
+      "change_pct": 5.81,
+      "turnover": 9.26,
+      "top_stock": "中文在线",
+      "up_count": 10,
+      "down_count": 2
+    },
+    {
+      "name": "数字经济",
+      "code": "BK1061",
+      "change_pct": 5.72,
+      "turnover": 6.81,
+      "top_stock": "直真科技",
+      "up_count": 169,
+      "down_count": 14
+    },
+    {
+      "name": "网络安全",
+      "code": "BK0655",
+      "change_pct": 5.7,
+      "turnover": 5.25,
+      "top_stock": "东方通信",
+      "up_count": 127,
+      "down_count": 5
+    },
+    {
+      "name": "阿里概念",
+      "code": "BK0689",
+      "change_pct": 5.68,
+      "turnover": 5.71,
+      "top_stock": "美年健康",
+      "up_count": 143,
+      "down_count": 16
+    },
+    {
+      "name": "腾讯云",
+      "code": "BK1189",
+      "change_pct": 5.62,
+      "turnover": 6.83,
+      "top_stock": "浙数文化",
+      "up_count": 21,
+      "down_count": 2
+    },
+    {
+      "name": "IPv6",
+      "code": "BK0897",
+      "change_pct": 5.57,
+      "turnover": 3.9,
+      "top_stock": "烽火通信",
+      "up_count": 13,
+      "down_count": 0
+    },
+    {
+      "name": "NFT概念",
+      "code": "BK0997",
+      "change_pct": 5.53,
+      "turnover": 8.26,
+      "top_stock": "视觉中国",
+      "up_count": 50,
+      "down_count": 5
+    },
+    {
+      "name": "数字货币",
+      "code": "BK0883",
+      "change_pct": 5.51,
+      "turnover": 5.73,
+      "top_stock": "中嘉博创",
+      "up_count": 79,
+      "down_count": 3
+    },
+    {
+      "name": "谷子经济",
+      "code": "BK1183",
+      "change_pct": 5.51,
+      "turnover": 7.79,
+      "top_stock": "博瑞传播",
+      "up_count": 68,
+      "down_count": 5
+    },
+    {
+      "name": "网络游戏",
+      "code": "BK0509",
+      "change_pct": 5.47,
+      "turnover": 8.04,
+      "top_stock": "博瑞传播",
+      "up_count": 60,
+      "down_count": 7
+    },
+    {
+      "name": "生物识别",
+      "code": "BK0970",
+      "change_pct": 5.41,
+      "turnover": 6.88,
+      "top_stock": "杰创智能",
+      "up_count": 49,
+      "down_count": 2
+    },
+    {
+      "name": "电子身份证",
+      "code": "BK1075",
+      "change_pct": 5.34,
+      "turnover": 6.99,
+      "top_stock": "拓尔思",
+      "up_count": 39,
+      "down_count": 0
+    },
+    {
+      "name": "区块链",
+      "code": "BK0830",
+      "change_pct": 5.31,
+      "turnover": 2.84,
+      "top_stock": "视觉中国",
+      "up_count": 218,
+      "down_count": 14
+    },
+    {
+      "name": "VPN",
+      "code": "BK0885",
+      "change_pct": 5.31,
+      "turnover": 9.02,
+      "top_stock": "深信服",
+      "up_count": 18,
+      "down_count": 1
+    },
+    {
+      "name": "影视概念",
+      "code": "BK0847",
+      "change_pct": 5.27,
+      "turnover": 6.44,
+      "top_stock": "博瑞传播",
+      "up_count": 57,
+      "down_count": 8
+    },
+    {
+      "name": "电子车牌",
+      "code": "BK0982",
+      "change_pct": 5.24,
+      "turnover": 7.69,
+      "top_stock": "亚联发展",
+      "up_count": 18,
+      "down_count": 0
+    },
+    {
+      "name": "人工智能",
+      "code": "BK0800",
+      "change_pct": 5.22,
+      "turnover": 5.62,
+      "top_stock": "视觉中国",
+      "up_count": 613,
+      "down_count": 65
+    },
+    {
+      "name": "广电",
+      "code": "BK0904",
+      "change_pct": 5.2,
+      "turnover": 7.5,
+      "top_stock": "银河电子",
+      "up_count": 22,
+      "down_count": 5
+    },
+    {
+      "name": "人脑工程",
+      "code": "BK0706",
+      "change_pct": 5.2,
+      "turnover": 11.44,
+      "top_stock": "岩山科技",
+      "up_count": 43,
+      "down_count": 4
+    },
+    {
+      "name": "鸿蒙概念",
+      "code": "BK0953",
+      "change_pct": 5.19,
+      "turnover": 7.43,
+      "top_stock": "博瑞传播",
+      "up_count": 116,
+      "down_count": 7
+    },
+    {
+      "name": "星闪概念",
+      "code": "BK1149",
+      "change_pct": 5.06,
+      "turnover": 7.1,
+      "top_stock": "电科芯片",
+      "up_count": 36,
+      "down_count": 2
+    },
+    {
+      "name": "军民融合",
+      "code": "BK0808",
+      "change_pct": 5.05,
+      "turnover": 7.66,
+      "top_stock": "巨力索具",
+      "up_count": 163,
+      "down_count": 18
+    },
+    {
+      "name": "数字孪生",
+      "code": "BK0861",
+      "change_pct": 5.04,
+      "turnover": 4.19,
+      "top_stock": "直真科技",
+      "up_count": 80,
+      "down_count": 6
+    },
+    {
+      "name": "边缘计算",
+      "code": "BK0860",
+      "change_pct": 5.01,
+      "turnover": 4.37,
+      "top_stock": "达华智能",
+      "up_count": 117,
+      "down_count": 8
+    },
+    {
+      "name": "智慧城市",
+      "code": "BK0628",
+      "change_pct": 5.0,
+      "turnover": 5.69,
+      "top_stock": "博瑞传播",
+      "up_count": 198,
+      "down_count": 18
+    },
+    {
+      "name": "毫米波概念",
+      "code": "BK1124",
+      "change_pct": 4.96,
+      "turnover": 10.0,
+      "top_stock": "通宇通讯",
+      "up_count": 41,
+      "down_count": 7
+    },
+    {
+      "name": "电子竞技",
+      "code": "BK0853",
+      "change_pct": 4.91,
+      "turnover": 3.45,
+      "top_stock": "博瑞传播",
+      "up_count": 31,
+      "down_count": 3
+    },
+    {
+      "name": "跨境支付",
+      "code": "BK1071",
+      "change_pct": 4.89,
+      "turnover": 0.52,
+      "top_stock": "易点天下",
+      "up_count": 61,
+      "down_count": 3
+    },
+    {
+      "name": "智能电视",
+      "code": "BK0656",
+      "change_pct": 4.87,
+      "turnover": 4.7,
+      "top_stock": "银河电子",
+      "up_count": 11,
+      "down_count": 1
+    },
+    {
+      "name": "东数西算",
+      "code": "BK1064",
+      "change_pct": 4.82,
+      "turnover": 5.8,
+      "top_stock": "直真科技",
+      "up_count": 58,
+      "down_count": 7
+    },
+    {
+      "name": "军工",
+      "code": "BK0490",
+      "change_pct": 4.81,
+      "turnover": 7.37,
+      "top_stock": "银河电子",
+      "up_count": 377,
+      "down_count": 43
+    },
+    {
+      "name": "混合现实",
+      "code": "BK1141",
+      "change_pct": 4.79,
+      "turnover": 4.46,
+      "top_stock": "展鹏科技",
+      "up_count": 27,
+      "down_count": 3
+    },
+    {
+      "name": "大飞机",
+      "code": "BK0814",
+      "change_pct": 4.73,
+      "turnover": 6.34,
+      "top_stock": "中国卫星",
+      "up_count": 87,
+      "down_count": 10
+    },
+    {
+      "name": "可控核聚变",
+      "code": "BK1163",
+      "change_pct": 4.66,
+      "turnover": 5.07,
+      "top_stock": "安泰科技",
+      "up_count": 67,
+      "down_count": 6
+    },
+    {
+      "name": "虚拟现实",
+      "code": "BK0722",
+      "change_pct": 4.65,
+      "turnover": 6.38,
+      "top_stock": "视觉中国",
+      "up_count": 190,
+      "down_count": 29
+    },
+    {
+      "name": "算力概念",
+      "code": "BK1134",
+      "change_pct": 4.57,
+      "turnover": 4.25,
+      "top_stock": "直真科技",
+      "up_count": 148,
+      "down_count": 24
+    },
+    {
+      "name": "移动支付",
+      "code": "BK0556",
+      "change_pct": 4.56,
+      "turnover": 4.49,
+      "top_stock": "达华智能",
+      "up_count": 65,
+      "down_count": 2
+    },
+    {
+      "name": "职业教育",
+      "code": "BK1022",
+      "change_pct": 4.49,
+      "turnover": 8.8,
+      "top_stock": "迪安诊断",
+      "up_count": 62,
+      "down_count": 5
+    },
+    {
+      "name": "网红经济",
+      "code": "BK0940",
+      "change_pct": 4.41,
+      "turnover": 6.71,
+      "top_stock": "利欧股份",
+      "up_count": 114,
+      "down_count": 17
+    },
+    {
+      "name": "国家安防",
+      "code": "BK0667",
+      "change_pct": 4.4,
+      "turnover": 6.1,
+      "top_stock": "拓尔思",
+      "up_count": 101,
+      "down_count": 12
+    },
+    {
+      "name": "氦气概念",
+      "code": "BK0949",
+      "change_pct": 4.4,
+      "turnover": 13.6,
+      "top_stock": "雪人集团",
+      "up_count": 9,
+      "down_count": 5
+    },
+    {
+      "name": "国资云概念",
+      "code": "BK1008",
+      "change_pct": 4.39,
+      "turnover": 5.84,
+      "top_stock": "易华录",
+      "up_count": 19,
+      "down_count": 0
+    },
+    {
+      "name": "数字哨兵",
+      "code": "BK1084",
+      "change_pct": 4.39,
+      "turnover": 6.09,
+      "top_stock": "捷顺科技",
+      "up_count": 11,
+      "down_count": 1
+    },
+    {
+      "name": "AI手机",
+      "code": "BK1162",
+      "change_pct": 4.35,
+      "turnover": 6.32,
+      "top_stock": "领益智造",
+      "up_count": 31,
+      "down_count": 3
+    },
+    {
+      "name": "低空经济",
+      "code": "BK1166",
+      "change_pct": 4.35,
+      "turnover": 6.98,
+      "top_stock": "通宇通讯",
+      "up_count": 250,
+      "down_count": 27
+    },
+    {
+      "name": "昨日触板",
+      "code": "BK0817",
+      "change_pct": 4.33,
+      "turnover": 3.88,
+      "top_stock": "山高环能",
+      "up_count": 45,
+      "down_count": 19
+    },
+    {
+      "name": "无人机",
+      "code": "BK0704",
+      "change_pct": 4.28,
+      "turnover": 7.57,
+      "top_stock": "电科芯片",
+      "up_count": 184,
+      "down_count": 22
+    },
+    {
+      "name": "3D玻璃",
+      "code": "BK0881",
+      "change_pct": 4.28,
+      "turnover": 6.83,
+      "top_stock": "凯盛科技",
+      "up_count": 15,
+      "down_count": 0
+    },
+    {
+      "name": "车联网(车路云)",
+      "code": "BK0920",
+      "change_pct": 4.27,
+      "turnover": 4.9,
+      "top_stock": "直真科技",
+      "up_count": 195,
+      "down_count": 19
+    },
+    {
+      "name": "AI芯片",
+      "code": "BK1127",
+      "change_pct": 4.24,
+      "turnover": 6.93,
+      "top_stock": "岩山科技",
+      "up_count": 29,
+      "down_count": 7
+    },
+    {
+      "name": "UWB概念",
+      "code": "BK0880",
+      "change_pct": 4.21,
+      "turnover": 3.97,
+      "top_stock": "通宇通讯",
+      "up_count": 18,
+      "down_count": 1
+    },
+    {
+      "name": "WiFi",
+      "code": "BK0915",
+      "change_pct": 4.2,
+      "turnover": 3.77,
+      "top_stock": "通宇通讯",
+      "up_count": 27,
+      "down_count": 3
+    },
+    {
+      "name": "超清视频",
+      "code": "BK0859",
+      "change_pct": 4.19,
+      "turnover": 4.85,
+      "top_stock": "新华网",
+      "up_count": 91,
+      "down_count": 7
+    },
+    {
+      "name": "航母概念",
+      "code": "BK0715",
+      "change_pct": 4.18,
+      "turnover": 4.53,
+      "top_stock": "海格通信",
+      "up_count": 28,
+      "down_count": 3
+    },
+    {
+      "name": "增强现实",
+      "code": "BK0801",
+      "change_pct": 4.1,
+      "turnover": 6.25,
+      "top_stock": "领益智造",
+      "up_count": 37,
+      "down_count": 8
+    },
+    {
+      "name": "华为概念",
+      "code": "BK0854",
+      "change_pct": 4.08,
+      "turnover": 5.34,
+      "top_stock": "视觉中国",
+      "up_count": 629,
+      "down_count": 118
+    },
+    {
+      "name": "互联医疗",
+      "code": "BK0837",
+      "change_pct": 3.97,
+      "turnover": 4.39,
+      "top_stock": "人民网",
+      "up_count": 81,
+      "down_count": 15
+    },
+    {
+      "name": "ETC",
+      "code": "BK0875",
+      "change_pct": 3.95,
+      "turnover": 5.83,
+      "top_stock": "亚联发展",
+      "up_count": 36,
+      "down_count": 6
+    },
+    {
+      "name": "蚂蚁概念",
+      "code": "BK0937",
+      "change_pct": 3.92,
+      "turnover": 1.5,
+      "top_stock": "博瑞传播",
+      "up_count": 53,
+      "down_count": 7
+    },
+    {
+      "name": "MLCC",
+      "code": "BK0890",
+      "change_pct": 3.91,
+      "turnover": 7.67,
+      "top_stock": "昀冢科技",
+      "up_count": 11,
+      "down_count": 4
+    },
+    {
+      "name": "EDR概念",
+      "code": "BK1049",
+      "change_pct": 3.91,
+      "turnover": 6.88,
+      "top_stock": "三六零",
+      "up_count": 12,
+      "down_count": 2
+    },
+    {
+      "name": "蓝宝石",
+      "code": "BK0674",
+      "change_pct": 3.9,
+      "turnover": 5.77,
+      "top_stock": "安泰科技",
+      "up_count": 16,
+      "down_count": 1
+    },
+    {
+      "name": "物联网",
+      "code": "BK0554",
+      "change_pct": 3.88,
+      "turnover": 5.35,
+      "top_stock": "直真科技",
+      "up_count": 338,
+      "down_count": 35
+    },
+    {
+      "name": "新型工业化",
+      "code": "BK1150",
+      "change_pct": 3.76,
+      "turnover": 5.11,
+      "top_stock": "恒为科技",
+      "up_count": 86,
+      "down_count": 11
+    },
+    {
+      "name": "华为海思",
+      "code": "BK1180",
+      "change_pct": 3.75,
+      "turnover": 6.6,
+      "top_stock": "卓易信息",
+      "up_count": 35,
+      "down_count": 5
+    },
+    {
+      "name": "首发经济",
+      "code": "BK1186",
+      "change_pct": 3.71,
+      "turnover": 6.58,
+      "top_stock": "博瑞传播",
+      "up_count": 35,
+      "down_count": 5
+    },
+    {
+      "name": "AI制药（医疗）",
+      "code": "BK1170",
+      "change_pct": 3.69,
+      "turnover": 7.43,
+      "top_stock": "美年健康",
+      "up_count": 44,
+      "down_count": 6
+    },
+    {
+      "name": "数据中心",
+      "code": "BK0922",
+      "change_pct": 3.66,
+      "turnover": 4.77,
+      "top_stock": "直真科技",
+      "up_count": 218,
+      "down_count": 33
+    },
+    {
+      "name": "第四代半导体",
+      "code": "BK1121",
+      "change_pct": 3.64,
+      "turnover": 4.18,
+      "top_stock": "东微半导",
+      "up_count": 3,
+      "down_count": 2
+    },
+    {
+      "name": "工业互联",
+      "code": "BK0832",
+      "change_pct": 3.58,
+      "turnover": 4.69,
+      "top_stock": "杭萧钢构",
+      "up_count": 164,
+      "down_count": 30
+    },
+    {
+      "name": "智能穿戴",
+      "code": "BK0641",
+      "change_pct": 3.52,
+      "turnover": 5.1,
+      "top_stock": "流金科技",
+      "up_count": 109,
+      "down_count": 16
+    },
+    {
+      "name": "全息技术",
+      "code": "BK0699",
+      "change_pct": 3.48,
+      "turnover": 5.67,
+      "top_stock": "苏州科达",
+      "up_count": 10,
+      "down_count": 1
+    },
+    {
+      "name": "3D打印",
+      "code": "BK0619",
+      "change_pct": 3.46,
+      "turnover": 6.78,
+      "top_stock": "中化装备",
+      "up_count": 54,
+      "down_count": 17
+    },
+    {
+      "name": "2025三季报预减",
+      "code": "BK1199",
+      "change_pct": 3.46,
+      "turnover": 5.16,
+      "top_stock": "探路者",
+      "up_count": 6,
+      "down_count": 2
+    },
+    {
+      "name": "彩票概念",
+      "code": "BK0671",
+      "change_pct": 3.4,
+      "turnover": 4.67,
+      "top_stock": "人民网",
+      "up_count": 18,
+      "down_count": 2
+    },
+    {
+      "name": "抖音小店",
+      "code": "BK0928",
+      "change_pct": 3.4,
+      "turnover": 3.06,
+      "top_stock": "美年健康",
+      "up_count": 22,
+      "down_count": 5
+    },
+    {
+      "name": "碳纤维",
+      "code": "BK1171",
+      "change_pct": 3.36,
+      "turnover": 6.78,
+      "top_stock": "楚江新材",
+      "up_count": 32,
+      "down_count": 6
+    },
+    {
+      "name": "气溶胶检测",
+      "code": "BK1065",
+      "change_pct": 3.36,
+      "turnover": 2.5,
+      "top_stock": "蓝盾光电",
+      "up_count": 9,
+      "down_count": 0
+    },
+    {
+      "name": "国产芯片",
+      "code": "BK0891",
+      "change_pct": 3.36,
+      "turnover": 6.0,
+      "top_stock": "烽火通信",
+      "up_count": 310,
+      "down_count": 65
+    },
+    {
+      "name": "裸眼3D",
+      "code": "BK1142",
+      "change_pct": 3.33,
+      "turnover": 3.54,
+      "top_stock": "联建光电",
+      "up_count": 21,
+      "down_count": 3
+    },
+    {
+      "name": "PLC概念",
+      "code": "BK1119",
+      "change_pct": 3.32,
+      "turnover": 4.02,
+      "top_stock": "中控技术",
+      "up_count": 9,
+      "down_count": 1
+    },
+    {
+      "name": "C2M概念",
+      "code": "BK0955",
+      "change_pct": 3.3,
+      "turnover": 3.77,
+      "top_stock": "汉得信息",
+      "up_count": 28,
+      "down_count": 9
+    },
+    {
+      "name": "5G概念",
+      "code": "BK0714",
+      "change_pct": 3.28,
+      "turnover": 4.97,
+      "top_stock": "通宇通讯",
+      "up_count": 258,
+      "down_count": 67
+    },
+    {
+      "name": "工业气体",
+      "code": "BK0981",
+      "change_pct": 3.25,
+      "turnover": 3.46,
+      "top_stock": "中泰股份",
+      "up_count": 18,
+      "down_count": 8
+    },
+    {
+      "name": "AI眼镜",
+      "code": "BK1178",
+      "change_pct": 3.24,
+      "turnover": 4.97,
+      "top_stock": "国脉文化",
+      "up_count": 103,
+      "down_count": 18
+    },
+    {
+      "name": "钙钛矿电池",
+      "code": "BK1094",
+      "change_pct": 3.21,
+      "turnover": 4.08,
+      "top_stock": "杭萧钢构",
+      "up_count": 30,
+      "down_count": 7
+    },
+    {
+      "name": "创业成份",
+      "code": "BK0638",
+      "change_pct": 3.18,
+      "turnover": 6.02,
+      "top_stock": "昆仑万维",
+      "up_count": 71,
+      "down_count": 29
+    },
+    {
+      "name": "机器视觉",
+      "code": "BK0998",
+      "change_pct": 3.14,
+      "turnover": 6.93,
+      "top_stock": "海天瑞声",
+      "up_count": 71,
+      "down_count": 13
+    },
+    {
+      "name": "科创板做市股",
+      "code": "BK1108",
+      "change_pct": 3.14,
+      "turnover": 2.31,
+      "top_stock": "赛微微电",
+      "up_count": 36,
+      "down_count": 8
+    },
+    {
+      "name": "被动元件",
+      "code": "BK0976",
+      "change_pct": 3.13,
+      "turnover": 7.55,
+      "top_stock": "ST惠伦",
+      "up_count": 21,
+      "down_count": 6
+    },
+    {
+      "name": "京东金融",
+      "code": "BK0849",
+      "change_pct": 3.1,
+      "turnover": 2.56,
+      "top_stock": "大智慧",
+      "up_count": 8,
+      "down_count": 2
+    },
+    {
+      "name": "食品安全",
+      "code": "BK0614",
+      "change_pct": 3.09,
+      "turnover": 5.39,
+      "top_stock": "三维天地",
+      "up_count": 40,
+      "down_count": 9
+    },
+    {
+      "name": "体育产业",
+      "code": "BK0708",
+      "change_pct": 3.09,
+      "turnover": 3.62,
+      "top_stock": "人民网",
+      "up_count": 67,
+      "down_count": 5
+    },
+    {
+      "name": "创业板综",
+      "code": "BK0742",
+      "change_pct": 3.07,
+      "turnover": 7.71,
+      "top_stock": "志特新材",
+      "up_count": 1101,
+      "down_count": 239
+    },
+    {
+      "name": "阿兹海默",
+      "code": "BK0894",
+      "change_pct": 3.06,
+      "turnover": 3.71,
+      "top_stock": "迪安诊断",
+      "up_count": 14,
+      "down_count": 5
+    },
+    {
+      "name": "AIPC",
+      "code": "BK1164",
+      "change_pct": 3.04,
+      "turnover": 7.72,
+      "top_stock": "卓易信息",
+      "up_count": 35,
+      "down_count": 10
+    },
+    {
+      "name": "跨境电商",
+      "code": "BK1115",
+      "change_pct": 2.99,
+      "turnover": 5.26,
+      "top_stock": "博瑞传播",
+      "up_count": 132,
+      "down_count": 26
+    },
+    {
+      "name": "基因测序",
+      "code": "BK0693",
+      "change_pct": 2.98,
+      "turnover": 3.06,
+      "top_stock": "美年健康",
+      "up_count": 41,
+      "down_count": 5
+    },
+    {
+      "name": "海洋经济",
+      "code": "BK0623",
+      "change_pct": 2.97,
+      "turnover": 4.67,
+      "top_stock": "巨力索具",
+      "up_count": 75,
+      "down_count": 22
+    },
+    {
+      "name": "超导概念",
+      "code": "BK0679",
+      "change_pct": 2.97,
+      "turnover": 10.14,
+      "top_stock": "西部超导",
+      "up_count": 16,
+      "down_count": 2
+    },
+    {
+      "name": "碳基材料",
+      "code": "BK1006",
+      "change_pct": 2.91,
+      "turnover": 6.52,
+      "top_stock": "楚江新材",
+      "up_count": 15,
+      "down_count": 4
+    },
+    {
+      "name": "小米概念",
+      "code": "BK0833",
+      "change_pct": 2.91,
+      "turnover": 4.61,
+      "top_stock": "利欧股份",
+      "up_count": 184,
+      "down_count": 36
+    },
+    {
+      "name": "HIT电池",
+      "code": "BK0908",
+      "change_pct": 2.9,
+      "turnover": 5.77,
+      "top_stock": "金辰股份",
+      "up_count": 28,
+      "down_count": 11
+    },
+    {
+      "name": "核污染防治",
+      "code": "BK0983",
+      "change_pct": 2.9,
+      "turnover": 2.99,
+      "top_stock": "中核科技",
+      "up_count": 28,
+      "down_count": 4
+    },
+    {
+      "name": "英伟达概念",
+      "code": "BK1161",
+      "change_pct": 2.9,
+      "turnover": 4.91,
+      "top_stock": "深信服",
+      "up_count": 43,
+      "down_count": 15
+    },
+    {
+      "name": "股权激励",
+      "code": "BK0567",
+      "change_pct": 2.89,
+      "turnover": 4.28,
+      "top_stock": "恒为科技",
+      "up_count": 167,
+      "down_count": 41
+    },
+    {
+      "name": "无人驾驶",
+      "code": "BK0802",
+      "change_pct": 2.88,
+      "turnover": 4.39,
+      "top_stock": "银河电子",
+      "up_count": 213,
+      "down_count": 46
+    },
+    {
+      "name": "商汤概念",
+      "code": "BK0942",
+      "change_pct": 2.85,
+      "turnover": 3.86,
+      "top_stock": "飞利信",
+      "up_count": 12,
+      "down_count": 2
+    },
+    {
+      "name": "飞行汽车(eVTOL)",
+      "code": "BK1157",
+      "change_pct": 2.85,
+      "turnover": 5.47,
+      "top_stock": "安泰科技",
+      "up_count": 71,
+      "down_count": 9
+    },
+    {
+      "name": "机器人概念",
+      "code": "BK1090",
+      "change_pct": 2.8,
+      "turnover": 5.2,
+      "top_stock": "美年健康",
+      "up_count": 542,
+      "down_count": 109
+    },
+    {
+      "name": "独角兽",
+      "code": "BK0835",
+      "change_pct": 2.74,
+      "turnover": 4.36,
+      "top_stock": "中衡设计",
+      "up_count": 82,
+      "down_count": 21
+    },
+    {
+      "name": "IGBT概念",
+      "code": "BK1048",
+      "change_pct": 2.73,
+      "turnover": 1.96,
+      "top_stock": "利欧股份",
+      "up_count": 36,
+      "down_count": 3
+    },
+    {
+      "name": "智慧灯杆",
+      "code": "BK1069",
+      "change_pct": 2.73,
+      "turnover": 5.39,
+      "top_stock": "得邦照明",
+      "up_count": 23,
+      "down_count": 2
+    },
+    {
+      "name": "植物照明",
+      "code": "BK1007",
+      "change_pct": 2.71,
+      "turnover": 4.3,
+      "top_stock": "得邦照明",
+      "up_count": 16,
+      "down_count": 2
+    },
+    {
+      "name": "地热能",
+      "code": "BK0622",
+      "change_pct": 2.71,
+      "turnover": 3.89,
+      "top_stock": "豫能控股",
+      "up_count": 6,
+      "down_count": 1
+    },
+    {
+      "name": "同步磁阻电机",
+      "code": "BK1131",
+      "change_pct": 2.7,
+      "turnover": 7.62,
+      "top_stock": "佳电股份",
+      "up_count": 7,
+      "down_count": 0
+    },
+    {
+      "name": "托育服务",
+      "code": "BK1074",
+      "change_pct": 2.7,
+      "turnover": 6.93,
+      "top_stock": "华媒控股",
+      "up_count": 6,
+      "down_count": 1
+    },
+    {
+      "name": "CAR-T细胞疗法",
+      "code": "BK0986",
+      "change_pct": 2.69,
+      "turnover": 4.45,
+      "top_stock": "迪安诊断",
+      "up_count": 20,
+      "down_count": 4
+    },
+    {
+      "name": "电商概念",
+      "code": "BK0665",
+      "change_pct": 2.68,
+      "turnover": 3.81,
+      "top_stock": "美年健康",
+      "up_count": 275,
+      "down_count": 60
+    },
+    {
+      "name": "智能电网",
+      "code": "BK0581",
+      "change_pct": 2.68,
+      "turnover": 5.76,
+      "top_stock": "恒为科技",
+      "up_count": 153,
+      "down_count": 29
+    },
+    {
+      "name": "汽车芯片",
+      "code": "BK0969",
+      "change_pct": 2.67,
+      "turnover": 5.24,
+      "top_stock": "格尔软件",
+      "up_count": 57,
+      "down_count": 10
+    },
+    {
+      "name": "旅游概念",
+      "code": "BK0692",
+      "change_pct": 2.67,
+      "turnover": 4.67,
+      "top_stock": "博瑞传播",
+      "up_count": 41,
+      "down_count": 9
+    },
+    {
+      "name": "互联金融",
+      "code": "BK0637",
+      "change_pct": 2.67,
+      "turnover": 0.94,
+      "top_stock": "博瑞传播",
+      "up_count": 161,
+      "down_count": 33
+    },
+    {
+      "name": "无线耳机",
+      "code": "BK0893",
+      "change_pct": 2.63,
+      "turnover": 6.33,
+      "top_stock": "领益智造",
+      "up_count": 73,
+      "down_count": 10
+    },
+    {
+      "name": "磁悬浮概念",
+      "code": "BK0975",
+      "change_pct": 2.63,
+      "turnover": 2.49,
+      "top_stock": "博菲电气",
+      "up_count": 23,
+      "down_count": 5
+    },
+    {
+      "name": "氮化镓",
+      "code": "BK0916",
+      "change_pct": 2.62,
+      "turnover": 6.72,
+      "top_stock": "亚光科技",
+      "up_count": 42,
+      "down_count": 6
+    },
+    {
+      "name": "共享经济",
+      "code": "BK0807",
+      "change_pct": 2.6,
+      "turnover": 2.93,
+      "top_stock": "迪安诊断",
+      "up_count": 13,
+      "down_count": 5
+    },
+    {
+      "name": "EDA概念",
+      "code": "BK0946",
+      "change_pct": 2.56,
+      "turnover": 4.21,
+      "top_stock": "航宇微",
+      "up_count": 7,
+      "down_count": 3
+    },
+    {
+      "name": "创投",
+      "code": "BK0506",
+      "change_pct": 2.56,
+      "turnover": 4.13,
+      "top_stock": "利欧股份",
+      "up_count": 219,
+      "down_count": 62
+    },
+    {
+      "name": "荣耀概念",
+      "code": "BK1177",
+      "change_pct": 2.55,
+      "turnover": 3.6,
+      "top_stock": "昀冢科技",
+      "up_count": 44,
+      "down_count": 9
+    },
+    {
+      "name": "深股通",
+      "code": "BK0804",
+      "change_pct": 2.52,
+      "turnover": 4.53,
+      "top_stock": "视觉中国",
+      "up_count": 1312,
+      "down_count": 368
+    },
+    {
+      "name": "传感器",
+      "code": "BK0905",
+      "change_pct": 2.52,
+      "turnover": 5.48,
+      "top_stock": "金卡智能",
+      "up_count": 94,
+      "down_count": 20
+    },
+    {
+      "name": "核能核电",
+      "code": "BK0577",
+      "change_pct": 2.47,
+      "turnover": 3.1,
+      "top_stock": "天桥起重",
+      "up_count": 154,
+      "down_count": 28
+    },
+    {
+      "name": "海工装备",
+      "code": "BK0601",
+      "change_pct": 2.47,
+      "turnover": 4.96,
+      "top_stock": "中国长城",
+      "up_count": 53,
+      "down_count": 19
+    },
+    {
+      "name": "存储芯片",
+      "code": "BK1137",
+      "change_pct": 2.45,
+      "turnover": 7.2,
+      "top_stock": "天奥电子",
+      "up_count": 69,
+      "down_count": 21
+    },
+    {
+      "name": "人形机器人",
+      "code": "BK1184",
+      "change_pct": 2.43,
+      "turnover": 5.65,
+      "top_stock": "美格智能",
+      "up_count": 181,
+      "down_count": 39
+    },
+    {
+      "name": "电子后视镜",
+      "code": "BK1125",
+      "change_pct": 2.43,
+      "turnover": 4.63,
+      "top_stock": "天迈科技",
+      "up_count": 22,
+      "down_count": 3
+    },
+    {
+      "name": "电子纸概念",
+      "code": "BK1057",
+      "change_pct": 2.43,
+      "turnover": 3.02,
+      "top_stock": "汉王科技",
+      "up_count": 13,
+      "down_count": 0
+    },
+    {
+      "name": "化债(AMC)概念",
+      "code": "BK0980",
+      "change_pct": 2.42,
+      "turnover": 3.24,
+      "top_stock": "中国一重",
+      "up_count": 49,
+      "down_count": 6
+    },
+    {
+      "name": "专精特新",
+      "code": "BK1005",
+      "change_pct": 2.41,
+      "turnover": 6.39,
+      "top_stock": "锋龙股份",
+      "up_count": 945,
+      "down_count": 265
+    },
+    {
+      "name": "TOPCon电池",
+      "code": "BK1097",
+      "change_pct": 2.41,
+      "turnover": 5.19,
+      "top_stock": "金辰股份",
+      "up_count": 31,
+      "down_count": 12
+    },
+    {
+      "name": "F5G概念",
+      "code": "BK1088",
+      "change_pct": 2.38,
+      "turnover": 2.61,
+      "top_stock": "通宇通讯",
+      "up_count": 19,
+      "down_count": 5
+    },
+    {
+      "name": "社区团购",
+      "code": "BK0965",
+      "change_pct": 2.38,
+      "turnover": 5.44,
+      "top_stock": "家家悦",
+      "up_count": 34,
+      "down_count": 4
+    },
+    {
+      "name": "养老概念",
+      "code": "BK0653",
+      "change_pct": 2.36,
+      "turnover": 3.27,
+      "top_stock": "美年健康",
+      "up_count": 94,
+      "down_count": 31
+    },
+    {
+      "name": "2025三季报扭亏",
+      "code": "BK1628",
+      "change_pct": 2.35,
+      "turnover": 2.53,
+      "top_stock": "中稀有色",
+      "up_count": 9,
+      "down_count": 2
+    },
+    {
+      "name": "融资融券",
+      "code": "BK0596",
+      "change_pct": 2.34,
+      "turnover": 2.49,
+      "top_stock": "视觉中国",
+      "up_count": 2861,
+      "down_count": 832
+    },
+    {
+      "name": "虚拟电厂",
+      "code": "BK0958",
+      "change_pct": 2.31,
+      "turnover": 3.23,
+      "top_stock": "南网科技",
+      "up_count": 51,
+      "down_count": 11
+    },
+    {
+      "name": "冰雪经济",
+      "code": "BK1185",
+      "change_pct": 2.31,
+      "turnover": 4.56,
+      "top_stock": "天桥起重",
+      "up_count": 33,
+      "down_count": 6
+    },
+    {
+      "name": "退税商店",
+      "code": "BK0933",
+      "change_pct": 2.31,
+      "turnover": 3.51,
+      "top_stock": "茂业商业",
+      "up_count": 12,
+      "down_count": 0
+    },
+    {
+      "name": "SPD概念",
+      "code": "BK1147",
+      "change_pct": 2.31,
+      "turnover": 6.63,
+      "top_stock": "国新健康",
+      "up_count": 9,
+      "down_count": 4
+    },
+    {
+      "name": "屏下摄像",
+      "code": "BK0947",
+      "change_pct": 2.31,
+      "turnover": 3.15,
+      "top_stock": "中兴通讯",
+      "up_count": 8,
+      "down_count": 0
+    },
+    {
+      "name": "第三代半导体",
+      "code": "BK0952",
+      "change_pct": 2.29,
+      "turnover": 6.62,
+      "top_stock": "利欧股份",
+      "up_count": 80,
+      "down_count": 29
+    },
+    {
+      "name": "液冷概念",
+      "code": "BK1138",
+      "change_pct": 2.28,
+      "turnover": 4.7,
+      "top_stock": "利欧股份",
+      "up_count": 82,
+      "down_count": 41
+    },
+    {
+      "name": "PEEK材料概念",
+      "code": "BK1156",
+      "change_pct": 2.27,
+      "turnover": 6.27,
+      "top_stock": "超捷股份",
+      "up_count": 34,
+      "down_count": 8
+    },
+    {
+      "name": "百元股",
+      "code": "BK1059",
+      "change_pct": 2.23,
+      "turnover": 3.72,
+      "top_stock": "中国卫星",
+      "up_count": 126,
+      "down_count": 86
+    },
+    {
+      "name": "新零售",
+      "code": "BK0825",
+      "change_pct": 2.21,
+      "turnover": 3.73,
+      "top_stock": "视觉中国",
+      "up_count": 130,
+      "down_count": 22
+    },
+    {
+      "name": "乳业",
+      "code": "BK0892",
+      "change_pct": 2.17,
+      "turnover": 2.27,
+      "top_stock": "福成股份",
+      "up_count": 29,
+      "down_count": 2
+    },
+    {
+      "name": "2025中报扭亏",
+      "code": "BK1196",
+      "change_pct": 2.17,
+      "turnover": 4.65,
+      "top_stock": "利欧股份",
+      "up_count": 142,
+      "down_count": 45
+    },
+    {
+      "name": "精准医疗",
+      "code": "BK0806",
+      "change_pct": 2.17,
+      "turnover": 3.31,
+      "top_stock": "美年健康",
+      "up_count": 36,
+      "down_count": 7
+    },
+    {
+      "name": "柔性屏(折叠屏)",
+      "code": "BK1160",
+      "change_pct": 2.16,
+      "turnover": 4.65,
+      "top_stock": "领益智造",
+      "up_count": 57,
+      "down_count": 16
+    },
+    {
+      "name": "半导体概念",
+      "code": "BK0917",
+      "change_pct": 2.15,
+      "turnover": 5.01,
+      "top_stock": "电科芯片",
+      "up_count": 339,
+      "down_count": 113
+    },
+    {
+      "name": "深成500",
+      "code": "BK0568",
+      "change_pct": 2.13,
+      "turnover": 3.15,
+      "top_stock": "美年健康",
+      "up_count": 345,
+      "down_count": 143
+    },
+    {
+      "name": "进口博览",
+      "code": "BK0850",
+      "change_pct": 2.13,
+      "turnover": 1.46,
+      "top_stock": "东方明珠",
+      "up_count": 15,
+      "down_count": 1
+    },
+    {
+      "name": "胎压监测",
+      "code": "BK0898",
+      "change_pct": 2.12,
+      "turnover": 5.28,
+      "top_stock": "道通科技",
+      "up_count": 26,
+      "down_count": 2
+    },
+    {
+      "name": "电子烟",
+      "code": "BK0865",
+      "change_pct": 2.11,
+      "turnover": 5.91,
+      "top_stock": "银禧科技",
+      "up_count": 41,
+      "down_count": 11
+    },
+    {
+      "name": "婴童概念",
+      "code": "BK0664",
+      "change_pct": 2.11,
+      "turnover": 4.29,
+      "top_stock": "迪安诊断",
+      "up_count": 120,
+      "down_count": 30
+    },
+    {
+      "name": "成渝特区",
+      "code": "BK0534",
+      "change_pct": 2.11,
+      "turnover": 2.58,
+      "top_stock": "博瑞传播",
+      "up_count": 67,
+      "down_count": 17
+    },
+    {
+      "name": "稀土永磁",
+      "code": "BK0578",
+      "change_pct": 2.1,
+      "turnover": 5.13,
+      "top_stock": "安泰科技",
+      "up_count": 42,
+      "down_count": 11
+    },
+    {
+      "name": "深圳特区",
+      "code": "BK0549",
+      "change_pct": 2.1,
+      "turnover": 3.08,
+      "top_stock": "亚联发展",
+      "up_count": 263,
+      "down_count": 79
+    },
+    {
+      "name": "参股新三板",
+      "code": "BK0600",
+      "change_pct": 2.09,
+      "turnover": 4.5,
+      "top_stock": "利欧股份",
+      "up_count": 70,
+      "down_count": 31
+    },
+    {
+      "name": "铜缆高速连接",
+      "code": "BK1168",
+      "change_pct": 2.07,
+      "turnover": 7.28,
+      "top_stock": "楚江新材",
+      "up_count": 27,
+      "down_count": 12
+    },
+    {
+      "name": "MiniLED",
+      "code": "BK0902",
+      "change_pct": 2.07,
+      "turnover": 4.01,
+      "top_stock": "联建光电",
+      "up_count": 51,
+      "down_count": 11
+    },
+    {
+      "name": "富时罗素",
+      "code": "BK0867",
+      "change_pct": 2.06,
+      "turnover": 2.03,
+      "top_stock": "视觉中国",
+      "up_count": 929,
+      "down_count": 305
+    },
+    {
+      "name": "并购重组概念",
+      "code": "BK1181",
+      "change_pct": 2.06,
+      "turnover": 4.22,
+      "top_stock": "焦作万方",
+      "up_count": 71,
+      "down_count": 25
+    },
+    {
+      "name": "北交所概念",
+      "code": "BK0925",
+      "change_pct": 2.05,
+      "turnover": 3.53,
+      "top_stock": "上海钢联",
+      "up_count": 22,
+      "down_count": 2
+    },
+    {
+      "name": "化妆品概念",
+      "code": "BK0974",
+      "change_pct": 2.04,
+      "turnover": 3.33,
+      "top_stock": "万事利",
+      "up_count": 46,
+      "down_count": 11
+    },
+    {
+      "name": "通用航空",
+      "code": "BK0625",
+      "change_pct": 2.04,
+      "turnover": 3.25,
+      "top_stock": "航发控制",
+      "up_count": 29,
+      "down_count": 8
+    },
+    {
+      "name": "2025三季报预增",
+      "code": "BK1198",
+      "change_pct": 2.03,
+      "turnover": 3.7,
+      "top_stock": "美年健康",
+      "up_count": 66,
+      "down_count": 24
+    },
+    {
+      "name": "麒麟电池",
+      "code": "BK1092",
+      "change_pct": 2.03,
+      "turnover": 4.48,
+      "top_stock": "银邦股份",
+      "up_count": 5,
+      "down_count": 3
+    },
+    {
+      "name": "股权转让",
+      "code": "BK0803",
+      "change_pct": 2.02,
+      "turnover": 3.96,
+      "top_stock": "睿智医药",
+      "up_count": 29,
+      "down_count": 7
+    },
+    {
+      "name": "体外诊断",
+      "code": "BK0841",
+      "change_pct": 2.02,
+      "turnover": 3.49,
+      "top_stock": "迪安诊断",
+      "up_count": 60,
+      "down_count": 7
+    },
+    {
+      "name": "减速器",
+      "code": "BK1100",
+      "change_pct": 2.02,
+      "turnover": 7.95,
+      "top_stock": "山子高科",
+      "up_count": 69,
+      "down_count": 12
+    },
+    {
+      "name": "碳化硅",
+      "code": "BK0977",
+      "change_pct": 2.02,
+      "turnover": 5.13,
+      "top_stock": "楚江新材",
+      "up_count": 34,
+      "down_count": 11
+    },
+    {
+      "name": "MicroLED",
+      "code": "BK0948",
+      "change_pct": 2.0,
+      "turnover": 3.4,
+      "top_stock": "联建光电",
+      "up_count": 21,
+      "down_count": 3
+    },
+    {
+      "name": "养老金",
+      "code": "BK0823",
+      "change_pct": 1.99,
+      "turnover": 2.53,
+      "top_stock": "值得买",
+      "up_count": 116,
+      "down_count": 57
+    },
+    {
+      "name": "水利建设",
+      "code": "BK0597",
+      "change_pct": 1.98,
+      "turnover": 2.5,
+      "top_stock": "利欧股份",
+      "up_count": 76,
+      "down_count": 26
+    },
+    {
+      "name": "长寿药",
+      "code": "BK0936",
+      "change_pct": 1.98,
+      "turnover": 5.16,
+      "top_stock": "银禧科技",
+      "up_count": 11,
+      "down_count": 4
+    },
+    {
+      "name": "西部大开发",
+      "code": "BK0590",
+      "change_pct": 1.97,
+      "turnover": 3.48,
+      "top_stock": "博瑞传播",
+      "up_count": 429,
+      "down_count": 162
+    },
+    {
+      "name": "建筑节能",
+      "code": "BK1076",
+      "change_pct": 1.97,
+      "turnover": 3.84,
+      "top_stock": "中衡设计",
+      "up_count": 37,
+      "down_count": 7
+    },
+    {
+      "name": "海南自贸",
+      "code": "BK1193",
+      "change_pct": 1.96,
+      "turnover": 4.52,
+      "top_stock": "力盛体育",
+      "up_count": 66,
+      "down_count": 14
+    },
+    {
+      "name": "智能家居",
+      "code": "BK0680",
+      "change_pct": 1.96,
+      "turnover": 3.92,
+      "top_stock": "居然智家",
+      "up_count": 129,
+      "down_count": 31
+    },
+    {
+      "name": "小米汽车",
+      "code": "BK1155",
+      "change_pct": 1.96,
+      "turnover": 4.74,
+      "top_stock": "浙文互联",
+      "up_count": 76,
+      "down_count": 23
+    },
+    {
+      "name": "激光雷达",
+      "code": "BK1002",
+      "change_pct": 1.96,
+      "turnover": 6.53,
+      "top_stock": "领益智造",
+      "up_count": 32,
+      "down_count": 10
+    },
+    {
+      "name": "工业母机",
+      "code": "BK1004",
+      "change_pct": 1.96,
+      "turnover": 4.95,
+      "top_stock": "中化装备",
+      "up_count": 65,
+      "down_count": 18
+    },
+    {
+      "name": "3D摄像头",
+      "code": "BK0901",
+      "change_pct": 1.94,
+      "turnover": 3.94,
+      "top_stock": "联创电子",
+      "up_count": 7,
+      "down_count": 2
+    },
+    {
+      "name": "中字头",
+      "code": "BK0505",
+      "change_pct": 1.93,
+      "turnover": 0.79,
+      "top_stock": "中国长城",
+      "up_count": 76,
+      "down_count": 19
+    },
+    {
+      "name": "痘病毒防治",
+      "code": "BK1085",
+      "change_pct": 1.93,
+      "turnover": 3.73,
+      "top_stock": "迪安诊断",
+      "up_count": 42,
+      "down_count": 11
+    },
+    {
+      "name": "无线充电",
+      "code": "BK0960",
+      "change_pct": 1.93,
+      "turnover": 5.31,
+      "top_stock": "安泰科技",
+      "up_count": 29,
+      "down_count": 10
+    },
+    {
+      "name": "BC电池",
+      "code": "BK1148",
+      "change_pct": 1.92,
+      "turnover": 4.21,
+      "top_stock": "博菲电气",
+      "up_count": 18,
+      "down_count": 8
+    },
+    {
+      "name": "冷链物流",
+      "code": "BK0852",
+      "change_pct": 1.92,
+      "turnover": 3.52,
+      "top_stock": "交运股份",
+      "up_count": 84,
+      "down_count": 25
+    },
+    {
+      "name": "小金属概念",
+      "code": "BK0695",
+      "change_pct": 1.92,
+      "turnover": 3.89,
+      "top_stock": "安泰科技",
+      "up_count": 73,
+      "down_count": 34
+    },
+    {
+      "name": "京津冀",
+      "code": "BK0684",
+      "change_pct": 1.91,
+      "turnover": 3.55,
+      "top_stock": "巨力索具",
+      "up_count": 42,
+      "down_count": 15
+    },
+    {
+      "name": "LED",
+      "code": "BK0580",
+      "change_pct": 1.9,
+      "turnover": 4.17,
+      "top_stock": "得邦照明",
+      "up_count": 71,
+      "down_count": 23
+    },
+    {
+      "name": "铁路基建",
+      "code": "BK0592",
+      "change_pct": 1.9,
+      "turnover": 1.76,
+      "top_stock": "博菲电气",
+      "up_count": 100,
+      "down_count": 20
+    },
+    {
+      "name": "医疗器械概念",
+      "code": "BK0668",
+      "change_pct": 1.9,
+      "turnover": 3.86,
+      "top_stock": "美年健康",
+      "up_count": 244,
+      "down_count": 73
+    },
+    {
+      "name": "华为汽车",
+      "code": "BK0984",
+      "change_pct": 1.9,
+      "turnover": 4.95,
+      "top_stock": "维科技术",
+      "up_count": 83,
+      "down_count": 30
+    },
+    {
+      "name": "特高压",
+      "code": "BK0918",
+      "change_pct": 1.89,
+      "turnover": 4.53,
+      "top_stock": "航天电子",
+      "up_count": 64,
+      "down_count": 18
+    },
+    {
+      "name": "雄安新区",
+      "code": "BK0813",
+      "change_pct": 1.87,
+      "turnover": 2.71,
+      "top_stock": "巨力索具",
+      "up_count": 112,
+      "down_count": 31
+    },
+    {
+      "name": "内贸流通",
+      "code": "BK1001",
+      "change_pct": 1.87,
+      "turnover": 4.29,
+      "top_stock": "茂业商业",
+      "up_count": 133,
+      "down_count": 26
+    },
+    {
+      "name": "重组蛋白",
+      "code": "BK1063",
+      "change_pct": 1.86,
+      "turnover": 3.59,
+      "top_stock": "成都先导",
+      "up_count": 9,
+      "down_count": 8
+    },
+    {
+      "name": "央国企改革",
+      "code": "BK0683",
+      "change_pct": 1.86,
+      "turnover": 1.82,
+      "top_stock": "交运股份",
+      "up_count": 1075,
+      "down_count": 297
+    },
+    {
+      "name": "一带一路",
+      "code": "BK0712",
+      "change_pct": 1.86,
+      "turnover": 1.73,
+      "top_stock": "通宇通讯",
+      "up_count": 384,
+      "down_count": 96
+    },
+    {
+      "name": "券商概念",
+      "code": "BK0711",
+      "change_pct": 1.85,
+      "turnover": 2.13,
+      "top_stock": "同花顺",
+      "up_count": 53,
+      "down_count": 1
+    },
+    {
+      "name": "低碳冶金",
+      "code": "BK0979",
+      "change_pct": 1.85,
+      "turnover": 1.14,
+      "top_stock": "酒钢宏兴",
+      "up_count": 7,
+      "down_count": 1
+    },
+    {
+      "name": "统一大市场",
+      "code": "BK1077",
+      "change_pct": 1.84,
+      "turnover": 3.05,
+      "top_stock": "炬申股份",
+      "up_count": 35,
+      "down_count": 6
+    },
+    {
+      "name": "充电桩",
+      "code": "BK0700",
+      "change_pct": 1.83,
+      "turnover": 4.38,
+      "top_stock": "银河电子",
+      "up_count": 185,
+      "down_count": 61
+    },
+    {
+      "name": "房屋检测",
+      "code": "BK1179",
+      "change_pct": 1.82,
+      "turnover": 3.36,
+      "top_stock": "新点软件",
+      "up_count": 28,
+      "down_count": 10
+    },
+    {
+      "name": "高压快充",
+      "code": "BK1144",
+      "change_pct": 1.82,
+      "turnover": 5.24,
+      "top_stock": "银河电子",
+      "up_count": 41,
+      "down_count": 16
+    },
+    {
+      "name": "长江三角",
+      "code": "BK0594",
+      "change_pct": 1.81,
+      "turnover": 3.04,
+      "top_stock": "美年健康",
+      "up_count": 302,
+      "down_count": 99
+    },
+    {
+      "name": "太阳能",
+      "code": "BK0588",
+      "change_pct": 1.81,
+      "turnover": 3.25,
+      "top_stock": "巨力索具",
+      "up_count": 312,
+      "down_count": 100
+    },
+    {
+      "name": "汽车拆解",
+      "code": "BK0943",
+      "change_pct": 1.8,
+      "turnover": 2.95,
+      "top_stock": "交运股份",
+      "up_count": 12,
+      "down_count": 3
+    },
+    {
+      "name": "QFII重仓",
+      "code": "BK0535",
+      "change_pct": 1.8,
+      "turnover": 4.42,
+      "top_stock": "通达海",
+      "up_count": 226,
+      "down_count": 96
+    },
+    {
+      "name": "碳交易",
+      "code": "BK0966",
+      "change_pct": 1.79,
+      "turnover": 1.68,
+      "top_stock": "豫能控股",
+      "up_count": 100,
+      "down_count": 28
+    },
+    {
+      "name": "宠物经济",
+      "code": "BK0993",
+      "change_pct": 1.79,
+      "turnover": 3.22,
+      "top_stock": "青木科技",
+      "up_count": 49,
+      "down_count": 16
+    },
+    {
+      "name": "空气能热泵",
+      "code": "BK1102",
+      "change_pct": 1.79,
+      "turnover": 3.27,
+      "top_stock": "雪人集团",
+      "up_count": 29,
+      "down_count": 6
+    },
+    {
+      "name": "富士康",
+      "code": "BK0842",
+      "change_pct": 1.77,
+      "turnover": 5.37,
+      "top_stock": "鼎捷数智",
+      "up_count": 30,
+      "down_count": 9
+    },
+    {
+      "name": "中证500",
+      "code": "BK0701",
+      "change_pct": 1.77,
+      "turnover": 2.94,
+      "top_stock": "美年健康",
+      "up_count": 326,
+      "down_count": 161
+    },
+    {
+      "name": "新材料",
+      "code": "BK0523",
+      "change_pct": 1.75,
+      "turnover": 5.05,
+      "top_stock": "安泰科技",
+      "up_count": 259,
+      "down_count": 105
+    },
+    {
+      "name": "风能",
+      "code": "BK0595",
+      "change_pct": 1.73,
+      "turnover": 2.33,
+      "top_stock": "巨力索具",
+      "up_count": 163,
+      "down_count": 58
+    },
+    {
+      "name": "雅下水电概念",
+      "code": "BK1192",
+      "change_pct": 1.72,
+      "turnover": 2.49,
+      "top_stock": "雪人集团",
+      "up_count": 38,
+      "down_count": 12
+    },
+    {
+      "name": "储能",
+      "code": "BK0989",
+      "change_pct": 1.71,
+      "turnover": 3.4,
+      "top_stock": "通宇通讯",
+      "up_count": 294,
+      "down_count": 99
+    },
+    {
+      "name": "机构重仓",
+      "code": "BK0552",
+      "change_pct": 1.71,
+      "turnover": 1.47,
+      "top_stock": "美年健康",
+      "up_count": 814,
+      "down_count": 276
+    },
+    {
+      "name": "沪股通",
+      "code": "BK0707",
+      "change_pct": 1.71,
+      "turnover": 1.59,
+      "top_stock": "杭萧钢构",
+      "up_count": 1063,
+      "down_count": 437
+    },
+    {
+      "name": "地下管网",
+      "code": "BK1058",
+      "change_pct": 1.7,
+      "turnover": 2.77,
+      "top_stock": "金洲管道",
+      "up_count": 33,
+      "down_count": 13
+    },
+    {
+      "name": "特斯拉",
+      "code": "BK0644",
+      "change_pct": 1.69,
+      "turnover": 4.98,
+      "top_stock": "金晶科技",
+      "up_count": 158,
+      "down_count": 53
+    },
+    {
+      "name": "IPO受益",
+      "code": "BK0697",
+      "change_pct": 1.67,
+      "turnover": 2.41,
+      "top_stock": "电广传媒",
+      "up_count": 45,
+      "down_count": 8
+    },
+    {
+      "name": "Chiplet概念",
+      "code": "BK1101",
+      "change_pct": 1.67,
+      "turnover": 6.85,
+      "top_stock": "合锻智能",
+      "up_count": 20,
+      "down_count": 9
+    },
+    {
+      "name": "转债标的",
+      "code": "BK0528",
+      "change_pct": 1.66,
+      "turnover": 2.6,
+      "top_stock": "嘉美包装",
+      "up_count": 265,
+      "down_count": 117
+    },
+    {
+      "name": "汽车热管理",
+      "code": "BK1089",
+      "change_pct": 1.65,
+      "turnover": 5.8,
+      "top_stock": "四川长虹",
+      "up_count": 68,
+      "down_count": 24
+    },
+    {
+      "name": "光通信模块",
+      "code": "BK1136",
+      "change_pct": 1.64,
+      "turnover": 7.13,
+      "top_stock": "通宇通讯",
+      "up_count": 49,
+      "down_count": 22
+    },
+    {
+      "name": "苹果概念",
+      "code": "BK0666",
+      "change_pct": 1.63,
+      "turnover": 3.88,
+      "top_stock": "安泰科技",
+      "up_count": 85,
+      "down_count": 41
+    },
+    {
+      "name": "上证380",
+      "code": "BK0705",
+      "change_pct": 1.63,
+      "turnover": 2.43,
+      "top_stock": "东方通信",
+      "up_count": 253,
+      "down_count": 119
+    },
+    {
+      "name": "氢能源",
+      "code": "BK0864",
+      "change_pct": 1.63,
+      "turnover": 2.65,
+      "top_stock": "艾可蓝",
+      "up_count": 169,
+      "down_count": 71
+    },
+    {
+      "name": "2025中报预增",
+      "code": "BK1194",
+      "change_pct": 1.62,
+      "turnover": 3.27,
+      "top_stock": "巨力索具",
+      "up_count": 310,
+      "down_count": 113
+    },
+    {
+      "name": "参股券商",
+      "code": "BK0514",
+      "change_pct": 1.61,
+      "turnover": 2.22,
+      "top_stock": "交运股份",
+      "up_count": 85,
+      "down_count": 38
+    },
+    {
+      "name": "人造肉",
+      "code": "BK0866",
+      "change_pct": 1.61,
+      "turnover": 3.25,
+      "top_stock": "东宝生物",
+      "up_count": 15,
+      "down_count": 3
+    },
+    {
+      "name": "2025中报预减",
+      "code": "BK1195",
+      "change_pct": 1.61,
+      "turnover": 3.01,
+      "top_stock": "嘉美包装",
+      "up_count": 151,
+      "down_count": 45
+    },
+    {
+      "name": "上海自贸",
+      "code": "BK0643",
+      "change_pct": 1.61,
+      "turnover": 1.41,
+      "top_stock": "交运股份",
+      "up_count": 25,
+      "down_count": 9
+    },
+    {
+      "name": "尾气治理",
+      "code": "BK0932",
+      "change_pct": 1.6,
+      "turnover": 5.62,
+      "top_stock": "艾可蓝",
+      "up_count": 23,
+      "down_count": 11
+    },
+    {
+      "name": "钠离子电池",
+      "code": "BK0988",
+      "change_pct": 1.6,
+      "turnover": 3.45,
+      "top_stock": "中国长城",
+      "up_count": 40,
+      "down_count": 20
+    },
+    {
+      "name": "乡村振兴",
+      "code": "BK0834",
+      "change_pct": 1.59,
+      "turnover": 3.35,
+      "top_stock": "宏盛股份",
+      "up_count": 103,
+      "down_count": 33
+    },
+    {
+      "name": "新能源车",
+      "code": "BK0900",
+      "change_pct": 1.58,
+      "turnover": 4.47,
+      "top_stock": "利欧股份",
+      "up_count": 479,
+      "down_count": 160
+    },
+    {
+      "name": "节能环保",
+      "code": "BK0494",
+      "change_pct": 1.57,
+      "turnover": 3.35,
+      "top_stock": "山高环能",
+      "up_count": 297,
+      "down_count": 102
+    },
+    {
+      "name": "参股保险",
+      "code": "BK0604",
+      "change_pct": 1.57,
+      "turnover": 0.91,
+      "top_stock": "利欧股份",
+      "up_count": 55,
+      "down_count": 19
+    },
+    {
+      "name": "粤港自贸",
+      "code": "BK0677",
+      "change_pct": 1.56,
+      "turnover": 3.24,
+      "top_stock": "粤 传 媒",
+      "up_count": 53,
+      "down_count": 19
+    },
+    {
+      "name": "培育钻石",
+      "code": "BK1023",
+      "change_pct": 1.56,
+      "turnover": 3.5,
+      "top_stock": "国机精工",
+      "up_count": 11,
+      "down_count": 3
+    },
+    {
+      "name": "新能源",
+      "code": "BK0493",
+      "change_pct": 1.55,
+      "turnover": 2.79,
+      "top_stock": "巨力索具",
+      "up_count": 157,
+      "down_count": 52
+    },
+    {
+      "name": "中特估",
+      "code": "BK1139",
+      "change_pct": 1.54,
+      "turnover": 0.47,
+      "top_stock": "烽火通信",
+      "up_count": 63,
+      "down_count": 13
+    },
+    {
+      "name": "深证100R",
+      "code": "BK0743",
+      "change_pct": 1.53,
+      "turnover": 1.91,
+      "top_stock": "昆仑万维",
+      "up_count": 65,
+      "down_count": 34
+    },
+    {
+      "name": "辅助生殖",
+      "code": "BK0939",
+      "change_pct": 1.52,
+      "turnover": 3.32,
+      "top_stock": "迪安诊断",
+      "up_count": 42,
+      "down_count": 11
+    },
+    {
+      "name": "中俄贸易概念",
+      "code": "BK1072",
+      "change_pct": 1.52,
+      "turnover": 3.23,
+      "top_stock": "通宇通讯",
+      "up_count": 68,
+      "down_count": 11
+    },
+    {
+      "name": "机器人执行器",
+      "code": "BK1145",
+      "change_pct": 1.52,
+      "turnover": 5.62,
+      "top_stock": "国机精工",
+      "up_count": 26,
+      "down_count": 9
+    },
+    {
+      "name": "固态电池",
+      "code": "BK0968",
+      "change_pct": 1.5,
+      "turnover": 4.01,
+      "top_stock": "浙数文化",
+      "up_count": 147,
+      "down_count": 68
+    },
+    {
+      "name": "参股期货",
+      "code": "BK0524",
+      "change_pct": 1.49,
+      "turnover": 2.03,
+      "top_stock": "浙江东方",
+      "up_count": 37,
+      "down_count": 7
+    },
+    {
+      "name": "预制菜概念",
+      "code": "BK1025",
+      "change_pct": 1.49,
+      "turnover": 4.73,
+      "top_stock": "福成股份",
+      "up_count": 50,
+      "down_count": 6
+    },
+    {
+      "name": "医疗美容",
+      "code": "BK0889",
+      "change_pct": 1.49,
+      "turnover": 2.62,
+      "top_stock": "亚联发展",
+      "up_count": 50,
+      "down_count": 19
+    },
+    {
+      "name": "纳米银",
+      "code": "BK0855",
+      "change_pct": 1.47,
+      "turnover": 7.08,
+      "top_stock": "欧菲光",
+      "up_count": 6,
+      "down_count": 1
+    },
+    {
+      "name": "新型城镇化",
+      "code": "BK1080",
+      "change_pct": 1.47,
+      "turnover": 3.66,
+      "top_stock": "志特新材",
+      "up_count": 73,
+      "down_count": 21
+    },
+    {
+      "name": "微盘股",
+      "code": "BK1158",
+      "change_pct": 1.47,
+      "turnover": 3.9,
+      "top_stock": "亚联发展",
+      "up_count": 319,
+      "down_count": 68
+    },
+    {
+      "name": "OLED",
+      "code": "BK0840",
+      "change_pct": 1.47,
+      "turnover": 4.57,
+      "top_stock": "江化微",
+      "up_count": 92,
+      "down_count": 37
+    },
+    {
+      "name": "动力电池回收",
+      "code": "BK1052",
+      "change_pct": 1.46,
+      "turnover": 4.38,
+      "top_stock": "道氏技术",
+      "up_count": 29,
+      "down_count": 12
+    },
+    {
+      "name": "锂电池",
+      "code": "BK0574",
+      "change_pct": 1.45,
+      "turnover": 4.3,
+      "top_stock": "中国长城",
+      "up_count": 280,
+      "down_count": 111
+    },
+    {
+      "name": "换电概念",
+      "code": "BK0985",
+      "change_pct": 1.45,
+      "turnover": 2.75,
+      "top_stock": "超捷股份",
+      "up_count": 28,
+      "down_count": 11
+    },
+    {
+      "name": "东北振兴",
+      "code": "BK0838",
+      "change_pct": 1.45,
+      "turnover": 2.9,
+      "top_stock": "大商股份",
+      "up_count": 40,
+      "down_count": 13
+    },
+    {
+      "name": "MSCI中国",
+      "code": "BK0821",
+      "change_pct": 1.44,
+      "turnover": 1.32,
+      "top_stock": "烽火通信",
+      "up_count": 343,
+      "down_count": 185
+    },
+    {
+      "name": "CRO",
+      "code": "BK0899",
+      "change_pct": 1.44,
+      "turnover": 3.91,
+      "top_stock": "成都先导",
+      "up_count": 21,
+      "down_count": 16
+    },
+    {
+      "name": "免税概念",
+      "code": "BK0927",
+      "change_pct": 1.42,
+      "turnover": 2.19,
+      "top_stock": "大商股份",
+      "up_count": 20,
+      "down_count": 6
+    },
+    {
+      "name": "啤酒概念",
+      "code": "BK1073",
+      "change_pct": 1.42,
+      "turnover": 2.83,
+      "top_stock": "嘉美包装",
+      "up_count": 12,
+      "down_count": 6
+    },
+    {
+      "name": "熔盐储能",
+      "code": "BK1103",
+      "change_pct": 1.41,
+      "turnover": 3.35,
+      "top_stock": "久盛电气",
+      "up_count": 9,
+      "down_count": 2
+    },
+    {
+      "name": "标准普尔",
+      "code": "BK0879",
+      "change_pct": 1.4,
+      "turnover": 1.71,
+      "top_stock": "视觉中国",
+      "up_count": 712,
+      "down_count": 289
+    },
+    {
+      "name": "湖北自贸",
+      "code": "BK0926",
+      "change_pct": 1.39,
+      "turnover": 4.63,
+      "top_stock": "烽火通信",
+      "up_count": 19,
+      "down_count": 7
+    },
+    {
+      "name": "中芯概念",
+      "code": "BK0935",
+      "change_pct": 1.38,
+      "turnover": 4.94,
+      "top_stock": "安泰科技",
+      "up_count": 42,
+      "down_count": 24
+    },
+    {
+      "name": "央视50_",
+      "code": "BK0610",
+      "change_pct": 1.37,
+      "turnover": 0.48,
+      "top_stock": "迪安诊断",
+      "up_count": 34,
+      "down_count": 16
+    },
+    {
+      "name": "噪声防治",
+      "code": "BK1082",
+      "change_pct": 1.37,
+      "turnover": 4.12,
+      "top_stock": "恒大高新",
+      "up_count": 6,
+      "down_count": 2
+    },
+    {
+      "name": "玻璃基板",
+      "code": "BK1175",
+      "change_pct": 1.36,
+      "turnover": 3.51,
+      "top_stock": "凯盛科技",
+      "up_count": 25,
+      "down_count": 8
+    },
+    {
+      "name": "工程机械概念",
+      "code": "BK0991",
+      "change_pct": 1.33,
+      "turnover": 1.79,
+      "top_stock": "优机股份",
+      "up_count": 43,
+      "down_count": 11
+    },
+    {
+      "name": "基金重仓",
+      "code": "BK0536",
+      "change_pct": 1.33,
+      "turnover": 3.91,
+      "top_stock": "航天电子",
+      "up_count": 54,
+      "down_count": 49
+    },
+    {
+      "name": "沪企改革",
+      "code": "BK0672",
+      "change_pct": 1.33,
+      "turnover": 1.91,
+      "top_stock": "交运股份",
+      "up_count": 34,
+      "down_count": 6
+    },
+    {
+      "name": "贬值受益",
+      "code": "BK0812",
+      "change_pct": 1.33,
+      "turnover": 2.97,
+      "top_stock": "宏盛股份",
+      "up_count": 131,
+      "down_count": 50
+    },
+    {
+      "name": "燃料电池",
+      "code": "BK0682",
+      "change_pct": 1.32,
+      "turnover": 3.53,
+      "top_stock": "安泰科技",
+      "up_count": 100,
+      "down_count": 38
+    },
+    {
+      "name": "工业大麻",
+      "code": "BK0856",
+      "change_pct": 1.32,
+      "turnover": 3.26,
+      "top_stock": "通化金马",
+      "up_count": 24,
+      "down_count": 11
+    },
+    {
+      "name": "绿色电力",
+      "code": "BK1024",
+      "change_pct": 1.31,
+      "turnover": 1.59,
+      "top_stock": "豫能控股",
+      "up_count": 115,
+      "down_count": 26
+    },
+    {
+      "name": "石墨烯",
+      "code": "BK0617",
+      "change_pct": 1.31,
+      "turnover": 4.22,
+      "top_stock": "中超控股",
+      "up_count": 47,
+      "down_count": 21
+    },
+    {
+      "name": "复合集流体",
+      "code": "BK1113",
+      "change_pct": 1.31,
+      "turnover": 5.68,
+      "top_stock": "劲嘉股份",
+      "up_count": 23,
+      "down_count": 6
+    },
+    {
+      "name": "抽水蓄能",
+      "code": "BK1003",
+      "change_pct": 1.31,
+      "turnover": 2.7,
+      "top_stock": "豫能控股",
+      "up_count": 28,
+      "down_count": 5
+    },
+    {
+      "name": "降解塑料",
+      "code": "BK0909",
+      "change_pct": 1.29,
+      "turnover": 3.21,
+      "top_stock": "银禧科技",
+      "up_count": 48,
+      "down_count": 14
+    },
+    {
+      "name": "调味品概念",
+      "code": "BK1026",
+      "change_pct": 1.29,
+      "turnover": 2.02,
+      "top_stock": "安记食品",
+      "up_count": 26,
+      "down_count": 5
+    },
+    {
+      "name": "白酒",
+      "code": "BK0896",
+      "change_pct": 1.29,
+      "turnover": 1.82,
+      "top_stock": "巨力索具",
+      "up_count": 39,
+      "down_count": 7
+    },
+    {
+      "name": "可燃冰",
+      "code": "BK0818",
+      "change_pct": 1.24,
+      "turnover": 2.14,
+      "top_stock": "鲁阳节能",
+      "up_count": 4,
+      "down_count": 5
+    },
+    {
+      "name": "超超临界发电",
+      "code": "BK1087",
+      "change_pct": 1.23,
+      "turnover": 2.4,
+      "top_stock": "豫能控股",
+      "up_count": 34,
+      "down_count": 14
+    },
+    {
+      "name": "刀片电池",
+      "code": "BK0951",
+      "change_pct": 1.23,
+      "turnover": 4.16,
+      "top_stock": "星云股份",
+      "up_count": 10,
+      "down_count": 2
+    },
+    {
+      "name": "合成生物",
+      "code": "BK1174",
+      "change_pct": 1.22,
+      "turnover": 3.72,
+      "top_stock": "亚联发展",
+      "up_count": 81,
+      "down_count": 28
+    },
+    {
+      "name": "锂矿概念",
+      "code": "BK1173",
+      "change_pct": 1.21,
+      "turnover": 3.36,
+      "top_stock": "大中矿业",
+      "up_count": 25,
+      "down_count": 13
+    },
+    {
+      "name": "垃圾分类",
+      "code": "BK0873",
+      "change_pct": 1.21,
+      "turnover": 3.45,
+      "top_stock": "山高环能",
+      "up_count": 71,
+      "down_count": 20
+    },
+    {
+      "name": "海绵城市",
+      "code": "BK0724",
+      "change_pct": 1.21,
+      "turnover": 2.06,
+      "top_stock": "利欧股份",
+      "up_count": 25,
+      "down_count": 9
+    },
+    {
+      "name": "油气设服",
+      "code": "BK0606",
+      "change_pct": 1.19,
+      "turnover": 2.84,
+      "top_stock": "雪人集团",
+      "up_count": 30,
+      "down_count": 17
+    },
+    {
+      "name": "生态农业",
+      "code": "BK0669",
+      "change_pct": 1.18,
+      "turnover": 3.63,
+      "top_stock": "福成股份",
+      "up_count": 26,
+      "down_count": 11
+    },
+    {
+      "name": "快递概念",
+      "code": "BK0990",
+      "change_pct": 1.18,
+      "turnover": 2.43,
+      "top_stock": "海晨股份",
+      "up_count": 31,
+      "down_count": 10
+    },
+    {
+      "name": "户外露营",
+      "code": "BK1079",
+      "change_pct": 1.17,
+      "turnover": 3.24,
+      "top_stock": "趣睡科技",
+      "up_count": 21,
+      "down_count": 6
+    },
+    {
+      "name": "反内卷概念",
+      "code": "BK1197",
+      "change_pct": 1.16,
+      "turnover": 2.35,
+      "top_stock": "金晶科技",
+      "up_count": 104,
+      "down_count": 47
+    },
+    {
+      "name": "民爆概念",
+      "code": "BK1066",
+      "change_pct": 1.15,
+      "turnover": 2.82,
+      "top_stock": "航天智造",
+      "up_count": 14,
+      "down_count": 6
+    },
+    {
+      "name": "参股银行",
+      "code": "BK0525",
+      "change_pct": 1.15,
+      "turnover": 1.64,
+      "top_stock": "博瑞传播",
+      "up_count": 153,
+      "down_count": 66
+    },
+    {
+      "name": "PCB",
+      "code": "BK0877",
+      "change_pct": 1.14,
+      "turnover": 5.16,
+      "top_stock": "楚江新材",
+      "up_count": 80,
+      "down_count": 44
+    },
+    {
+      "name": "GDR",
+      "code": "BK0868",
+      "change_pct": 1.13,
+      "turnover": 1.75,
+      "top_stock": "明阳智能",
+      "up_count": 6,
+      "down_count": 4
+    },
+    {
+      "name": "HS300_",
+      "code": "BK0500",
+      "change_pct": 1.12,
+      "turnover": 0.88,
+      "top_stock": "用友网络",
+      "up_count": 192,
+      "down_count": 96
+    },
+    {
+      "name": "抗菌面料",
+      "code": "BK1116",
+      "change_pct": 1.12,
+      "turnover": 3.78,
+      "top_stock": "探路者",
+      "up_count": 11,
+      "down_count": 4
+    },
+    {
+      "name": "天然气",
+      "code": "BK0843",
+      "change_pct": 1.11,
+      "turnover": 1.44,
+      "top_stock": "德龙汇能",
+      "up_count": 79,
+      "down_count": 43
+    },
+    {
+      "name": "地摊经济",
+      "code": "BK0924",
+      "change_pct": 1.09,
+      "turnover": 3.09,
+      "top_stock": "茂业商业",
+      "up_count": 21,
+      "down_count": 8
+    },
+    {
+      "name": "有机硅",
+      "code": "BK0961",
+      "change_pct": 1.08,
+      "turnover": 4.16,
+      "top_stock": "博菲电气",
+      "up_count": 24,
+      "down_count": 11
+    },
+    {
+      "name": "青蒿素",
+      "code": "BK0872",
+      "change_pct": 1.04,
+      "turnover": 1.37,
+      "top_stock": "德龙汇能",
+      "up_count": 8,
+      "down_count": 2
+    },
+    {
+      "name": "土壤修复",
+      "code": "BK1070",
+      "change_pct": 1.02,
+      "turnover": 2.74,
+      "top_stock": "海能技术",
+      "up_count": 28,
+      "down_count": 6
+    },
+    {
+      "name": "AB股",
+      "code": "BK0498",
+      "change_pct": 1.02,
+      "turnover": 1.79,
+      "top_stock": "东方通信",
+      "up_count": 57,
+      "down_count": 14
+    },
+    {
+      "name": "医废处理",
+      "code": "BK0914",
+      "change_pct": 1.02,
+      "turnover": 2.76,
+      "top_stock": "金圆股份",
+      "up_count": 23,
+      "down_count": 6
+    },
+    {
+      "name": "次新股",
+      "code": "BK0501",
+      "change_pct": 0.99,
+      "turnover": 9.11,
+      "top_stock": "百奥赛图",
+      "up_count": 78,
+      "down_count": 33
+    },
+    {
+      "name": "发电机概念",
+      "code": "BK1014",
+      "change_pct": 0.99,
+      "turnover": 4.36,
+      "top_stock": "*ST金灵",
+      "up_count": 18,
+      "down_count": 3
+    },
+    {
+      "name": "证金持股",
+      "code": "BK0718",
+      "change_pct": 0.99,
+      "turnover": 0.77,
+      "top_stock": "东方明珠",
+      "up_count": 141,
+      "down_count": 67
+    },
+    {
+      "name": "钛白粉",
+      "code": "BK0805",
+      "change_pct": 0.98,
+      "turnover": 2.93,
+      "top_stock": "振华股份",
+      "up_count": 8,
+      "down_count": 4
+    },
+    {
+      "name": "娃哈哈概念",
+      "code": "BK1165",
+      "change_pct": 0.98,
+      "turnover": 3.63,
+      "top_stock": "嘉美包装",
+      "up_count": 13,
+      "down_count": 6
+    },
+    {
+      "name": "PPP模式",
+      "code": "BK0721",
+      "change_pct": 0.97,
+      "turnover": 1.98,
+      "top_stock": "国晟科技",
+      "up_count": 98,
+      "down_count": 42
+    },
+    {
+      "name": "低价股",
+      "code": "BK1053",
+      "change_pct": 0.95,
+      "turnover": 2.43,
+      "top_stock": "金隅集团",
+      "up_count": 89,
+      "down_count": 35
+    },
+    {
+      "name": "轮毂电机",
+      "code": "BK1099",
+      "change_pct": 0.92,
+      "turnover": 2.9,
+      "top_stock": "佳电股份",
+      "up_count": 7,
+      "down_count": 2
+    },
+    {
+      "name": "黄金概念",
+      "code": "BK0547",
+      "change_pct": 0.91,
+      "turnover": 3.27,
+      "top_stock": "明牌珠宝",
+      "up_count": 48,
+      "down_count": 20
+    },
+    {
+      "name": "茅指数",
+      "code": "BK0999",
+      "change_pct": 0.9,
+      "turnover": 1.57,
+      "top_stock": "金山办公",
+      "up_count": 30,
+      "down_count": 12
+    },
+    {
+      "name": "光刻机(胶)",
+      "code": "BK0884",
+      "change_pct": 0.89,
+      "turnover": 7.63,
+      "top_stock": "安泰科技",
+      "up_count": 58,
+      "down_count": 40
+    },
+    {
+      "name": "转基因",
+      "code": "BK0907",
+      "change_pct": 0.87,
+      "turnover": 2.75,
+      "top_stock": "托普云农",
+      "up_count": 11,
+      "down_count": 4
+    },
+    {
+      "name": "幽门螺杆菌概念",
+      "code": "BK1056",
+      "change_pct": 0.87,
+      "turnover": 3.32,
+      "top_stock": "向日葵",
+      "up_count": 32,
+      "down_count": 18
+    },
+    {
+      "name": "超级电容",
+      "code": "BK0703",
+      "change_pct": 0.85,
+      "turnover": 4.01,
+      "top_stock": "航天彩虹",
+      "up_count": 20,
+      "down_count": 11
+    },
+    {
+      "name": "代糖概念",
+      "code": "BK0938",
+      "change_pct": 0.83,
+      "turnover": 2.48,
+      "top_stock": "鲁信创投",
+      "up_count": 9,
+      "down_count": 6
+    },
+    {
+      "name": "社保重仓",
+      "code": "BK0520",
+      "change_pct": 0.83,
+      "turnover": 1.6,
+      "top_stock": "科锐国际",
+      "up_count": 9,
+      "down_count": 10
+    },
+    {
+      "name": "CPO概念",
+      "code": "BK1128",
+      "change_pct": 0.82,
+      "turnover": 5.85,
+      "top_stock": "烽火通信",
+      "up_count": 25,
+      "down_count": 22
+    },
+    {
+      "name": "钒电池",
+      "code": "BK1095",
+      "change_pct": 0.82,
+      "turnover": 3.34,
+      "top_stock": "四川长虹",
+      "up_count": 14,
+      "down_count": 6
+    },
+    {
+      "name": "肝炎概念",
+      "code": "BK1078",
+      "change_pct": 0.82,
+      "turnover": 3.44,
+      "top_stock": "迪安诊断",
+      "up_count": 39,
+      "down_count": 17
+    },
+    {
+      "name": "科创板做市商",
+      "code": "BK1107",
+      "change_pct": 0.79,
+      "turnover": 1.1,
+      "top_stock": "国金证券",
+      "up_count": 12,
+      "down_count": 1
+    },
+    {
+      "name": "粮食概念",
+      "code": "BK1086",
+      "change_pct": 0.78,
+      "turnover": 3.65,
+      "top_stock": "海能技术",
+      "up_count": 23,
+      "down_count": 8
+    },
+    {
+      "name": "上证180_",
+      "code": "BK0612",
+      "change_pct": 0.78,
+      "turnover": 0.64,
+      "top_stock": "三六零",
+      "up_count": 118,
+      "down_count": 56
+    },
+    {
+      "name": "煤化工",
+      "code": "BK0492",
+      "change_pct": 0.77,
+      "turnover": 2.03,
+      "top_stock": "宏盛股份",
+      "up_count": 37,
+      "down_count": 34
+    },
+    {
+      "name": "AH股",
+      "code": "BK0499",
+      "change_pct": 0.76,
+      "turnover": 0.61,
+      "top_stock": "金隅集团",
+      "up_count": 104,
+      "down_count": 58
+    },
+    {
+      "name": "病毒防治",
+      "code": "BK0675",
+      "change_pct": 0.76,
+      "turnover": 2.72,
+      "top_stock": "迪安诊断",
+      "up_count": 69,
+      "down_count": 42
+    },
+    {
+      "name": "破净股",
+      "code": "BK1112",
+      "change_pct": 0.75,
+      "turnover": 0.71,
+      "top_stock": "金隅集团",
+      "up_count": 190,
+      "down_count": 62
+    },
+    {
+      "name": "注册制次新股",
+      "code": "BK0971",
+      "change_pct": 0.75,
+      "turnover": 9.0,
+      "top_stock": "百奥赛图",
+      "up_count": 55,
+      "down_count": 31
+    },
+    {
+      "name": "举牌",
+      "code": "BK0685",
+      "change_pct": 0.75,
+      "turnover": 0.47,
+      "top_stock": "海尔生物",
+      "up_count": 1,
+      "down_count": 3
+    },
+    {
+      "name": "高带宽内存",
+      "code": "BK1152",
+      "change_pct": 0.72,
+      "turnover": 4.73,
+      "top_stock": "香农芯创",
+      "up_count": 16,
+      "down_count": 9
+    },
+    {
+      "name": "鸡肉概念",
+      "code": "BK0887",
+      "change_pct": 0.72,
+      "turnover": 1.25,
+      "top_stock": "益生股份",
+      "up_count": 17,
+      "down_count": 3
+    },
+    {
+      "name": "消毒剂",
+      "code": "BK0913",
+      "change_pct": 0.72,
+      "turnover": 3.56,
+      "top_stock": "清水源",
+      "up_count": 36,
+      "down_count": 21
+    },
+    {
+      "name": "流感",
+      "code": "BK0906",
+      "change_pct": 0.72,
+      "turnover": 2.55,
+      "top_stock": "迪安诊断",
+      "up_count": 72,
+      "down_count": 42
+    },
+    {
+      "name": "土地流转",
+      "code": "BK0632",
+      "change_pct": 0.67,
+      "turnover": 4.47,
+      "top_stock": "大名城",
+      "up_count": 29,
+      "down_count": 15
+    },
+    {
+      "name": "农业种植",
+      "code": "BK0888",
+      "change_pct": 0.66,
+      "turnover": 3.21,
+      "top_stock": "托普云农",
+      "up_count": 59,
+      "down_count": 23
+    },
+    {
+      "name": "汽车一体化压铸",
+      "code": "BK1093",
+      "change_pct": 0.66,
+      "turnover": 3.49,
+      "top_stock": "星源卓镁",
+      "up_count": 23,
+      "down_count": 7
+    },
+    {
+      "name": "生物疫苗",
+      "code": "BK0548",
+      "change_pct": 0.66,
+      "turnover": 2.4,
+      "top_stock": "长春高新",
+      "up_count": 38,
+      "down_count": 24
+    },
+    {
+      "name": "上证50_",
+      "code": "BK0611",
+      "change_pct": 0.65,
+      "turnover": 0.38,
+      "top_stock": "金山办公",
+      "up_count": 33,
+      "down_count": 16
+    },
+    {
+      "name": "宁组合",
+      "code": "BK1000",
+      "change_pct": 0.65,
+      "turnover": 2.52,
+      "top_stock": "中微公司",
+      "up_count": 16,
+      "down_count": 8
+    },
+    {
+      "name": "维生素",
+      "code": "BK0895",
+      "change_pct": 0.65,
+      "turnover": 2.35,
+      "top_stock": "花园生物",
+      "up_count": 19,
+      "down_count": 11
+    },
+    {
+      "name": "装配建筑",
+      "code": "BK0945",
+      "change_pct": 0.64,
+      "turnover": 1.64,
+      "top_stock": "杭萧钢构",
+      "up_count": 61,
+      "down_count": 24
+    },
+    {
+      "name": "环氧丙烷",
+      "code": "BK1011",
+      "change_pct": 0.63,
+      "turnover": 1.47,
+      "top_stock": "航锦科技",
+      "up_count": 14,
+      "down_count": 6
+    },
+    {
+      "name": "净水概念",
+      "code": "BK1068",
+      "change_pct": 0.58,
+      "turnover": 1.21,
+      "top_stock": "九阳股份",
+      "up_count": 17,
+      "down_count": 4
+    },
+    {
+      "name": "页岩气",
+      "code": "BK0603",
+      "change_pct": 0.58,
+      "turnover": 0.9,
+      "top_stock": "航天智造",
+      "up_count": 17,
+      "down_count": 14
+    },
+    {
+      "name": "超级品牌",
+      "code": "BK0811",
+      "change_pct": 0.55,
+      "turnover": 1.34,
+      "top_stock": "张小泉",
+      "up_count": 24,
+      "down_count": 8
+    },
+    {
+      "name": "供销社概念",
+      "code": "BK1109",
+      "change_pct": 0.54,
+      "turnover": 3.02,
+      "top_stock": "万润股份",
+      "up_count": 10,
+      "down_count": 3
+    },
+    {
+      "name": "毛发医疗",
+      "code": "BK0996",
+      "change_pct": 0.49,
+      "turnover": 2.93,
+      "top_stock": "国际医学",
+      "up_count": 10,
+      "down_count": 5
+    },
+    {
+      "name": "生物质能发电",
+      "code": "BK1098",
+      "change_pct": 0.46,
+      "turnover": 2.48,
+      "top_stock": "华光环能",
+      "up_count": 19,
+      "down_count": 5
+    },
+    {
+      "name": "中药概念",
+      "code": "BK0615",
+      "change_pct": 0.43,
+      "turnover": 2.61,
+      "top_stock": "通化金马",
+      "up_count": 91,
+      "down_count": 47
+    },
+    {
+      "name": "减肥药",
+      "code": "BK1146",
+      "change_pct": 0.41,
+      "turnover": 2.14,
+      "top_stock": "睿智医药",
+      "up_count": 17,
+      "down_count": 15
+    },
+    {
+      "name": "B股",
+      "code": "BK0636",
+      "change_pct": 0.4,
+      "turnover": 0.31,
+      "top_stock": "东信Ｂ股",
+      "up_count": 33,
+      "down_count": 27
+    },
+    {
+      "name": "滨海新区",
+      "code": "BK0566",
+      "change_pct": 0.4,
+      "turnover": 2.64,
+      "top_stock": "鹏翎股份",
+      "up_count": 13,
+      "down_count": 6
+    },
+    {
+      "name": "稀缺资源",
+      "code": "BK0519",
+      "change_pct": 0.39,
+      "turnover": 2.63,
+      "top_stock": "中稀有色",
+      "up_count": 32,
+      "down_count": 43
+    },
+    {
+      "name": "免疫治疗",
+      "code": "BK0698",
+      "change_pct": 0.38,
+      "turnover": 2.48,
+      "top_stock": "姚记科技",
+      "up_count": 26,
+      "down_count": 15
+    },
+    {
+      "name": "猪肉概念",
+      "code": "BK0882",
+      "change_pct": 0.36,
+      "turnover": 1.92,
+      "top_stock": "益生股份",
+      "up_count": 23,
+      "down_count": 10
+    },
+    {
+      "name": "化工原料",
+      "code": "BK0512",
+      "change_pct": 0.34,
+      "turnover": 2.51,
+      "top_stock": "金晶科技",
+      "up_count": 43,
+      "down_count": 33
+    },
+    {
+      "name": "ST股",
+      "code": "BK0511",
+      "change_pct": 0.34,
+      "turnover": 2.39,
+      "top_stock": "ST思科瑞",
+      "up_count": 73,
+      "down_count": 96
+    },
+    {
+      "name": "水产养殖",
+      "code": "BK0967",
+      "change_pct": 0.28,
+      "turnover": 4.32,
+      "top_stock": "神农种业",
+      "up_count": 9,
+      "down_count": 6
+    },
+    {
+      "name": "创新药",
+      "code": "BK1106",
+      "change_pct": 0.23,
+      "turnover": 2.68,
+      "top_stock": "通化金马",
+      "up_count": 70,
+      "down_count": 79
+    },
+    {
+      "name": "租售同权",
+      "code": "BK0822",
+      "change_pct": 0.23,
+      "turnover": 2.2,
+      "top_stock": "明牌珠宝",
+      "up_count": 6,
+      "down_count": 10
+    },
+    {
+      "name": "氟化工",
+      "code": "BK0690",
+      "change_pct": 0.09,
+      "turnover": 5.0,
+      "top_stock": "中矿资源",
+      "up_count": 16,
+      "down_count": 18
+    },
+    {
+      "name": "REITs概念",
+      "code": "BK0992",
+      "change_pct": 0.01,
+      "turnover": 1.82,
+      "top_stock": "哈投股份",
+      "up_count": 12,
+      "down_count": 11
+    },
+    {
+      "name": "PVDF概念",
+      "code": "BK1012",
+      "change_pct": -0.01,
+      "turnover": 3.24,
+      "top_stock": "华谊集团",
+      "up_count": 6,
+      "down_count": 10
+    },
+    {
+      "name": "独家药品",
+      "code": "BK0676",
+      "change_pct": -0.01,
+      "turnover": 2.16,
+      "top_stock": "科源制药",
+      "up_count": 23,
+      "down_count": 19
+    },
+    {
+      "name": "磷化工",
+      "code": "BK1010",
+      "change_pct": -0.09,
+      "turnover": 2.82,
+      "top_stock": "清水源",
+      "up_count": 18,
+      "down_count": 26
+    },
+    {
+      "name": "超级真菌",
+      "code": "BK0862",
+      "change_pct": -0.1,
+      "turnover": 1.58,
+      "top_stock": "尔康制药",
+      "up_count": 12,
+      "down_count": 10
+    },
+    {
+      "name": "单抗概念",
+      "code": "BK0870",
+      "change_pct": -0.15,
+      "turnover": 1.93,
+      "top_stock": "长春高新",
+      "up_count": 24,
+      "down_count": 23
+    },
+    {
+      "name": "肝素概念",
+      "code": "BK0944",
+      "change_pct": -0.19,
+      "turnover": 1.45,
+      "top_stock": "复星医药",
+      "up_count": 7,
+      "down_count": 5
+    },
+    {
+      "name": "草甘膦",
+      "code": "BK0950",
+      "change_pct": -0.65,
+      "turnover": 3.26,
+      "top_stock": "诺 普 信",
+      "up_count": 4,
+      "down_count": 7
+    }
+  ],
+  "update_time": "2026-01-12T14:54:58.360317",
+  "cache_type": "concept_sectors"
+}

@@ -7,6 +7,35 @@
       <span class="timer-value">{{ formatTime(analysisElapsedTime) }}</span>
     </div>
     
+    <!-- 分析启动提示弹窗 -->
+    <transition name="analysis-toast">
+      <div v-if="showAnalysisToast" class="analysis-toast-overlay" @click="showAnalysisToast = false">
+        <div class="analysis-toast" @click.stop>
+          <div class="toast-header">
+            <span class="toast-icon">🏛️</span>
+            <span class="toast-title">机构级多维度智能分析已启动</span>
+            <button class="toast-close" @click="showAnalysisToast = false">×</button>
+          </div>
+          <div class="toast-body">
+            <p>本系统采用<strong>21个专业智能分析体</strong>协同工作，模拟机构投研部门的多角色分工运作模式</p>
+            <div class="toast-phases">
+              <div class="phase-item"><span class="phase-dot phase-1"></span>第一阶段：全维信息采集</div>
+              <div class="phase-item"><span class="phase-dot phase-2"></span>第二阶段：策略整合</div>
+              <div class="phase-item"><span class="phase-dot phase-3"></span>第三阶段：风险评估</div>
+              <div class="phase-item"><span class="phase-dot phase-4"></span>第四阶段：决策输出</div>
+            </div>
+            <div class="toast-footer">
+              <span class="time-badge">⏱️ 预计分析时间：8-15分钟</span>
+              <span class="toast-tip">请耐心等待，可实时查看各智能体进度</span>
+            </div>
+          </div>
+          <div class="toast-progress">
+            <div class="toast-progress-bar"></div>
+          </div>
+        </div>
+      </div>
+    </transition>
+    
     <!-- 全局日志窗口 -->
     <GlobalLogWindow 
       ref="globalLogWindowRef"
@@ -28,7 +57,6 @@
             @keyup.enter="startAnalysis"
           />
         </div>
-
         <button 
           @click="startAnalysis"
           :disabled="isAnalyzing || !isValidCode"
@@ -61,7 +89,6 @@
         </button>
       </div>
     </div>
-
     <!-- 智能体网格 - 按4个阶段分组显示 -->
     <div class="agents-container space-y-12">
       <!-- 第一阶段：全维信息采集与分析 -->
@@ -94,7 +121,6 @@
           />
         </div>
       </div>
-
       <!-- 第二阶段：策略整合 -->
       <div>
         <div class="stage-header">
@@ -123,7 +149,6 @@
           />
         </div>
       </div>
-
       <!-- 辩论环节 1：多空博弈（放在第二阶段之后） -->
       <div v-if="showBullBearDebate" class="debate-section">
         <DebatePanel 
@@ -137,7 +162,6 @@
           :agent-ids="['bull_researcher', 'bear_researcher', 'research_manager']"
         />
       </div>
-
       <!-- 第三阶段：风控终审 -->
       <div>
         <div class="stage-header">
@@ -166,7 +190,6 @@
           />
         </div>
       </div>
-
       <!-- 辩论环节 2：风控评估（放在第三阶段之后） -->
       <div v-if="showRiskDebate" class="debate-section">
         <DebatePanel 
@@ -180,7 +203,6 @@
           :agent-ids="['risk_aggressive', 'risk_conservative', 'risk_neutral', 'risk_manager']"
         />
       </div>
-
       <!-- 第四阶段：最终决策 -->
       <div>
         <div class="stage-header">
@@ -212,7 +234,6 @@
         </div>
         
       </div>
-
       <!-- 综合分析报告 -->
       <div v-if="showReport" class="mt-12 mb-20">
         <div class="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700 shadow-2xl">
@@ -277,7 +298,6 @@
                   <span v-if="stageInfo.agentCount > 0" class="stage-tab-count">{{ stageInfo.agentCount }}</span>
                 </button>
               </div>
-
               <!-- 阶段内容区 -->
               <div class="stage-content-area">
                 <div v-for="(stageInfo, stageKey) in reportStages" :key="stageKey" v-show="activeReportStage === stageKey">
@@ -285,7 +305,6 @@
                     <span class="stage-content-icon">{{ stageInfo.icon }}</span>
                     <h3 class="stage-content-title">{{ stageInfo.fullTitle }}</h3>
                   </div>
-
                   <!-- 智能体分析结果列表 -->
                   <div class="agent-results-list">
                     <div
@@ -307,7 +326,6 @@
                       <div class="agent-result-content prose prose-invert max-w-none" v-html="parseMarkdown(agentOutputs[agent.id])"></div>
                     </div>
                   </div>
-
                   <!-- 辩论摘要（仅在第二、三阶段显示） -->
                   <div v-if="stageKey === 'stage2' && bullBearDebateConclusion" class="debate-summary">
                     <div class="debate-summary-header">
@@ -319,7 +337,6 @@
                       <div class="debate-conclusion">{{ bullBearDebateConclusion.content }}</div>
                     </div>
                   </div>
-
                   <div v-if="stageKey === 'stage3' && riskDebateConclusion" class="debate-summary risk">
                     <div class="debate-summary-header">
                       <span>⚖️</span>
@@ -347,7 +364,6 @@
         </div>
       </div>
     </div>
-
     <!-- 详情弹窗 -->
     <div v-if="selectedAgent" class="modal-overlay" @click="selectedAgent = null">
       <div class="modal-content" @click.stop>
@@ -360,7 +376,6 @@
         </div>
       </div>
     </div>
-
     <ModelManager :visible="showModelManager" @close="showModelManager = false" @save="handleModelSave" />
     <ApiConfig :visible="showApiConfig" :apiKeys="apiKeys" :apiStatus="apiStatus" @close="showApiConfig = false" @save="handleApiSave" @updateStatus="updateApiStatus" />
     <StyleConfig 
@@ -420,7 +435,6 @@
     />
   </div>
 </template>
-
 <script>
 import { ref, computed, inject, onBeforeUnmount, onMounted } from 'vue'
 import axios from 'axios'
@@ -447,7 +461,6 @@ import {
   markAnalysisComplete
 } from '@/utils/analysisState'
 import { fetchWithSmartTimeout, ProgressMonitor } from '@/utils/smartTimeout'
-
 // 22个智能体完整定义（21个可配置 + 1个特殊的interpreter嵌入在GM卡片中）
 const AGENTS = [
   // Stage 1 - Group 1: 舆情与市场
@@ -461,14 +474,12 @@ const AGENTS = [
   { id: 'technical', role: 'TECHNICAL', title: '技术分析专家', icon: '📈', color: 'violet', stage: 1, group: 2 },
   { id: 'funds', role: 'FUNDS', title: '资金流向分析师', icon: '💰', color: 'emerald', stage: 1, group: 2 },
   { id: 'fundamental', role: 'FUNDAMENTAL', title: '基本面估值分析师', icon: '💼', color: 'indigo', stage: 1, group: 2 },
-
   // Stage 2 - 策略与辩论
   { id: 'bull_researcher', role: 'BULL', title: '看涨研究员', icon: '🐂', color: 'red', stage: 2 },
   { id: 'bear_researcher', role: 'BEAR', title: '看跌研究员', icon: '🐻', color: 'green', stage: 2 },
   { id: 'manager_fundamental', role: 'MANAGER_FUNDAMENTAL', title: '基本面研究总监', icon: '👔', color: 'blue', stage: 2 },
   { id: 'manager_momentum', role: 'MANAGER_MOMENTUM', title: '市场动能总监', icon: '⚡', color: 'amber', stage: 2 },
   { id: 'research_manager', role: 'RESEARCH_MANAGER', title: '研究部经理', icon: '🎓', color: 'violet', stage: 2 },
-
   // Stage 3 - 风控与博弈
   { id: 'risk_aggressive', role: 'RISK_AGGRESSIVE', title: '激进风控师', icon: '⚔️', color: 'orange', stage: 3 },
   { id: 'risk_conservative', role: 'RISK_CONSERVATIVE', title: '保守风控师', icon: '🛡️', color: 'slate', stage: 3 },
@@ -476,13 +487,11 @@ const AGENTS = [
   { id: 'risk_system', role: 'RISK_SYSTEM', title: '系统性风险总监', icon: '⚠️', color: 'red', stage: 3 },
   { id: 'risk_portfolio', role: 'RISK_PORTFOLIO', title: '组合风险总监', icon: '📉', color: 'amber', stage: 3 },
   { id: 'risk_manager', role: 'RISK_MANAGER', title: '风控部经理', icon: '👮', color: 'indigo', stage: 3 },
-
   // Stage 4 - 最终决策
   { id: 'gm', role: 'GM', title: '投资决策总经理', icon: '👑', color: 'fuchsia', stage: 4 },
   { id: 'trader', role: 'TRADER', title: '量化交易员', icon: '🤖', color: 'cyan', stage: 4 },
   { id: 'interpreter', role: 'INTERPRETER', title: '白话解读员', icon: '📢', color: 'green', stage: 4 }
 ]
-
 export default {
   name: 'AnalysisView',
   components: { 
@@ -510,7 +519,7 @@ export default {
     const analysisElapsedTime = ref(0)
     const analysisTimer = ref(null)
     const pollingInterval = ref(null)  // 轮询定时器
-
+    const showAnalysisToast = ref(false)  // 分析启动提示弹窗
     // 标签页标题提示
     const originalTitle = 'InvestMind Pro - AI投资决策系统'
     let titleFlashInterval = null
@@ -524,7 +533,6 @@ export default {
     const apiKeys = inject('apiKeys')
     const saveApiConfig = inject('saveApiConfig')
     const updateApiStatusFunc = inject('updateApiStatus')
-
     // Agent states
     const agentStatus = ref({})
     const agentOutputs = ref({})
@@ -536,18 +544,15 @@ export default {
     const modelUpdateTrigger = ref(0)
     const cardsExpanded = ref(false) // 卡片是否展开，默认折叠
     const agentConfig = ref({}) // 智能体配置
-
     // Debate states
     const showBullBearDebate = ref(false)
     const bullBearDebateStatus = ref('idle')
     const bullBearDebateMessages = ref([])
     const bullBearDebateConclusion = ref(null)
-
     const showRiskDebate = ref(false)
     const riskDebateStatus = ref('idle')
     const riskDebateMessages = ref([])
     const riskDebateConclusion = ref(null)
-
     const showReport = ref(false)
     const reportView = ref('professional') // 默认显示专业版
     const enableSimpleSummary = ref(true) // 白话总结开关，默认开启
@@ -568,7 +573,6 @@ export default {
     const lastPollingTime = ref(0)  // 上次轮询时间
     const pollingEnabled = ref(false)  // 是否启用轮询
     const currentSessionId = ref(null)  // 当前会话 ID
-
     // Initialize
     const initAgents = () => {
       AGENTS.forEach(a => {
@@ -581,7 +585,6 @@ export default {
       })
     }
     initAgents()
-
     // 加载智能体配置
     const loadAgentConfig = async () => {
       try {
@@ -602,7 +605,6 @@ export default {
     const enabledAgents = computed(() => {
       return AGENTS.filter(a => agentConfig.value[a.id] === true)
     })
-
     // Computed Groups（使用启用的智能体）
     const stage1Agents = computed(() => enabledAgents.value.filter(a => a.stage === 1))
     const stage2Agents = computed(() => enabledAgents.value.filter(a => a.stage === 2))
@@ -625,13 +627,11 @@ export default {
             return `<pre>${agentOutputs.value['interpreter']}</pre>`
         }
     })
-
     // 报告阶段配置（动态计算有内容的智能体数量）
     const reportStages = computed(() => {
       const getStageAgentCount = (stage) => {
         return AGENTS.filter(a => a.stage === stage && agentOutputs.value[a.id] && a.id !== 'interpreter').length
       }
-
       return {
         stage1: {
           icon: '🌐',
@@ -663,13 +663,11 @@ export default {
         }
       }
     })
-
     // 获取指定阶段有输出的智能体列表
     const getStageAgentsWithOutput = (stageKey) => {
       const stageNum = parseInt(stageKey.replace('stage', ''))
       return AGENTS.filter(a => a.stage === stageNum && agentOutputs.value[a.id] && a.id !== 'interpreter')
     }
-
     // 获取智能体卡片样式类
     const getAgentCardClass = (agent) => {
       const colorMap = {
@@ -687,7 +685,6 @@ export default {
       }
       return colorMap[agent.color] || 'agent-card-blue'
     }
-
     // 解析 Markdown
     const parseMarkdown = (text) => {
       if (!text) return ''
@@ -697,29 +694,35 @@ export default {
         return `<pre>${text}</pre>`
       }
     }
-
     // 格式化耗时
     const formatDuration = (seconds) => {
       if (!seconds || seconds <= 0) return ''
       return `${Number(seconds).toFixed(1)}s`
     }
-
     // 处理股票选择
     const handleStockSelect = (stock) => {
       console.log('选择股票:', stock)
-      // 移除SH/SZ前缀
-      stockCode.value = stock.code.replace('SH', '').replace('SZ', '')
+      // 提取纯数字股票代码（移除.SH/.SZ后缀）
+      const code = stock.code || ''
+      // 支持多种格式：600519.SH, SH600519, 600519
+      const pureCode = code.replace(/\.(SH|SZ|BJ)$/i, '')  // 移除后缀
+                          .replace(/^(SH|SZ|BJ)/i, '')     // 移除前缀
+                          .trim()
+      stockCode.value = pureCode
     }
-
     // Analysis Logic
     const startAnalysis = async () => {
       if (!isValidCode.value || isAnalyzing.value) return
-
       // 清除强制停止标记（允许新分析）
       clearForceStopFlag()
-
       isAnalyzing.value = true
       cardsExpanded.value = true // 开始分析时自动展开所有卡片
+      
+      // 显示分析启动提示弹窗，8秒后自动消失
+      showAnalysisToast.value = true
+      setTimeout(() => {
+        showAnalysisToast.value = false
+      }, 8000)
       agentDataSources.value = {}
       agentStatus.value = {}
       agentOutputs.value = {}
@@ -733,10 +736,8 @@ export default {
       if (globalLogWindowRef.value && globalLogWindowRef.value.clearLogs) {
         globalLogWindowRef.value.clearLogs()
       }
-
       // 更新标题为分析中
       document.title = `⏳ 分析中... - ${stockCode.value}`
-
       // 记录开始时间（不再使用前端独立计时器）
       analysisStartTime.value = Date.now()
       analysisElapsedTime.value = 0
@@ -772,7 +773,6 @@ export default {
         
         const sessionData = await sessionResponse.json()
         currentSessionId.value = sessionData.session_id
-
         // 保存到 localStorage（使用统一的函数）
         saveSessionId(currentSessionId.value)
         console.log('[会话] 会话创建成功:', currentSessionId.value)
@@ -788,7 +788,6 @@ export default {
         
         // 启动轮询机制
         startPolling()
-
         // 2. 执行第一阶段：全维信息采集与分析（细分三步）
         // ✅ 根据配置过滤启用的智能体
         // Step 1.1: 数据采集层 (News, Social, China)
@@ -797,21 +796,18 @@ export default {
         if (step1Agents.length > 0) {
           await runAgentsParallel(step1Agents, fetchedStockData)
         }
-
         // Step 1.2: 行业与宏观分析层 (Industry, Macro) - 依赖Step 1.1
         const step2AgentsCandidates = ['industry', 'macro']
         const step2Agents = step2AgentsCandidates.filter(id => agentConfig.value[id] === true)
         if (step2Agents.length > 0) {
           await runAgentsParallel(step2Agents, fetchedStockData)
         }
-
         // Step 1.3: 深度专业分析层 (Technical, Funds, Fundamental) - 依赖Step 1.2
         const step3AgentsCandidates = ['technical', 'funds', 'fundamental']
         const step3Agents = step3AgentsCandidates.filter(id => agentConfig.value[id] === true)
         if (step3Agents.length > 0) {
           await runAgentsParallel(step3Agents, fetchedStockData)
         }
-
         // 3. 执行第二阶段：策略整合 (并发执行)
         console.log('[startAnalysis] 开始第二阶段...')
         const stage2Ids = enabledAgents.value.filter(a => a.stage === 2).map(a => a.id)
@@ -820,10 +816,8 @@ export default {
           await runAgentsParallel(stage2Ids, fetchedStockData)
         }
         console.log('[startAnalysis] 第二阶段完成')
-
         // 2. 触发多空辩论 (模拟或真实API)
         await runBullBearDebate()
-
         // 5. 执行第三阶段：风控终审（分批处理，避免并发过载）
         console.log('[startAnalysis] 开始第三阶段...')
         const stage3Ids = enabledAgents.value.filter(a => a.stage === 3).map(a => a.id)
@@ -832,21 +826,17 @@ export default {
           await runAgentsInBatches(stage3Ids, fetchedStockData, 2) // 每批最多2个
         }
         console.log('[startAnalysis] 第三阶段完成')
-
         // 4. 触发风控辩论
         console.log('[startAnalysis] 开始风控辩论...')
         await runRiskDebate()
         console.log('[startAnalysis] 风控辩论完成')
-
         // 6. 执行第四阶段：最终决策
         const stage4Ids = enabledAgents.value.filter(a => a.stage === 4).map(a => a.id)
         if (stage4Ids.length > 0) {
           await runAgentsParallel(stage4Ids, fetchedStockData)
         }
-
         showReport.value = true
         scrollToBottom()
-
         // 标记分析完成
         if (currentSessionId.value) {
           try {
@@ -860,10 +850,8 @@ export default {
             console.error('[数据库] 标记完成失败:', dbError)
           }
         }
-
         // 触发标题闪烁提示（如果页面在后台）
         startTitleFlash(stockData.value?.name)
-
       } catch (error) {
         console.error('分析流程异常:', error)
         window.$toast && window.$toast.error(`分析中断: ${error.message}`)
@@ -892,7 +880,6 @@ export default {
         // 清除保存的状态（分析已完成）
         markAnalysisComplete()
         console.log('[分析完成] 已清除保存的状态')
-
         // 如果页面在前台，更新标题
         if (document.visibilityState === 'visible') {
           if (showReport.value) {
@@ -903,12 +890,10 @@ export default {
         }
       }
     }
-
     const runAgentsParallel = async (agentIds, data) => {
       const targetAgents = AGENTS.filter(a => agentIds.includes(a.id))
       await Promise.all(targetAgents.map(agent => runAgentAnalysis(agent, data)))
     }
-
     // 分批运行智能体（解决并发过载问题）
     const runAgentsInBatches = async (agentIds, data, batchSize = 2) => {
       const agents = agentIds.map(id => AGENTS.find(a => a.id === id))
@@ -928,7 +913,6 @@ export default {
       
       console.log(`[runAgentsInBatches] ✅ 所有批次完成`)
     }
-
     const getInstruction = (agent, data) => {
         const base = `分析${data.name || '该股票'}(${stockCode.value})的投资价值。当前价格：${data.price || 'N/A'}元，涨跌幅：${data.change_percent || 'N/A'}%。\n\n`
         
@@ -940,7 +924,6 @@ export default {
 3. 评估新闻的情绪倾向（利好/利空/中性），并给出情绪评分（-10到10）
 4. 分析新闻的可信度和影响力（权威媒体vs自媒体）
 5. 总结核心观点：当前舆情是偏多还是偏空？
-
 注意：
 - 必须给出具体的新闻内容和分析，不要说“暂无重大事件”
 - 即使没有重大新闻，也要分析常规新闻和市场讨论
@@ -1009,92 +992,72 @@ export default {
             
             // 第四阶段
             gm: `作为投资决策总经理，综合所有分析师、多空辩论和风控意见，给出最终的投资决策。
-
 请按以下格式输出，用特殊标记分隔两个版本：
-
 ===PROFESSIONAL_START===
 ## 专业投资决策
-
 ### 1. 投资建议
 - 决策结论：（买入/卖出/观望）
 - 目标价位：
 - 仓位建议：
 - 投资周期：
-
 ### 2. 决策依据
 （基于所有分析师的专业意见，给出严谨的投资逻辑）
-
 ### 3. 风险评估
 （综合风控团队的评估，给出专业的风险分析）
 ===PROFESSIONAL_END===
-
 ===SIMPLE_START===
 ## 白话投资建议
-
 ### 📊 【能买不？】
 （明确回答：强烈推荐买入/可以适当买入/观望等待/不建议买入）
-
 ### 💰 【价格指引】
 - **什么价格买合适？** （具体价格，如：1400-1420元）
 - **什么价格可以卖？** （具体价格，如：1500元以上）
 - **买了能放多久？** （如：3-6个月/1年以上）
-
 ### ⚠️ 【风险提醒】
 （用3句大白话说清楚最需要担心的风险）
 1. 
 2. 
 3. 
-
 ### 📝 【操作步骤】
 （分步骤给出具体操作建议）
 第1步：
 第2步：
 第3步：
 ===SIMPLE_END===
-
 注意：
 - 专业版保持金融机构级别的专业性
 - 白话版用通俗易懂的语言，数字要具体
 - 必须同时输出两个版本`,
             trader: `基于所有分析师的综合意见，请给出具体的交易策略和执行计划。包括：入场点位、止损位、目标位、仓位管理等。`,
             interpreter: `你是一位亲民的投资解读员，专门把复杂的投资分析翻译成老百姓能懂的话。
-
 基于前面所有智能体的分析结果，请用最简单直白的语言回答：
-
 📊 【买卖建议】
 1. 能不能买？（明确回答：强烈推荐买入/可以适当买入/观望等待/不建议买入）
 2. 已经有的要不要卖？（明确回答：坚决持有/可以卖出/建议减仓）
-
 💰 【价格指引】
 3. 什么价格买合适？（给出具体价格，如：1400-1420元之间）
 4. 什么价格可以卖？（给出具体价格，如：1500元以上）
 5. 买了能放多久？（如：建议持有3-6个月/1年以上/短线几天）
-
 💡 【原因解释】
 用3句大白话说清楚为什么给出这样的建议。
-
 ⚠️ 【风险提醒】（用大白话说3个最需要注意的风险）
 - 风险1：
 - 风险2：
 - 风险3：
-
 📝 【操作步骤】（具体怎么做）
 第1步：
 第2步：
 第3步：
-
 记住：不用专业术语，像朋友聊天，数字要具体。`
         }
         
         return base + (map[agent.id] || map[agent.role] || "请基于你的专业领域进行分析。")
     }
-
     const runAgentAnalysis = async (agent, data) => {
       agentStatus.value[agent.id] = 'fetching'
       
       // 模拟思维链步骤
       simulateThoughts(agent.id, agent.role)
-
       try {
         // ✅ 关键修复：先获取数据源，再进行分析
         // 为不同的智能体添加真实的数据源
@@ -1414,10 +1377,8 @@ export default {
         
         // ✅ 关键：数据源设置完成后，再调用API进行分析
         agentStatus.value[agent.id] = 'analyzing'
-
         // 记录开始时间（前端计时）
         const agentStartTime = Date.now()
-
         // 记录开始时间到数据库（用于持久化）
         if (currentSessionId.value) {
           try {
@@ -1434,11 +1395,9 @@ export default {
             console.warn(`[数据库] 记录开始时间失败: ${agent.id}`, e)
           }
         }
-
         // 使用智能超时机制
         const progressMonitor = new ProgressMonitor(agent.id, 10000)
         progressMonitor.start()
-
         try {
           const response = await fetchWithSmartTimeout(
             '/api/analyze',
@@ -1477,13 +1436,11 @@ export default {
           agentOutputs.value[agent.id] = analysisResult
           agentTokens.value[agent.id] = Math.floor(analysisResult.length / 1.5)
           agentStatus.value[agent.id] = 'success'
-
           // 计算耗时（从开始到收到响应）
           const agentEndTime = Date.now()
           const durationSeconds = (agentEndTime - agentStartTime) / 1000
           agentDurations.value[agent.id] = durationSeconds
           console.log(`[${agent.id}] 耗时: ${durationSeconds.toFixed(1)}s`)
-
           // 处理降级级别
           if (result.fallback_level !== undefined) {
             agentFallbackLevels.value[agent.id] = result.fallback_level
@@ -1537,7 +1494,6 @@ export default {
         agentOutputs.value[agent.id] = `⚠️ 分析失败: ${e.message}\n\n建议：\n1. 检查网络连接\n2. 尝试使用其他 AI 模型\n3. 稍后重试`
       }
     }
-
     // 定制不同角色的思考模板
     const THOUGHT_TEMPLATES = {
       NEWS: [
@@ -1583,7 +1539,6 @@ export default {
         { icon: '📝', message: '生成最终决策建议...' }
       ]
     }
-
     const simulateThoughts = (agentId, role) => {
         const template = THOUGHT_TEMPLATES[role] || THOUGHT_TEMPLATES['DEFAULT']
         
@@ -1605,7 +1560,6 @@ export default {
             i++
         }, 1000) // 稍微调慢一点，让用户看清
     }
-
     const shortenText = (text, maxLen = 140) => {
         if (!text) {
             return '⚠️ 暂无有效观点，请检查模型配置或稍后重试。'
@@ -1616,7 +1570,6 @@ export default {
         }
         return clean.slice(0, maxLen) + '...'
     }
-
     const localBullBearFallback = () => {
         if (!stockData.value) {
             return null
@@ -1749,7 +1702,6 @@ export default {
         
         return { label, score, summary, rec }
     }
-
     const localRiskFallback = () => {
         if (!stockData.value) {
             return null
@@ -1871,13 +1823,11 @@ export default {
         
         return { level, label, score, summary }
     }
-
     const runBullBearDebate = async () => {
         showBullBearDebate.value = true
         bullBearDebateStatus.value = 'debating'
         bullBearDebateMessages.value = []
         bullBearDebateConclusion.value = null
-
         try {
             const response = await fetchWithSmartTimeout(
                 '/api/debate/research',
@@ -1898,27 +1848,21 @@ export default {
                     agentId: 'debate_research'
                 }
             )
-
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`)
             }
-
             const result = await response.json()
             console.log('[runBullBearDebate] 后端辩论结果:', result)
-
             if (!result.success) {
                 throw new Error(result.detail || result.error || '多空辩论失败')
             }
-
             const bullContent = result.bull_view?.content || ''
             const bearContent = result.bear_view?.content || ''
-
             // 检测后端返回的是否是超时错误信息
             const isTimeout = bullContent.includes('AI 响应超时') || bearContent.includes('AI 响应超时')
             if (isTimeout) {
                 throw new Error('后端LLM超时，触发本地兜底')
             }
-
             // 提取核心观点（去除辩论过程，只保留最终结论）
             const extractCoreView = (content) => {
                 // 如果包含多个角色的对话，只提取最后一段
@@ -1933,7 +1877,6 @@ export default {
                 // 如果没找到，返回前150字
                 return content.substring(0, 150) + '...'
             }
-
             if (bullContent) {
                 bullBearDebateMessages.value.push({
                     agentName: '看涨研究员',
@@ -1942,7 +1885,6 @@ export default {
                     round: 1
                 })
             }
-
             if (bearContent) {
                 bullBearDebateMessages.value.push({
                     agentName: '看跌研究员',
@@ -1951,7 +1893,6 @@ export default {
                     round: 1
                 })
             }
-
             // 使用后端 recommendation / confidence 映射到前端评分
             const rec = (result.recommendation || '').toUpperCase()
             let label = '信号不明确'
@@ -1966,7 +1907,6 @@ export default {
                 label = '分歧/观望'
                 score = 55
             }
-
             const summary = result.debate_summary || result.final_decision?.content || ''
             // 限制结论长度，只显示核心信息
             const shortSummary = summary.length > 150 ? summary.substring(0, 150) + '...' : summary
@@ -1974,7 +1914,6 @@ export default {
                 content: shortSummary ? `方向评估：${label}。${shortSummary}` : `方向评估：${label}。`,
                 score
             }
-
             bullBearDebateStatus.value = 'finished'
         } catch (e) {
             console.error('[runBullBearDebate] 多空辩论失败:', e)
@@ -2015,13 +1954,11 @@ export default {
             }
         }
     }
-
     const runRiskDebate = async () => {
         showRiskDebate.value = true
         riskDebateStatus.value = 'debating'
         riskDebateMessages.value = []
         riskDebateConclusion.value = null
-
         try {
             const response = await fetchWithSmartTimeout(
                 '/api/debate/risk',
@@ -2042,22 +1979,17 @@ export default {
                     agentId: 'debate_risk'
                 }
             )
-
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`)
             }
-
             const result = await response.json()
             console.log('[runRiskDebate] 风险辩论结果:', result)
-
             if (!result.success) {
                 throw new Error(result.detail || result.error || '风险辩论失败')
             }
-
             const aggressiveContent = result.aggressive_view?.content || ''
             const conservativeContent = result.conservative_view?.content || ''
             const neutralContent = result.neutral_view?.content || ''
-
             // 检测后端返回的是否是超时错误信息
             const isTimeout = aggressiveContent.includes('AI 响应超时') || 
                             conservativeContent.includes('AI 响应超时') || 
@@ -2065,7 +1997,6 @@ export default {
             if (isTimeout) {
                 throw new Error('后端LLM超时，触发本地兜底')
             }
-
             // 提取核心观点
             const extractCoreView = (content) => {
                 const lines = content.split('\n').filter(l => l.trim())
@@ -2077,7 +2008,6 @@ export default {
                 }
                 return content.substring(0, 150) + '...'
             }
-
             if (aggressiveContent) {
                 riskDebateMessages.value.push({
                     agentName: '激进风控',
@@ -2086,7 +2016,6 @@ export default {
                     round: 1
                 })
             }
-
             if (conservativeContent) {
                 riskDebateMessages.value.push({
                     agentName: '保守风控',
@@ -2095,7 +2024,6 @@ export default {
                     round: 1
                 })
             }
-
             // 确保三方观点都显示（即使内容为空也要有占位）
             if (neutralContent) {
                 riskDebateMessages.value.push({
@@ -2105,7 +2033,6 @@ export default {
                     round: 1
                 })
             }
-
             const level = result.risk_level || 'UNKNOWN'
             let label = '风险不明'
             let score = 50
@@ -2119,7 +2046,6 @@ export default {
                 label = '低风险'
                 score = 75
             }
-
             const adviceSummary = result.position_advice?.summary || ''
             // 限制结论长度
             const shortAdvice = adviceSummary.length > 150 ? adviceSummary.substring(0, 150) + '...' : adviceSummary
@@ -2127,7 +2053,6 @@ export default {
                 content: shortAdvice ? `风险评级：${label}。${shortAdvice}` : `风险评级：${label}。`,
                 score
             }
-
             riskDebateStatus.value = 'finished'
         } catch (e) {
             console.error('[runRiskDebate] 风险辩论失败:', e)
@@ -2261,7 +2186,6 @@ export default {
             }
         }
     }
-
     // Utils
     const fetchStockData = async (code) => {
         try {
@@ -2547,11 +2471,9 @@ export default {
       const secs = seconds % 60
       return `${mins}:${secs.toString().padStart(2, '0')}`
     }
-
     const showDetail = (agent) => {
         selectedAgent.value = agent
     }
-
     const generateReport = () => {
         const sections = []
         const stageTitles = {
@@ -2560,11 +2482,9 @@ export default {
             3: '\u7b2c\u4e09\u9636\u6bb5\uff1a\u98ce\u9669\u63a7\u5236\u7ec8\u5ba1',
             4: '\u7b2c\u56db\u9636\u6bb5\uff1a\u6295\u8d44\u51b3\u7b56\u6267\u884c'
         }
-
         const getAgentsByStage = (stage) => {
             return AGENTS.filter(a => a.stage === stage)
         }
-
         for (let stage = 1; stage <= 4; stage++) {
             const stageAgents = getAgentsByStage(stage).filter(a => agentOutputs.value[a.id])
             if (!stageAgents.length) {
@@ -2579,13 +2499,10 @@ export default {
                 sections.push(`### ${a.icon} ${a.title}\n${output}`)
             })
         }
-
         const bullConclusion = bullBearDebateConclusion.value
         const riskConclusion = riskDebateConclusion.value
-
         if (bullConclusion || riskConclusion) {
             sections.push('## 讨论与决议')
-
             if (bullConclusion) {
                 const bullScore = typeof bullConclusion.score === 'number' ? bullConclusion.score : 'N/A'
                 sections.push(
@@ -2594,7 +2511,6 @@ export default {
                     `\n- \u7efc\u5408\u7ed3\u8bba\uff1a${bullConclusion.content || ''}`
                 )
             }
-
             if (riskConclusion) {
                 const riskScore = typeof riskConclusion.score === 'number' ? riskConclusion.score : 'N/A'
                 sections.push(
@@ -2604,10 +2520,8 @@ export default {
                 )
             }
         }
-
         return sections.join('\n\n---\n\n')
     }
-
     // 加载可用模型列表
     const loadAvailableModels = async () => {
       try {
@@ -2682,9 +2596,7 @@ export default {
       }
     }
     const handleStyleSave = () => {}
-
     const styleSettings = ref({})
-
     // ==================== 轮询机制 ====================
     
     /**
@@ -2695,10 +2607,8 @@ export default {
         console.log('[轮询] 已在运行，跳过')
         return
       }
-
       pollingEnabled.value = true
       console.log('[轮询] 启动轮询机制，间隔 5 秒')
-
       // 启动本地计时器作为备份（每秒更新）
       if (!analysisTimer.value && analysisStartTime.value) {
         analysisTimer.value = setInterval(() => {
@@ -2712,14 +2622,12 @@ export default {
         }, 1000)
         console.log('[计时器] 启动本地计时器')
       }
-
       pollingInterval.value = setInterval(async () => {
         if (!isAnalyzing.value) {
           console.log('[轮询] 分析已结束，停止轮询')
           stopPolling()
           return
         }
-
         try {
           await pollBackendStatus()
         } catch (error) {
@@ -2727,7 +2635,6 @@ export default {
         }
       }, 5000)  // 每 5 秒轮询一次
     }
-
     /**
      * 停止轮询
      */
@@ -2850,10 +2757,8 @@ export default {
           // 移动端后台时，后端继续运行，轮询继续
         } else {
           console.log('[页面状态] 回到前台，强制同步后端状态')
-
           // 停止标题闪烁
           stopTitleFlash()
-
           // 更新标题
           if (showReport.value && !isAnalyzing.value) {
             document.title = `✅ 分析完成 - ${stockData.value?.name || stockCode.value}`
@@ -2862,12 +2767,10 @@ export default {
           } else {
             document.title = originalTitle
           }
-
           // ✅ 关键修复：回到前台时立即同步
           if (isAnalyzing.value && currentSessionId.value) {
             // 立即轮询一次，获取最新状态
             await pollBackendStatus()
-
             // 如果还在分析中，确保轮询正在运行
             if (isAnalyzing.value && !pollingInterval.value) {
               console.log('[页面状态] 重启轮询')
@@ -2877,7 +2780,6 @@ export default {
         }
       })
     }
-
     // ==================== 状态持久化管理 ====================
     
     /**
@@ -2969,9 +2871,7 @@ export default {
         clearAnalysisState()
       }
     }
-
     // ==================== 标签页标题提示 ====================
-
     /**
      * 开始标题闪烁提示（分析完成时调用）
      */
@@ -2981,25 +2881,20 @@ export default {
         document.title = `✅ 分析完成 - ${stockName || stockCode.value}`
         return
       }
-
       // 页面在后台，开始闪烁
       let isOriginal = false
       const flashTitle = `✅ 分析完成 - ${stockName || stockCode.value}`
-
       // 清除之前的闪烁
       if (titleFlashInterval) {
         clearInterval(titleFlashInterval)
       }
-
       titleFlashInterval = setInterval(() => {
         document.title = isOriginal ? flashTitle : '📊 点击查看结果'
         isOriginal = !isOriginal
       }, 1000)
-
       // 尝试播放提示音（需要用户之前有交互）
       playNotificationSound()
     }
-
     /**
      * 停止标题闪烁
      */
@@ -3010,7 +2905,6 @@ export default {
       }
       document.title = originalTitle
     }
-
     /**
      * 播放提示音
      */
@@ -3020,41 +2914,33 @@ export default {
         const audioContext = new (window.AudioContext || window.webkitAudioContext)()
         const oscillator = audioContext.createOscillator()
         const gainNode = audioContext.createGain()
-
         oscillator.connect(gainNode)
         gainNode.connect(audioContext.destination)
-
         oscillator.frequency.value = 800  // 频率
         oscillator.type = 'sine'
         gainNode.gain.value = 0.1  // 音量（较小）
-
         oscillator.start()
-
         // 渐弱效果
         gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3)
         oscillator.stop(audioContext.currentTime + 0.3)
-
         console.log('[提示音] 已播放')
       } catch (e) {
         // 静默失败（用户可能没有交互过页面）
         console.log('[提示音] 无法播放:', e.message)
       }
     }
-
     /**
      * 强制停止分析
      * 用于解决移动端卡住的问题
      */
     const forceStop = async () => {
       console.log('[强制停止] 开始清理...')
-
       // 1. 停止所有计时和轮询
       if (analysisTimer.value) {
         clearInterval(analysisTimer.value)
         analysisTimer.value = null
       }
       stopPolling()
-
       // 2. 通知后端取消会话
       if (currentSessionId.value) {
         try {
@@ -3064,11 +2950,9 @@ export default {
           console.error('[强制停止] 通知后端失败:', error)
         }
       }
-
       // 3. 使用统一的清除函数（设置强制停止标记）
       forceCleanAllState()
       console.log('[强制停止] 已清除所有 localStorage')
-
       // 4. 重置所有状态
       isAnalyzing.value = false
       analysisElapsedTime.value = 0
@@ -3088,7 +2972,6 @@ export default {
       riskDebateMessages.value = []
       bullBearDebateConclusion.value = null
       riskDebateConclusion.value = null
-
       console.log('[强制停止] 清理完成')
       window.$toast && window.$toast.success('已强制停止分析并清除所有状态，可以重新开始了！')
     }
@@ -3098,10 +2981,8 @@ export default {
      */
     onMounted(async () => {
       console.log('[页面加载] 检查保存的状态...')
-
       // ✅ 加载智能体配置
       await loadAgentConfig()
-
       // ✅ 检查是否被强制停止
       if (isForceStoppedState()) {
         console.log('[页面加载] 检测到强制停止标记，清除并跳过恢复')
@@ -3110,32 +2991,26 @@ export default {
         setupVisibilityListener()
         return
       }
-
       // 设置页面可见性监听器
       setupVisibilityListener()
-
       // 优先检查后端会话
       const sessionId = getSessionId()
       
       if (sessionId) {
         console.log('[页面加载] 发现会话 ID:', sessionId)
-
         try {
           // 查询后端会话状态（数据库版本）
           const response = await fetch(
             `/api/analysis/db/session/${sessionId}/status`
           )
-
           if (response.ok) {
             const status = await response.json()
             console.log('[页面加载] 后端会话状态:', status.status, `${status.progress}%`)
-
             if (status.status === 'running') {
               // 检查是否真的在运行（通过 last_activity_time 判断）
               const lastActivity = status.last_activity_time ? status.last_activity_time * 1000 : 0
               const now = Date.now()
               const inactiveSeconds = lastActivity ? (now - lastActivity) / 1000 : 999
-
               // 如果超过30秒无活动，说明实际上已经中断了
               if (inactiveSeconds > 30) {
                 console.log('[页面加载] 会话状态为running但已无活动，视为中断')
@@ -3148,17 +3023,14 @@ export default {
                   `运行时间: ${Math.floor(elapsedSeconds / 60)}分${elapsedSeconds % 60}秒\n\n` +
                   `是否要查看已完成的分析结果？\n` +
                   `（点击"取消"将清除此会话）`
-
                 if (window.confirm(message)) {
                   currentSessionId.value = sessionId
                   stockCode.value = status.stock_code
                   cardsExpanded.value = true
                   isAnalyzing.value = false
-
                   for (const agentId of status.completed_agents) {
                     await fetchAgentResult(agentId)
                   }
-
                   analysisElapsedTime.value = elapsedSeconds
                   window.$toast && window.$toast.info(`已加载 ${completedCount} 个智能体的分析结果`)
                 } else {
@@ -3168,33 +3040,27 @@ export default {
                 }
                 return
               }
-
               // 真正在运行中，恢复会话
               currentSessionId.value = sessionId
               stockCode.value = status.stock_code
               isAnalyzing.value = true
               cardsExpanded.value = true
-
               // 恢复已完成的智能体
               for (const agentId of status.completed_agents) {
                 await fetchAgentResult(agentId)
               }
-
               // 启动轮询
               startPolling()
-
               // 设置时间（使用实际运行时间）
               analysisStartTime.value = status.start_time * 1000
               analysisElapsedTime.value = Math.floor(status.elapsed_time)
               // 注意：不再启动前端计时器，时间将由后端轮询更新
-
               console.log('[页面加载] 从后端恢复会话成功，当前时间:', analysisElapsedTime.value, '秒')
               window.$toast && window.$toast.success('已从后端恢复分析状态')
               return
             } else if (status.status === 'interrupted') {
               // 会话被中断（服务重启等原因）
               console.log('[页面加载] 会话已中断，进度:', status.progress, '%')
-
               // 显示中断提示，让用户选择
               const completedCount = status.completed_agents?.length || 0
               // 优先使用 elapsed_time（基于 start_time 计算），其次使用 actual_elapsed_seconds
@@ -3205,22 +3071,18 @@ export default {
                 `运行时间: ${Math.floor(elapsedSeconds / 60)}分${elapsedSeconds % 60}秒\n\n` +
                 `是否要查看已完成的分析结果？\n` +
                 `（点击"取消"将清除此会话）`
-
               if (window.confirm(message)) {
                 // 用户选择查看已完成的结果
                 currentSessionId.value = sessionId
                 stockCode.value = status.stock_code
                 cardsExpanded.value = true
                 isAnalyzing.value = false  // 不再分析中
-
                 // 恢复已完成的智能体结果
                 for (const agentId of status.completed_agents) {
                   await fetchAgentResult(agentId)
                 }
-
                 // 设置时间（优先使用 elapsed_time）
                 analysisElapsedTime.value = elapsedSeconds
-
                 window.$toast && window.$toast.info(`已加载 ${completedCount} 个智能体的分析结果`)
               } else {
                 // 用户选择清除会话
@@ -3263,23 +3125,18 @@ export default {
       if (analysisTimer.value) {
         clearInterval(analysisTimer.value)
       }
-
       // 停止轮询
       stopPolling()
-
       // 停止标题闪烁
       stopTitleFlash()
-
       // 恢复原始标题
       document.title = originalTitle
-
       // 如果分析已完成，清除保存的状态
       if (!isAnalyzing.value && showReport.value) {
         clearAnalysisState()
         console.log('[页面卸载] 已清除完成的分析状态')
       }
     })
-
     return {
         stockCode, stockData, isAnalyzing, isValidCode, startAnalysis,
         AGENTS,
@@ -3301,13 +3158,13 @@ export default {
         showGlobalLogWindow, globalLogWindowRef,  // 新增: 全局日志窗口
         forceStop,  // 新增: 强制停止
         showFallbackMonitor,  // 新增: 降级监控面板
+        showAnalysisToast,  // 新增: 分析启动提示弹窗
         // 专业版报告阶段切换
         activeReportStage, reportStages, getStageAgentsWithOutput, getAgentCardClass, parseMarkdown, formatDuration
     }
   }
 }
 </script>
-
 <style scoped>
 .analysis-container {
   padding: 2rem;
@@ -3315,7 +3172,6 @@ export default {
   margin: 0 auto;
   min-height: 100vh;
 }
-
 .input-card {
   background: rgba(30, 41, 59, 0.6);
   backdrop-filter: blur(12px);
@@ -3326,7 +3182,6 @@ export default {
   margin: 0 auto 4rem;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
 }
-
 .stock-input {
   width: 100%;
   background: rgba(15, 23, 42, 0.8);
@@ -3337,7 +3192,6 @@ export default {
   font-size: 1.2rem;
   margin-top: 0.5rem;
 }
-
 .analyze-btn {
   width: 100%;
   padding: 1rem;
@@ -3348,17 +3202,14 @@ export default {
   border-radius: 0.5rem;
   transition: all 0.3s;
 }
-
 .analyze-btn:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
 }
-
 .analyze-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
-
 /* 强制停止按钮 */
 .force-stop-btn {
   margin-top: 1rem;
@@ -3374,17 +3225,14 @@ export default {
   transition: all 0.3s;
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
-
 .force-stop-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 20px rgba(239, 68, 68, 0.4);
   background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
 }
-
 .force-stop-btn:active {
   transform: translateY(0);
 }
-
 /* 降级监控按钮 */
 .monitor-btn {
   margin-top: 1rem;
@@ -3400,15 +3248,197 @@ export default {
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
-
 .monitor-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 20px rgba(59, 130, 246, 0.4);
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
 }
-
 .monitor-btn:active {
   transform: translateY(0);
+}
+
+/* 分析启动提示弹窗样式 */
+.analysis-toast-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.analysis-toast {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.98) 100%);
+  border: 2px solid rgba(99, 102, 241, 0.5);
+  border-radius: 20px;
+  padding: 0;
+  max-width: 520px;
+  width: 100%;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.6), 0 0 40px rgba(99, 102, 241, 0.2);
+  animation: toast-bounce-in 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  overflow: hidden;
+}
+@keyframes toast-bounce-in {
+  0% { opacity: 0; transform: scale(0.8) translateY(-30px); }
+  50% { transform: scale(1.02) translateY(0); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.toast-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 24px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(139, 92, 246, 0.15) 100%);
+  border-bottom: 1px solid rgba(99, 102, 241, 0.3);
+}
+.toast-icon {
+  font-size: 32px;
+  animation: icon-pulse 2s ease-in-out infinite;
+}
+@keyframes icon-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+.toast-title {
+  flex: 1;
+  font-size: 18px;
+  font-weight: 700;
+  color: #a5b4fc;
+  letter-spacing: 0.5px;
+}
+.toast-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #94a3b8;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.toast-close:hover {
+  background: rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+.toast-body {
+  padding: 20px 24px;
+}
+.toast-body p {
+  color: #cbd5e1;
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+.toast-body strong {
+  color: #fbbf24;
+  font-weight: 600;
+}
+.toast-phases {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.phase-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(30, 41, 59, 0.6);
+  border-radius: 8px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+.phase-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.phase-dot.phase-1 { background: #3b82f6; box-shadow: 0 0 8px rgba(59, 130, 246, 0.5); }
+.phase-dot.phase-2 { background: #a855f7; box-shadow: 0 0 8px rgba(168, 85, 247, 0.5); }
+.phase-dot.phase-3 { background: #f97316; box-shadow: 0 0 8px rgba(249, 115, 22, 0.5); }
+.phase-dot.phase-4 { background: #ef4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
+.toast-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(99, 102, 241, 0.2);
+}
+.time-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.15) 100%);
+  border-radius: 20px;
+  color: #34d399;
+  font-size: 14px;
+  font-weight: 600;
+  width: fit-content;
+}
+.toast-tip {
+  color: #64748b;
+  font-size: 12px;
+}
+.toast-progress {
+  height: 4px;
+  background: rgba(99, 102, 241, 0.2);
+  overflow: hidden;
+}
+.toast-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+  animation: progress-shrink 8s linear forwards;
+}
+@keyframes progress-shrink {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+/* 弹窗过渡动画 */
+.analysis-toast-enter-active {
+  animation: toast-bounce-in 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+.analysis-toast-leave-active {
+  animation: toast-fade-out 0.3s ease-out forwards;
+}
+@keyframes toast-fade-out {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.9) translateY(-20px); }
+}
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .analysis-toast {
+    max-width: 100%;
+    margin: 10px;
+    border-radius: 16px;
+  }
+  .toast-header {
+    padding: 14px 18px;
+  }
+  .toast-icon {
+    font-size: 26px;
+  }
+  .toast-title {
+    font-size: 15px;
+  }
+  .toast-body {
+    padding: 16px 18px;
+  }
+  .toast-phases {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
 }
 
 .floating-timer {
@@ -3428,7 +3458,6 @@ export default {
   animation: pulse-border 2s ease-in-out infinite;
   font-size: 0.875rem;
 }
-
 @keyframes pulse-border {
   0%, 100% {
     border-color: rgba(59, 130, 246, 0.5);
@@ -3439,23 +3468,19 @@ export default {
     box-shadow: 0 10px 40px rgba(59, 130, 246, 0.3);
   }
 }
-
 .timer-icon {
   font-size: 1.5rem;
   animation: rotate 3s linear infinite;
 }
-
 @keyframes rotate {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
-
 .timer-label {
   color: #94a3b8;
   font-size: 0.95rem;
   font-weight: 500;
 }
-
 .timer-value {
   color: #3b82f6;
   font-weight: bold;
@@ -3464,20 +3489,17 @@ export default {
   min-width: 4rem;
   text-align: center;
 }
-
 .stage-header {
   margin-bottom: 1.5rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   padding-bottom: 1rem;
 }
-
 .stage-desc {
   display: block;
   margin-top: 0.5rem;
   color: #94a3b8;
   font-size: 0.9rem;
 }
-
 .sub-group-title {
   margin-bottom: 1rem;
   font-weight: 600;
@@ -3485,17 +3507,14 @@ export default {
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-
 .debate-section {
   margin: 3rem 0;
   animation: slideIn 0.5s ease-out;
 }
-
 @keyframes slideIn {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
 .export-btn {
   display: flex;
   align-items: center;
@@ -3506,7 +3525,6 @@ export default {
   font-size: 0.9rem;
   transition: all 0.2s;
 }
-
 /* Modal */
 .modal-overlay {
   position: fixed;
@@ -3518,7 +3536,6 @@ export default {
   align-items: center;
   justify-content: center;
 }
-
 .modal-content {
   background: #0f172a;
   border: 1px solid #334155;
@@ -3529,7 +3546,6 @@ export default {
   display: flex;
   flex-direction: column;
 }
-
 .modal-header {
   padding: 1.5rem;
   border-bottom: 1px solid #334155;
@@ -3537,20 +3553,17 @@ export default {
   justify-content: space-between;
   align-items: center;
 }
-
 .modal-body {
   padding: 1.5rem;
   overflow-y: auto;
   color: #e2e8f0;
   line-height: 1.6;
 }
-
 .close-btn {
   background: transparent;
   color: #94a3b8;
   font-size: 1.5rem;
 }
-
 .spinner {
   width: 20px;
   height: 20px;
@@ -3560,9 +3573,7 @@ export default {
   animation: spin 1s linear infinite;
   margin-right: 0.5rem;
 }
-
 @keyframes spin { to { transform: rotate(360deg); } }
-
 /* 白话解读面板样式 */
 .interpretation-panel {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
@@ -3572,36 +3583,30 @@ export default {
   color: white;
   box-shadow: 0 10px 40px rgba(16, 185, 129, 0.3);
 }
-
 .interpretation-panel .panel-header {
   text-align: center;
   margin-bottom: 30px;
   padding-bottom: 20px;
   border-bottom: 2px solid rgba(255, 255, 255, 0.2);
 }
-
 .interpretation-panel .icon {
   font-size: 48px;
   display: block;
   margin-bottom: 15px;
 }
-
 .interpretation-panel .panel-title {
   font-size: 28px;
   font-weight: bold;
   margin-bottom: 10px;
 }
-
 .interpretation-panel .panel-subtitle {
   font-size: 16px;
   opacity: 0.9;
 }
-
 .interpretation-panel .analyzing-state {
   text-align: center;
   padding: 40px;
 }
-
 .interpretation-panel .loading-spinner {
   width: 50px;
   height: 50px;
@@ -3611,7 +3616,6 @@ export default {
   animation: spin 1s linear infinite;
   margin: 0 auto 20px;
 }
-
 .interpretation-panel .interpretation-content {
   background: rgba(255, 255, 255, 0.15);
   border-radius: 15px;
@@ -3619,7 +3623,6 @@ export default {
   font-size: 16px;
   line-height: 1.8;
 }
-
 .interpretation-panel .markdown-content h1,
 .interpretation-panel .markdown-content h2,
 .interpretation-panel .markdown-content h3 {
@@ -3627,43 +3630,35 @@ export default {
   margin-bottom: 10px;
   font-weight: bold;
 }
-
 .interpretation-panel .markdown-content p {
   margin: 10px 0;
 }
-
 .interpretation-panel .markdown-content ul,
 .interpretation-panel .markdown-content ol {
   margin: 10px 0;
   padding-left: 25px;
 }
-
 .interpretation-panel .markdown-content li {
   margin: 8px 0;
   list-style: disc;
 }
-
 .interpretation-panel .markdown-content ol li {
   list-style: decimal;
 }
-
 .interpretation-panel .markdown-content strong {
   font-weight: bold;
   color: #fde047;
 }
-
 .interpretation-panel .error-state {
   text-align: center;
   padding: 30px;
   background: rgba(239, 68, 68, 0.2);
   border-radius: 10px;
 }
-
 /* 报告标签页样式 */
 .report-tabs {
   margin-top: 20px;
 }
-
 .tab-header {
   display: flex;
   gap: 10px;
@@ -3671,7 +3666,6 @@ export default {
   border-bottom: 2px solid rgba(71, 85, 105, 0.3);
   padding-bottom: 10px;
 }
-
 .tab-btn {
   display: flex;
   align-items: center;
@@ -3686,22 +3680,18 @@ export default {
   cursor: pointer;
   transition: all 0.3s ease;
 }
-
 .tab-btn:hover {
   background: rgba(71, 85, 105, 0.5);
   color: #e2e8f0;
 }
-
 .tab-btn.active {
   background: rgba(59, 130, 246, 0.2);
   border-color: #3b82f6;
   color: #60a5fa;
 }
-
 .tab-icon {
   font-size: 20px;
 }
-
 .tab-badge {
   font-size: 12px;
   padding: 2px 8px;
@@ -3709,12 +3699,10 @@ export default {
   border-radius: 12px;
   color: #93c5fd;
 }
-
 .tab-btn.active .tab-badge {
   background: rgba(59, 130, 246, 0.3);
   color: #60a5fa;
 }
-
 .interpretation-panel-report {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   border-radius: 15px;
@@ -3722,12 +3710,10 @@ export default {
   color: white;
   box-shadow: 0 10px 40px rgba(16, 185, 129, 0.3);
 }
-
 .interpretation-panel-report .markdown-content {
   font-size: 16px;
   line-height: 1.8;
 }
-
 .interpretation-panel-report .markdown-content h1,
 .interpretation-panel-report .markdown-content h2,
 .interpretation-panel-report .markdown-content h3 {
@@ -3735,11 +3721,9 @@ export default {
   margin-bottom: 10px;
   font-weight: bold;
 }
-
 .interpretation-panel-report .markdown-content strong {
   color: #fde047;
 }
-
 .empty-interpretation {
   text-align: center;
   padding: 60px 20px;
@@ -3748,7 +3732,6 @@ export default {
   color: #94a3b8;
   font-size: 16px;
 }
-
 /* 白话解读员配置按钮 */
 .config-btn {
   padding: 8px 12px;
@@ -3761,12 +3744,10 @@ export default {
   font-size: 18px;
   margin-left: auto;
 }
-
 .config-btn:hover {
   background: rgba(59, 130, 246, 0.3);
   transform: scale(1.1);
 }
-
 /* 白话解读员配置弹窗 */
 .interpreter-config-modal {
   background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
@@ -3777,7 +3758,6 @@ export default {
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   border: 1px solid rgba(59, 130, 246, 0.3);
 }
-
 .interpreter-config-modal .modal-header {
   padding: 20px 24px;
   border-bottom: 1px solid rgba(71, 85, 105, 0.3);
@@ -3785,15 +3765,12 @@ export default {
   justify-content: space-between;
   align-items: center;
 }
-
 .interpreter-config-modal .modal-body {
   padding: 24px;
 }
-
 .interpreter-config-modal .config-item {
   margin-bottom: 20px;
 }
-
 .interpreter-config-modal .config-label {
   display: block;
   color: #e2e8f0;
@@ -3801,7 +3778,6 @@ export default {
   font-weight: 600;
   margin-bottom: 8px;
 }
-
 .interpreter-config-modal .model-select {
   width: 100%;
   padding: 10px 12px;
@@ -3812,23 +3788,19 @@ export default {
   font-size: 14px;
   cursor: pointer;
 }
-
 .interpreter-config-modal .model-select:focus {
   outline: none;
   border-color: #3b82f6;
 }
-
 .interpreter-config-modal .temperature-slider {
   width: calc(100% - 60px);
   margin-right: 10px;
 }
-
 .interpreter-config-modal .temperature-value {
   color: #60a5fa;
   font-weight: 600;
   font-size: 16px;
 }
-
 .interpreter-config-modal .config-note {
   background: rgba(16, 185, 129, 0.1);
   border-left: 3px solid #10b981;
@@ -3836,13 +3808,11 @@ export default {
   border-radius: 8px;
   margin-top: 20px;
 }
-
 .interpreter-config-modal .config-note p {
   color: #94a3b8;
   font-size: 13px;
   margin: 6px 0;
 }
-
 .interpreter-config-modal .modal-footer {
   padding: 16px 24px;
   border-top: 1px solid rgba(71, 85, 105, 0.3);
@@ -3850,7 +3820,6 @@ export default {
   justify-content: flex-end;
   gap: 12px;
 }
-
 .interpreter-config-modal .cancel-btn {
   padding: 8px 20px;
   background: rgba(71, 85, 105, 0.3);
@@ -3860,11 +3829,9 @@ export default {
   cursor: pointer;
   transition: all 0.3s ease;
 }
-
 .interpreter-config-modal .cancel-btn:hover {
   background: rgba(71, 85, 105, 0.5);
 }
-
 .interpreter-config-modal .save-btn {
   padding: 8px 20px;
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
@@ -3875,12 +3842,10 @@ export default {
   cursor: pointer;
   transition: all 0.3s ease;
 }
-
 .interpreter-config-modal .save-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
 }
-
 /* ========================================
    移动端响应式优化
    ======================================== */
@@ -4021,7 +3986,6 @@ export default {
     font-size: 1.5rem;
   }
 }
-
 /* ========================================
    专业版报告 - 阶段标签切换样式
    ======================================== */
@@ -4031,7 +3995,6 @@ export default {
   border: 1px solid rgba(71, 85, 105, 0.3);
   overflow: hidden;
 }
-
 /* 阶段标签栏 */
 .stage-tabs {
   display: flex;
@@ -4042,7 +4005,6 @@ export default {
   overflow-x: auto;
   scrollbar-width: thin;
 }
-
 .stage-tab {
   display: flex;
   align-items: center;
@@ -4059,33 +4021,27 @@ export default {
   white-space: nowrap;
   flex-shrink: 0;
 }
-
 .stage-tab:hover:not(:disabled) {
   background: rgba(71, 85, 105, 0.5);
   color: #e2e8f0;
   transform: translateY(-2px);
 }
-
 .stage-tab.active {
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(99, 102, 241, 0.3) 100%);
   border-color: #3b82f6;
   color: #60a5fa;
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
-
 .stage-tab:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
-
 .stage-tab-icon {
   font-size: 18px;
 }
-
 .stage-tab-title {
   font-weight: 600;
 }
-
 .stage-tab-count {
   background: rgba(59, 130, 246, 0.3);
   color: #93c5fd;
@@ -4094,19 +4050,16 @@ export default {
   font-size: 12px;
   font-weight: 600;
 }
-
 .stage-tab.active .stage-tab-count {
   background: rgba(59, 130, 246, 0.5);
   color: #fff;
 }
-
 /* 阶段内容区 */
 .stage-content-area {
   padding: 20px;
   max-height: 700px;
   overflow-y: auto;
 }
-
 .stage-content-header {
   display: flex;
   align-items: center;
@@ -4115,25 +4068,21 @@ export default {
   padding-bottom: 12px;
   border-bottom: 2px solid rgba(59, 130, 246, 0.3);
 }
-
 .stage-content-icon {
   font-size: 28px;
 }
-
 .stage-content-title {
   font-size: 20px;
   font-weight: 700;
   color: #e2e8f0;
   margin: 0;
 }
-
 /* 智能体结果列表 */
 .agent-results-list {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
-
 /* 智能体结果卡片 */
 .agent-result-card {
   background: rgba(30, 41, 59, 0.6);
@@ -4142,12 +4091,10 @@ export default {
   overflow: hidden;
   transition: all 0.3s ease;
 }
-
 .agent-result-card:hover {
   border-color: rgba(59, 130, 246, 0.5);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
-
 /* 智能体卡片颜色变体 */
 .agent-card-emerald { border-left: 4px solid #10b981; }
 .agent-card-cyan { border-left: 4px solid #06b6d4; }
@@ -4160,7 +4107,6 @@ export default {
 .agent-card-amber { border-left: 4px solid #f59e0b; }
 .agent-card-orange { border-left: 4px solid #f97316; }
 .agent-card-fuchsia { border-left: 4px solid #d946ef; }
-
 .agent-result-header {
   display: flex;
   align-items: center;
@@ -4169,18 +4115,15 @@ export default {
   background: rgba(15, 23, 42, 0.5);
   border-bottom: 1px solid rgba(71, 85, 105, 0.2);
 }
-
 .agent-result-icon {
   font-size: 22px;
 }
-
 .agent-result-title {
   font-size: 16px;
   font-weight: 600;
   color: #e2e8f0;
   flex: 1;
 }
-
 .agent-result-duration {
   font-size: 12px;
   color: #60a5fa;
@@ -4190,7 +4133,6 @@ export default {
   font-family: monospace;
   font-weight: 600;
 }
-
 .agent-result-tokens {
   font-size: 12px;
   color: #94a3b8;
@@ -4199,14 +4141,12 @@ export default {
   border-radius: 6px;
   font-family: monospace;
 }
-
 .agent-result-content {
   padding: 18px;
   color: #cbd5e1;
   font-size: 14px;
   line-height: 1.7;
 }
-
 .agent-result-content h1,
 .agent-result-content h2,
 .agent-result-content h3,
@@ -4215,33 +4155,27 @@ export default {
   margin-top: 16px;
   margin-bottom: 10px;
 }
-
 .agent-result-content h1 { font-size: 1.5em; }
 .agent-result-content h2 { font-size: 1.3em; }
 .agent-result-content h3 { font-size: 1.15em; }
-
 .agent-result-content ul,
 .agent-result-content ol {
   padding-left: 20px;
   margin: 10px 0;
 }
-
 .agent-result-content li {
   margin: 6px 0;
 }
-
 .agent-result-content strong {
   color: #fbbf24;
   font-weight: 600;
 }
-
 .agent-result-content code {
   background: rgba(71, 85, 105, 0.4);
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 0.9em;
 }
-
 /* 辩论摘要样式 */
 .debate-summary {
   margin-top: 20px;
@@ -4250,12 +4184,10 @@ export default {
   border-radius: 12px;
   overflow: hidden;
 }
-
 .debate-summary.risk {
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(79, 70, 229, 0.1) 100%);
   border-color: rgba(99, 102, 241, 0.3);
 }
-
 .debate-summary-header {
   display: flex;
   align-items: center;
@@ -4266,93 +4198,74 @@ export default {
   font-weight: 600;
   color: #fbbf24;
 }
-
 .debate-summary.risk .debate-summary-header {
   color: #818cf8;
 }
-
 .debate-summary-content {
   padding: 16px 18px;
 }
-
 .debate-score {
   font-size: 14px;
   color: #e2e8f0;
   margin-bottom: 10px;
 }
-
 .debate-score strong {
   color: #fbbf24;
   font-size: 18px;
 }
-
 .debate-summary.risk .debate-score strong {
   color: #818cf8;
 }
-
 .debate-conclusion {
   font-size: 14px;
   color: #cbd5e1;
   line-height: 1.6;
 }
-
 /* 滚动条样式 */
 .stage-content-area::-webkit-scrollbar {
   width: 8px;
 }
-
 .stage-content-area::-webkit-scrollbar-track {
   background: rgba(30, 41, 59, 0.3);
   border-radius: 4px;
 }
-
 .stage-content-area::-webkit-scrollbar-thumb {
   background: rgba(71, 85, 105, 0.5);
   border-radius: 4px;
 }
-
 .stage-content-area::-webkit-scrollbar-thumb:hover {
   background: rgba(71, 85, 105, 0.7);
 }
-
 /* 移动端适配 */
 @media (max-width: 768px) {
   .stage-tabs {
     padding: 8px 12px;
     gap: 6px;
   }
-
   .stage-tab {
     padding: 8px 12px;
     font-size: 12px;
   }
-
   .stage-tab-icon {
     font-size: 16px;
   }
-
   .stage-tab-title {
     display: none;
   }
-
   .stage-content-area {
     padding: 12px;
     max-height: 600px;
   }
-
   .stage-content-header {
     margin-bottom: 12px;
   }
-
   .stage-content-title {
     font-size: 16px;
   }
-
   .agent-result-header {
     padding: 10px 12px;
     flex-wrap: wrap;
   }
-
   .agent-result-content {
     padding: 12px;
     font-size: 13px;

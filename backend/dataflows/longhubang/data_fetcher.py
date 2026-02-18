@@ -66,16 +66,17 @@ class LonghubangDataFetcher:
         """初始化数据获取器"""
         logger.info("[龙虎榜] 数据获取器初始化...")
 
-    def _find_latest_trading_day(self, max_days: int = 10) -> Optional[str]:
+    def _find_latest_trading_day(self, max_days: int = 15) -> Optional[str]:
         """
         查找最近有龙虎榜数据的交易日
-        
+
         Args:
-            max_days: 最多往前查找的天数
-            
+            max_days: 最多往前查找的天数（默认15天，覆盖节假日）
+
         Returns:
             str: 有数据的日期（格式：YYYYMMDD），如果没找到返回None
         """
+        trading_days_checked = 0
         for i in range(max_days):
             check_date = datetime.now() - timedelta(days=i)
             date = check_date.strftime('%Y%m%d')
@@ -84,20 +85,24 @@ class LonghubangDataFetcher:
             if weekday >= 5:  # 周六=5, 周日=6
                 logger.debug(f"[龙虎榜] {date} 是周末，跳过")
                 continue
+
+            trading_days_checked += 1
             try:
                 df = ak.stock_lhb_detail_em(start_date=date, end_date=date)
                 if df is not None and isinstance(df, pd.DataFrame) and not df.empty:
                     logger.info(f"[龙虎榜] 找到最近有数据的交易日: {date}")
                     return date
                 else:
-                    logger.debug(f"[龙虎榜] {date} 无数据")
+                    logger.debug(f"[龙虎榜] {date} 无数据（可能是节假日）")
             except TypeError as e:
-                # 处理 'NoneType' object is not subscriptable 错误
-                logger.debug(f"[龙虎榜] {date} API返回None: {e}")
+                # 处理 'NoneType' object is not subscriptable 错误（akshare内部错误）
+                logger.debug(f"[龙虎榜] {date} API返回None（可能是节假日）: {e}")
                 continue
             except Exception as e:
                 logger.debug(f"[龙虎榜] {date} 查询失败: {e}")
                 continue
+
+        logger.warning(f"[龙虎榜] 在最近{max_days}天内未找到有数据的交易日（检查了{trading_days_checked}个工作日）")
         return None
 
     def get_longhubang_data(self, date: str = None) -> Dict[str, Any]:

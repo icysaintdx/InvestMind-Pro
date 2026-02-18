@@ -517,5 +517,53 @@
       "risk_level": "未评估",
       "investment_advice": ""
     }
+  },
+  "AT20260106041739": {
+    "task_id": "AT20260106041739",
+    "stock_code": "600025",
+    "strategy_id": "sentiment_resonance",
+    "initial_capital": 100000.0,
+    "current_capital": 100000.0,
+    "status": "running",
+    "created_at": "2026-01-06T04:17:39.685480",
+    "last_decision_at": "2026-01-06T04:17:53.359894",
+    "total_trades": 1,
+    "total_profit": 0,
+    "auto_select_strategy": false,
+    "risk_preference": "moderate",
+    "analysis_result": {
+      "stock_code": "600025",
+      "stock_name": "华能水电",
+      "analysis_summary": "新闻舆情分析师：【华能水电（600025）投资价值分析】  **核心观点：当前舆情偏中性，情绪评分约+1，建议观望。**  ---  ### 一、关键事件识别与分析  **1....\n社交媒体分析师：当前华能水电（600025）的成交额为17.5亿元，较前一交易日微涨0.22%，量能维持在相对稳定水平。从情绪分析视角切入：  1. **平台讨论热度**：雪球...\n中国市场专家：1. **A股大盘当前趋势**：当前A股处于震荡格局，主要指数如沪深300、上证50等呈现窄幅波动，缺乏明确方向性突破。市场情绪偏谨慎，资金观望情绪浓厚，短期或...\n行业轮动分析师：**行业周期判断：萧条期末段，复苏预期弱，整体仍处低谷。**   水电行业受制于自然条件波动、新能源替代加速及政策支持边际减弱，当前处于行业周期的萧条期末段。虽...",
+      "technical_score": null,
+      "fundamental_score": null,
+      "sentiment_score": null,
+      "risk_level": "未评估",
+      "investment_advice": ""
+    }
+  },
+  "AT20260107061217": {
+    "task_id": "AT20260107061217",
+    "stock_code": "600025",
+    "strategy_id": "sentiment_resonance",
+    "initial_capital": 100000.0,
+    "current_capital": 100000.0,
+    "status": "running",
+    "created_at": "2026-01-07T06:12:17.435550",
+    "last_decision_at": "2026-01-07T06:12:30.549662",
+    "total_trades": 0,
+    "total_profit": 0,
+    "auto_select_strategy": false,
+    "risk_preference": "moderate",
+    "analysis_result": {
+      "stock_code": "600025",
+      "stock_name": "华能水电",
+      "analysis_summary": "新闻舆情分析师：【华能水电（600025）投资价值分析】  **核心观点：当前舆情偏中性，情绪评分约+1，建议观望。**  ---  ### 一、关键事件识别与分析  **1....\n社交媒体分析师：当前华能水电（600025）的成交额为17.5亿元，较前一交易日微涨0.22%，量能维持在相对稳定水平。从情绪分析视角切入：  1. **平台讨论热度**：雪球...\n中国市场专家：1. **A股大盘当前趋势**：当前A股处于震荡格局，主要指数如沪深300、上证50等呈现窄幅波动，缺乏明确方向性突破。市场情绪偏谨慎，资金观望情绪浓厚，短期或...\n行业轮动分析师：**行业周期判断：萧条期末段，复苏预期弱，整体仍处低谷。**   水电行业受制于自然条件波动、新能源替代加速及政策支持边际减弱，当前处于行业周期的萧条期末段。虽...",
+      "technical_score": null,
+      "fundamental_score": null,
+      "sentiment_score": null,
+      "risk_level": "未评估",
+      "investment_advice": ""
+    }
   }
 }

@@ -32,6 +32,9 @@
         <button @click="showNotificationSettings = true" class="btn-secondary">
           🔔 通知设置
         </button>
+        <button @click="showAlertRulesConfig = true" class="btn-secondary">
+          ⚙️ 预警规则
+        </button>
       </div>
     </div>
 
@@ -135,6 +138,9 @@
           <span v-if="unreadAlertCount > 0" class="alert-badge">{{ unreadAlertCount }}</span>
         </h2>
         <div class="section-actions">
+          <button @click="testAlertNotification('critical')" class="btn-test-alert critical" title="测试紧急预警">🚨 测试</button>
+          <button @click="testAlertNotification('high')" class="btn-test-alert high" title="测试高级预警">⚠️ 测试</button>
+          <button @click="testAlertNotification('positive')" class="btn-test-alert positive" title="测试利好消息">✅ 测试</button>
           <button @click="loadAlerts" class="btn-secondary">🔄 刷新</button>
           <button v-if="unreadAlertCount > 0" @click="markAllAlertsRead" class="btn-secondary">✓ 全部已读</button>
         </div>
@@ -168,19 +174,26 @@
       </div>
     </div>
 
-    <!-- 数据源状态 -->
-    <div class="card section">
+    <!-- 数据源状态（紧凑版） -->
+    <div class="card section data-sources-compact">
       <div class="section-header clickable" @click="dataSourcesCollapsed = !dataSourcesCollapsed">
         <h2>
           <span class="collapse-icon">{{ dataSourcesCollapsed ? '▶' : '▼' }}</span>
           🔌 数据源状态
+          <!-- 折叠时显示摘要 -->
+          <span v-if="dataSourcesCollapsed" class="sources-summary-inline">
+            <span class="summary-item online">● {{ onlineSourcesCount }}在线</span>
+            <span v-if="offlineSourcesCount > 0" class="summary-item offline">● {{ offlineSourcesCount }}离线</span>
+            <span v-if="errorSourcesCount > 0" class="summary-item error">● {{ errorSourcesCount }}异常</span>
+            <span class="summary-item latency">{{ avgLatency }}ms</span>
+          </span>
         </h2>
         <div class="section-actions">
-          <button @click.stop="quickTestAllSources" class="btn-secondary" :disabled="isTestingAll">
-            <span v-if="!isTestingAll">⚡ 快速检测</span>
-            <span v-else>🔄 检测中...</span>
+          <button @click.stop="quickTestAllSources" class="btn-secondary btn-sm" :disabled="isTestingAll">
+            <span v-if="!isTestingAll">⚡ 检测</span>
+            <span v-else>🔄 ...</span>
           </button>
-          <button @click.stop="openInterfaceTest" class="btn-secondary">📊 详细测试</button>
+          <button @click.stop="openInterfaceTest" class="btn-secondary btn-sm">📊 详细</button>
         </div>
       </div>
       <div v-show="!dataSourcesCollapsed" class="data-sources-new">
@@ -340,6 +353,9 @@
     <div class="card section">
       <div class="section-header">
         <h2>📰 实时新闻流 <span v-if="newsStats.totalFetched > 0" class="news-count-info">共获取到{{ newsStats.totalFetched }}条新闻，去重后剩余{{ newsStats.total }}条</span></h2>
+        <button @click="showNewsApiInfo = !showNewsApiInfo" class="btn-secondary btn-sm api-info-btn">
+          {{ showNewsApiInfo ? '🔽 收起接口信息' : '📋 查看接口信息' }}
+        </button>
         <div class="news-filters">
           <div class="sentiment-tabs">
             <button
@@ -383,6 +399,55 @@
         </div>
       </div>
 
+      <!-- 新闻接口信息面板 -->
+      <div v-if="showNewsApiInfo" class="api-info-panel">
+        <div class="api-info-header">
+          <h4>📡 实时新闻流数据源接口（共20+个）</h4>
+        </div>
+        <div class="api-info-grid">
+          <div class="api-info-group">
+            <h5>AKShare 接口</h5>
+            <ul class="api-list">
+              <li><span class="api-name">东方财富全球资讯</span> <code>ak.stock_info_global_em</code> <span class="api-refresh">60秒</span></li>
+              <li><span class="api-name">财联社电报</span> <code>ak.stock_info_global_cls</code> <span class="api-refresh">30秒</span></li>
+              <li><span class="api-name">富途牛牛</span> <code>ak.stock_info_global_futu</code> <span class="api-refresh">60秒</span></li>
+              <li><span class="api-name">同花顺</span> <code>ak.stock_info_global_ths</code> <span class="api-refresh">60秒</span></li>
+              <li><span class="api-name">新浪财经</span> <code>ak.stock_info_global_sina</code> <span class="api-refresh">60秒</span></li>
+              <li><span class="api-name">微博热议</span> <code>ak.stock_js_weibo_report</code> <span class="api-refresh">120秒</span></li>
+              <li><span class="api-name">财经早餐</span> <code>ak.stock_info_cjzc_em</code> <span class="api-refresh">300秒</span></li>
+              <li><span class="api-name">新闻联播</span> <code>ak.news_cctv</code> <span class="api-refresh">600秒</span></li>
+              <li><span class="api-name">百度财经</span> <code>ak.news_economic_baidu</code> <span class="api-refresh">120秒</span></li>
+            </ul>
+          </div>
+          <div class="api-info-group">
+            <h5>巨潮资讯官方API</h5>
+            <ul class="api-list">
+              <li><span class="api-name">巨潮市场公告</span> <code>cninfo_api.get_announcement_info</code> <span class="api-refresh">300秒</span></li>
+              <li><span class="api-name">巨潮上市状态变动</span> <code>cninfo_api.get_listing_status_changes</code> <span class="api-refresh">300秒</span></li>
+              <li><span class="api-name">巨潮新闻数据</span> <code>cninfo_api.get_news_list</code> <span class="api-refresh vip">VIP 120秒</span></li>
+              <li><span class="api-name">巨潮研报摘要</span> <code>cninfo_api.get_research_report_summary</code> <span class="api-refresh vip">VIP 300秒</span></li>
+              <li><span class="api-name">巨潮高管变动</span> <code>cninfo_api.get_management_personnel</code> <span class="api-refresh">600秒</span></li>
+            </ul>
+          </div>
+          <div class="api-info-group">
+            <h5>Tushare 新闻接口</h5>
+            <ul class="api-list">
+              <li><span class="api-name">Tushare全平台聚合</span> <code>ts.major_news</code> <span class="api-refresh free">免费 60秒</span></li>
+              <li><span class="api-name">Tushare-新浪财经</span> <code>ts.major_news(src='新浪财经')</code> <span class="api-refresh free">免费 120秒</span></li>
+              <li><span class="api-name">Tushare-财联社</span> <code>ts.major_news(src='财联社')</code> <span class="api-refresh free">免费 120秒</span></li>
+              <li><span class="api-name">Tushare-同花顺</span> <code>ts.major_news(src='同花顺')</code> <span class="api-refresh free">免费 120秒</span></li>
+              <li><span class="api-name">Tushare-华尔街见闻</span> <code>ts.major_news(src='华尔街见闻')</code> <span class="api-refresh free">免费 120秒</span></li>
+              <li><span class="api-name">Tushare新闻联播</span> <code>ts.cctv_news</code> <span class="api-refresh">5000积分 600秒</span></li>
+              <li><span class="api-name">Tushare上证E互动</span> <code>ts.irm_qa_sh</code> <span class="api-refresh">5000积分 300秒</span></li>
+              <li><span class="api-name">Tushare深证互动易</span> <code>ts.irm_qa_sz</code> <span class="api-refresh">5000积分 300秒</span></li>
+              <li><span class="api-name">Tushare新闻快讯</span> <code>ts.news</code> <span class="api-refresh paid">高级 60秒</span></li>
+              <li><span class="api-name">Tushare国家政策法规</span> <code>ts.npr</code> <span class="api-refresh paid">高级 300秒</span></li>
+              <li><span class="api-name">Tushare上市公司公告</span> <code>ts.anns_d</code> <span class="api-refresh paid">高级 300秒</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
       <div class="news-list">
         <!-- 新闻加载中状态 -->
         <div v-if="newsLoading && filteredNewsList.length === 0" class="loading-state">
@@ -390,12 +455,12 @@
           <p>新闻正在后台加载中...</p>
         </div>
         <div v-else-if="filteredNewsList.length === 0" class="empty-state">
-          <p>暂无{{ sentimentFilter === 'positive' ? '正面' : sentimentFilter === 'negative' ? '负面' : '' }}新闻数据</p>
+          <p>暂无{{ sentimentFilter === 'positive' ? '正面' : sentimentFilter === 'negative' ? '负面' : sentimentFilter === 'non_neutral' ? '有情绪标签的' : '' }}新闻数据</p>
         </div>
         <div
           v-for="(news, idx) in filteredNewsList"
           :key="`news-${idx}-${news.id || ''}`"
-          :class="['news-item', `sentiment-${news.sentiment}`]"
+          :class="['news-item', `sentiment-${news.sentiment}`, { 'has-monitored-stocks': getMatchedMonitoredStocks(news).length > 0 }]"
         >
           <div class="news-header">
             <h3>
@@ -414,6 +479,18 @@
             </span>
             <span v-if="news.sentiment_score" :class="['news-score', news.sentiment]">
               情绪分: {{ news.sentiment_score }}
+            </span>
+          </div>
+          <!-- 关联的监控股票 -->
+          <div v-if="getMatchedMonitoredStocks(news).length > 0" class="news-related-stocks">
+            <span class="related-label">关联监控:</span>
+            <span
+              v-for="stock in getMatchedMonitoredStocks(news)"
+              :key="stock.code"
+              class="related-stock-tag"
+              @click="viewDetails(stock)"
+            >
+              {{ stock.name || stock.code }}
             </span>
           </div>
           <p class="news-summary">{{ news.summary || news.content }}</p>
@@ -734,6 +811,282 @@
       </div>
     </div>
 
+    <!-- 预警规则配置弹窗 -->
+    <div v-if="showAlertRulesConfig" class="modal-overlay" @click="showAlertRulesConfig = false">
+      <div class="modal-content alert-rules-modal" @click.stop>
+        <div class="modal-header">
+          <h3>⚙️ 预警规则配置</h3>
+          <button @click="showAlertRulesConfig = false" class="close-btn">×</button>
+        </div>
+
+        <div class="alert-rules-content">
+          <!-- Tab切换 -->
+          <div class="alert-rules-tabs">
+            <button
+              :class="['tab-btn', { active: alertRulesTab === 'rules' }]"
+              @click="alertRulesTab = 'rules'"
+            >
+              📋 预警规则
+            </button>
+            <button
+              :class="['tab-btn', { active: alertRulesTab === 'thresholds' }]"
+              @click="alertRulesTab = 'thresholds'"
+            >
+              📊 阈值配置
+            </button>
+            <button
+              :class="['tab-btn', { active: alertRulesTab === 'aggregation' }]"
+              @click="alertRulesTab = 'aggregation'"
+            >
+              🔗 预警聚合
+            </button>
+          </div>
+
+          <!-- 预警规则列表 -->
+          <div v-if="alertRulesTab === 'rules'" class="tab-content">
+            <div class="rules-header">
+              <h4>自定义预警规则</h4>
+              <button @click="showAddRuleForm = true" class="btn-primary btn-sm">
+                ➕ 添加规则
+              </button>
+            </div>
+
+            <!-- 添加规则表单 -->
+            <div v-if="showAddRuleForm" class="add-rule-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>规则名称</label>
+                  <input v-model="newRule.name" type="text" placeholder="如：涨幅超5%预警" class="input-field" />
+                </div>
+                <div class="form-group">
+                  <label>规则类型</label>
+                  <select v-model="newRule.rule_type" class="input-field">
+                    <option v-for="type in ruleTypes" :key="type.value" :value="type.value">
+                      {{ type.label }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>预警级别</label>
+                  <select v-model="newRule.alert_level" class="input-field">
+                    <option value="critical">紧急</option>
+                    <option value="high">高</option>
+                    <option value="medium">中</option>
+                    <option value="low">低</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>应用范围</label>
+                  <select v-model="newRule.apply_to_all" class="input-field">
+                    <option :value="true">所有监控股票</option>
+                    <option :value="false">指定股票</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- 条件配置 -->
+              <div class="form-row" v-if="newRule.rule_type === 'price_change'">
+                <div class="form-group">
+                  <label>涨跌幅阈值(%)</label>
+                  <input v-model.number="newRule.conditions.threshold" type="number" step="0.1" placeholder="5" class="input-field" />
+                </div>
+                <div class="form-group">
+                  <label>比较方式</label>
+                  <select v-model="newRule.conditions.operator" class="input-field">
+                    <option value=">">大于</option>
+                    <option value=">=">大于等于</option>
+                    <option value="<">小于</option>
+                    <option value="<=">小于等于</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row" v-if="newRule.rule_type === 'volume_change'">
+                <div class="form-group">
+                  <label>成交量倍数</label>
+                  <input v-model.number="newRule.conditions.volume_ratio" type="number" step="0.1" placeholder="3" class="input-field" />
+                </div>
+              </div>
+
+              <div class="form-row" v-if="newRule.rule_type === 'pledge_ratio'">
+                <div class="form-group">
+                  <label>质押比例阈值(%)</label>
+                  <input v-model.number="newRule.conditions.pledge_threshold" type="number" step="1" placeholder="50" class="input-field" />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>规则描述</label>
+                  <input v-model="newRule.description" type="text" placeholder="规则说明（可选）" class="input-field" />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group checkbox-group">
+                  <label>
+                    <input type="checkbox" v-model="newRule.notify_email" />
+                    邮件通知
+                  </label>
+                  <label>
+                    <input type="checkbox" v-model="newRule.notify_wechat" />
+                    微信通知
+                  </label>
+                  <label>
+                    <input type="checkbox" v-model="newRule.is_enabled" />
+                    启用规则
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button @click="createAlertRule" class="btn-primary" :disabled="!newRule.name || creatingRule">
+                  {{ creatingRule ? '创建中...' : '✅ 创建规则' }}
+                </button>
+                <button @click="showAddRuleForm = false; resetNewRule()" class="btn-secondary">
+                  取消
+                </button>
+              </div>
+            </div>
+
+            <!-- 规则列表 -->
+            <div class="rules-list">
+              <div v-if="loadingRules" class="loading-state">
+                <div class="spinner"></div>
+                <p>加载规则中...</p>
+              </div>
+              <div v-else-if="alertRules.length === 0" class="empty-state">
+                <p>暂无自定义预警规则</p>
+                <p class="hint">点击"添加规则"创建您的第一条预警规则</p>
+              </div>
+              <div v-else class="rule-cards">
+                <div
+                  v-for="rule in alertRules"
+                  :key="rule.id"
+                  :class="['rule-card', { disabled: !rule.is_enabled }]"
+                >
+                  <div class="rule-header">
+                    <span class="rule-name">{{ rule.name }}</span>
+                    <span :class="['rule-level', rule.alert_level]">{{ getLevelLabel(rule.alert_level) }}</span>
+                  </div>
+                  <div class="rule-info">
+                    <span class="rule-type">{{ getRuleTypeLabel(rule.rule_type) }}</span>
+                    <span class="rule-scope">{{ rule.apply_to_all ? '所有股票' : '指定股票' }}</span>
+                  </div>
+                  <div v-if="rule.description" class="rule-desc">{{ rule.description }}</div>
+                  <div class="rule-actions">
+                    <button @click="toggleRuleEnabled(rule)" class="btn-small">
+                      {{ rule.is_enabled ? '🔴 禁用' : '🟢 启用' }}
+                    </button>
+                    <button @click="deleteAlertRule(rule.id)" class="btn-small btn-danger">
+                      🗑️ 删除
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 阈值配置 -->
+          <div v-if="alertRulesTab === 'thresholds'" class="tab-content">
+            <h4>行情异动预警阈值</h4>
+            <div class="thresholds-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>急涨阈值 (%)</label>
+                  <input v-model.number="alertThresholds.surge_pct" type="number" step="0.1" class="input-field" />
+                  <span class="hint">涨幅超过此值触发急涨预警</span>
+                </div>
+                <div class="form-group">
+                  <label>急跌阈值 (%)</label>
+                  <input v-model.number="alertThresholds.plunge_pct" type="number" step="0.1" class="input-field" />
+                  <span class="hint">跌幅超过此值触发急跌预警</span>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>涨停阈值 (%)</label>
+                  <input v-model.number="alertThresholds.limit_up_pct" type="number" step="0.1" class="input-field" />
+                  <span class="hint">涨幅达到此值视为涨停</span>
+                </div>
+                <div class="form-group">
+                  <label>跌停阈值 (%)</label>
+                  <input v-model.number="alertThresholds.limit_down_pct" type="number" step="0.1" class="input-field" />
+                  <span class="hint">跌幅达到此值视为跌停</span>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>放量倍数</label>
+                  <input v-model.number="alertThresholds.volume_ratio" type="number" step="0.1" class="input-field" />
+                  <span class="hint">成交量超过均量此倍数触发放量预警</span>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button @click="saveAlertThresholds" class="btn-primary" :disabled="savingThresholds">
+                  {{ savingThresholds ? '保存中...' : '💾 保存阈值配置' }}
+                </button>
+                <button @click="loadAlertThresholds" class="btn-secondary">
+                  🔄 重置
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 预警聚合配置 -->
+          <div v-if="alertRulesTab === 'aggregation'" class="tab-content">
+            <h4>预警聚合设置</h4>
+            <p class="section-desc">配置预警聚合规则，避免短时间内收到大量相似预警通知</p>
+
+            <div class="aggregation-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>聚合时间窗口 (分钟)</label>
+                  <input v-model.number="alertAggregation.time_window" type="number" min="1" max="60" class="input-field" />
+                  <span class="hint">在此时间窗口内的相似预警将被合并</span>
+                </div>
+                <div class="form-group">
+                  <label>最大聚合数量</label>
+                  <input v-model.number="alertAggregation.max_count" type="number" min="1" max="100" class="input-field" />
+                  <span class="hint">单次聚合最多包含的预警数量</span>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group checkbox-group">
+                  <label>
+                    <input type="checkbox" v-model="alertAggregation.enabled" />
+                    启用预警聚合
+                  </label>
+                  <label>
+                    <input type="checkbox" v-model="alertAggregation.same_stock_only" />
+                    仅聚合同一股票的预警
+                  </label>
+                  <label>
+                    <input type="checkbox" v-model="alertAggregation.same_type_only" />
+                    仅聚合同类型预警
+                  </label>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>通知冷却时间 (分钟)</label>
+                  <input v-model.number="alertAggregation.cooldown" type="number" min="0" max="120" class="input-field" />
+                  <span class="hint">同一股票的同类型预警在此时间内不重复通知</span>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button @click="saveAlertAggregation" class="btn-primary" :disabled="savingAggregation">
+                  {{ savingAggregation ? '保存中...' : '💾 保存聚合配置' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 接口测试弹窗 -->
     <div v-if="showInterfaceTest" class="modal-overlay" @click="showInterfaceTest = false">
       <div class="modal-content interface-test-modal" @click.stop>
@@ -889,7 +1242,7 @@
           <div class="overview-item">
             <span class="overview-label">情绪评分</span>
             <span class="sentiment-score" :style="{ color: getSentimentColor(stockSentiment?.overall_score || comprehensiveData?.overall_score || selectedStock?.sentimentScore || 50) }">
-              {{ stockSentiment?.overall_score || comprehensiveData?.overall_score || selectedStock?.sentimentScore || 50 }}分
+              {{ formatScore(stockSentiment?.overall_score || comprehensiveData?.overall_score || selectedStock?.sentimentScore || 50) }}分
             </span>
           </div>
           <div class="overview-item">
@@ -1458,7 +1811,7 @@
         <div v-if="detailTab === 'news'" class="detail-content">
           <!-- 新闻类型筛选 -->
           <div class="filter-bar">
-            <button 
+            <button
               v-for="type in [
                 { value: 'all', label: '全部' },
                 { value: 'financial', label: '📈 财报' },
@@ -1473,6 +1826,36 @@
             >
               {{ type.label }}
             </button>
+            <button @click="showStockNewsApiInfo = !showStockNewsApiInfo" class="btn-secondary btn-sm api-info-btn-small">
+              {{ showStockNewsApiInfo ? '🔽' : '📋' }}
+            </button>
+          </div>
+
+          <!-- 个股新闻接口信息面板 -->
+          <div v-if="showStockNewsApiInfo" class="api-info-panel compact">
+            <div class="api-info-header">
+              <h4>📡 个股新闻舆情数据源接口（共8个）</h4>
+            </div>
+            <div class="api-info-grid">
+              <div class="api-info-group">
+                <h5>多源新闻聚合器（5个）</h5>
+                <ul class="api-list compact">
+                  <li><span class="api-name">东方财富个股新闻</span> <code>ak.stock_news_em</code></li>
+                  <li><span class="api-name">东方财富全球资讯</span> <code>ak.stock_info_global_em</code> <span class="api-note">关键词过滤</span></li>
+                  <li><span class="api-name">财联社全球资讯</span> <code>ak.stock_info_global_cls</code> <span class="api-note">关键词过滤</span></li>
+                  <li><span class="api-name">百度财经新闻</span> <code>ak.news_economic_baidu</code> <span class="api-note">关键词过滤</span></li>
+                  <li><span class="api-name">备用源</span> <code>get_realtime_stock_news</code> <span class="api-note">东财爬虫</span></li>
+                </ul>
+              </div>
+              <div class="api-info-group">
+                <h5>巨潮官方API（3个）</h5>
+                <ul class="api-list compact">
+                  <li><span class="api-name">巨潮个股公告</span> <code>cninfo_api.get_announcement_info</code></li>
+                  <li><span class="api-name">巨潮个股新闻</span> <code>cninfo_api.get_news_list</code> <span class="api-refresh vip">VIP</span></li>
+                  <li><span class="api-name">巨潮个股研报摘要</span> <code>cninfo_api.get_research_report_summary</code> <span class="api-refresh vip">VIP</span></li>
+                </ul>
+              </div>
+            </div>
           </div>
 
           <!-- 新闻列表 -->
@@ -1552,7 +1935,7 @@
             <div class="sentiment-overview">
               <div class="sentiment-score-panel">
                 <div class="sentiment-score-big" :style="{ color: getSentimentColor(stockSentiment.overall_score) }">
-                  {{ stockSentiment.overall_score || 50 }}
+                  {{ formatScore(stockSentiment.overall_score || 50) }}
                 </div>
                 <div class="sentiment-label">{{ getSentimentLabel(stockSentiment.overall_sentiment) }}</div>
               </div>
@@ -1641,7 +2024,7 @@
 </template>
 
 <script>
-import { ref, reactive, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, watch, nextTick, inject } from 'vue'
 import axios from 'axios'
 import * as echarts from 'echarts'
 import StockSearchInput from '@/components/StockSearchInput.vue'
@@ -1655,15 +2038,26 @@ export default {
   setup() {
     const API_BASE = `${API_BASE_URL}/api`
 
+    // 注入全局预警方法
+    const triggerGlobalAlert = inject('triggerGlobalAlert', null)
+    const showGlobalToast = inject('showGlobalToast', null)
+    const triggerGlobalBorderFlash = inject('triggerGlobalBorderFlash', null)
+
     // 状态数据
     const isRefreshing = ref(false)
     const refreshingText = ref('数据刷新中...')
     const refreshingProgress = ref(0)
     const showAddMonitor = ref(false)
+    const addingMonitor = ref(false)  // 添加监控的loading状态
     const showStockDetails = ref(false)
     const showNotificationSettings = ref(false)  // 通知设置弹窗
     const showInterfaceTest = ref(false)  // 接口测试弹窗
     const showRefreshSettings = ref(false)  // 刷新频率设置弹窗
+    const showNewsApiInfo = ref(false)  // 新闻流接口信息面板
+    const showStockNewsApiInfo = ref(false)  // 个股新闻接口信息面板
+    const showAlertRulesConfig = ref(false)  // 预警规则配置弹窗
+    const alertRulesTab = ref('rules')  // rules, thresholds, aggregation
+    const showAddRuleForm = ref(false)  // 添加规则表单
     const currentFilter = ref('全部')
     const newsSource = ref('all')
     const detailTab = ref('interface')  // interface, basic, market, financial, capital, risk, news
@@ -1725,6 +2119,51 @@ export default {
       BARK_KEY: '',
       BARK_SERVER: ''
     })
+
+    // 预警规则相关状态
+    const alertRules = ref([])
+    const loadingRules = ref(false)
+    const creatingRule = ref(false)
+    const savingThresholds = ref(false)
+    const savingAggregation = ref(false)
+    const ruleTypes = ref([
+      { value: 'price_change', label: '价格变动' },
+      { value: 'volume_change', label: '成交量变动' },
+      { value: 'pledge_ratio', label: '质押比例' },
+      { value: 'restricted_release', label: '限售解禁' },
+      { value: 'holder_change', label: '股东变动' },
+      { value: 'st_warning', label: 'ST风险' },
+      { value: 'suspend', label: '停复牌' },
+      { value: 'news_sentiment', label: '新闻情绪' },
+      { value: 'custom', label: '自定义' }
+    ])
+    const newRule = ref({
+      name: '',
+      description: '',
+      rule_type: 'price_change',
+      conditions: { threshold: 5, operator: '>' },
+      alert_level: 'medium',
+      apply_to_all: true,
+      stock_codes: [],
+      notify_email: false,
+      notify_wechat: false,
+      is_enabled: true
+    })
+    const alertThresholds = ref({
+      surge_pct: 5.0,
+      plunge_pct: -5.0,
+      limit_up_pct: 9.9,
+      limit_down_pct: -9.9,
+      volume_ratio: 3.0
+    })
+    const alertAggregation = ref({
+      enabled: true,
+      time_window: 5,
+      max_count: 10,
+      same_stock_only: true,
+      same_type_only: false,
+      cooldown: 30
+    })
     
     // 综合数据
     const loadingComprehensive = ref(false)
@@ -1761,7 +2200,7 @@ export default {
     const monitoredStocks = ref([])
     const dataSources = ref([])
     const newsList = ref([])
-    const sentimentFilter = ref('all')  // 默认显示全部新闻
+    const sentimentFilter = ref('non_neutral')  // 默认显示有情绪标签的新闻（非中性）
     const sentimentStats = ref({ positive: 0, negative: 0, neutral: 0 })
     const newsStats = ref({ total: 0, totalFetched: 0 })  // 新闻统计
     const selectedStock = ref(null)
@@ -1900,6 +2339,7 @@ export default {
 
     const newMonitor = reactive({
       code: '',
+      name: '',  // 股票名称，由前端传递避免后端查找
       frequency: '1h',
       retention_days: 7,  // 新增：保存周期
       items: {
@@ -2183,6 +2623,156 @@ export default {
       }
     }
 
+    // ==================== 预警规则相关方法 ====================
+
+    // 加载预警规则列表
+    const loadAlertRules = async () => {
+      loadingRules.value = true
+      try {
+        const response = await axios.get(`${API_BASE}/alerts/rules`)
+        if (response.data.success) {
+          alertRules.value = response.data.rules || []
+        }
+      } catch (error) {
+        console.error('加载预警规则失败:', error)
+      } finally {
+        loadingRules.value = false
+      }
+    }
+
+    // 创建预警规则
+    const createAlertRule = async () => {
+      if (!newRule.value.name) return
+      creatingRule.value = true
+      try {
+        const response = await axios.post(`${API_BASE}/alerts/rules`, newRule.value)
+        if (response.data.success) {
+          showToast('规则创建成功', 'success')
+          alertRules.value.unshift(response.data.rule)
+          showAddRuleForm.value = false
+          resetNewRule()
+        } else {
+          showToast(`创建失败: ${response.data.message}`, 'error')
+        }
+      } catch (error) {
+        showToast(`创建失败: ${error.response?.data?.detail || error.message}`, 'error')
+      } finally {
+        creatingRule.value = false
+      }
+    }
+
+    // 重置新规则表单
+    const resetNewRule = () => {
+      newRule.value = {
+        name: '',
+        description: '',
+        rule_type: 'price_change',
+        conditions: { threshold: 5, operator: '>' },
+        alert_level: 'medium',
+        apply_to_all: true,
+        stock_codes: [],
+        notify_email: false,
+        notify_wechat: false,
+        is_enabled: true
+      }
+    }
+
+    // 切换规则启用状态
+    const toggleRuleEnabled = async (rule) => {
+      try {
+        const response = await axios.put(`${API_BASE}/alerts/rules/${rule.id}`, {
+          is_enabled: !rule.is_enabled
+        })
+        if (response.data.success) {
+          rule.is_enabled = !rule.is_enabled
+          showToast(rule.is_enabled ? '规则已启用' : '规则已禁用', 'success')
+        }
+      } catch (error) {
+        showToast(`操作失败: ${error.message}`, 'error')
+      }
+    }
+
+    // 删除预警规则
+    const deleteAlertRule = async (ruleId) => {
+      if (!confirm('确定要删除此规则吗？')) return
+      try {
+        const response = await axios.delete(`${API_BASE}/alerts/rules/${ruleId}`)
+        if (response.data.success) {
+          alertRules.value = alertRules.value.filter(r => r.id !== ruleId)
+          showToast('规则已删除', 'success')
+        }
+      } catch (error) {
+        showToast(`删除失败: ${error.message}`, 'error')
+      }
+    }
+
+    // 加载预警阈值配置
+    const loadAlertThresholds = async () => {
+      try {
+        const response = await axios.get(`${API_BASE}/alerts/thresholds`)
+        if (response.data.success && response.data.thresholds) {
+          alertThresholds.value = { ...alertThresholds.value, ...response.data.thresholds }
+        }
+      } catch (error) {
+        console.error('加载预警阈值失败:', error)
+      }
+    }
+
+    // 保存预警阈值配置
+    const saveAlertThresholds = async () => {
+      savingThresholds.value = true
+      try {
+        const response = await axios.post(`${API_BASE}/alerts/thresholds`, alertThresholds.value)
+        if (response.data.success) {
+          showToast('阈值配置已保存', 'success')
+        } else {
+          showToast(`保存失败: ${response.data.message}`, 'error')
+        }
+      } catch (error) {
+        showToast(`保存失败: ${error.message}`, 'error')
+      } finally {
+        savingThresholds.value = false
+      }
+    }
+
+    // 保存预警聚合配置
+    const saveAlertAggregation = async () => {
+      savingAggregation.value = true
+      try {
+        // 保存到本地存储（后端暂未实现聚合配置API）
+        localStorage.setItem('alertAggregation', JSON.stringify(alertAggregation.value))
+        showToast('聚合配置已保存', 'success')
+      } catch (error) {
+        showToast(`保存失败: ${error.message}`, 'error')
+      } finally {
+        savingAggregation.value = false
+      }
+    }
+
+    // 加载预警聚合配置
+    const loadAlertAggregation = () => {
+      try {
+        const saved = localStorage.getItem('alertAggregation')
+        if (saved) {
+          alertAggregation.value = { ...alertAggregation.value, ...JSON.parse(saved) }
+        }
+      } catch (error) {
+        console.error('加载聚合配置失败:', error)
+      }
+    }
+
+    // 获取规则类型标签
+    const getRuleTypeLabel = (type) => {
+      const found = ruleTypes.value.find(t => t.value === type)
+      return found ? found.label : type
+    }
+
+    // 获取预警级别标签
+    const getLevelLabel = (level) => {
+      const labels = { critical: '紧急', high: '高', medium: '中', low: '低' }
+      return labels[level] || level
+    }
+
     // 计算属性（使用持久化的统计数据）
     const todayNewsCount = computed(() => dailyStats.value.todayNews || newsList.value.length)
     const riskAlertCount = computed(() => dailyStats.value.riskAlerts || 0)
@@ -2205,6 +2795,46 @@ export default {
       }
       return filtered
     })
+
+    // 获取新闻关联的监控股票
+    const getMatchedMonitoredStocks = (news) => {
+      if (!news || !monitoredStocks.value.length) return []
+
+      const matched = []
+      const title = (news.title || '').toLowerCase()
+      const content = (news.content || news.summary || '').toLowerCase()
+      const relatedStocks = news.relatedStocks || news.related_stocks || []
+      const keywords = news.keywords || []
+
+      for (const stock of monitoredStocks.value) {
+        const stockCode = (stock.code || '').split('.')[0]
+        const stockName = (stock.name || '').toLowerCase()
+
+        // 检查是否在关联股票列表中
+        if (relatedStocks.some(s => s.includes(stockCode))) {
+          matched.push(stock)
+          continue
+        }
+
+        // 检查标题或内容中是否包含股票代码或名称
+        if (stockCode && (title.includes(stockCode) || content.includes(stockCode))) {
+          matched.push(stock)
+          continue
+        }
+
+        if (stockName && stockName.length >= 2 && (title.includes(stockName) || content.includes(stockName))) {
+          matched.push(stock)
+          continue
+        }
+
+        // 检查关键词是否包含股票名称
+        if (stockName && keywords.some(kw => kw.toLowerCase().includes(stockName))) {
+          matched.push(stock)
+        }
+      }
+
+      return matched
+    }
 
     const filteredStocks = computed(() => {
       if (currentFilter.value === '全部') return monitoredStocks.value
@@ -2326,7 +2956,7 @@ export default {
         }
       }
     }
-    
+
     const checkDataSources = async () => {
       try {
         const response = await axios.post(`${API_BASE}/dataflow/sources/check`)
@@ -2337,6 +2967,20 @@ export default {
       } catch (error) {
         console.error('检测数据源失败:', error)
         showToast('检测失败: ' + error.message, 'error')
+      }
+    }
+
+    // 静默检测数据源（页面加载时自动调用，不显示toast）
+    const silentCheckDataSources = async () => {
+      try {
+        const response = await axios.post(`${API_BASE}/dataflow/sources/check`)
+        if (response.data.success) {
+          await loadDataSources()
+        }
+      } catch (error) {
+        console.error('静默检测数据源失败:', error)
+        // 静默失败，只加载缓存状态
+        await loadDataSources()
       }
     }
 
@@ -2482,8 +3126,9 @@ export default {
     // 股票选择回调
     const onStockSelect = (stock) => {
       if (stock) {
-        // 设置完整的股票代码（带后缀）
+        // 设置完整的股票代码（带后缀）和名称
         newMonitor.code = stock.code
+        newMonitor.name = stock.name  // 传递名称给后端，避免后端查找
         selectedStockName.value = `${stock.name} (${stock.code})`
       }
     }
@@ -2500,6 +3145,7 @@ export default {
           // 立即关闭模态框和重置表单
           showAddMonitor.value = false
           newMonitor.code = ''
+          newMonitor.name = ''  // 清空股票名称
           selectedStockName.value = ''  // 清空选中的股票名称
           showToast('添加成功，后台正在获取数据...', 'success')
 
@@ -3031,11 +3677,19 @@ export default {
       return num.toFixed(2)
     }
 
+    // 格式化评分（保留2位小数）
+    const formatScore = (value) => {
+      if (value === null || value === undefined) return '50.00'
+      const num = parseFloat(value)
+      if (isNaN(num)) return '50.00'
+      return num.toFixed(2)
+    }
+
     const formatPercent = (value) => {
       // 检查是否为有效数值
-      if (value === null || value === undefined) return '-'
+      if (value === null || value === undefined) return 'NaN%'
       const num = parseFloat(value)
-      if (isNaN(num)) return '-'
+      if (isNaN(num)) return 'NaN%'
       // 如果值已经是小数形式（如0.86），乘以100转为百分比
       // 如果值已经是百分比形式（如86），直接使用
       const percent = num <= 1 && num >= -1 ? num * 100 : num
@@ -3719,17 +4373,66 @@ export default {
         }
       }
 
-      // 根据预警级别显示不同的提示
-      if (alert_level === 'critical') {
-        showToast(`🚨 紧急预警: ${alert?.title || '有新的紧急预警'}`, 'error')
-      } else if (alert_level === 'high') {
-        showToast(`⚠️ 高级预警: ${alert?.title || '有新的高级预警'}`, 'warning')
+      // 触发全局预警通知（吐司+弹窗+边框闪动）
+      if (triggerGlobalAlert && alert) {
+        triggerGlobalAlert({
+          ...alert,
+          alert_level: alert_level
+        })
       } else {
-        showToast(`📢 新预警: ${alert?.title || '有新的预警'}`, 'info')
+        // 回退到本地吐司通知
+        if (alert_level === 'critical') {
+          showToast(`🚨 紧急预警: ${alert?.title || '有新的紧急预警'}`, 'error')
+        } else if (alert_level === 'high') {
+          showToast(`⚠️ 高级预警: ${alert?.title || '有新的高级预警'}`, 'warning')
+        } else {
+          showToast(`📢 新预警: ${alert?.title || '有新的预警'}`, 'info')
+        }
       }
 
       // 更新风险预警计数
       dailyStats.value.riskAlerts = (dailyStats.value.riskAlerts || 0) + 1
+    }
+
+    // 测试预警通知效果
+    const testAlertNotification = (level) => {
+      const testAlerts = {
+        critical: {
+          id: Date.now(),
+          alert_level: 'critical',
+          title: '股价异常波动预警',
+          message: '贵州茅台(600519)在过去5分钟内下跌超过5%，当前跌幅-5.23%，成交量放大3倍，请注意风险！',
+          stock_name: '贵州茅台',
+          ts_code: '600519.SH',
+          alert_time: new Date().toISOString()
+        },
+        high: {
+          id: Date.now(),
+          alert_level: 'high',
+          title: '大单异动预警',
+          message: '宁德时代(300750)出现大额卖单，单笔成交金额超过5000万元，请关注资金流向。',
+          stock_name: '宁德时代',
+          ts_code: '300750.SZ',
+          alert_time: new Date().toISOString()
+        },
+        positive: {
+          id: Date.now(),
+          alert_level: 'medium',
+          is_positive: true,
+          title: '利好消息提醒',
+          message: '比亚迪(002594)发布业绩预告，预计净利润同比增长100%-120%，超出市场预期。',
+          stock_name: '比亚迪',
+          ts_code: '002594.SZ',
+          alert_time: new Date().toISOString()
+        }
+      }
+
+      const alert = testAlerts[level]
+      if (triggerGlobalAlert) {
+        triggerGlobalAlert(alert)
+      } else {
+        showToast(`测试预警: ${alert.title}`, level === 'critical' ? 'error' : level === 'high' ? 'warning' : 'success')
+      }
     }
 
     // 处理股票数据更新通知
@@ -3843,8 +4546,8 @@ export default {
       // 加载刷新设置
       loadRefreshSettings()
 
-      // 页面加载时检测一次数据源状态
-      loadDataSources()
+      // 页面加载时自动检测数据源状态（静默检测，不显示toast）
+      silentCheckDataSources()
       // 加载其他数据
       refreshAllData()
       // 加载通知设置数据
@@ -3853,6 +4556,10 @@ export default {
       loadNotificationConfig()
       // 加载预警列表
       loadAlerts()
+      // 加载预警规则和配置
+      loadAlertRules()
+      loadAlertThresholds()
+      loadAlertAggregation()
 
       // 设置自定义刷新定时器
       setupRefreshTimers()
@@ -3898,6 +4605,11 @@ export default {
       showNotificationSettings,  // 通知设置弹窗
       showInterfaceTest,  // 接口测试弹窗
       showRefreshSettings,  // 刷新频率设置弹窗
+      showNewsApiInfo,  // 新闻流接口信息面板
+      showStockNewsApiInfo,  // 个股新闻接口信息面板
+      showAlertRulesConfig,  // 预警规则配置弹窗
+      alertRulesTab,  // 预警规则Tab
+      showAddRuleForm,  // 添加规则表单
       refreshSettings,  // 刷新设置
       newsRefreshOptions,  // 新闻刷新选项
       announcementRefreshOptions,  // 公告刷新选项
@@ -3911,6 +4623,7 @@ export default {
       dataSources,
       newsList,
       filteredNewsList,
+      getMatchedMonitoredStocks,  // 获取新闻关联的监控股票
       sentimentFilter,
       sentimentStats,
       newsStats,  // 新闻统计
@@ -3996,6 +4709,7 @@ export default {
       formatTime,
       formatMoney,  // 新增
       formatPercent,  // 百分比格式化
+      formatScore,  // 评分格式化（保留2位小数）
       getStatusText,
       getRiskText,
       getRiskScoreClass,  // 风险评分样式
@@ -4011,7 +4725,29 @@ export default {
       getAlertLevelText,
       getInterfaceSuccessRate,
       getInterfaceName,
-      safeArray  // 安全数组转换
+      safeArray,  // 安全数组转换
+      // 预警规则相关
+      alertRules,
+      loadingRules,
+      creatingRule,
+      savingThresholds,
+      savingAggregation,
+      ruleTypes,
+      newRule,
+      alertThresholds,
+      alertAggregation,
+      loadAlertRules,
+      createAlertRule,
+      resetNewRule,
+      toggleRuleEnabled,
+      deleteAlertRule,
+      loadAlertThresholds,
+      saveAlertThresholds,
+      saveAlertAggregation,
+      getRuleTypeLabel,
+      getLevelLabel,
+      // 测试预警通知
+      testAlertNotification
     }
   }
 }
@@ -4471,6 +5207,52 @@ export default {
   border: 1px solid rgba(51, 65, 85, 0.3);
 }
 
+/* 数据源状态紧凑版样式 */
+.data-sources-compact .section-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sources-summary-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: 12px;
+  font-size: 13px;
+  font-weight: normal;
+}
+
+.sources-summary-inline .summary-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(30, 41, 59, 0.6);
+}
+
+.sources-summary-inline .summary-item.online {
+  color: #10b981;
+}
+
+.sources-summary-inline .summary-item.offline {
+  color: #6b7280;
+}
+
+.sources-summary-inline .summary-item.error {
+  color: #ef4444;
+}
+
+.sources-summary-inline .summary-item.latency {
+  color: #60a5fa;
+}
+
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
 .health-item {
   display: flex;
   align-items: center;
@@ -4824,6 +5606,45 @@ export default {
   line-height: 1.5;
 }
 
+/* 新闻关联监控股票样式 */
+.news-related-stocks {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+  padding: 6px 10px;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 6px;
+  border-left: 3px solid #3b82f6;
+}
+
+.news-related-stocks .related-label {
+  font-size: 12px;
+  color: rgba(148, 163, 184, 0.8);
+  margin-right: 4px;
+}
+
+.news-related-stocks .related-stock-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 12px;
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.news-related-stocks .related-stock-tag:hover {
+  background: rgba(59, 130, 246, 0.4);
+  color: #93c5fd;
+}
+
+.news-item.has-monitored-stocks {
+  border-left: 3px solid #3b82f6;
+}
+
 /* 按钮 */
 .btn-primary,
 .btn-secondary,
@@ -4845,6 +5666,118 @@ export default {
 .btn-secondary {
   background: rgba(148, 163, 184, 0.15);
   color: #e2e8f0;
+}
+
+.btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+.api-info-btn {
+  margin-left: auto;
+}
+
+.api-info-btn-small {
+  margin-left: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+/* 接口信息面板 */
+.api-info-panel {
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.api-info-panel.compact {
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.api-info-header h4 {
+  margin: 0 0 0.75rem 0;
+  color: #a5b4fc;
+  font-size: 0.9rem;
+}
+
+.api-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.api-info-group h5 {
+  margin: 0 0 0.5rem 0;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.api-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.api-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+  font-size: 0.8rem;
+  color: #cbd5e1;
+  flex-wrap: wrap;
+}
+
+.api-list.compact li {
+  padding: 0.25rem 0;
+  font-size: 0.75rem;
+}
+
+.api-name {
+  color: #e2e8f0;
+  min-width: 120px;
+}
+
+.api-list code {
+  background: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.api-refresh {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+}
+
+.api-refresh.vip {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+}
+
+.api-refresh.free {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.api-refresh.paid {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
+.api-note {
+  color: #64748b;
+  font-size: 0.7rem;
+  font-style: italic;
 }
 
 .btn-small {
@@ -6020,6 +6953,48 @@ export default {
 /* ========== 实时预警面板样式 ========== */
 .realtime-alerts-section {
   border-left: 4px solid #f59e0b;
+}
+
+/* 测试预警按钮 */
+.btn-test-alert {
+  padding: 0.375rem 0.625rem;
+  border: 1px solid;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: transparent;
+}
+
+.btn-test-alert.critical {
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #ef4444;
+}
+
+.btn-test-alert.critical:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+}
+
+.btn-test-alert.high {
+  border-color: rgba(245, 158, 11, 0.5);
+  color: #f59e0b;
+}
+
+.btn-test-alert.high:hover {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: #f59e0b;
+}
+
+.btn-test-alert.positive {
+  border-color: rgba(16, 185, 129, 0.5);
+  color: #10b981;
+}
+
+.btn-test-alert.positive:hover {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: #10b981;
 }
 
 .alert-badge {
@@ -8004,5 +8979,265 @@ export default {
 
 .settings-info li {
   margin-bottom: 0.25rem;
+}
+
+/* 预警规则配置弹窗样式 */
+.alert-rules-modal {
+  width: 800px;
+  max-width: 95vw;
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.alert-rules-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.alert-rules-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  padding-bottom: 0.5rem;
+}
+
+.alert-rules-tabs .tab-btn {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.alert-rules-tabs .tab-btn:hover {
+  background: rgba(99, 102, 241, 0.1);
+  color: #e2e8f0;
+}
+
+.alert-rules-tabs .tab-btn.active {
+  background: rgba(99, 102, 241, 0.2);
+  color: #a5b4fc;
+}
+
+.tab-content {
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.rules-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.rules-header h4 {
+  margin: 0;
+  color: #e2e8f0;
+}
+
+.add-rule-form {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.form-group {
+  flex: 1;
+}
+
+.form-group label {
+  display: block;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  margin-bottom: 0.25rem;
+}
+
+.form-group .hint {
+  display: block;
+  color: #64748b;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.checkbox-group {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #e2e8f0;
+  cursor: pointer;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #6366f1;
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.rules-list {
+  min-height: 200px;
+}
+
+.loading-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: #94a3b8;
+}
+
+.empty-state .hint {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.rule-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.rule-card {
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  padding: 1rem;
+  transition: all 0.2s;
+}
+
+.rule-card:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+.rule-card.disabled {
+  opacity: 0.6;
+}
+
+.rule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.rule-name {
+  color: #e2e8f0;
+  font-weight: 500;
+}
+
+.rule-level {
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
+.rule-level.critical {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+.rule-level.high {
+  background: rgba(251, 146, 60, 0.2);
+  color: #fb923c;
+}
+
+.rule-level.medium {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+}
+
+.rule-level.low {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+
+.rule-info {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.rule-type,
+.rule-scope {
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.rule-desc {
+  color: #64748b;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.rule-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-danger {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #f87171 !important;
+}
+
+.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.3) !important;
+}
+
+.thresholds-form,
+.aggregation-form {
+  background: rgba(30, 41, 59, 0.4);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.section-desc {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(99, 102, 241, 0.3);
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style>

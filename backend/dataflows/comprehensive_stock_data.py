@@ -30,20 +30,212 @@ def extract_pure_symbol(ts_code: str) -> str:
 
 class ComprehensiveStockDataService:
     """综合股票数据服务 - 整合所有接口"""
-    
+
+    # 数据分层定义
+    DATA_LAYERS = {
+        'L1_REALTIME': {
+            'name': '实时层',
+            'update_interval': 60,  # 1分钟
+            'tasks': ['realtime', 'realtime_tick', 'st_status', 'suspend']
+        },
+        'L2_MEDIUM': {
+            'name': '中频层',
+            'update_interval': 3600,  # 1小时
+            'tasks': ['news_sina', 'announcements', 'hsgt_holding', 'dragon_tiger',
+                     'block_trade', 'limit_list', 'margin', 'holder_trade', 'pledge']
+        },
+        'L3_LOW': {
+            'name': '低频层',
+            'update_interval': 86400,  # 1天
+            'tasks': ['financial', 'forecast', 'audit', 'dividend', 'restricted',
+                     'top_inst', 'pledge_detail', 'margin_detail', 'ggt_top10',
+                     'hk_hold', 'limit_list_ths', 'manager_rewards']
+        },
+        'L4_STATIC': {
+            'name': '静态层',
+            'update_interval': 604800,  # 7天
+            'tasks': ['company_info', 'managers', 'main_business']
+        }
+    }
+
     def __init__(self):
         self.tushare_token = os.getenv('TUSHARE_TOKEN', '')
         self.tushare_api = None
-        
+
+        # 静态数据缓存（L4层数据缓存）
+        self._static_cache: Dict[str, Dict] = {}
+        self._static_cache_time: Dict[str, datetime] = {}
+
         # 初始化Tushare
         if self.tushare_token:
             try:
                 import tushare as ts
                 ts.set_token(self.tushare_token)
                 self.tushare_api = ts.pro_api()
-                logger.info("✅ Tushare API初始化成功")
+                logger.info("[OK] Tushare API初始化成功")
             except Exception as e:
-                logger.error(f"❌ Tushare初始化失败: {e}")
+                logger.error(f"[FAIL] Tushare初始化失败: {e}")
+
+    def get_layered_data(self, ts_code: str, layers: List[str] = None,
+                         force_refresh: bool = False) -> Dict:
+        """
+        分层获取股票数据
+
+        Args:
+            ts_code: 股票代码
+            layers: 要获取的层级列表，如 ['L1_REALTIME', 'L2_MEDIUM']
+                   默认为 None，表示获取所有层级
+            force_refresh: 是否强制刷新（忽略缓存）
+
+        Returns:
+            分层数据字典
+        """
+        if layers is None:
+            layers = list(self.DATA_LAYERS.keys())
+
+        result = {
+            'ts_code': ts_code,
+            'timestamp': datetime.now().isoformat(),
+            'layers_fetched': layers,
+        }
+
+        # 收集需要获取的任务
+        tasks_to_fetch = {}
+
+        for layer in layers:
+            if layer not in self.DATA_LAYERS:
+                continue
+
+            layer_config = self.DATA_LAYERS[layer]
+
+            # 检查静态层缓存
+            if layer == 'L4_STATIC' and not force_refresh:
+                cache_key = f"{ts_code}_{layer}"
+                if cache_key in self._static_cache:
+                    cache_time = self._static_cache_time.get(cache_key)
+                    if cache_time and (datetime.now() - cache_time).total_seconds() < layer_config['update_interval']:
+                        # 使用缓存
+                        for task in layer_config['tasks']:
+                            result[task] = self._static_cache[cache_key].get(task, {})
+                        logger.info(f"[CACHE] 使用静态层缓存: {ts_code}")
+                        continue
+
+            # 添加到待获取任务
+            for task in layer_config['tasks']:
+                tasks_to_fetch[task] = self._get_task_func(task, ts_code)
+
+        # 并发获取数据
+        if tasks_to_fetch:
+            fetched_data = self._fetch_tasks_concurrent(tasks_to_fetch, ts_code)
+            result.update(fetched_data)
+
+            # 更新静态层缓存
+            if 'L4_STATIC' in layers:
+                cache_key = f"{ts_code}_L4_STATIC"
+                self._static_cache[cache_key] = {
+                    task: result.get(task, {})
+                    for task in self.DATA_LAYERS['L4_STATIC']['tasks']
+                }
+                self._static_cache_time[cache_key] = datetime.now()
+
+        return result
+
+    def get_monitor_data(self, ts_code: str) -> Dict:
+        """
+        获取监控所需的数据（仅L1和L2层）
+        用于定时监控更新，不获取静态数据
+        """
+        return self.get_layered_data(ts_code, layers=['L1_REALTIME', 'L2_MEDIUM'])
+
+    def get_detail_data(self, ts_code: str, force_refresh: bool = False) -> Dict:
+        """
+        获取详情页所需的完整数据（所有层级）
+        用于用户查看股票详情时
+        """
+        return self.get_layered_data(ts_code, layers=None, force_refresh=force_refresh)
+
+    def _get_task_func(self, task: str, ts_code: str):
+        """获取任务对应的函数和参数"""
+        task_map = {
+            'realtime': (self._get_realtime_quote, ts_code),
+            'realtime_tick': (self._get_realtime_tick, ts_code),
+            'st_status': (self._check_st_status, ts_code),
+            'suspend': (self._get_suspend_info, ts_code),
+            'news_sina': (self._get_news_sina, ts_code),
+            'announcements': (self._get_announcements_akshare, ts_code),
+            'hsgt_holding': (self._get_hsgt_holding, ts_code),
+            'dragon_tiger': (self._get_dragon_tiger, ts_code),
+            'block_trade': (self._get_block_trade, ts_code),
+            'limit_list': (self._get_limit_list, ts_code),
+            'margin': (self._get_margin_data, ts_code),
+            'holder_trade': (self._get_holder_trade, ts_code),
+            'pledge': (self._get_pledge_data, ts_code),
+            'financial': (self._get_financial_data, ts_code),
+            'forecast': (self._get_performance_forecast, ts_code),
+            'audit': (self._get_audit_opinion, ts_code),
+            'dividend': (self._get_dividend_data, ts_code),
+            'restricted': (self._get_restricted_release, ts_code),
+            'top_inst': (self._get_top_inst, ts_code),
+            'pledge_detail': (self._get_pledge_detail, ts_code),
+            'margin_detail': (self._get_margin_detail, ts_code),
+            'ggt_top10': (self._get_ggt_top10, ts_code),
+            'hk_hold': (self._get_hk_hold, ts_code),
+            'limit_list_ths': (self._get_limit_list_ths, ts_code),
+            'manager_rewards': (self._get_manager_rewards, ts_code),
+            'company_info': (self._get_company_info, ts_code),
+            'managers': (self._get_managers, ts_code),
+            'main_business': (self._get_main_business, ts_code),
+        }
+        return task_map.get(task, (lambda x: {'status': 'not_found'}, ts_code))
+
+    def _fetch_tasks_concurrent(self, tasks: Dict, ts_code: str) -> Dict:
+        """并发获取任务数据"""
+        import concurrent.futures
+        import threading
+        import time
+
+        result = {}
+        log_lock = threading.Lock()
+
+        def execute_task(key, func, arg):
+            task_start = time.time()
+            try:
+                result_data = func(arg)
+                elapsed = time.time() - task_start
+                with log_lock:
+                    if isinstance(result_data, dict) and result_data.get('status') in ['success', 'has_suspend', 'normal']:
+                        logger.debug(f"[OK] {key} ({elapsed:.2f}s)")
+                    else:
+                        logger.debug(f"[WARN] {key} ({elapsed:.2f}s)")
+                return result_data
+            except Exception as e:
+                elapsed = time.time() - task_start
+                with log_lock:
+                    logger.debug(f"[FAIL] {key} ({elapsed:.2f}s) - {str(e)[:50]}")
+                return {'status': 'error', 'message': str(e)}
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            future_to_key = {}
+            for key, (func, arg) in tasks.items():
+                future = executor.submit(execute_task, key, func, arg)
+                future_to_key[future] = key
+
+            try:
+                for future in concurrent.futures.as_completed(future_to_key, timeout=60):
+                    key = future_to_key[future]
+                    try:
+                        result[key] = future.result(timeout=15)
+                    except concurrent.futures.TimeoutError:
+                        result[key] = {'status': 'timeout', 'message': '获取超时'}
+                    except Exception as e:
+                        result[key] = {'status': 'error', 'message': str(e)}
+            except concurrent.futures.TimeoutError:
+                for future, key in future_to_key.items():
+                    if not future.done():
+                        result[key] = {'status': 'timeout', 'message': '整体超时'}
+                        future.cancel()
+
+        return result
     
     def get_all_stock_data(self, ts_code: str) -> Dict:
         """
@@ -125,6 +317,10 @@ class ComprehensiveStockDataService:
             'industry_policy': {},
             'news': {},
             'akshare_ext': {},
+            # 巨潮官方API数据
+            'cninfo_announcement': {},
+            'cninfo_news': {},
+            'cninfo_research': {},
         }
 
         # 使用并发执行加速数据获取
@@ -173,6 +369,11 @@ class ComprehensiveStockDataService:
             'ggt_top10': (self._get_ggt_top10, ts_code),
             'hk_hold': (self._get_hk_hold, ts_code),
             'limit_list_ths': (self._get_limit_list_ths, ts_code),
+
+            # 巨潮官方API数据
+            'cninfo_announcement': (self._get_cninfo_announcement, ts_code),
+            'cninfo_news': (self._get_cninfo_stock_news, ts_code),
+            'cninfo_research': (self._get_cninfo_research_report, ts_code),
         }
 
         # 创建一个锁来保护日志输出
@@ -207,17 +408,35 @@ class ComprehensiveStockDataService:
 
             # 等待所有任务完成（增加超时时间到60秒）
             completed_count = 0
-            for future in concurrent.futures.as_completed(future_to_key, timeout=60):
-                key = future_to_key[future]
-                try:
-                    result[key] = future.result(timeout=15)
-                    completed_count += 1
-                except concurrent.futures.TimeoutError:
-                    logger.warning(f"⚠️ {key} 获取超时")
-                    result[key] = {'status': 'timeout', 'message': '获取超时'}
-                except Exception as e:
-                    logger.warning(f"⚠️ {key} 获取失败: {e}")
-                    result[key] = {'status': 'error', 'message': str(e)}
+            try:
+                for future in concurrent.futures.as_completed(future_to_key, timeout=60):
+                    key = future_to_key[future]
+                    try:
+                        result[key] = future.result(timeout=15)
+                        completed_count += 1
+                    except concurrent.futures.TimeoutError:
+                        logger.warning(f"[WARN] {key} 获取超时")
+                        result[key] = {'status': 'timeout', 'message': '获取超时'}
+                    except Exception as e:
+                        logger.warning(f"[WARN] {key} 获取失败: {e}")
+                        result[key] = {'status': 'error', 'message': str(e)}
+            except concurrent.futures.TimeoutError:
+                # 整体超时，处理未完成的任务
+                unfinished_count = 0
+                for future, key in future_to_key.items():
+                    if not future.done():
+                        unfinished_count += 1
+                        result[key] = {'status': 'timeout', 'message': '整体超时未完成'}
+                        future.cancel()
+                    elif key not in result:
+                        # 已完成但未处理的任务
+                        try:
+                            result[key] = future.result(timeout=0.1)
+                            completed_count += 1
+                        except Exception as e:
+                            result[key] = {'status': 'error', 'message': str(e)}
+                if unfinished_count > 0:
+                    logger.warning(f"[WARN] 整体超时，{unfinished_count}个任务未完成")
 
         total_time = time.time() - start_time
         logger.info(f"📊 数据获取完成: {completed_count}/{len(tasks)} 个接口，耗时 {total_time:.2f} 秒")
@@ -1235,6 +1454,115 @@ class ComprehensiveStockDataService:
         except Exception as e:
             logger.warning(f"⚠️ 公告快讯获取失败: {e}")
             return {'status': 'no_data', 'message': '公告快讯暂不可用'}
+
+    def _get_cninfo_announcement(self, ts_code: str) -> Dict:
+        """获取巨潮官方API个股公告（使用同步版本避免事件循环冲突）"""
+        try:
+            from backend.dataflows.announcement.cninfo_api import CninfoConfig, get_announcement_info_sync
+
+            if not CninfoConfig.is_configured():
+                return {'status': 'no_data', 'message': '巨潮API未配置'}
+
+            symbol = extract_pure_symbol(ts_code)
+
+            # 使用同步版本
+            result = get_announcement_info_sync(stock_code=symbol, page_size=50)
+
+            if result.get('success') and result.get('data'):
+                records = []
+                for item in result['data'][:20]:
+                    records.append({
+                        'date': str(item.get('F001D', '')),  # 公告日期
+                        'title': str(item.get('F002V', '')),  # 公告标题
+                        'type': str(item.get('F003V', '')),   # 公告类型
+                        'code': str(item.get('SECCODE', symbol)),
+                        'source': '巨潮资讯'
+                    })
+                return {
+                    'status': 'success',
+                    'count': len(records),
+                    'data': records
+                }
+            return {'status': 'no_data', 'message': result.get('error', '无公告数据')}
+
+        except Exception as e:
+            logger.warning(f"⚠️ 巨潮公告获取失败: {e}")
+            return {'status': 'no_data', 'message': f'巨潮公告暂不可用: {str(e)[:50]}'}
+
+    def _get_cninfo_stock_news(self, ts_code: str) -> Dict:
+        """获取巨潮官方API个股新闻（使用同步版本避免事件循环冲突）"""
+        try:
+            from backend.dataflows.announcement.cninfo_api import CninfoConfig, get_news_list_sync
+
+            if not CninfoConfig.is_configured():
+                return {'status': 'no_data', 'message': '巨潮API未配置'}
+
+            symbol = extract_pure_symbol(ts_code)
+
+            # 使用同步版本
+            result = get_news_list_sync(stock_code=symbol, limit=30)
+
+            if result.get('success') and result.get('data'):
+                records = []
+                for item in result['data'][:20]:
+                    records.append({
+                        'time': str(item.get('F001D', '')),      # 发布时间
+                        'title': str(item.get('F006V', '')),     # 新闻标题
+                        'news_id': str(item.get('TEXTID', '')),  # 新闻ID
+                        'category': str(item.get('F005V', '')),  # 新闻分类
+                        'author': str(item.get('F007V', '')),    # 发布作者
+                        'source': '巨潮资讯'
+                    })
+                return {
+                    'status': 'success',
+                    'count': len(records),
+                    'data': records
+                }
+            return {'status': 'no_data', 'message': result.get('error', '无新闻数据')}
+
+        except Exception as e:
+            logger.warning(f"⚠️ 巨潮新闻获取失败: {e}")
+            return {'status': 'no_data', 'message': f'巨潮新闻暂不可用: {str(e)[:50]}'}
+
+    def _get_cninfo_research_report(self, ts_code: str) -> Dict:
+        """获取巨潮官方API个股研报摘要（使用同步版本避免事件循环冲突）"""
+        try:
+            from backend.dataflows.announcement.cninfo_api import CninfoConfig, get_research_report_summary_sync
+
+            if not CninfoConfig.is_configured():
+                return {'status': 'no_data', 'message': '巨潮API未配置'}
+
+            symbol = extract_pure_symbol(ts_code)
+
+            # 使用同步版本
+            result = get_research_report_summary_sync(row_count=100)
+
+            if result.get('success') and result.get('data'):
+                # 筛选当前股票的研报
+                records = []
+                for item in result['data']:
+                    item_code = str(item.get('SECCODE', ''))
+                    if symbol in item_code or item_code in symbol:
+                        records.append({
+                            'date': str(item.get('F001D', '')),       # 资讯发布日期
+                            'title': str(item.get('F002V', '')),      # 资讯标题
+                            'content': str(item.get('F003V', ''))[:500],  # 资讯内容
+                            'institution': str(item.get('F004V', '')),  # 研报发布机构
+                            'report_date': str(item.get('F005D', '')),  # 研报发布日期
+                            'category': str(item.get('F006V', '')),   # 资讯分类名称
+                            'source': '巨潮资讯'
+                        })
+                if records:
+                    return {
+                        'status': 'success',
+                        'count': len(records),
+                        'data': records[:10]  # 最多返回10条
+                    }
+            return {'status': 'no_data', 'message': '无研报数据'}
+
+        except Exception as e:
+            logger.warning(f"⚠️ 巨潮研报获取失败: {e}")
+            return {'status': 'no_data', 'message': f'巨潮研报暂不可用: {str(e)[:50]}'}
     
     def _get_industry_policy(self) -> Dict:
         """获取行业政策动态（AKShare）- 使用财经新闻作为政策信息源"""
@@ -1978,8 +2306,51 @@ class ComprehensiveStockDataService:
                 )
 
                 if df is not None and not df.empty:
-                    # 只取最新报告期的数据（前20条）
-                    records = df.head(20).to_dict('records')
+                    # Tushare fina_mainbz 返回字段: ts_code, end_date, bz_item, bz_sales, bz_profit, bz_cost, curr_type
+                    # 需要计算 bz_sales_ratio 和 gross_margin
+                    # 按报告期分组计算占比
+                    records = []
+                    df_sorted = df.head(20)
+
+                    # 计算每个报告期的总收入用于计算占比
+                    if 'end_date' in df_sorted.columns:
+                        period_totals = df_sorted.groupby('end_date')['bz_sales'].sum()
+                    else:
+                        period_totals = {'total': df_sorted['bz_sales'].sum()}
+
+                    for _, row in df_sorted.iterrows():
+                        bz_sales = row.get('bz_sales', 0) or 0
+                        bz_profit = row.get('bz_profit', 0) or 0
+                        bz_cost = row.get('bz_cost', 0) or 0
+                        end_date = row.get('end_date', '')
+
+                        # 计算营收占比
+                        if 'end_date' in df_sorted.columns and end_date in period_totals:
+                            total_sales = period_totals[end_date]
+                        else:
+                            total_sales = period_totals.get('total', bz_sales)
+
+                        bz_sales_ratio = bz_sales / total_sales if total_sales > 0 else None
+
+                        # 计算毛利率 = (收入 - 成本) / 收入
+                        if bz_sales > 0 and bz_cost > 0:
+                            gross_margin = (bz_sales - bz_cost) / bz_sales
+                        elif bz_sales > 0 and bz_profit > 0:
+                            # 如果没有成本数据，尝试用利润计算
+                            gross_margin = bz_profit / bz_sales
+                        else:
+                            gross_margin = None
+
+                        records.append({
+                            'bz_item': row.get('bz_item', '') or '',
+                            'bz_sales': bz_sales,
+                            'bz_sales_ratio': bz_sales_ratio,
+                            'bz_profit': bz_profit,
+                            'bz_cost': bz_cost,
+                            'gross_margin': gross_margin,
+                            'report_date': str(end_date) if end_date else ''
+                        })
+
                     return {
                         'status': 'success',
                         'count': len(records),
@@ -2013,30 +2384,44 @@ class ComprehensiveStockDataService:
                 # 新版AKShare列名: ['股票代码', '报告日期', '分类类型', '主营构成', '主营收入', '收入比例', '主营成本', '成本比例', '主营利润', '利润比例', '毛利率']
                 records = []
                 for _, row in df.head(20).iterrows():
+                    # 安全获取数值，处理 NaN 和 None（使用 pd.isna 可以处理 numpy 和 python 的 NaN）
+                    # 返回 None 表示数据不可用，前端会显示 NaN%
+                    def safe_float(val, default=None):
+                        if val is None or pd.isna(val):
+                            return default
+                        try:
+                            return float(val)
+                        except:
+                            return default
+
                     # 收入比例已经是小数形式（如0.86），不需要除以100
-                    sales_ratio = row.get('收入比例', 0)
-                    profit_ratio = row.get('利润比例', 0)
-                    cost_ratio = row.get('成本比例', 0)
+                    sales_ratio = safe_float(row.get('收入比例'))
+                    profit_ratio = safe_float(row.get('利润比例'))
+                    cost_ratio = safe_float(row.get('成本比例'))
+                    gross_margin = safe_float(row.get('毛利率'))
 
                     # 如果比例大于1，说明是百分比形式，需要除以100
-                    if sales_ratio and sales_ratio > 1:
+                    if sales_ratio is not None and sales_ratio > 1:
                         sales_ratio = sales_ratio / 100
-                    if profit_ratio and profit_ratio > 1:
+                    if profit_ratio is not None and profit_ratio > 1:
                         profit_ratio = profit_ratio / 100
-                    if cost_ratio and cost_ratio > 1:
+                    if cost_ratio is not None and cost_ratio > 1:
                         cost_ratio = cost_ratio / 100
+                    # 毛利率通常是百分比形式（如30表示30%），需要除以100
+                    if gross_margin is not None and gross_margin > 1:
+                        gross_margin = gross_margin / 100
 
                     records.append({
-                        'bz_item': row.get('主营构成', ''),
-                        'bz_type': row.get('分类类型', ''),
-                        'bz_sales': row.get('主营收入', 0),
-                        'bz_sales_ratio': sales_ratio if pd.notna(sales_ratio) else 0,
-                        'bz_profit': row.get('主营利润', 0) if pd.notna(row.get('主营利润')) else 0,
-                        'bz_profit_ratio': profit_ratio if pd.notna(profit_ratio) else 0,
-                        'bz_cost': row.get('主营成本', 0) if pd.notna(row.get('主营成本')) else 0,
-                        'bz_cost_ratio': cost_ratio if pd.notna(cost_ratio) else 0,
-                        'gross_margin': row.get('毛利率', 0) if pd.notna(row.get('毛利率')) else 0,
-                        'report_date': str(row.get('报告日期', ''))
+                        'bz_item': row.get('主营构成', '') or '',
+                        'bz_type': row.get('分类类型', '') or '',
+                        'bz_sales': safe_float(row.get('主营收入'), 0),
+                        'bz_sales_ratio': sales_ratio,
+                        'bz_profit': safe_float(row.get('主营利润'), 0),
+                        'bz_profit_ratio': profit_ratio,
+                        'bz_cost': safe_float(row.get('主营成本'), 0),
+                        'bz_cost_ratio': cost_ratio,
+                        'gross_margin': gross_margin,
+                        'report_date': str(row.get('报告日期', '') or '')
                     })
 
                 return {
@@ -2215,9 +2600,17 @@ class ComprehensiveStockDataService:
                 'status': 'no_data',
                 'message': '公告查询暂不可用'
             }
-    
+
     def _get_news_data(self, ts_code: str) -> List[Dict]:
-        """获取新闻数据（调用现有的新闻聚合器）"""
+        """获取新闻数据（调用现有的新闻聚合器 + 巨潮官方API）
+
+        数据源接口说明:
+        - 多源新闻聚合器: AKShare东方财富个股新闻、东方财富全球资讯、财联社全球资讯、百度财经新闻、备用源realtime_news
+        - 巨潮官方API: 个股公告(announcement)、个股新闻(news)、个股研报摘要(research)
+        """
+        all_news = []
+
+        # 1. 从新闻聚合器获取（默认分类为news）
         try:
             from backend.dataflows.news.multi_source_news_aggregator import get_news_aggregator
 
@@ -2230,11 +2623,81 @@ class ComprehensiveStockDataService:
                 include_market_news=True
             )
 
-            return result.get('merged_news', [])
-
+            merged_news = result.get('merged_news', [])
+            # 为聚合器返回的新闻添加默认字段
+            for news in merged_news:
+                news['report_type'] = news.get('report_type', 'news')  # 默认为新闻类型
+                news['sentiment'] = news.get('sentiment', 'neutral')
+                news['score'] = news.get('score', 50)
+                news['urgency'] = news.get('urgency', 'normal')
+            all_news.extend(merged_news)
         except Exception as e:
-            logger.warning(f"⚠️ 新闻数据获取失败: {e}")
-            return []
+            logger.warning(f"新闻聚合器获取失败: {e}")
+
+        # 2. 从巨潮官方API获取公告
+        try:
+            cninfo_ann = self._get_cninfo_announcement(ts_code)
+            if cninfo_ann.get('status') == 'success' and cninfo_ann.get('data'):
+                for item in cninfo_ann['data']:
+                    all_news.append({
+                        'title': item.get('title', ''),
+                        'content': f"公告类型: {item.get('type', '未知')}",
+                        'pub_time': item.get('date', ''),
+                        'source': '巨潮资讯',
+                        'report_type': 'announcement',
+                        'sentiment': 'neutral',
+                        'score': 50,
+                        'urgency': 'normal',
+                        'url': ''
+                    })
+        except Exception as e:
+            logger.debug(f"巨潮公告获取失败: {e}")
+
+        # 3. 从巨潮官方API获取新闻
+        try:
+            cninfo_news = self._get_cninfo_stock_news(ts_code)
+            if cninfo_news.get('status') == 'success' and cninfo_news.get('data'):
+                for item in cninfo_news['data']:
+                    all_news.append({
+                        'title': item.get('title', ''),
+                        'content': f"分类: {item.get('category', '未知')} | 作者: {item.get('author', '未知')}",
+                        'pub_time': item.get('time', ''),
+                        'source': '巨潮资讯',
+                        'report_type': 'news',
+                        'sentiment': 'neutral',
+                        'score': 50,
+                        'urgency': 'normal',
+                        'url': ''
+                    })
+        except Exception as e:
+            logger.debug(f"巨潮新闻获取失败: {e}")
+
+        # 4. 从巨潮官方API获取研报
+        try:
+            cninfo_research = self._get_cninfo_research_report(ts_code)
+            if cninfo_research.get('status') == 'success' and cninfo_research.get('data'):
+                for item in cninfo_research['data']:
+                    all_news.append({
+                        'title': item.get('title', ''),
+                        'content': f"机构: {item.get('institution', '未知')} | {item.get('content', '')[:200]}",
+                        'pub_time': item.get('date', ''),
+                        'source': '巨潮资讯',
+                        'report_type': 'research',
+                        'sentiment': 'neutral',
+                        'score': 50,
+                        'urgency': 'normal',
+                        'url': ''
+                    })
+        except Exception as e:
+            logger.debug(f"巨潮研报获取失败: {e}")
+
+        # 按时间排序（最新的在前）
+        try:
+            all_news.sort(key=lambda x: x.get('pub_time', ''), reverse=True)
+        except:
+            pass
+
+        return all_news
 
     # ==================== 缺失的Tushare接口补充 ====================
 
@@ -2635,6 +3098,18 @@ class ComprehensiveStockDataService:
         # 29. 东方财富个股新闻
         if data.get('news_em', {}).get('status') == 'success':
             summary['news_em'] = f"✅ 东财新闻{data['news_em']['count']}条"
+
+        # 30. 巨潮个股公告
+        if data.get('cninfo_announcement', {}).get('status') == 'success':
+            summary['cninfo_announcement'] = f"✅ 巨潮公告{data['cninfo_announcement']['count']}条"
+
+        # 31. 巨潮个股新闻
+        if data.get('cninfo_news', {}).get('status') == 'success':
+            summary['cninfo_news'] = f"✅ 巨潮新闻{data['cninfo_news']['count']}条"
+
+        # 32. 巨潮研报摘要
+        if data.get('cninfo_research', {}).get('status') == 'success':
+            summary['cninfo_research'] = f"✅ 巨潮研报{data['cninfo_research']['count']}条"
 
         return summary
 

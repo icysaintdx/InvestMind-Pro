@@ -291,11 +291,43 @@ class SentimentEngine:
             negative_score *= 1.5
         
         # 计算情绪得分 (0-100)
+        # 改进算法：使用更严谨的评分机制
+        # 基准分50分，根据正负面词汇的差异和强度调整
         total = positive_score + negative_score
+
         if total == 0:
-            score = 50  # 中性
+            score = 50  # 中性，无情绪词汇
         else:
-            score = (positive_score / total) * 100
+            # 计算情绪差值（正面 - 负面）
+            sentiment_diff = positive_score - negative_score
+
+            # 使用sigmoid函数将差值映射到0-100
+            # 这样可以避免极端分数，使评分更加合理
+            import math
+
+            # 调整系数：控制评分的敏感度
+            # sensitivity越大，评分变化越平缓
+            sensitivity = max(3.0, total * 0.5)  # 根据总词汇数动态调整
+
+            # sigmoid映射：diff为0时score=50，diff越大score越接近100，diff越小score越接近0
+            normalized_diff = sentiment_diff / sensitivity
+            score = 100 / (1 + math.exp(-normalized_diff))
+
+            # 限制极端分数：真正的90+分应该是非常明确的利好/利空
+            # 只有当正面词汇数>=5且无负面词汇时才能达到90+
+            # 只有当负面词汇数>=5且无正面词汇时才能低于10
+            if score > 85:
+                if negative_score > 0 or positive_score < 5:
+                    score = min(score, 85)
+                elif positive_score >= 5 and negative_score == 0:
+                    # 真正的强利好：5个以上正面词且无负面词
+                    score = min(score, 95)
+            elif score < 15:
+                if positive_score > 0 or negative_score < 5:
+                    score = max(score, 15)
+                elif negative_score >= 5 and positive_score == 0:
+                    # 真正的强利空：5个以上负面词且无正面词
+                    score = max(score, 5)
         
         # 确定情绪倾向
         if score >= 60:

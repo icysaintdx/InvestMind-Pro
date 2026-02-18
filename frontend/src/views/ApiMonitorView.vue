@@ -148,6 +148,11 @@
               </div>
             </div>
 
+            <!-- 消息 - 移到左侧避免被耗时挡住 -->
+            <div class="api-message" :title="api.message">
+              {{ api.message || '-' }}
+            </div>
+
             <!-- 可用性 -->
             <div class="api-uptime">
               <span :class="getUptimeClass(api.uptime)">{{ api.uptime?.toFixed(1) || '100.0' }}%</span>
@@ -187,11 +192,6 @@
               <div class="history-bar empty">
                 <span class="no-history">暂无历史</span>
               </div>
-            </div>
-
-            <!-- 消息 - 完整显示 -->
-            <div class="api-message" :title="api.message">
-              {{ api.message || '-' }}
             </div>
 
             <!-- 操作 -->
@@ -925,7 +925,8 @@ export default {
 
 .api-item {
   display: grid;
-  grid-template-columns: 70px 1.5fr 60px 100px 100px 2fr 40px;
+  /* 状态 | 名称 | 消息 | 可用性 | 延迟 | 历史 | 操作 */
+  grid-template-columns: 70px 1.2fr 1.5fr 60px 100px 100px 40px;
   gap: 0.5rem;
   align-items: center;
   padding: 0.75rem 1rem;
@@ -1144,15 +1145,17 @@ export default {
 /* 响应式 */
 @media (max-width: 1400px) {
   .api-item {
-    grid-template-columns: 60px 1.2fr 55px 90px 90px 1.5fr 40px;
+    /* 状态 | 名称 | 消息 | 可用性 | 延迟 | 历史 | 操作 */
+    grid-template-columns: 60px 1fr 1.2fr 55px 90px 90px 40px;
   }
 }
 
 @media (max-width: 1200px) {
   .api-item {
-    grid-template-columns: 60px 1fr 50px 85px 80px 40px;
+    /* 状态 | 名称 | 消息 | 可用性 | 延迟 | 操作 */
+    grid-template-columns: 60px 1fr 1fr 50px 85px 40px;
   }
-  .api-message {
+  .api-history {
     display: none;
   }
 }
@@ -1163,10 +1166,11 @@ export default {
   }
 
   .api-item {
-    grid-template-columns: 50px 1fr 50px 80px 40px;
+    /* 状态 | 名称 | 消息 | 延迟 | 操作 */
+    grid-template-columns: 50px 1fr 1fr 80px 40px;
   }
 
-  .api-history {
+  .api-uptime {
     display: none;
   }
 }
@@ -1188,7 +1192,7 @@ export default {
     grid-template-columns: 1fr 70px 40px;
   }
 
-  .api-status, .api-uptime {
+  .api-status, .api-message {
     display: none;
   }
 }

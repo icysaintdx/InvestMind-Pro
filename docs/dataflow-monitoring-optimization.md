@@ -520,3 +520,33 @@ backend/
 └── websocket/
     └── news_realtime.py            # WebSocket推送 (新建)
 ```
+
+
+
+NewsMonitorCenter (统一入口)
+├── 后台数据采集层 (ProcessPoolExecutor - 已有)
+├── 统一数据源层 (AKShare + Tushare + 巨潮资讯)
+├── 统一缓存层 (NewsCache - 去重+TTL)
+├── 智能分析层 (情绪分析复用 + 股票关联 + 影响评估)
+└── 统一API层 (/api/news-center/*)
+关键决策
+对比项	统一架构	独立架构
+数据一致性	✅ 所有模块数据一致	❌ 可能不一致
+请求效率	✅ 一次获取，多处使用	❌ 重复请求
+实时性	✅ 统一推送机制	❌ 各自轮询
+数据源频率配置
+类型	高频(30秒)	中频(2分钟)	低频(5分钟+)
+新闻	财联社、东财	新浪、同花顺	微博热议
+公告	巨潮资讯	东财公告	-
+通知分级
+级别	条件	方式
+紧急	urgency=high 或 impact≥9	弹窗+声音+推送
+重要	impact≥7 且有关联股票	弹窗+推送
+一般	impact≥5 且有关联股票	列表高亮
+普通	其他	静默更新
+
+已有可复用组件
+background_news_service.py - ProcessPoolExecutor 进程池
+sentiment_engine.py - 情绪分析引擎
+cninfo_crawler.py - 巨潮爬虫 (待激活)
+unified_news_api_endpoint.py - 12数据源聚合

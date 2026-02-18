@@ -1,0 +1,522 @@
+{
+  "data": [
+    {
+      "sector": "软件开发",
+      "change_pct": 7.69,
+      "main_net_inflow": 10901452544.0,
+      "main_net_inflow_pct": 5.16
+    },
+    {
+      "sector": "互联网服务",
+      "change_pct": 7.43,
+      "main_net_inflow": 6195074304.0,
+      "main_net_inflow_pct": 3.03
+    },
+    {
+      "sector": "文化传媒",
+      "change_pct": 7.29,
+      "main_net_inflow": 3705042176.0,
+      "main_net_inflow_pct": 3.63
+    },
+    {
+      "sector": "证券",
+      "change_pct": 1.49,
+      "main_net_inflow": 2631391232.0,
+      "main_net_inflow_pct": 5.26
+    },
+    {
+      "sector": "计算机设备",
+      "change_pct": 4.72,
+      "main_net_inflow": 1874052352.0,
+      "main_net_inflow_pct": 3.18
+    },
+    {
+      "sector": "游戏",
+      "change_pct": 5.35,
+      "main_net_inflow": 1176717824.0,
+      "main_net_inflow_pct": 2.97
+    },
+    {
+      "sector": "专业服务",
+      "change_pct": 3.11,
+      "main_net_inflow": 499228240.0,
+      "main_net_inflow_pct": 3.39
+    },
+    {
+      "sector": "家电行业",
+      "change_pct": 1.65,
+      "main_net_inflow": 434428160.0,
+      "main_net_inflow_pct": 0.88
+    },
+    {
+      "sector": "能源金属",
+      "change_pct": 1.92,
+      "main_net_inflow": 427318016.0,
+      "main_net_inflow_pct": 1.41
+    },
+    {
+      "sector": "医疗器械",
+      "change_pct": 2.23,
+      "main_net_inflow": 411319552.0,
+      "main_net_inflow_pct": 1.05
+    },
+    {
+      "sector": "非金属材料",
+      "change_pct": 2.41,
+      "main_net_inflow": 403725056.0,
+      "main_net_inflow_pct": 1.34
+    },
+    {
+      "sector": "酿酒行业",
+      "change_pct": 0.9,
+      "main_net_inflow": 388400096.0,
+      "main_net_inflow_pct": 2.37
+    },
+    {
+      "sector": "水泥建材",
+      "change_pct": 1.09,
+      "main_net_inflow": 376457696.0,
+      "main_net_inflow_pct": 4.77
+    },
+    {
+      "sector": "仪器仪表",
+      "change_pct": 3.25,
+      "main_net_inflow": 318952528.0,
+      "main_net_inflow_pct": 1.38
+    },
+    {
+      "sector": "通用设备",
+      "change_pct": 2.56,
+      "main_net_inflow": 275669248.0,
+      "main_net_inflow_pct": 0.26
+    },
+    {
+      "sector": "物流行业",
+      "change_pct": 1.38,
+      "main_net_inflow": 184493536.0,
+      "main_net_inflow_pct": 1.46
+    },
+    {
+      "sector": "纺织服装",
+      "change_pct": 1.58,
+      "main_net_inflow": 162443328.0,
+      "main_net_inflow_pct": 0.85
+    },
+    {
+      "sector": "教育",
+      "change_pct": 4.37,
+      "main_net_inflow": 138199808.0,
+      "main_net_inflow_pct": 1.64
+    },
+    {
+      "sector": "船舶制造",
+      "change_pct": 4.11,
+      "main_net_inflow": 130667008.0,
+      "main_net_inflow_pct": 0.7
+    },
+    {
+      "sector": "钢铁行业",
+      "change_pct": 2.0,
+      "main_net_inflow": 102258176.0,
+      "main_net_inflow_pct": 0.45
+    },
+    {
+      "sector": "交运设备",
+      "change_pct": 1.44,
+      "main_net_inflow": 96758976.0,
+      "main_net_inflow_pct": 0.78
+    },
+    {
+      "sector": "家用轻工",
+      "change_pct": 2.24,
+      "main_net_inflow": 92440816.0,
+      "main_net_inflow_pct": 1.17
+    },
+    {
+      "sector": "电力行业",
+      "change_pct": 1.14,
+      "main_net_inflow": 90978304.0,
+      "main_net_inflow_pct": 0.33
+    },
+    {
+      "sector": "贸易行业",
+      "change_pct": 2.07,
+      "main_net_inflow": 82228448.0,
+      "main_net_inflow_pct": 0.65
+    },
+    {
+      "sector": "电子化学品",
+      "change_pct": 1.03,
+      "main_net_inflow": 56466832.0,
+      "main_net_inflow_pct": 0.21
+    },
+    {
+      "sector": "公用事业",
+      "change_pct": 0.76,
+      "main_net_inflow": 37863936.0,
+      "main_net_inflow_pct": 1.16
+    },
+    {
+      "sector": "铁路公路",
+      "change_pct": 0.71,
+      "main_net_inflow": 35104992.0,
+      "main_net_inflow_pct": 0.78
+    },
+    {
+      "sector": "工程机械",
+      "change_pct": 0.97,
+      "main_net_inflow": 28755088.0,
+      "main_net_inflow_pct": 0.2
+    },
+    {
+      "sector": "煤炭行业",
+      "change_pct": -0.29,
+      "main_net_inflow": -39063264.0,
+      "main_net_inflow_pct": -0.38
+    },
+    {
+      "sector": "珠宝首饰",
+      "change_pct": 1.63,
+      "main_net_inflow": -43760326.0,
+      "main_net_inflow_pct": -1.74
+    },
+    {
+      "sector": "多元金融",
+      "change_pct": 1.69,
+      "main_net_inflow": -49597120.0,
+      "main_net_inflow_pct": -0.34
+    },
+    {
+      "sector": "航空机场",
+      "change_pct": 0.58,
+      "main_net_inflow": -89394224.0,
+      "main_net_inflow_pct": -1.35
+    },
+    {
+      "sector": "汽车服务",
+      "change_pct": 1.46,
+      "main_net_inflow": -110822990.0,
+      "main_net_inflow_pct": -6.63
+    },
+    {
+      "sector": "装修装饰",
+      "change_pct": 2.26,
+      "main_net_inflow": -122560608.0,
+      "main_net_inflow_pct": -2.07
+    },
+    {
+      "sector": "房地产服务",
+      "change_pct": 0.42,
+      "main_net_inflow": -144112224.0,
+      "main_net_inflow_pct": -4.57
+    },
+    {
+      "sector": "燃气",
+      "change_pct": 1.37,
+      "main_net_inflow": -150140256.0,
+      "main_net_inflow_pct": -1.89
+    },
+    {
+      "sector": "装修建材",
+      "change_pct": 1.25,
+      "main_net_inflow": -190070528.0,
+      "main_net_inflow_pct": -1.65
+    },
+    {
+      "sector": "商业百货",
+      "change_pct": 2.76,
+      "main_net_inflow": -196655616.0,
+      "main_net_inflow_pct": -0.54
+    },
+    {
+      "sector": "美容护理",
+      "change_pct": 1.8,
+      "main_net_inflow": -205711216.0,
+      "main_net_inflow_pct": -3.56
+    },
+    {
+      "sector": "综合行业",
+      "change_pct": 1.16,
+      "main_net_inflow": -215808624.0,
+      "main_net_inflow_pct": -1.98
+    },
+    {
+      "sector": "工程咨询服务",
+      "change_pct": 1.59,
+      "main_net_inflow": -219202704.0,
+      "main_net_inflow_pct": -2.55
+    },
+    {
+      "sector": "贵金属",
+      "change_pct": 2.09,
+      "main_net_inflow": -221714752.0,
+      "main_net_inflow_pct": -1.58
+    },
+    {
+      "sector": "航运港口",
+      "change_pct": 1.35,
+      "main_net_inflow": -232995280.0,
+      "main_net_inflow_pct": -2.08
+    },
+    {
+      "sector": "航天航空",
+      "change_pct": 5.84,
+      "main_net_inflow": -253706240.0,
+      "main_net_inflow_pct": -0.29
+    },
+    {
+      "sector": "石油行业",
+      "change_pct": -0.56,
+      "main_net_inflow": -281440192.0,
+      "main_net_inflow_pct": -2.58
+    },
+    {
+      "sector": "造纸印刷",
+      "change_pct": 1.09,
+      "main_net_inflow": -289242400.0,
+      "main_net_inflow_pct": -3.2
+    },
+    {
+      "sector": "食品饮料",
+      "change_pct": 1.52,
+      "main_net_inflow": -324910896.0,
+      "main_net_inflow_pct": -1.24
+    },
+    {
+      "sector": "医药商业",
+      "change_pct": 0.98,
+      "main_net_inflow": -340013216.0,
+      "main_net_inflow_pct": -2.74
+    },
+    {
+      "sector": "采掘行业",
+      "change_pct": -0.43,
+      "main_net_inflow": -346639456.0,
+      "main_net_inflow_pct": -5.0
+    },
+    {
+      "sector": "旅游酒店",
+      "change_pct": 1.1,
+      "main_net_inflow": -367450208.0,
+      "main_net_inflow_pct": -2.48
+    },
+    {
+      "sector": "农药兽药",
+      "change_pct": 0.2,
+      "main_net_inflow": -391697792.0,
+      "main_net_inflow_pct": -4.39
+    },
+    {
+      "sector": "橡胶制品",
+      "change_pct": 1.29,
+      "main_net_inflow": -393702864.0,
+      "main_net_inflow_pct": -4.19
+    },
+    {
+      "sector": "化肥行业",
+      "change_pct": -0.56,
+      "main_net_inflow": -397366432.0,
+      "main_net_inflow_pct": -2.69
+    },
+    {
+      "sector": "医疗服务",
+      "change_pct": 3.44,
+      "main_net_inflow": -429729024.0,
+      "main_net_inflow_pct": -1.21
+    },
+    {
+      "sector": "化纤行业",
+      "change_pct": 0.72,
+      "main_net_inflow": -432534432.0,
+      "main_net_inflow_pct": -3.38
+    },
+    {
+      "sector": "电机",
+      "change_pct": 1.73,
+      "main_net_inflow": -535594544.0,
+      "main_net_inflow_pct": -3.0
+    },
+    {
+      "sector": "生物制品",
+      "change_pct": 0.54,
+      "main_net_inflow": -573907680.0,
+      "main_net_inflow_pct": -2.73
+    },
+    {
+      "sector": "玻璃玻纤",
+      "change_pct": 1.35,
+      "main_net_inflow": -592512000.0,
+      "main_net_inflow_pct": -3.6
+    },
+    {
+      "sector": "化学原料",
+      "change_pct": 0.59,
+      "main_net_inflow": -627453584.0,
+      "main_net_inflow_pct": -2.62
+    },
+    {
+      "sector": "农牧饲渔",
+      "change_pct": 0.26,
+      "main_net_inflow": -638171568.0,
+      "main_net_inflow_pct": -2.61
+    },
+    {
+      "sector": "银行",
+      "change_pct": 0.31,
+      "main_net_inflow": -643224832.0,
+      "main_net_inflow_pct": -2.23
+    },
+    {
+      "sector": "中药",
+      "change_pct": 0.08,
+      "main_net_inflow": -690235792.0,
+      "main_net_inflow_pct": -5.5
+    },
+    {
+      "sector": "工程建设",
+      "change_pct": 0.36,
+      "main_net_inflow": -705613184.0,
+      "main_net_inflow_pct": -2.66
+    },
+    {
+      "sector": "包装材料",
+      "change_pct": 2.03,
+      "main_net_inflow": -715723616.0,
+      "main_net_inflow_pct": -4.87
+    },
+    {
+      "sector": "通信设备",
+      "change_pct": 5.02,
+      "main_net_inflow": -821260288.0,
+      "main_net_inflow_pct": -0.35
+    },
+    {
+      "sector": "消费电子",
+      "change_pct": 2.46,
+      "main_net_inflow": -892717312.0,
+      "main_net_inflow_pct": -0.72
+    },
+    {
+      "sector": "通信服务",
+      "change_pct": 3.67,
+      "main_net_inflow": -937561856.0,
+      "main_net_inflow_pct": -2.41
+    },
+    {
+      "sector": "环保行业",
+      "change_pct": 0.97,
+      "main_net_inflow": -992258784.0,
+      "main_net_inflow_pct": -4.19
+    },
+    {
+      "sector": "光伏设备",
+      "change_pct": 2.66,
+      "main_net_inflow": -1028667136.0,
+      "main_net_inflow_pct": -1.13
+    },
+    {
+      "sector": "小金属",
+      "change_pct": 1.6,
+      "main_net_inflow": -1033706240.0,
+      "main_net_inflow_pct": -1.43
+    },
+    {
+      "sector": "汽车整车",
+      "change_pct": 0.15,
+      "main_net_inflow": -1090352272.0,
+      "main_net_inflow_pct": -5.42
+    },
+    {
+      "sector": "化学制药",
+      "change_pct": 0.38,
+      "main_net_inflow": -1439089408.0,
+      "main_net_inflow_pct": -3.24
+    },
+    {
+      "sector": "光学光电子",
+      "change_pct": 1.83,
+      "main_net_inflow": -1458202624.0,
+      "main_net_inflow_pct": -2.11
+    },
+    {
+      "sector": "电源设备",
+      "change_pct": 1.04,
+      "main_net_inflow": -1982437376.0,
+      "main_net_inflow_pct": -5.74
+    },
+    {
+      "sector": "电网设备",
+      "change_pct": 1.88,
+      "main_net_inflow": -2006338304.0,
+      "main_net_inflow_pct": -2.52
+    },
+    {
+      "sector": "房地产开发",
+      "change_pct": -0.44,
+      "main_net_inflow": -2034578080.0,
+      "main_net_inflow_pct": -7.1
+    },
+    {
+      "sector": "化学制品",
+      "change_pct": 0.94,
+      "main_net_inflow": -2190361600.0,
+      "main_net_inflow_pct": -3.63
+    },
+    {
+      "sector": "塑料制品",
+      "change_pct": 1.89,
+      "main_net_inflow": -2322181120.0,
+      "main_net_inflow_pct": -5.33
+    },
+    {
+      "sector": "汽车零部件",
+      "change_pct": 1.25,
+      "main_net_inflow": -2327908096.0,
+      "main_net_inflow_pct": -2.01
+    },
+    {
+      "sector": "风电设备",
+      "change_pct": 1.55,
+      "main_net_inflow": -2480923648.0,
+      "main_net_inflow_pct": -8.02
+    },
+    {
+      "sector": "保险",
+      "change_pct": -0.97,
+      "main_net_inflow": -2635950256.0,
+      "main_net_inflow_pct": -14.16
+    },
+    {
+      "sector": "半导体",
+      "change_pct": 2.01,
+      "main_net_inflow": -3143654400.0,
+      "main_net_inflow_pct": -1.32
+    },
+    {
+      "sector": "有色金属",
+      "change_pct": 1.88,
+      "main_net_inflow": -3309153792.0,
+      "main_net_inflow_pct": -3.46
+    },
+    {
+      "sector": "专用设备",
+      "change_pct": 1.67,
+      "main_net_inflow": -3838182656.0,
+      "main_net_inflow_pct": -3.28
+    },
+    {
+      "sector": "电池",
+      "change_pct": 0.38,
+      "main_net_inflow": -6440656896.0,
+      "main_net_inflow_pct": -7.85
+    },
+    {
+      "sector": "电子元件",
+      "change_pct": 2.17,
+      "main_net_inflow": -6615243776.0,
+      "main_net_inflow_pct": -4.8
+    }
+  ],
+  "update_time": "2026-01-12T14:54:58.636693",
+  "cache_type": "sector_fund_flow"
+}
