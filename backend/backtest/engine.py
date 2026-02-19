@@ -516,7 +516,7 @@ class BacktestEngine:
     
     def _calculate_monthly_returns(self, equity_df: pd.DataFrame) -> pd.DataFrame:
         """计算月度收益"""
-        monthly_equity = equity_df['portfolio_value'].resample('M').last()
+        monthly_equity = equity_df['portfolio_value'].resample('ME').last()
         monthly_returns = monthly_equity.pct_change()
         
         return pd.DataFrame({

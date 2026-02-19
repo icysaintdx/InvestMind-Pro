@@ -142,7 +142,7 @@ class MetricsCalculator:
         annual_return = (1 + total_return) ** (1 / years) - 1 if years > 0 else 0
         
         # 计算月均收益率
-        monthly_return = returns.resample('M').apply(lambda x: (1 + x).prod() - 1).mean()
+        monthly_return = returns.resample('ME').apply(lambda x: (1 + x).prod() - 1).mean()
         
         # 计算最大回撤
         drawdown_data = self.calculate_drawdown(equity_curve['portfolio_value'])

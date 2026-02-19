@@ -758,7 +758,7 @@ export default defineComponent({
     // 后端健康检查
     const checkBackendHealth = async () => {
       try {
-        const response = await fetch('http://localhost:8000/', { 
+        const response = await fetch('http://' + window.location.hostname + ':8000/', { 
           method: 'GET',
           signal: AbortSignal.timeout(10000) // 10秒超时，给AI请求留出时间
         })
@@ -781,7 +781,7 @@ export default defineComponent({
     // 加载后端配置
     const loadBackendConfig = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/config')
+        const response = await fetch('http://' + window.location.hostname + ':8000/api/config')
         if (response.ok) {
           const data = await response.json()
           console.log('App加载后端配置:', data)
@@ -864,7 +864,7 @@ export default defineComponent({
     // 测试后端连接
     const testBackendConnection = async () => {
       try {
-        const response = await fetch('http://localhost:8000/')
+        const response = await fetch('http://' + window.location.hostname + ':8000/')
         console.log('后端连接状态:', response.ok ? '成功' : '失败')
       } catch (error) {
         console.error('无法连接到后端:', error)
@@ -955,7 +955,7 @@ export default defineComponent({
         dataChannelKeys.value = { ...dataChannelKeys.value, ...dataKeys }
         
         // 保存到后端
-        const response = await fetch('http://localhost:8000/api/config', {
+        const response = await fetch('http://' + window.location.hostname + ':8000/api/config', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ api_keys: keys })

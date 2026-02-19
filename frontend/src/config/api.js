@@ -1,6 +1,6 @@
 // API 配置
 const API_BASE_URL = process.env.NODE_ENV === 'production'
-  ? '' // 生产环境使用相对路径（通过 Nginx 代理）
+  ? `http://${window.location.hostname}:8000` // 生产环境使用当前IP+后端端口
   : 'http://localhost:8000' // 开发环境使用完整路径
 
 // WebSocket 配置
@@ -10,7 +10,7 @@ const getWsBaseUrl = () => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     return `${protocol}//${window.location.host}`
   }
-  return 'ws://localhost:8000'
+  return 'ws://' + window.location.hostname + ':8000'
 }
 
 export const WS_BASE_URL = getWsBaseUrl()
