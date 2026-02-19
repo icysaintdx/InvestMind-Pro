@@ -20,6 +20,12 @@ from .news_cache import NewsCache, CachedNews, get_news_cache
 from .stock_relation_analyzer import StockRelationAnalyzer, get_stock_relation_analyzer
 from .impact_assessor import ImpactAssessor, get_impact_assessor
 from .news_config import get_news_config_manager, NewsSourceType
+from .news_priority_classifier import (
+    NewsPriorityClassifier, 
+    NewsPriority, 
+    NewsCategory,
+    NewsClassification
+)
 
 logger = logging.getLogger(__name__)
 
@@ -89,8 +95,10 @@ class NewsMonitorCenter:
         self._stock_analyzer = get_stock_relation_analyzer()
         self._impact_assessor = get_impact_assessor()
         self._sentiment_engine = None
+        self._priority_classifier = None  # 优先级分类器
         self._config_manager = get_news_config_manager()
         self._init_sentiment_engine()
+        self._init_priority_classifier()  # 初始化优先级分类器
         self._sources: Dict[str, DataSourceConfig] = {
             "cls": DataSourceConfig("财联社电报", DataSourceType.CLS, 30, priority=10),
             "eastmoney": DataSourceConfig(
@@ -122,6 +130,15 @@ class NewsMonitorCenter:
             self._sentiment_engine = get_sentiment_engine()
         except Exception as e:
             logger.warning(f"Failed to load sentiment engine: {e}")
+
+    def _init_priority_classifier(self):
+        """初始化新闻优先级分类器"""
+        try:
+            self._priority_classifier = NewsPriorityClassifier()
+            logger.info("News priority classifier initialized")
+        except Exception as e:
+            logger.warning(f"Failed to load priority classifier: {e}")
+            self._priority_classifier = None
 
     async def start(self):
         if self._running:
@@ -892,10 +909,13 @@ class NewsMonitorCenter:
             logger.error(f"Failed to create alerts for monitored stocks: {e}")
 
     async def _process_news(self, news_list: List[Dict], source_id: str):
-        """处理新闻列表 - 将CPU密集型操作移到线程池避免阻塞"""
+        """处理新闻列表 - 加入优先级分类和分级处理"""
         new_count = 0
         urgent_news = []
-        monitored_stock_news = []  # 与监控股票相关的新闻
+        p0_news = []  # P0级紧急新闻
+        p1_news = []  # P1级重要新闻
+        p2_news = []  # P2级一般新闻
+        monitored_stock_news = []
         loop = asyncio.get_event_loop()
 
         # 获取监控股票列表
@@ -909,6 +929,19 @@ class NewsMonitorCenter:
             if self._cache.is_duplicate(title, news_data.get("pub_time", "")):
                 self._stats["total_duplicates"] += 1
                 continue
+
+            # ========== 优先级分类（新增）==========
+            priority_classification = None
+            if self._priority_classifier:
+                try:
+                    priority_classification = await loop.run_in_executor(
+                        self._executor,
+                        self._priority_classifier.classify,
+                        title,
+                        content
+                    )
+                except Exception as e:
+                    logger.debug(f"Priority classification failed: {e}")
 
             # 将CPU密集型操作移到线程池中执行
             try:
@@ -925,6 +958,7 @@ class NewsMonitorCenter:
                 related_stocks = []
                 impact = type("Impact", (), {"urgency": "low", "score": 0})()
 
+            # 构建增强新闻数据
             enriched_news = {
                 **news_data,
                 "sentiment": sentiment_result.get("sentiment", "neutral"),
@@ -934,12 +968,35 @@ class NewsMonitorCenter:
                 "related_stocks": related_stocks,
                 "impact_score": impact.score,
             }
+
+            # 添加优先级信息（如果有）
+            if priority_classification:
+                enriched_news["priority"] = priority_classification.priority.value
+                enriched_news["category"] = priority_classification.category.value
+                enriched_news["sub_category"] = priority_classification.sub_category
+                enriched_news["expected_return"] = priority_classification.expected_return
+                enriched_news["urgency_score"] = priority_classification.urgency_score
+                enriched_news["classification_confidence"] = priority_classification.confidence
+                enriched_news["classification_reason"] = priority_classification.reason
+
             result = self._cache.add_news_batch([enriched_news])
             if result["added"] > 0:
                 new_count += 1
                 self._stats["total_processed"] += 1
-                if impact.urgency in ["critical", "high"]:
-                    urgent_news.append(enriched_news)
+
+                # 分级处理（基于优先级分类）
+                if priority_classification:
+                    if priority_classification.priority == NewsPriority.P0:
+                        p0_news.append(enriched_news)
+                        urgent_news.append(enriched_news)  # P0也是紧急新闻
+                    elif priority_classification.priority == NewsPriority.P1:
+                        p1_news.append(enriched_news)
+                    else:
+                        p2_news.append(enriched_news)
+                else:
+                    # 兼容旧逻辑：基于impact.urgency
+                    if impact.urgency in ["critical", "high"]:
+                        urgent_news.append(enriched_news)
 
                 # 检查是否与监控股票相关
                 if monitored_codes and related_stocks:
@@ -952,34 +1009,55 @@ class NewsMonitorCenter:
 
         self._stats["total_fetched"] += len(news_list)
         self._stats["last_fetch_time"] = datetime.now().isoformat()
+
+        # ========== 分级处理和推送 ==========
         if new_count > 0:
-            logger.info(f"[{source_id}] Processed {new_count} new news")
+            logger.info(
+                f"[{source_id}] Processed {new_count} new news | "
+                f"P0: {len(p0_news)} | P1: {len(p1_news)} | P2: {len(p2_news)}"
+            )
             for callback in self._on_new_news:
                 try:
                     callback(new_count, source_id)
                 except:
                     pass
-        if urgent_news:
+
+        # P0级新闻：立即处理，最高优先级
+        if p0_news:
+            logger.warning(f"[{source_id}] 🚨 Found {len(p0_news)} P0 CRITICAL news!")
+            await self._process_p0_news(p0_news)
+
+        # P1级新闻：优先处理
+        if p1_news:
+            logger.info(f"[{source_id}] ⚠️  Found {len(p1_news)} P1 IMPORTANT news")
+            await self._process_p1_news(p1_news)
+
+        # P2级新闻：常规处理
+        if p2_news:
+            logger.debug(f"[{source_id}] Found {len(p2_news)} P2 NORMAL news")
+
+        # 兼容旧逻辑的紧急新闻处理
+        if urgent_news and not p0_news:  # 如果没有P0，但有其他紧急新闻
             logger.warning(f"[{source_id}] Found {len(urgent_news)} urgent news!")
             for callback in self._on_urgent_news:
                 try:
                     callback(urgent_news)
                 except:
                     pass
-            # WebSocket 推送紧急新闻
+            # WebSocket 推送
             ws_notify, ws_urgent = _get_ws_notifiers()
             if ws_urgent:
                 try:
                     asyncio.create_task(ws_urgent(urgent_news))
                 except:
                     pass
-            # 发送通知（企业微信/钉钉/邮件等）
+            # 发送通知
             try:
                 asyncio.create_task(self._send_urgent_notification(urgent_news))
             except:
                 pass
 
-        # 处理与监控股票相关的新闻 - 创建预警
+        # 处理与监控股票相关的新闻
         if monitored_stock_news:
             logger.info(
                 f"[{source_id}] Found {len(monitored_stock_news)} news related to monitored stocks"
@@ -987,6 +1065,73 @@ class NewsMonitorCenter:
             asyncio.create_task(
                 self._create_alerts_for_monitored_stocks(monitored_stock_news)
             )
+
+    async def _process_p0_news(self, p0_news: List[Dict]):
+        """处理P0级紧急新闻 - 立即响应"""
+        logger.info(f"Processing {len(p0_news)} P0 CRITICAL news immediately")
+
+        # 1. 立即推送到WebSocket
+        ws_notify, ws_urgent = _get_ws_notifiers()
+        if ws_urgent:
+            try:
+                asyncio.create_task(ws_urgent(p0_news))
+            except Exception as e:
+                logger.error(f"Failed to push P0 news via WebSocket: {e}")
+
+        # 2. 发送紧急通知
+        try:
+            asyncio.create_task(self._send_p0_notification(p0_news))
+        except Exception as e:
+            logger.error(f"Failed to send P0 notification: {e}")
+
+        # 3. 触发回调
+        for callback in self._on_urgent_news:
+            try:
+                callback(p0_news)
+            except:
+                pass
+
+    async def _process_p1_news(self, p1_news: List[Dict]):
+        """处理P1级重要新闻 - 优先响应"""
+        logger.info(f"Processing {len(p1_news)} P1 IMPORTANT news with priority")
+
+        # 1. 推送到WebSocket（但优先级低于P0）
+        ws_notify, ws_urgent = _get_ws_notifiers()
+        if ws_notify:
+            try:
+                asyncio.create_task(ws_notify(len(p1_news), "p1_important"))
+            except Exception as e:
+                logger.debug(f"Failed to push P1 news: {e}")
+
+    async def _send_p0_notification(self, p0_news: List[Dict]):
+        """发送P0级新闻的紧急通知"""
+        try:
+            from backend.services.notification_service import get_notification_service
+
+            notification_service = get_notification_service()
+
+            alerts = []
+            for news in p0_news[:3]:  # 最多3条P0新闻
+                expected_return = news.get("expected_return", 5.0)
+                category = news.get("category", "未知")
+
+                alerts.append(
+                    {
+                        "title": f"🚨【P0紧急】{news.get('title', '重要新闻')[:40]}...",
+                        "message": f"类别: {category} | 预期收益: {expected_return}%\n"
+                                   f"{news.get('content', '')[:150]}",
+                        "level": "critical",
+                        "stock_code": ", ".join(news.get("related_stocks", [])[:3]) or "市场",
+                        "suggestion": news.get("classification_reason", "立即关注"),
+                    }
+                )
+
+            if alerts:
+                await notification_service.send_batch_alerts(alerts)
+                logger.info(f"Sent {len(alerts)} P0 critical alerts")
+
+        except Exception as e:
+            logger.error(f"Failed to send P0 notification: {e}")
 
     def _analyze_news_sync(self, title: str, content: str):
         """同步分析新闻（在线程池中执行）"""
