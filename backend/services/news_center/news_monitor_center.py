@@ -26,6 +26,7 @@ from .news_priority_classifier import (
     NewsCategory,
     NewsClassification
 )
+from .news_storage import NewsStorage, get_news_storage, save_news_article
 
 logger = logging.getLogger(__name__)
 
@@ -96,9 +97,11 @@ class NewsMonitorCenter:
         self._impact_assessor = get_impact_assessor()
         self._sentiment_engine = None
         self._priority_classifier = None  # 优先级分类器
+        self._news_storage = None  # 新闻存储服务
         self._config_manager = get_news_config_manager()
         self._init_sentiment_engine()
         self._init_priority_classifier()  # 初始化优先级分类器
+        self._init_news_storage()  # 初始化新闻存储
         self._sources: Dict[str, DataSourceConfig] = {
             "cls": DataSourceConfig("财联社电报", DataSourceType.CLS, 30, priority=10),
             "eastmoney": DataSourceConfig(
@@ -139,6 +142,15 @@ class NewsMonitorCenter:
         except Exception as e:
             logger.warning(f"Failed to load priority classifier: {e}")
             self._priority_classifier = None
+
+    def _init_news_storage(self):
+        """初始化新闻存储服务"""
+        try:
+            self._news_storage = get_news_storage()
+            logger.info("News storage service initialized")
+        except Exception as e:
+            logger.warning(f"Failed to load news storage: {e}")
+            self._news_storage = None
 
     async def start(self):
         if self._running:
@@ -984,6 +996,13 @@ class NewsMonitorCenter:
                 new_count += 1
                 self._stats["total_processed"] += 1
 
+                # ========== 保存到数据库（新增）==========
+                if self._news_storage:
+                    try:
+                        asyncio.create_task(self._save_to_storage(enriched_news))
+                    except Exception as e:
+                        logger.debug(f"Failed to save to storage: {e}")
+
                 # 分级处理（基于优先级分类）
                 if priority_classification:
                     if priority_classification.priority == NewsPriority.P0:
@@ -1102,6 +1121,41 @@ class NewsMonitorCenter:
                 asyncio.create_task(ws_notify(len(p1_news), "p1_important"))
             except Exception as e:
                 logger.debug(f"Failed to push P1 news: {e}")
+
+    async def _save_to_storage(self, news_data: Dict):
+        """保存新闻到数据库（异步）"""
+        try:
+            if not self._news_storage:
+                return
+
+            import json
+            from .news_storage import NewsArticle
+
+            article = NewsArticle(
+                title=news_data.get('title', ''),
+                content=news_data.get('content', ''),
+                source=news_data.get('source', ''),
+                source_key=news_data.get('source_key', ''),
+                publish_time=news_data.get('publish_time', ''),
+                crawl_time=news_data.get('crawl_time', ''),
+                priority=news_data.get('priority', 'P2'),
+                category=news_data.get('category', 'general'),
+                sub_category=news_data.get('sub_category', ''),
+                sentiment=news_data.get('sentiment', 'neutral'),
+                sentiment_score=news_data.get('sentiment_score', 0.0),
+                expected_return=news_data.get('expected_return', 0.0),
+                urgency_score=news_data.get('urgency_score', 0.0),
+                impact_score=news_data.get('impact_score', 0.0),
+                keywords=json.dumps(news_data.get('keywords', [])),
+                related_stocks=json.dumps(news_data.get('related_stocks', [])),
+                url=news_data.get('url', ''),
+                raw_data=json.dumps(news_data)
+            )
+
+            self._news_storage.save_news(article)
+
+        except Exception as e:
+            logger.debug(f"Save to storage error: {e}")
 
     async def _send_p0_notification(self, p0_news: List[Dict]):
         """发送P0级新闻的紧急通知"""
