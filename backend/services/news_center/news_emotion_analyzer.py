@@ -77,10 +77,18 @@ class NewsEmotionAnalyzer:
         from pathlib import Path
         from dotenv import load_dotenv
         
-        # 加载.env文件
-        env_path = Path(__file__).parent.parent.parent.parent / ".env"
-        if env_path.exists():
-            load_dotenv(env_path)
+        # 尝试从多个位置加载.env
+        possible_paths = [
+            Path(__file__).parent.parent.parent.parent / ".env",
+            Path.cwd() / ".env",
+            Path.home() / ".openclaw" / "workspace" / "InvestMindPro" / ".env",
+        ]
+        
+        for env_path in possible_paths:
+            if env_path.exists():
+                load_dotenv(env_path, override=True)
+                logger.info(f"Loaded .env from: {env_path}")
+                break
         
         api_key = os.getenv("SILICONFLOW_API_KEY")
         if not api_key:
