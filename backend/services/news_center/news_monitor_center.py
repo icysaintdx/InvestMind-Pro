@@ -27,6 +27,7 @@ from .news_priority_classifier import (
     NewsClassification
 )
 from .news_storage import NewsStorage, get_news_storage, save_news_article
+from .news_emotion_analyzer import NewsEmotionAnalyzer, get_emotion_analyzer
 
 logger = logging.getLogger(__name__)
 
@@ -98,10 +99,12 @@ class NewsMonitorCenter:
         self._sentiment_engine = None
         self._priority_classifier = None  # 优先级分类器
         self._news_storage = None  # 新闻存储服务
+        self._emotion_analyzer = None  # 情绪分析器
         self._config_manager = get_news_config_manager()
         self._init_sentiment_engine()
         self._init_priority_classifier()  # 初始化优先级分类器
         self._init_news_storage()  # 初始化新闻存储
+        self._init_emotion_analyzer()  # 初始化情绪分析器
         self._sources: Dict[str, DataSourceConfig] = {
             "cls": DataSourceConfig("财联社电报", DataSourceType.CLS, 30, priority=10),
             "eastmoney": DataSourceConfig(
@@ -151,6 +154,15 @@ class NewsMonitorCenter:
         except Exception as e:
             logger.warning(f"Failed to load news storage: {e}")
             self._news_storage = None
+
+    def _init_emotion_analyzer(self):
+        """初始化情绪分析器"""
+        try:
+            self._emotion_analyzer = get_emotion_analyzer()
+            logger.info("Emotion analyzer initialized")
+        except Exception as e:
+            logger.warning(f"Failed to load emotion analyzer: {e}")
+            self._emotion_analyzer = None
 
     async def start(self):
         if self._running:
@@ -970,6 +982,18 @@ class NewsMonitorCenter:
                 related_stocks = []
                 impact = type("Impact", (), {"urgency": "low", "score": 0})()
 
+            # ========== LLM情绪分析（新增）==========
+            emotion_analysis = None
+            if self._emotion_analyzer:
+                try:
+                    emotion_analysis = await self._emotion_analyzer.analyze(
+                        title=title,
+                        content=content,
+                        stock_code=news_data.get('stock_code')
+                    )
+                except Exception as e:
+                    logger.debug(f"Emotion analysis failed: {e}")
+
             # 构建增强新闻数据
             enriched_news = {
                 **news_data,
@@ -980,6 +1004,20 @@ class NewsMonitorCenter:
                 "related_stocks": related_stocks,
                 "impact_score": impact.score,
             }
+
+            # 添加LLM情绪分析结果（如果有）
+            if emotion_analysis:
+                enriched_news["llm_sentiment"] = emotion_analysis.sentiment
+                enriched_news["llm_sentiment_score"] = emotion_analysis.score
+                enriched_news["llm_confidence"] = emotion_analysis.confidence
+                enriched_news["event_type"] = emotion_analysis.event_type
+                enriched_news["event_subtype"] = emotion_analysis.event_subtype
+                enriched_news["impact_level"] = emotion_analysis.impact_level
+                enriched_news["impact_duration"] = emotion_analysis.impact_duration
+                enriched_news["affected_sectors"] = emotion_analysis.affected_sectors
+                enriched_news["emotion_summary"] = emotion_analysis.summary
+                enriched_news["emotion_key_points"] = emotion_analysis.key_points
+                enriched_news["emotion_risk_factors"] = emotion_analysis.risk_factors
 
             # 添加优先级信息（如果有）
             if priority_classification:
