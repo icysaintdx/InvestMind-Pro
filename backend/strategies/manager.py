@@ -27,8 +27,29 @@ class StrategyManager:
         self.performance_history: Dict[str, List[StrategyPerformance]] = {}
         self.config_file = Path("backend/data/strategy_config.json")
         
+        self._sentiment_service = None
+        self._weight_adjuster = None
+        
         self._load_config()
         self._register_all_strategies()
+    
+    def _get_sentiment_service(self):
+        if self._sentiment_service is None:
+            try:
+                from backend.services.sentiment_trend_service import get_sentiment_trend_service
+                self._sentiment_service = get_sentiment_trend_service()
+            except Exception as e:
+                logger.warning(f"Failed to init sentiment service: {e}")
+        return self._sentiment_service
+    
+    def _get_weight_adjuster(self):
+        if self._weight_adjuster is None:
+            try:
+                from backend.services.strategy.ai_weight_adjuster import get_ai_weight_adjuster
+                self._weight_adjuster = get_ai_weight_adjuster()
+            except Exception as e:
+                logger.warning(f"Failed to init weight adjuster: {e}")
+        return self._weight_adjuster
         
     def _load_config(self):
         """加载策略配置"""
@@ -163,39 +184,40 @@ class StrategyManager:
         market_data: pd.DataFrame = None,
         fundamental_data: Dict = None
     ) -> List[StrategySignal]:
-        """
-        运行所有激活的策略
-        
-        Args:
-            stock_code: 股票代码
-            market_data: 市场数据
-            fundamental_data: 基本面数据
-            
-        Returns:
-            策略信号列表
-        """
         if not self.active_strategies:
             logger.warning("没有激活的策略")
             return []
             
-        # 如果没有提供数据，获取默认数据
         if market_data is None:
             market_data = await self._get_default_market_data(stock_code)
+        
+        # Fetch sentiment and adjust weights dynamically
+        sentiment_summary = None
+        sentiment_svc = self._get_sentiment_service()
+        if sentiment_svc:
+            try:
+                sentiment_summary = sentiment_svc.get_stock_sentiment_summary(stock_code)
+                adjuster = self._get_weight_adjuster()
+                if adjuster and sentiment_summary:
+                    self.strategy_weights = adjuster.adjust_weights(
+                        sentiment_summary, self.strategy_weights
+                    )
+                    logger.info(f"Weights adjusted for {stock_code}: direction={sentiment_summary.get('direction')}")
+            except Exception as e:
+                logger.warning(f"Sentiment integration failed: {e}")
             
-        # 并发运行所有策略
         tasks = []
         for strategy_id in self.active_strategies:
             if strategy_id in self.strategies:
                 strategy = self.strategies[strategy_id]
                 tasks.append(
                     self._run_strategy_safe(
-                        strategy, stock_code, market_data, fundamental_data
+                        strategy, strategy_id, stock_code, market_data,
+                        fundamental_data, sentiment_summary
                     )
                 )
                 
         signals = await asyncio.gather(*tasks)
-        
-        # 过滤掉None值
         signals = [s for s in signals if s is not None]
         
         logger.info(f"运行 {len(signals)} 个策略，生成 {len(signals)} 个信号")
@@ -205,15 +227,23 @@ class StrategyManager:
     async def _run_strategy_safe(
         self,
         strategy: BaseStrategy,
+        strategy_id: str,
         stock_code: str,
         market_data: pd.DataFrame,
-        fundamental_data: Dict
+        fundamental_data: Dict,
+        sentiment_summary: Dict = None
     ) -> Optional[StrategySignal]:
-        """安全运行策略（带异常处理）"""
         try:
-            return await strategy.analyze(stock_code, market_data, fundamental_data)
+            if strategy_id == "sentiment_resonance" and sentiment_summary:
+                if hasattr(strategy, 'generate_signal'):
+                    return strategy.generate_signal(
+                        market_data, 0, **{"sentiment_data": sentiment_summary}
+                    )
+            if hasattr(strategy, 'analyze'):
+                return await strategy.analyze(stock_code, market_data, fundamental_data)
+            return strategy.generate_signal(market_data, 0)
         except Exception as e:
-            logger.error(f"策略 {strategy.strategy_id} 运行失败: {e}")
+            logger.error(f"策略 {strategy_id} 运行失败: {e}")
             return None
             
     def combine_signals(
