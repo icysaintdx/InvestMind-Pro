@@ -268,8 +268,25 @@ class SentimentResonanceStrategy(BaseStrategy):
         """初始化策略"""
         self._initialized = True
     
-    def generate_signal(self, data: pd.DataFrame, current_position: int = 0) -> StrategySignal:
-        """生成交易信号（新接口）"""
+    def generate_signal(self, data: pd.DataFrame, current_position: int = 0,
+                        sentiment_data: Optional[Dict[str, Any]] = None) -> StrategySignal:
+        """
+        生成交易信号 - 真正融合情绪数据 + 技术指标
+        
+        Args:
+            data: K线数据
+            current_position: 当前持仓
+            sentiment_data: 情绪摘要，来自 SentimentTrendService.get_stock_sentiment_summary()
+                {
+                    "score": float,           # -1~1
+                    "direction": str,         # bullish/bearish/neutral
+                    "momentum": float,        # 情绪动量
+                    "confidence": float,      # 数据置信度
+                    "recent_negative_spike": bool,
+                    "trend_reversal": bool,
+                    "signal_strength": float,
+                }
+        """
         df = self.calculate_indicators(data)
         
         if len(df) < 20:
@@ -284,149 +301,129 @@ class SentimentResonanceStrategy(BaseStrategy):
         
         row = df.iloc[-1]
         price = row['close']
-        
-        # 简化版本：基于技术指标的信号
         rsi = row.get('rsi', 50)
         macd = row.get('macd', 0)
+        macd_hist = row.get('macd_hist', 0)
+        vol_ratio = row.get('volume_ratio', 1.0)
         
-        signal_type = SignalType.HOLD
-        confidence = 0.5
+        # === 情绪维度 ===
+        sent = sentiment_data or {}
+        sent_score = sent.get("score", 0.0)
+        sent_direction = sent.get("direction", "neutral")
+        sent_momentum = sent.get("momentum", 0.0)
+        sent_confidence = sent.get("confidence", 0.0)
+        negative_spike = sent.get("recent_negative_spike", False)
+        trend_reversal = sent.get("trend_reversal", False)
+        
+        # === 技术维度得分 (-1 ~ 1) ===
+        tech_score = 0.0
+        tech_reasons = []
+        
+        if rsi < 30:
+            tech_score += 0.6
+            tech_reasons.append(f"RSI超卖({rsi:.1f})")
+        elif rsi < 45:
+            tech_score += 0.3
+            tech_reasons.append(f"RSI偏低({rsi:.1f})")
+        elif rsi > 70:
+            tech_score -= 0.6
+            tech_reasons.append(f"RSI超买({rsi:.1f})")
+        elif rsi > 55:
+            tech_score -= 0.3
+            tech_reasons.append(f"RSI偏高({rsi:.1f})")
+        
+        if macd > 0 and macd_hist > 0:
+            tech_score += 0.4
+            tech_reasons.append("MACD金叉放大")
+        elif macd > 0:
+            tech_score += 0.2
+            tech_reasons.append("MACD为正")
+        elif macd < 0 and macd_hist < 0:
+            tech_score -= 0.4
+            tech_reasons.append("MACD死叉放大")
+        elif macd < 0:
+            tech_score -= 0.2
+            tech_reasons.append("MACD为负")
+        
+        tech_score = max(-1.0, min(1.0, tech_score))
+        
+        # === 资金维度（量比） ===
+        fund_score = 0.0
+        if vol_ratio > 2.0:
+            fund_score = 0.4
+        elif vol_ratio > 1.3:
+            fund_score = 0.2
+        elif vol_ratio < 0.5:
+            fund_score = -0.3
+        elif vol_ratio < 0.8:
+            fund_score = -0.1
+        
+        # === 三维度共振计算 ===
+        # 情绪权重40% + 技术权重35% + 资金权重25%
+        sentiment_weight = 0.40 if sent_confidence > 0.3 else 0.15
+        tech_weight = 0.35 if sent_confidence > 0.3 else 0.55
+        fund_weight = 0.25 if sent_confidence > 0.3 else 0.30
+        
+        composite_score = (
+            sent_score * sentiment_weight +
+            tech_score * tech_weight +
+            fund_score * fund_weight
+        )
+        
+        # === 特殊情况处理 ===
         reasons = []
         
-        # 多维度共振逻辑 - 放宽条件使策略更活跃
-        # 强买入信号：RSI超卖 + MACD向上
-        if rsi < 30 and macd > 0:
+        if negative_spike:
+            composite_score -= 0.3
+            reasons.append("⚠️ 负面情绪突增")
+        
+        if trend_reversal:
+            composite_score *= 0.7
+            reasons.append("⚠️ 情绪趋势反转")
+        
+        # === 信号生成 ===
+        if composite_score > 0.5:
             signal_type = SignalType.STRONG_BUY
-            confidence = 0.85
-            reasons = [
-                f"RSI严重超卖: {rsi:.1f}",
-                "MACD金叉确认",
-                "强烈情绪共振买入"
-            ]
-        # 普通买入信号：RSI较低 或 MACD金叉
-        elif rsi < 40 or (macd > 0 and row.get('macd_hist', 0) > 0):
+            confidence = min(0.6 + abs(composite_score) * 0.3, 0.95)
+        elif composite_score > 0.2:
             signal_type = SignalType.BUY
-            confidence = 0.65
-            reasons = []
-            if rsi < 40:
-                reasons.append(f"RSI偏低: {rsi:.1f}")
-            if macd > 0:
-                reasons.append("MACD为正")
-            reasons.append("情绪共振买入信号")
-        # 强卖出信号：RSI超买 + MACD向下
-        elif rsi > 70 and macd < 0:
+            confidence = min(0.5 + abs(composite_score) * 0.3, 0.85)
+        elif composite_score < -0.5:
             signal_type = SignalType.STRONG_SELL
-            confidence = 0.85
-            reasons = [
-                f"RSI严重超买: {rsi:.1f}",
-                "MACD死叉确认",
-                "强烈情绪共振卖出"
-            ]
-        # 普通卖出信号：RSI较高 或 MACD死叉
-        elif rsi > 60 or (macd < 0 and row.get('macd_hist', 0) < 0):
+            confidence = min(0.6 + abs(composite_score) * 0.3, 0.95)
+        elif composite_score < -0.2:
             signal_type = SignalType.SELL
-            confidence = 0.65
-            reasons = []
-            if rsi > 60:
-                reasons.append(f"RSI偏高: {rsi:.1f}")
-            if macd < 0:
-                reasons.append("MACD为负")
-            reasons.append("情绪共振卖出信号")
+            confidence = min(0.5 + abs(composite_score) * 0.3, 0.85)
+        else:
+            signal_type = SignalType.HOLD
+            confidence = 0.4
+        
+        # 构建原因列表
+        if sent_confidence > 0.1:
+            reasons.append(f"📰 情绪: {sent_direction}({sent_score:+.2f}, 动量{sent_momentum:+.2f})")
+        else:
+            reasons.append("📰 情绪: 数据不足")
+        reasons.extend([f"📊 {r}" for r in tech_reasons[:2]])
+        if fund_score != 0:
+            reasons.append(f"💰 量比: {vol_ratio:.2f}")
+        reasons.append(f"共振得分: {composite_score:+.3f}")
+        
+        strength = min(abs(composite_score), 1.0)
         
         return StrategySignal(
             signal_type=signal_type,
-            confidence=confidence,
-            strength=0.7,
+            confidence=round(confidence, 3),
+            strength=round(strength, 3),
             price=price,
-            stop_loss=price * 0.95 if signal_type == SignalType.BUY else None,
-            target_price=price * 1.10 if signal_type == SignalType.BUY else None,
-            position_size=0.3 if signal_type == SignalType.BUY else 0,
+            stop_loss=price * (1 - self.risk_params['stop_loss_pct']) if signal_type in [SignalType.BUY, SignalType.STRONG_BUY] else None,
+            target_price=price * (1 + self.risk_params['take_profit_pct']) if signal_type in [SignalType.BUY, SignalType.STRONG_BUY] else None,
+            position_size=self.risk_params['max_position_pct'] * strength if signal_type in [SignalType.BUY, SignalType.STRONG_BUY] else 0,
             reasons=reasons[:5],
             strategy_id="sentiment_resonance",
             strategy_name=self.name
         )
     
-    def _generate_signals_legacy(
-        self,
-        data: pd.DataFrame,
-        agent_results: Optional[Dict[str, Any]] = None
-    ) -> List[Signal]:
-        """
-        生成交易信号
-        
-        Args:
-            data: 价格数据
-            agent_results: 智能体分析结果
-        """
-        df = self.calculate_indicators(data)
-        signals = []
-        
-        # 获取智能体分析结果
-        stock_code = agent_results.get("stock_code", "000001") if agent_results else "000001"
-        agent_scores = self.analyze_with_agents(stock_code, agent_results)
-        
-        # 计算共振得分
-        resonance = self.calculate_resonance_score(
-            agent_scores["news_sentiment"],
-            agent_scores["technical_score"],
-            agent_scores["fund_flow"]
-        )
-        
-        # 只在最后一根K线生成信号
-        if len(df) < 2:
-            return signals
-        
-        row = df.iloc[-1]
-        
-        # 检查是否达到共振阈值
-        if resonance["score"] >= self.params["resonance_score_min"]:
-            
-            # 多头共振信号
-            if resonance["direction"] == 1:
-                current_price = row['close']
-                
-                # 计算目标价和止损价
-                target_price = current_price * (1 + self.risk_params['take_profit_pct'])
-                stop_loss = current_price * (1 - self.risk_params['stop_loss_pct'])
-                
-                # 计算仓位大小（基于共振强度）
-                position_size = self.risk_params['max_position_pct'] * resonance["strength"]
-                
-                # 生成信号原因
-                reasons = self._generate_buy_reasons(resonance, agent_scores, row)
-                
-                signal = Signal(
-                    strategy_id="sentiment_resonance",
-                    strategy_name=self.name,
-                    signal_type=SignalType.BUY,
-                    strength=resonance["strength"],
-                    confidence=resonance["score"] / 3.0,  # 归一化到[0, 1]
-                    target_price=target_price,
-                    stop_loss=stop_loss,
-                    position_size=position_size,
-                    reasons=reasons,
-                    timestamp=df.index[-1]
-                )
-                
-                signals.append(signal)
-            
-            # 空头共振信号
-            elif resonance["direction"] == -1:
-                reasons = self._generate_sell_reasons(resonance, agent_scores, row)
-                
-                signal = Signal(
-                    strategy_id="sentiment_resonance",
-                    strategy_name=self.name,
-                    signal_type=SignalType.SELL,
-                    strength=resonance["strength"],
-                    confidence=resonance["score"] / 3.0,
-                    reasons=reasons,
-                    timestamp=df.index[-1]
-                )
-                
-                signals.append(signal)
-        
-        return signals
+    # _generate_signals_legacy removed - was dead code using only RSI+MACD without sentiment
     
     def _generate_buy_reasons(
         self,
