@@ -1,64 +1,62 @@
-# TASK: API 全面审计与优化
+# TASK: 双驱动架构审计与优化
 
 ## 项目背景
-InvestMindPro 是一个 A股智能分析系统，21个AI智能体协作分析股票。
-- 后端：FastAPI (uvicorn)，端口 8000
-- 前端：Vue.js (已构建在 frontend/dist/)
-- 数据库：SQLite (InvestMindPro.db)
-- 数据源：akshare (A股实时数据)
-- LLM：通过 kirocpa 代理 (https://kirocpa.zeabur.app/v1)，key=icysaintdx，模型 kimi-k2.5
+InvestMindPro 是 A股智能分析系统。当前号称"双驱动"（数据采集驱动 + AI分析驱动），但实际上两者是割裂的：
+- 数据采集：用 akshare 抓取 A股数据，存本地缓存
+- AI分析：用户点击"分析"按钮 → 临时抓数据 → 调 LLM → 返回结果
+- 问题：没有真正的"驱动"，只是请求-响应模式，数据和AI之间没有自动联动
+
+## 技术栈
+- 后端：FastAPI (Python 3.12)，SQLite 数据库
+- LLM：kirocpa 代理 (https://kirocpa.zeabur.app/v1)，key=icysaintdx，模型 kimi-k2.5
+- 数据源：akshare（A股实时行情、财务数据、新闻）
+- 前端：Vue.js
 
 ## 你的任务
-系统性审计所有 API 端点，修复问题，优化性能。确保前端每个功能都能正常工作。
+审计当前的数据流和分析流，找出断裂点，优化为真正的双驱动架构。
 
 ## 具体工作
 
-### 1. 端点审计
-逐个测试以下 API 路由（在 backend/server.py 和 backend/api/ 下）：
-- `/api/market/overview` — 市场概览
-- `/api/market/hot-sectors` — 热门板块
-- `/api/market/top-amount` — 成交额排行
-- `/api/market/bid-ask/{code}` — 盘口数据
-- `/api/market/transactions/{code}` — 成交明细
-- `/api/market/longhubang/*` — 龙虎榜
-- `/api/analysis/*` — 智能体分析
-- `/api/strategy/*` — 策略中心
-- `/api/news/*` — 新闻中心
-- `/api/monitor/*` — 自选股监控
-- `/api/backtest/*` — 回测
-- `/api/paper-trading/*` — 模拟交易
-- `/api/auto-trading/*` — 自动交易
-- `/api/sector-rotation/*` — 板块轮动
+### 1. 数据采集流审计
+- 梳理所有数据采集点（akshare 调用在哪些文件）
+- 数据缓存机制是否合理（缓存时间、更新策略）
+- 非交易时间的数据处理逻辑
+- 后台预加载机制（market_adapter.py 有 daemon thread 预加载 spot 数据）
+- 关键文件：
+  - `backend/api/market_adapter.py` — 市场数据采集+缓存
+  - `backend/services/stock_data_service.py` — 股票数据服务
+  - `backend/services/data_flow/` — 数据流服务
+  - `backend/services/news_center/` — 新闻数据采集
 
-### 2. 每个端点检查
-- 返回格式是否正确（前端期望的字段名、结构）
-- 错误处理是否完善（网络超时、数据为空、非交易时间）
-- 响应速度是否合理（目标 <3秒，市场数据可接受 <10秒）
-- 非交易时间（周末/节假日）是否返回缓存数据而非空数据
+### 2. AI分析流审计
+- 分析请求的完整流程（从前端点击到返回结果）
+- 21个智能体的调度逻辑（并行？串行？依赖关系？）
+- 分析结果的存储和复用
+- 关键文件：
+  - `backend/server.py` — analyze_stock 端点（约第2420行）
+  - `backend/agents/` — 智能体定义
+  - `backend/agent_configs.json` — 智能体配置
 
-### 3. 已知问题
-- 部分端点在非交易时间返回空数据
-- 某些端点返回格式与前端期望不匹配（如 data 包装层级问题）
-- market_adapter.py 是实际的市场路由（不是 market_data_api.py，后者被注释掉了）
-- longhubang_adapter.py 是龙虎榜路由
-- sector_rotation_adapter.py 是板块轮动路由
+### 3. 断裂点识别与修复
+找出数据采集和AI分析之间的断裂：
+- 数据更新后是否自动触发相关分析？（目前没有）
+- 分析结果是否缓存复用？（目前每次重新分析）
+- 多个智能体是否共享数据上下文？（目前各自独立获取）
+- 监控的股票是否有定时自动分析？
 
-### 4. 关键文件
-- `backend/server.py` — 主服务器，所有路由注册
-- `backend/api/market_adapter.py` — 市场数据 API
-- `backend/api/longhubang_adapter.py` — 龙虎榜 API
-- `backend/api/sector_rotation_adapter.py` — 板块轮动 API
-- `backend/api/strategy_center_api.py` — 策略中心 API
-- `backend/api/news_center_api.py` — 新闻中心 API
-- `frontend/src/views/` — 前端页面（了解前端期望的数据格式）
+### 4. 优化方向
+- 数据变更事件 → 自动触发相关智能体重新分析
+- 分析结果缓存（同一股票短时间内不重复分析）
+- 智能体间数据共享（避免重复获取相同数据）
+- 后台定时任务：监控股票自动分析、市场异动检测
 
 ## 约束
-- 不要修改数据库结构（正在导入历史数据）
-- 不要改动 LLM 调用逻辑（已调通）
-- 修复时保持向后兼容，不要破坏已工作的功能
-- 用 curl 测试每个端点，记录结果
+- 不要修改数据库结构（正在导入历史新闻数据）
+- 不要改动 LLM API 调用方式（已调通 kirocpa + kimi-k2.5）
+- 保持 API 接口兼容（前端不需要改）
+- 先审计出报告，再动手改代码
 
 ## 交付物
-1. API 审计报告（每个端点的状态、问题、修复）
-2. 所有修复的代码变更
-3. 测试验证结果
+1. 架构审计报告（当前数据流图、断裂点、优化建议）
+2. 优化后的代码变更
+3. 测试验证

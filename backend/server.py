@@ -337,6 +337,18 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             print(f"[WARN] 统一新闻监控中心启动失败: {e}")
 
+    # 启动自动分析触发器（默认启动）
+    # 连接数据采集流和AI分析流：订阅新闻/异动事件，自动失效缓存，定时异动检测
+    if os.getenv("ENABLE_AUTO_ANALYSIS_TRIGGER", "true").lower() == "true":
+        try:
+            from backend.services.auto_analysis_trigger import get_auto_analysis_trigger
+
+            auto_trigger = get_auto_analysis_trigger()
+            await auto_trigger.start()
+            print("[OK] 自动分析触发器已启动（事件订阅 + 定时异动检测）")
+        except Exception as e:
+            print(f"[WARN] 自动分析触发器启动失败: {e}")
+
     # 启动TDX数据缓存服务（默认启动）
     # 该服务在后台定时获取TDX数据，缓存到服务器端文件
     # 所有API请求直接读取缓存，不阻塞用户请求
@@ -426,6 +438,16 @@ async def lifespan(app: FastAPI):
         news_monitor = get_news_monitor_center()
         await news_monitor.stop()
         print("[OK] 统一新闻监控中心已停止")
+    except:
+        pass
+
+    # 停止自动分析触发器
+    try:
+        from backend.services.auto_analysis_trigger import get_auto_analysis_trigger
+
+        auto_trigger = get_auto_analysis_trigger()
+        await auto_trigger.stop()
+        print("[OK] 自动分析触发器已停止")
     except:
         pass
 
@@ -2430,6 +2452,29 @@ async def analyze_stock(request: AnalyzeRequest):
         previous_outputs = request.previous_outputs
         custom_instruction = request.custom_instruction
 
+        # ========== 分析缓存：命中则直接返回 ==========
+        try:
+            from backend.services.analysis_cache import get_analysis_cache
+            _analysis_cache = get_analysis_cache()
+            cached_result = _analysis_cache.get(agent_id, stock_code, stock_data)
+            if cached_result:
+                print(f"[分析] {agent_id} 缓存命中，跳过LLM调用")
+                return {"success": True, "result": cached_result, "fallback_level": 0, "cached": True}
+        except Exception as e:
+            print(f"[分析] 缓存检查失败(忽略): {e}")
+            _analysis_cache = None
+
+        # ========== 共享数据上下文：预获取 + 数据增强 ==========
+        _shared_ctx = None
+        try:
+            from backend.services.shared_data_context import SharedDataContext
+            _shared_ctx = SharedDataContext.get_or_create(stock_code, stock_data)
+            await _shared_ctx.prefetch()
+            # 用增强数据替换原始 stock_data
+            stock_data = _shared_ctx.get_enriched_stock_data()
+        except Exception as e:
+            print(f"[分析] 共享上下文预获取失败(忽略): {e}")
+
         # 从缓存获取配置
         agent_config = get_agent_config(agent_id)
 
@@ -2496,6 +2541,12 @@ async def analyze_stock(request: AnalyzeRequest):
         user_prompt += (
             f"成交: {stock_data.get('traAmount', stock_data.get('volume', 'N/A'))}\n"
         )
+
+        # ========== 注入新闻上下文（来自共享数据上下文）==========
+        if _shared_ctx:
+            news_context = _shared_ctx.build_news_context(max_items=5)
+            if news_context:
+                user_prompt += f"\n{news_context}\n"
 
         # 重点：前序分析结果（使用完整内容）
         summary_text = None
@@ -2669,6 +2720,25 @@ async def analyze_stock(request: AnalyzeRequest):
 
             print(f"[分析] {request.agent_id} 分析完成")
             fallback_level = result.get("fallback_level", 0)
+
+            # ========== 缓存存储 ==========
+            if _analysis_cache:
+                try:
+                    _analysis_cache.put(agent_id, stock_code, text, fallback_level, stock_data)
+                except Exception as _ce:
+                    print(f"[分析] 缓存存储失败(忽略): {_ce}")
+
+            # ========== 发布分析完成事件 ==========
+            try:
+                from backend.services.event_bus import get_event_bus, Event, EventType
+                await get_event_bus().publish(Event(
+                    event_type=EventType.ANALYSIS_COMPLETED,
+                    data={"agent_id": agent_id, "stock_code": stock_code, "fallback_level": fallback_level},
+                    source="analyze_stock",
+                ))
+            except Exception as _ee:
+                print(f"[分析] 事件发布失败(忽略): {_ee}")
+
             return {
                 "success": True,
                 "result": text,
@@ -2678,6 +2748,18 @@ async def analyze_stock(request: AnalyzeRequest):
             # 失败也返回兜底文本，不让前端显示空
             print(f"[分析] {request.agent_id} 分析失败，使用兜底: {result.get('error','')[:80]}")
             text = _fallback_texts.get(_agent_role, "⚠️ 分析暂时不可用，建议稍后重试。")
+
+            # ========== 发布分析失败事件 ==========
+            try:
+                from backend.services.event_bus import get_event_bus, Event, EventType
+                await get_event_bus().publish(Event(
+                    event_type=EventType.ANALYSIS_FAILED,
+                    data={"agent_id": agent_id, "stock_code": stock_code, "error": result.get("error", "")[:200]},
+                    source="analyze_stock",
+                ))
+            except Exception:
+                pass
+
             return {"success": True, "result": text, "fallback_level": 99}
 
     except Exception as e:
