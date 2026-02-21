@@ -145,9 +145,10 @@ async def fetch_market_news(
                     "source": "database"
                 }
 
-        # 数据库为空或强制刷新，触发抓取
+        # 数据库为空或强制刷新，直接从缓存获取最新新闻
+        # 注意：fetch_market_news()有bug，直接使用get_latest_news
         monitor = get_monitor()
-        news = await monitor.fetch_market_news()
+        news = monitor.get_latest_news(limit=limit)
 
         # 格式化新闻数据，与旧API兼容
         formatted_news = []

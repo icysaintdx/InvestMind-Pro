@@ -242,7 +242,7 @@ class FallbackHandler:
             config_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "agent_configs.json")
             model_name = "Qwen/Qwen2.5-7B-Instruct"
             temperature = 0.2
-            api_key = os.getenv("SILICONFLOW_API_KEY", "")
+            api_key = os.getenv("MINIMAX_API_KEY", "icysaintdx")
             
             if os.path.exists(config_file):
                 with open(config_file, 'r', encoding='utf-8') as f:
@@ -297,7 +297,7 @@ class FallbackHandler:
             # 快速调用LLM（5秒超时）
             async with httpx.AsyncClient(timeout=httpx.Timeout(5.0)) as client:
                 response = await client.post(
-                    "https://api.siliconflow.cn/v1/chat/completions",
+                    "https://kirocpa.zeabur.app/v1/chat/completions",
                     headers={
                         "Authorization": f"Bearer {api_key}",
                         "Content-Type": "application/json"

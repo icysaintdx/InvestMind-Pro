@@ -287,7 +287,7 @@ export default {
   data() {
     return {
       currentView: 'professional', // GM卡片的标签切换：'professional' 或 'simple'
-      selectedModel: this.agent.modelName || 'deepseek-chat',
+      selectedModel: this.agent.modelName || 'Qwen/Qwen3-8B',
       temperature: this.agent.temperature || 0.3,
       modelOptions: [], // 将从后端加载
       sourcesExpanded: false, // 数据源是否展开
@@ -475,10 +475,10 @@ export default {
               console.log(`[${this.agent.id}] 没有找到已选择的模型，使用默认列表`)
               // 如果没有已选择的模型，加载一些默认模型
               this.modelOptions = [
-                { name: 'gemini-2.0-flash-exp', label: 'Gemini 2.0 Flash' },
+                { name: 'Qwen/Qwen3-8B', label: 'Qwen3-8B' },
                 { name: 'deepseek-chat', label: 'DeepSeek Chat' },
                 { name: 'qwen-plus', label: '通义千问 Plus' },
-                { name: 'Qwen/Qwen3-8B', label: 'Qwen3-8B' }
+                { name: 'gemini-2.0-flash-exp', label: 'Gemini 2.0 Flash' }
               ]
             }
             
@@ -497,7 +497,7 @@ export default {
         console.error('加载模型列表失败:', error)
         // 如果加载失败，使用默认列表
         this.modelOptions = [
-          { name: 'gemini-2.0-flash-exp', label: 'Gemini 2.0 Flash' },
+          { name: 'Qwen/Qwen3-8B', label: 'Qwen3-8B' },
           { name: 'deepseek-chat', label: 'DeepSeek Chat' },
           { name: 'qwen-plus', label: '通义千问 Plus' }
         ]
@@ -517,7 +517,8 @@ export default {
         'deepseek-coder': 'DeepSeek Coder',
         'qwen-plus': '通义千问 Plus',
         'qwen-max': '通义千问 Max',
-        'qwen-turbo': '通义千问 Turbo'
+        'qwen-turbo': '通义千问 Turbo',
+        'Qwen/Qwen3-8B': 'Qwen3-8B'
       }
       return labelMap[modelName] || modelName
     },

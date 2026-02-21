@@ -17,6 +17,7 @@ logger = get_logger("services.llm")
 
 # API URLs
 API_URLS = {
+    "minimax": "https://kirocpa.zeabur.app/v1/chat/completions",
     "siliconflow": "https://api.siliconflow.cn/v1/chat/completions",
     "deepseek": "https://api.deepseek.com/v1/chat/completions",
     "qwen": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
@@ -25,6 +26,7 @@ API_URLS = {
 
 # 默认模型配置（当配置文件不可用时使用）
 DEFAULT_MODELS = {
+    "minimax": "minimax-m2.1",
     "siliconflow": "Qwen/Qwen2.5-7B-Instruct",
     "deepseek": "deepseek-chat",
     "qwen": "qwen-turbo",
@@ -35,12 +37,13 @@ DEFAULT_MODELS = {
 def get_api_key(provider: str) -> str:
     """获取API Key - 优先从环境变量读取"""
     env_keys = {
+        "minimax": "MINIMAX_API_KEY",
         "siliconflow": "SILICONFLOW_API_KEY",
         "deepseek": "DEEPSEEK_API_KEY",
         "qwen": "DASHSCOPE_API_KEY",
         "gemini": "GOOGLE_API_KEY",
     }
-    return os.getenv(env_keys.get(provider, ""), "")
+    return os.getenv(env_keys.get(provider, ""), "") or ("icysaintdx" if provider == "minimax" else "")
 
 
 class LLMService:
@@ -69,9 +72,13 @@ class LLMService:
         if not model:
             return None
 
-        # 包含斜杠的模型名（如 Qwen/Qwen3-8B）都是SiliconFlow托管的
+        # minimax模型 (kirocpa中转)
+        if model_lower.startswith("minimax"):
+            return "minimax"
+
+        # 包含斜杠的模型名（如 Qwen/Qwen3-8B）走kirocpa中转（SiliconFlow余额为0）
         if "/" in model:
-            return "siliconflow"
+            return "minimax"
 
         # 官方直连模型
         model_lower = model.lower()
@@ -85,8 +92,8 @@ class LLMService:
             # qwen2.5-7b-instruct 等阿里云模型
             return "qwen"
 
-        # 默认使用siliconflow
-        return "siliconflow"
+        # 默认使用minimax (kirocpa中转)
+        return "minimax"
 
     def get_task_config(self, task_name: str) -> Dict[str, Any]:
         """
@@ -107,8 +114,8 @@ class LLMService:
             logger.warning(f"获取任务配置失败: {task_name}, {e}")
             # 返回默认配置
             return {
-                "provider": "siliconflow",
-                "model": DEFAULT_MODELS.get("siliconflow"),
+                "provider": "minimax",
+                "model": DEFAULT_MODELS.get("minimax"),
                 "enabled": True,
                 "temperature": 0.7,
                 "max_tokens": 2048
@@ -150,9 +157,9 @@ class LLMService:
             temperature = temperature if temperature is not None else config.get("temperature", 0.7)
             max_tokens = max_tokens or config.get("max_tokens", 2048)
             # 根据model自动推断provider（优先级高于配置文件中的provider）
-            provider = provider or self._infer_provider_from_model(model) or config.get("provider", "siliconflow")
+            provider = provider or self._infer_provider_from_model(model) or config.get("provider", "minimax")
         else:
-            provider = provider or "siliconflow"
+            provider = provider or "minimax"
             temperature = temperature if temperature is not None else 0.7
             max_tokens = max_tokens or 2048
 
@@ -162,7 +169,7 @@ class LLMService:
         if not api_key:
             logger.warning(f"未配置 {provider} API Key，尝试使用备用提供商")
             # 尝试备用提供商
-            for backup_provider in ["siliconflow", "deepseek", "qwen"]:
+            for backup_provider in ["minimax", "deepseek", "qwen", "siliconflow"]:
                 if backup_provider != provider and get_api_key(backup_provider):
                     provider = backup_provider
                     api_key = get_api_key(provider)

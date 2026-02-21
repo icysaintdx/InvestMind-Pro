@@ -81,6 +81,20 @@
               >
               <button @click="testApi('siliconflow')" class="test-btn">测试</button>
             </div>
+
+            <div class="key-item">
+              <label class="key-label">
+                <span class="provider-icon">🚀</span>
+                Minimax API Key (kirocpa中转)
+              </label>
+              <input 
+                type="password" 
+                v-model="localKeys.minimax" 
+                placeholder="MiniMax M2/M2.1 中转 (kirocpa.zeabur.app)"
+                class="key-input"
+              >
+              <button @click="testApi('minimax')" class="test-btn">测试</button>
+            </div>
           </div>
         </div>
 

@@ -21,6 +21,9 @@ class LLMProvider(Enum):
     DEEPSEEK = "deepseek"
     QWEN = "qwen"
     SILICONFLOW = "siliconflow"
+    MINIMAX = "minimax"
+    KIMI = "kimi"
+    GLM = "glm"
     LOCAL = "local"  # 预留本地模型接口
 
 class LLMConfig:
@@ -43,7 +46,10 @@ class LLMConfig:
             LLMProvider.GEMINI: "GEMINI_API_KEY",
             LLMProvider.DEEPSEEK: "DEEPSEEK_API_KEY",
             LLMProvider.QWEN: "DASHSCOPE_API_KEY",
-            LLMProvider.SILICONFLOW: "SILICONFLOW_API_KEY"
+            LLMProvider.SILICONFLOW: "SILICONFLOW_API_KEY",
+            LLMProvider.MINIMAX: "MINIMAX_API_KEY",
+            LLMProvider.KIMI: "KIMI_API_KEY",
+            LLMProvider.GLM: "GLM_API_KEY"
         }
         return os.getenv(key_map.get(provider, ""), "")
 
@@ -143,7 +149,10 @@ class UnifiedLLMClient:
             LLMProvider.GEMINI: "/api/ai/gemini",
             LLMProvider.DEEPSEEK: "/api/ai/deepseek",
             LLMProvider.QWEN: "/api/ai/qwen",
-            LLMProvider.SILICONFLOW: "/api/ai/siliconflow"
+            LLMProvider.SILICONFLOW: "/api/ai/siliconflow",
+            LLMProvider.MINIMAX: "/api/ai/minimax",
+            LLMProvider.KIMI: "/api/ai/kimi",
+            LLMProvider.GLM: "/api/ai/glm"
         }
         return endpoint_map.get(self.config.provider, "/api/ai/siliconflow")
         

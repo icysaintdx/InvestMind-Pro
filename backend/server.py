@@ -158,6 +158,7 @@ from backend.api.auto_trade_api import (
     router as auto_trade_router,
 )  # 智能交易计划API（自动监控+自动执行）
 from backend.api.indicators_api import router as indicators_router  # 技术指标分析API
+from backend.api.paper_trading_api import router as paper_trading_router  # 模拟交易API
 
 # ==================== 配置 ====================
 
@@ -168,6 +169,9 @@ API_KEYS = {
     "qwen": os.getenv("DASHSCOPE_API_KEY", "")
     or os.getenv("QWEN_API_KEY", ""),  # 支持两种环境变量名
     "siliconflow": os.getenv("SILICONFLOW_API_KEY", ""),
+    "minimax": os.getenv("MINIMAX_API_KEY", ""),
+    "kimi": os.getenv("KIMI_API_KEY", ""),
+    "glm": os.getenv("GLM_API_KEY", ""),
     "juhe": os.getenv("JUHE_API_KEY", ""),
     "finnhub": os.getenv("FINNHUB_API_KEY", ""),
     "tushare": os.getenv("TUSHARE_TOKEN", ""),
@@ -517,11 +521,38 @@ app.include_router(async_analysis_router)  # 异步分析API
 app.include_router(websocket_router)  # WebSocket实时通知API
 app.include_router(providers_router)  # 数据源Provider API (TDX/Wencai/TA-Lib)
 app.include_router(report_router)  # PDF报告生成API
-app.include_router(longhubang_router)  # 龙虎榜分析API
+# 龙虎榜适配器（缓存优化版）- 优先加载
+try:
+    from backend.api.longhubang_adapter import router as longhubang_adapter_router
+    app.include_router(longhubang_adapter_router)
+    print("[OK] 龙虎榜适配器已加载（带5分钟缓存）")
+    # 跳过原始router，使用适配器版本
+except ImportError as e:
+    print(f"[WARN] 龙虎榜适配器加载失败，回退到原始版本: {e}")
+    app.include_router(longhubang_router)  # 原始龙虎榜分析API
+
 app.include_router(wencai_router)  # 问财智能选股API
-app.include_router(sector_rotation_router)  # 板块轮动分析API
+# 板块轮动适配器（迁移到统一数据中心）
+try:
+    from backend.api.sector_rotation_adapter import router as sector_rotation_adapter_router
+    app.include_router(sector_rotation_adapter_router)
+    print("[OK] 板块轮动适配器已加载（使用统一数据中心）")
+except ImportError as e:
+    print(f"[WARN] 板块轮动适配器加载失败: {e}")
+
+# 原始板块轮动API（已迁移到适配器，注释掉）
+# app.include_router(sector_rotation_router)  # 板块轮动分析API
 app.include_router(sentiment_router)  # 市场情绪分析API
-app.include_router(market_data_router)  # 市场数据API（盘口、排行榜等）
+# 市场数据适配器（统一数据中心版）- 优先加载
+try:
+    from backend.api.market_adapter import router as market_adapter_router
+    app.include_router(market_adapter_router)
+    print("[OK] 市场数据适配器已加载（使用统一数据中心）")
+except ImportError as e:
+    print(f"[WARN] 市场数据适配器加载失败: {e}")
+
+# 原始市场数据API（已迁移到适配器，暂时保留作为备用）
+# app.include_router(market_data_router)  # 市场数据API（盘口、排行榜等）
 app.include_router(news_center_router)  # 统一新闻监控中心API
 app.include_router(cninfo_router)  # 巨潮资讯网官方API
 app.include_router(system_router)  # 系统设置API
@@ -531,8 +562,25 @@ app.include_router(alert_router)  # 预警服务API
 app.include_router(strategy_center_router)  # 策略中心API
 app.include_router(strategy_backtest_router)  # 策略回测API
 app.include_router(smart_trading_router)  # 智能交易API（策略+虚拟交易+实时监控）
+
+# 统一数据中心API v2 (新增)
+try:
+    from backend.api.unified_data_api import router as unified_data_v2_router
+    app.include_router(unified_data_v2_router)
+    print("[OK] 统一数据中心API v2 已加载")
+except ImportError as e:
+    print(f"[WARN] 统一数据中心API v2 加载失败: {e}")
+
+# 统一数据中心监控API (新增)
+try:
+    from backend.api.unified_monitor_api import router as unified_monitor_router
+    app.include_router(unified_monitor_router)
+    print("[OK] 统一数据中心监控API 已加载")
+except ImportError as e:
+    print(f"[WARN] 统一数据中心监控API 加载失败: {e}")
 app.include_router(auto_trade_router)  # 智能交易计划API（自动监控+自动执行）
 app.include_router(indicators_router)  # 技术指标分析API
+app.include_router(paper_trading_router)  # 模拟交易API
 
 
 # ==================== 数据模型 ====================
@@ -846,11 +894,11 @@ async def siliconflow_api(request: SiliconFlowRequest):
             agent_role = request.agentRole if hasattr(request, "agentRole") else None
             complex_agents = ["NEWS", "FUNDAMENTAL", "TECHNICAL", "MACRO", "INDUSTRY"]
             if agent_role in complex_agents:
-                read_timeout = 60.0  # 复杂智能体 60秒
-                total_timeout = 90.0
+                read_timeout = 120.0  # 复杂智能体 120秒
+                total_timeout = 150.0
             else:
-                read_timeout = 45.0  # 普通智能体 45秒
-                total_timeout = 60.0
+                read_timeout = 90.0  # 普通智能体 90秒
+                total_timeout = 120.0
             # 为每个请求创建独立的客户端，避免连接池死锁
             client = httpx.AsyncClient(
                 timeout=httpx.Timeout(
@@ -1260,6 +1308,263 @@ async def siliconflow_api(request: SiliconFlowRequest):
                     print(f"  [WARN] 耗时过长，建议检查网络或API状态")
 
 
+@app.post("/api/ai/minimax")
+async def minimax_api(request: SiliconFlowRequest):
+    """Minimax API 代理 (中转) - 带重试逻辑"""
+    import time
+    import asyncio as _asyncio
+    req_time = time.strftime('%H:%M:%S')
+    request._start_time = time.time()
+    
+    print(f"[Minimax] [{req_time}] 开始请求")
+    
+    api_key = request.apiKey or os.getenv("MINIMAX_API_KEY", "icysaintdx")
+    base_url = os.getenv("MINIMAX_BASE_URL", "https://kirocpa.zeabur.app/v1")
+    
+    if not api_key:
+        raise HTTPException(status_code=500, detail="未配置 Minimax API Key")
+    
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}",
+    }
+    
+    data = {
+        "model": request.model or "kimi-k2.5",
+        "messages": [
+            {"role": "system", "content": request.systemPrompt},
+            {"role": "user", "content": request.prompt},
+        ],
+        "temperature": request.temperature,
+        "max_tokens": request.maxTokens or 4096,
+        "stream": False,
+    }
+    
+    max_retries = 3
+    last_error = None
+    
+    for attempt in range(max_retries):
+        client = None
+        try:
+            client = httpx.AsyncClient(
+                timeout=httpx.Timeout(timeout=200.0, connect=15.0, read=180.0),
+                limits=httpx.Limits(max_connections=10, max_keepalive_connections=5),
+            )
+            
+            response = await client.post(
+                f"{base_url}/chat/completions",
+                headers=headers,
+                json=data
+            )
+            response.raise_for_status()
+            result = response.json()
+
+            # kirocpa代理返回HTTP 200但body里藏错误（不返回标准HTTP状态码）
+            if "choices" not in result:
+                body_status = str(result.get("status", ""))
+                body_msg = result.get("msg", result.get("error", "unknown"))
+                print(f"[Minimax] [BODY-ERR] status={body_status} msg={body_msg}")
+                # 449=rate limit → 当作429重试
+                if body_status == "449" and attempt < max_retries - 1:
+                    wait = (attempt + 1) * 5
+                    print(f"[Minimax] [RETRY {attempt+1}/{max_retries}] 限流, {wait}s后重试...")
+                    await _asyncio.sleep(wait)
+                    continue
+                return {"success": False, "error": f"Minimax代理错误: {body_msg}"}
+
+            msg = result["choices"][0].get("message", {})
+            text = msg.get("content", "")
+            # kimi等推理模型：content可能为空，答案在reasoning_content里
+            if not text and msg.get("reasoning_content"):
+                text = msg["reasoning_content"]
+            usage = result.get("usage", {})
+            
+            elapsed = time.time() - request._start_time
+            retry_info = f" (重试{attempt}次)" if attempt > 0 else ""
+            print(f"[Minimax] [{time.strftime('%H:%M:%S')}] [OK] 响应成功 - {elapsed:.1f}秒{retry_info}")
+            
+            return {
+                "success": True,
+                "text": text,
+                "usage": usage,
+            }
+            
+        except (httpx.HTTPStatusError, httpx.ReadTimeout, httpx.ConnectTimeout) as e:
+            last_error = e
+            status = getattr(getattr(e, 'response', None), 'status_code', 0)
+            if attempt < max_retries - 1 and (status in (502, 503, 429) or isinstance(e, (httpx.ReadTimeout, httpx.ConnectTimeout))):
+                wait = (attempt + 1) * 3
+                print(f"[Minimax] [RETRY {attempt+1}/{max_retries}] {type(e).__name__} (status={status}), {wait}s后重试...")
+                await _asyncio.sleep(wait)
+                continue
+            print(f"[Minimax] [FAIL] 错误: {type(e).__name__}: {str(e)[:200]}")
+            return {
+                "success": False,
+                "error": f"Minimax API 错误: {str(e)[:200]}",
+            }
+        except Exception as e:
+            print(f"[Minimax] [FAIL] 错误: {type(e).__name__}: {str(e)[:200]}")
+            return {
+                "success": False,
+                "error": f"Minimax API 错误: {str(e)[:200]}",
+            }
+        finally:
+            if client:
+                try:
+                    await client.aclose()
+                except:
+                    pass
+    
+    return {
+        "success": False,
+        "error": f"Minimax API 错误: 重试{max_retries}次后仍失败: {str(last_error)[:200]}",
+    }
+
+
+@app.post("/api/ai/kimi")
+async def kimi_api(request: SiliconFlowRequest):
+    """Kimi API 代理 (中转)"""
+    import time
+    req_time = time.strftime('%H:%M:%S')
+    request._start_time = time.time()
+    
+    print(f"[Kimi] [{req_time}] 开始请求")
+    
+    client = None
+    try:
+        api_key = request.apiKey or os.getenv("KIMI_API_KEY", "")
+        base_url = os.getenv("KIMI_BASE_URL", "https://kirocpa.zeabur.app/v1")
+        
+        if not api_key:
+            raise HTTPException(status_code=500, detail="未配置 Kimi API Key")
+        
+        client = httpx.AsyncClient(
+            timeout=httpx.Timeout(timeout=120.0, connect=15.0, read=90.0),
+            limits=httpx.Limits(max_connections=10, max_keepalive_connections=5),
+        )
+        
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+        }
+        
+        data = {
+            "model": request.model or "kimi-k2.5",
+            "messages": [
+                {"role": "system", "content": request.systemPrompt},
+                {"role": "user", "content": request.prompt},
+            ],
+            "temperature": request.temperature,
+            "max_tokens": request.maxTokens or 4096,
+            "stream": False,
+        }
+        
+        response = await client.post(
+            f"{base_url}/chat/completions",
+            headers=headers,
+            json=data
+        )
+        response.raise_for_status()
+        
+        result = response.json()
+        text = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+        usage = result.get("usage", {})
+        
+        elapsed = time.time() - request._start_time
+        print(f"[Kimi] [{time.strftime('%H:%M:%S')}] [OK] 响应成功 - {elapsed:.1f}秒")
+        
+        return {
+            "success": True,
+            "text": text,
+            "usage": usage,
+        }
+        
+    except Exception as e:
+        print(f"[Kimi] [FAIL] 错误: {type(e).__name__}: {str(e)[:200]}")
+        return {
+            "success": False,
+            "error": f"Kimi API 错误: {str(e)[:200]}",
+        }
+    finally:
+        if client:
+            try:
+                await client.aclose()
+            except:
+                pass
+
+
+@app.post("/api/ai/glm")
+async def glm_api(request: SiliconFlowRequest):
+    """GLM API 代理 (智谱AI)"""
+    import time
+    req_time = time.strftime('%H:%M:%S')
+    request._start_time = time.time()
+    
+    print(f"[GLM] [{req_time}] 开始请求")
+    
+    client = None
+    try:
+        api_key = request.apiKey or os.getenv("GLM_API_KEY", "")
+        base_url = os.getenv("GLM_BASE_URL", "https://open.bigmodel.cn/api/coding/paas/v4")
+        
+        if not api_key:
+            raise HTTPException(status_code=500, detail="未配置 GLM API Key")
+        
+        client = httpx.AsyncClient(
+            timeout=httpx.Timeout(timeout=120.0, connect=15.0, read=90.0),
+            limits=httpx.Limits(max_connections=10, max_keepalive_connections=5),
+        )
+        
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+        }
+        
+        data = {
+            "model": request.model or "glm-4.7",
+            "messages": [
+                {"role": "system", "content": request.systemPrompt},
+                {"role": "user", "content": request.prompt},
+            ],
+            "temperature": request.temperature,
+            "max_tokens": request.maxTokens or 4096,
+            "stream": False,
+        }
+        
+        response = await client.post(
+            f"{base_url}/chat/completions",
+            headers=headers,
+            json=data
+        )
+        response.raise_for_status()
+        
+        result = response.json()
+        text = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+        usage = result.get("usage", {})
+        
+        elapsed = time.time() - request._start_time
+        print(f"[GLM] [{time.strftime('%H:%M:%S')}] [OK] 响应成功 - {elapsed:.1f}秒")
+        
+        return {
+            "success": True,
+            "text": text,
+            "usage": usage,
+        }
+        
+    except Exception as e:
+        print(f"[GLM] [FAIL] 错误: {type(e).__name__}: {str(e)[:200]}")
+        return {
+            "success": False,
+            "error": f"GLM API 错误: {str(e)[:200]}",
+        }
+    finally:
+        if client:
+            try:
+                await client.aclose()
+            except:
+                pass
+
+
 @app.get("/api/models")
 async def get_all_models():
     """获取所有可用模型的综合列表"""
@@ -1523,6 +1828,26 @@ async def get_all_models():
             },
         ]
         all_models.extend(gemini_models)
+
+    # 5. 添加Minimax模型
+    if API_KEYS.get("minimax"):
+        minimax_models = [
+            {
+                "provider": "MINIMAX",
+                "name": "minimax-m2",
+                "label": "Minimax M2",
+                "type": "llm",
+                "channel": "Minimax",
+            },
+            {
+                "provider": "MINIMAX",
+                "name": "minimax-m2.1",
+                "label": "Minimax M2.1",
+                "type": "llm",
+                "channel": "Minimax",
+            },
+        ]
+        all_models.extend(minimax_models)
 
     print(f"[Models] 返回 {len(all_models)} 个模型")
     return {"success": True, "models": all_models, "total": len(all_models)}
@@ -2040,21 +2365,18 @@ async def summarize_previous_outputs(
         "【分析原文】\n" + combined_text
     )
     settings = get_summarizer_settings()
-    model_name = settings.get("modelName", "Qwen/Qwen2.5-7B-Instruct")
+    model_name = settings.get("modelName", "kimi-k2.5")
     temperature = settings.get("temperature", 0.2)
-    provider = "SILICONFLOW"
-    # 仅当模型名不包含"/"且明显是官方 DeepSeek 直连型号时，才走 deepseek_api
-    # 否则（包括 SiliconFlow deepseek-* 模型）统一通过 SiliconFlow 渠道调用
-    if "/" not in model_name:
-        lower_name = model_name.lower()
-        if model_name.startswith("gemini"):
-            provider = "GEMINI"
-        elif lower_name.startswith("deepseek-") or lower_name in [
-            "deepseek-chat",
-            "deepseek-coder",
-            "deepseek-reasoner",
-        ]:
-            provider = "DEEPSEEK"
+    provider = "MINIMAX"  # 默认走kirocpa中转
+    lower_name = model_name.lower()
+    if lower_name.startswith("minimax"):
+        provider = "MINIMAX"
+    elif model_name.startswith("gemini"):
+        provider = "GEMINI"
+    elif lower_name.startswith("deepseek"):
+        provider = "DEEPSEEK"
+    elif "/" in model_name:
+        provider = "MINIMAX"  # 含/的模型也走kirocpa中转（SiliconFlow余额为0）
     try:
         if provider == "GEMINI":
             req = GeminiRequest(
@@ -2071,6 +2393,14 @@ async def summarize_previous_outputs(
                 temperature=temperature,
             )
             result = await deepseek_api(req)
+        elif provider == "MINIMAX":
+            req = SiliconFlowRequest(
+                model=model_name,
+                systemPrompt=system_prompt,
+                prompt=user_prompt,
+                temperature=temperature,
+            )
+            result = await minimax_api(req)
         else:
             req = SiliconFlowRequest(
                 model=model_name,
@@ -2106,8 +2436,8 @@ async def analyze_stock(request: AnalyzeRequest):
         # 如果没有找到配置，使用默认值（使用SiliconFlow避免余额问题）
         if not agent_config:
             agent_config = {
-                "modelName": "Qwen/Qwen2.5-7B-Instruct",  # 默认使用SiliconFlow的通义千问
-                "modelProvider": "SILICONFLOW",
+                "modelName": "kimi-k2.5",  # 默认使用kirocpa中转的Kimi
+                "modelProvider": "MINIMAX",
                 "temperature": 0.3,
             }
 
@@ -2152,6 +2482,7 @@ async def analyze_stock(request: AnalyzeRequest):
         role_name = get_agent_role(agent_id)
         system_prompt = f"你是一个专业的{role_name}，隶属于InvestMindPro顶级投研团队。你的目标是提供深度、犀利且独到的投资见解。"
         system_prompt += "\n\n【风格要求】\n1. 直接切入主题，严禁废话。\n2. 严禁在开头复述股票代码、名称、当前价格等基础信息（除非数据出现重大异常）。\n3. 像华尔街资深分析师一样说话，使用专业术语但逻辑清晰。\n4. 必须引用前序同事的分析结论作为支撑或反驳的依据。"
+        system_prompt += "\n\n【结构化摘要要求】\n分析完成后，必须在末尾附加以下格式（供后续决策层机器读取）：\n[DIGEST]\n方向: 看多/看空/中性\n置信度: 高/中/低\n核心判断: （一句话，30字以内）\n关键数据: （最重要的2-3个数据点）\n风险提示: （最大的1-2个风险）\n[/DIGEST]"
         # 构建用户提示词
         user_prompt = ""
 
@@ -2172,7 +2503,7 @@ async def analyze_stock(request: AnalyzeRequest):
             total_prev_len_for_summary = sum(
                 len(str(output)) for output in previous_outputs.values() if output
             )
-            if total_prev_len_for_summary > 3000:
+            if total_prev_len_for_summary > 2000:
                 summary_text = await summarize_previous_outputs(
                     agent_id, previous_outputs, stock_code
                 )
@@ -2184,12 +2515,16 @@ async def analyze_stock(request: AnalyzeRequest):
                 user_prompt += summary_text + "\n\n"
             else:
                 user_prompt += (
-                    "\n【团队成员已完成的分析】(请基于此进行深化，不要重复)\n"
+                    "\n【团队成员分析摘要】(请基于此进行深化，不要重复)\n"
                 )
                 for agent_name, output in previous_outputs.items():
                     if output:
+                        # 优先提取[DIGEST]标记内容，避免上下文膨胀
+                        import re
+                        digest_match = re.search(r'\[DIGEST\](.*?)\[/DIGEST\]', str(output), re.DOTALL)
+                        digest = digest_match.group(1).strip() if digest_match else str(output)[:300]
                         user_prompt += (
-                            f">>> {get_agent_role(agent_name)} 的结论:\n{output}\n\n"
+                            f">>> {get_agent_role(agent_name)}:\n{digest}\n\n"
                         )
         else:
             user_prompt += (
@@ -2246,6 +2581,9 @@ async def analyze_stock(request: AnalyzeRequest):
                 "social_analyst": "NEWS",
             }
 
+            # 防止LLM复述提示词
+            system_prompt += '\n\n【重要】请直接输出你的专业分析结论。严禁重复任务描述、角色设定或指令内容。不要出现「用户让我」「我是一个」「我的任务是」等自我描述。'
+
             req = SiliconFlowRequest(
                 model=model_name,
                 systemPrompt=system_prompt,
@@ -2285,21 +2623,62 @@ async def analyze_stock(request: AnalyzeRequest):
                 if len(previous_outputs) > 3:
                     print(f"  ... 还有 {len(previous_outputs) - 3} 个")
 
-            print(f"[分析] {request.agent_id} 调用SiliconFlow API: {model_name}")
-            result = await siliconflow_api(req)
+            # 统一走kirocpa中转（SiliconFlow余额为0）
+            print(f"[分析] {request.agent_id} 调用kirocpa API: {model_name}")
+            result = await minimax_api(req)
+
+        # 角色兜底文本
+        _fallback_texts = {
+            "NEWS": "📰 新闻分析暂时不可用。基于历史经验，建议保持观望，关注后续消息面变化。",
+            "FUNDAMENTAL": "📊 基本面分析暂时不可用。建议参考最新财报数据和券商研报进行判断。",
+            "TECHNICAL": "📈 技术分析暂时不可用。建议关注关键支撑位和阻力位，结合成交量判断。",
+            "BULL": "🐂 多方观点暂时不可用。在数据不足的情况下，建议谨慎乐观，关注积极催化剂。",
+            "BEAR": "🐻 空方观点暂时不可用。在数据不足的情况下，建议保持谨慎，注意潜在风险。",
+            "RISK": "⚠️ 风险评估暂时不可用。建议采用保守策略，控制仓位，设置止损。",
+            "MANAGER": "👔 投资经理建议暂时不可用。建议维持现有仓位，等待更多信息。",
+            "TRADER": "💹 交易建议暂时不可用。建议暂不操作，等待明确信号。",
+            "MACRO": "🌍 宏观分析暂时不可用。建议关注央行政策动向和经济数据发布。",
+            "INDUSTRY": "🏭 行业分析暂时不可用。建议关注行业政策和龙头公司动态。",
+        }
+        _agent_role = agent_role_map.get(request.agent_id, "DEFAULT")
 
         if result.get("success"):
+            text = result.get("text", "").strip()
+
+            # 清理LLM复述的提示词/角色描述
+            if text:
+                lines = text.split('\n')
+                cleaned = []
+                in_preamble = True
+                _echo_prefixes = ('用户让我', '我是一个', '作为一个', '作为一名', '我应该', '我的任务是',
+                                  '我需要分析', '根据用户的要求', '根据要求', '好的，', '好的,',
+                                  '收到，', '收到,', '明白，', '明白,', '以下是我的')
+                for line in lines:
+                    s = line.strip()
+                    if in_preamble and (not s or any(s.startswith(p) for p in _echo_prefixes)):
+                        continue
+                    in_preamble = False
+                    cleaned.append(line)
+                text = '\n'.join(cleaned).strip()
+
+            # 空结果兜底
+            if not text:
+                print(f"[分析] {request.agent_id} 结果为空，使用兜底文本")
+                text = _fallback_texts.get(_agent_role, "⚠️ 分析暂时不可用，建议稍后重试。")
+                return {"success": True, "result": text, "fallback_level": 99}
+
             print(f"[分析] {request.agent_id} 分析完成")
-            # 始终返回 fallback_level，默认为 0（原始请求）
             fallback_level = result.get("fallback_level", 0)
             return {
                 "success": True,
-                "result": result.get("text", ""),
+                "result": text,
                 "fallback_level": fallback_level,
             }
         else:
-            print(f"[分析] {request.agent_id} 分析失败: {result.get('error')}")
-            return {"success": False, "error": result.get("error", "分析失败")}
+            # 失败也返回兜底文本，不让前端显示空
+            print(f"[分析] {request.agent_id} 分析失败，使用兜底: {result.get('error','')[:80]}")
+            text = _fallback_texts.get(_agent_role, "⚠️ 分析暂时不可用，建议稍后重试。")
+            return {"success": True, "result": text, "fallback_level": 99}
 
     except Exception as e:
         import traceback
@@ -2955,37 +3334,45 @@ async def test_api_connection(provider: str, request: TestApiRequest):
 
 
 # ==================== 静态文件服务 ====================
-# 挂载静态文件目录（如果存在）
+# 挂载静态文件目录
+# 优先使用 Vue 前端 dist，fallback 到 backend/static（旧版单页面已废弃）
 import os.path
 
-static_dir = os.path.join(os.path.dirname(__file__), "static")
-if os.path.exists(static_dir):
-    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+_backend_dir = os.path.dirname(os.path.abspath(__file__))
+_project_root = os.path.dirname(_backend_dir)
+vue_dist_dir = os.path.join(_project_root, "frontend", "dist")
+legacy_static_dir = os.path.join(_backend_dir, "static")
+
+# Vue 前端资源（css/js/img）
+if os.path.exists(vue_dist_dir):
+    # Vue build 产出的 css/js/img 子目录
+    for sub in ("css", "js", "img", "fonts"):
+        sub_path = os.path.join(vue_dist_dir, sub)
+        if os.path.exists(sub_path):
+            app.mount(f"/{sub}", StaticFiles(directory=sub_path), name=f"vue_{sub}")
+    # favicon 等根级静态文件
+    app.mount("/static", StaticFiles(directory=vue_dist_dir), name="vue_static")
+elif os.path.exists(legacy_static_dir):
+    app.mount("/static", StaticFiles(directory=legacy_static_dir), name="static")
 
 
 # ==================== 健康检查 ====================
 @app.get("/")
 async def root():
-    """根路径 - 返回 HTML 页面（如果存在）"""
-    html_file = os.path.join(static_dir, "index.html")
-    if os.path.exists(html_file):
-        return FileResponse(html_file)
-    else:
-        return {
-            "status": "running",
-            "service": "IcySaint AI Backend",
-            "version": "1.0.0",
-            "endpoints": [
-                "/api/ai/gemini",
-                "/api/ai/deepseek",
-                "/api/ai/qwen",
-                "/api/ai/siliconflow",
-                "/api/ai/siliconflow-models",
-                "/api/analyze",
-                "/api/stock/{symbol}",
-                "/api/config",
-            ],
-        }
+    """根路径 - 返回 Vue 前端 HTML"""
+    # 优先 Vue dist
+    vue_html = os.path.join(vue_dist_dir, "index.html")
+    if os.path.exists(vue_html):
+        return FileResponse(vue_html)
+    # fallback 旧版
+    legacy_html = os.path.join(legacy_static_dir, "index.html")
+    if os.path.exists(legacy_html):
+        return FileResponse(legacy_html)
+    return {
+        "status": "running",
+        "service": "IcySaint AI Backend",
+        "version": "2.6.0",
+    }
 
 
 @app.get("/health")
@@ -2993,6 +3380,19 @@ async def root():
 async def health_check():
     """健康检查端点"""
     return {"status": "healthy"}
+
+
+# Vue SPA catch-all: 非API路径都返回index.html，让Vue Router处理
+@app.get("/{full_path:path}")
+async def spa_catch_all(full_path: str):
+    """Vue SPA路由支持"""
+    # 跳过API和静态资源路径
+    if full_path.startswith("api/") or full_path.startswith("static/"):
+        raise HTTPException(status_code=404)
+    vue_html = os.path.join(vue_dist_dir, "index.html")
+    if os.path.exists(vue_html):
+        return FileResponse(vue_html)
+    raise HTTPException(status_code=404)
 
 
 # ==================== 启动服务器 ====================

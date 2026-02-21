@@ -9,35 +9,74 @@ from datetime import datetime, timedelta
 import threading
 import pandas as pd
 import akshare as ak
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
+
+_ak_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="akshare")
+
+def _ak_call_with_timeout(func, *args, timeout=5, **kwargs):
+    """带超时的akshare调用，防止周末/非交易时段挂起"""
+    try:
+        future = _ak_executor.submit(func, *args, **kwargs)
+        return future.result(timeout=timeout)
+    except FuturesTimeoutError:
+        logger.warning(f"[市场数据] akshare调用超时({timeout}s): {func.__name__}")
+        return None
+    except Exception as e:
+        logger.error(f"[市场数据] akshare调用失败: {func.__name__}: {e}")
+        return None
 
 from backend.utils.logging_config import get_logger
 
 logger = get_logger("api.market_data")
 router = APIRouter(prefix="/api/market", tags=["Market Data"])
 
+
+def _is_trading_time():
+    """判断当前是否为A股交易时段（周一至周五 9:15-15:30）"""
+    now = datetime.now()
+    if now.weekday() >= 5:  # 周六=5, 周日=6
+        return False
+    hour_min = now.hour * 100 + now.minute
+    return 915 <= hour_min <= 1530
+
+
 # ==================== 全市场行情缓存 ====================
 _market_data_cache = None
 _market_data_cache_time = None
 _market_data_cache_lock = threading.Lock()
-_MARKET_DATA_CACHE_DURATION = 30  # 缓存30秒
+_MARKET_DATA_CACHE_DURATION = 30  # 交易时段缓存30秒
+_MARKET_DATA_CACHE_DURATION_OFF = 3600  # 非交易时段缓存1小时
 
 
 def _get_market_data_cached():
     """获取全市场行情数据（优先TDX，降级到AKShare，带缓存）"""
     global _market_data_cache, _market_data_cache_time
 
+    trading = _is_trading_time()
+    cache_ttl = _MARKET_DATA_CACHE_DURATION if trading else _MARKET_DATA_CACHE_DURATION_OFF
+
     with _market_data_cache_lock:
         now = datetime.now()
         # 检查缓存是否有效
         if (_market_data_cache is not None and
             _market_data_cache_time is not None and
-            (now - _market_data_cache_time).total_seconds() < _MARKET_DATA_CACHE_DURATION):
-            logger.debug("[市场数据] 使用缓存数据")
+            (now - _market_data_cache_time).total_seconds() < cache_ttl):
+            logger.debug(f"[市场数据] 使用缓存数据 (trading={trading})")
             return _market_data_cache
 
-        # 缓存过期或不存在，重新获取
-        # 优先使用TDX（快得多，约3-5秒 vs AKShare的1分钟）
-        df = _get_market_data_from_tdx()
+        # 非交易时段 → 有旧缓存返回旧缓存，无缓存返回None，绝不发起网络请求
+        if not trading:
+            if _market_data_cache is not None:
+                logger.info("[市场数据] 非交易时段，返回旧缓存")
+                _market_data_cache_time = now
+                return _market_data_cache
+            else:
+                logger.info("[市场数据] 非交易时段，无缓存，跳过网络请求")
+                return None
+
+        # 交易时段，缓存过期或不存在，重新获取
+        # 优先使用TDX（带超时保护）
+        df = _ak_call_with_timeout(_get_market_data_from_tdx, timeout=5)
         if df is not None and not df.empty:
             _market_data_cache = df
             _market_data_cache_time = now
@@ -47,7 +86,7 @@ def _get_market_data_cached():
         # 降级到AKShare
         logger.info("[市场数据] 降级到AKShare获取全市场行情...")
         try:
-            df = ak.stock_zh_a_spot_em()
+            df = _ak_call_with_timeout(ak.stock_zh_a_spot_em, timeout=5)
             if df is not None and not df.empty:
                 _market_data_cache = df
                 _market_data_cache_time = now
@@ -244,6 +283,9 @@ async def get_bid_ask(code: str):
 
 
 # ==================== 热点板块 ====================
+_hot_sectors_cache = {}  # key: sector_type, value: (time, data)
+_HOT_SECTORS_CACHE_TTL = 60  # 交易时段60秒
+_HOT_SECTORS_CACHE_TTL_OFF = 3600  # 非交易时段1小时
 
 @router.get("/hot-sectors")
 async def get_hot_sectors(
@@ -252,21 +294,35 @@ async def get_hot_sectors(
 ):
     """
     获取热点板块（按涨跌幅排序）
-
-    Args:
-        sector_type: 板块类型 - industry(行业板块) 或 concept(概念板块)
-        limit: 返回数量
-
-    Returns:
-        热点板块列表
     """
     try:
+        trading = _is_trading_time()
+        cache_ttl = _HOT_SECTORS_CACHE_TTL if trading else _HOT_SECTORS_CACHE_TTL_OFF
+        now = datetime.now()
+
+        # 检查缓存
+        if sector_type in _hot_sectors_cache:
+            cache_time, cache_data = _hot_sectors_cache[sector_type]
+            if (now - cache_time).total_seconds() < cache_ttl:
+                logger.debug(f"[热点板块] 使用缓存 {sector_type} (trading={trading})")
+                return cache_data
+            # 非交易时段有旧缓存 → 直接返回
+            if not trading:
+                logger.info(f"[热点板块] 非交易时段，返回旧缓存 {sector_type}")
+                _hot_sectors_cache[sector_type] = (now, cache_data)
+                return cache_data
+
+        # 非交易时段且无缓存 → 直接返回空，不发起网络请求
+        if not trading:
+            logger.info(f"[热点板块] 非交易时段，无缓存，跳过网络请求 {sector_type}")
+            return {"sectors": [], "message": "非交易时段，暂无数据", "type": sector_type}
+
         logger.info(f"[热点板块] 获取 {sector_type} 板块, limit={limit}")
 
         if sector_type == "concept":
-            df = ak.stock_board_concept_name_em()
+            df = _ak_call_with_timeout(ak.stock_board_concept_name_em, timeout=5)
         else:
-            df = ak.stock_board_industry_name_em()
+            df = _ak_call_with_timeout(ak.stock_board_industry_name_em, timeout=5)
 
         if df is None or df.empty:
             return {"sectors": [], "message": "暂无数据"}
@@ -296,7 +352,9 @@ async def get_hot_sectors(
             })
 
         logger.info(f"[热点板块] 获取到 {len(sectors)} 个板块")
-        return {"sectors": sectors, "type": sector_type}
+        result = {"sectors": sectors, "type": sector_type}
+        _hot_sectors_cache[sector_type] = (datetime.now(), result)
+        return result
 
     except Exception as e:
         logger.error(f"[热点板块] 错误: {e}")

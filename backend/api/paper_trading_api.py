@@ -10,6 +10,8 @@ from datetime import datetime
 import uuid
 import logging
 
+from backend.dataflows.stock_api_tradingagents import get_stock_info
+
 logger = logging.getLogger(__name__)
 
 # 创建路由
@@ -299,10 +301,13 @@ async def place_order(request: PlaceOrderRequest):
                 existing_position["profit"] = existing_position["market_value"] - total_cost
                 existing_position["profit_rate"] = existing_position["profit"] / total_cost
             else:
-                # 新建持仓
+                # 新建持仓 - 查询股票名称
+                stock_info = get_stock_info(request.stock_code)
+                stock_name = stock_info.get('name', request.stock_code) if stock_info else request.stock_code
+                
                 new_position = {
                     "stock_code": request.stock_code,
-                    "stock_name": request.stock_code,  # 实际应该查询股票名称
+                    "stock_name": stock_name,  # 使用查询到的真实名称
                     "quantity": request.quantity,
                     "avg_cost": current_price,
                     "current_price": current_price,

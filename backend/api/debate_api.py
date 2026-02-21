@@ -73,9 +73,12 @@ def _resolve_provider(model_name: str, model_provider: Optional[str]) -> str:
 
     name = (model_name or "").lower()
 
-    # 带 / 的通常是平台模型，默认通过 SiliconFlow 统一访问
+    # minimax 模型通过 kirocpa 中转
+    if (model_name or "").lower().startswith("minimax"):
+        return "minimax"
+    # 带 / 的通常是平台模型，默认通过 kirocpa 中转
     if "/" in (model_name or ""):
-        return "siliconflow"
+        return "minimax"
 
     if name.startswith("gemini"):
         return "gemini"
@@ -85,8 +88,8 @@ def _resolve_provider(model_name: str, model_provider: Optional[str]) -> str:
         # 官方通义千问兼容接口
         return "qwen"
 
-    # 兜底交给 SiliconFlow 统一转发
-    return "siliconflow"
+    # 兜底交给 kirocpa 中转
+    return "minimax"
 
 
 def _create_llm_for_agent(agent_id: str, default_model: str = "Qwen/Qwen2.5-7B-Instruct", default_temp: float = 0.3):

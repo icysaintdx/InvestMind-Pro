@@ -10,10 +10,10 @@
     <div class="action-bar">
       <div class="date-selector">
         <label>选择日期：</label>
-        <input type="date" v-model="selectedDate" @change="fetchDailyData" />
+        <input type="date" v-model="selectedDate" @change="onDateChange" />
       </div>
       <div class="quick-actions">
-        <button class="btn btn-primary" @click="fetchDailyData" :disabled="loading">
+        <button class="btn btn-primary" @click="refreshCurrentTab" :disabled="loading">
           <span v-if="loading">加载中...</span>
           <span v-else>刷新数据</span>
         </button>
@@ -49,7 +49,7 @@
         v-for="tab in tabs"
         :key="tab.key"
         :class="['tab-btn', { active: activeTab === tab.key }]"
-        @click="activeTab = tab.key"
+        @click="switchTab(tab.key)"
       >
         {{ tab.label }}
       </button>
@@ -258,6 +258,7 @@ export default {
       loadingProgress: 0,
       selectedDate: this.getToday(),
       activeTab: 'daily',
+      loadedTabs: new Set(), // 跟踪已加载的标签页
       tabs: [
         { key: 'daily', label: '今日龙虎榜' },
         { key: 'institution', label: '机构统计' },
@@ -273,7 +274,8 @@ export default {
     }
   },
   mounted() {
-    this.fetchDailyData()
+    // 懒加载：只加载当前标签页
+    this.loadTabData(this.activeTab)
   },
   methods: {
     getToday() {
@@ -286,39 +288,43 @@ export default {
       this.loadingProgress = progress
     },
 
-    async fetchDailyData() {
+    // 切换标签页
+    switchTab(tabKey) {
+      this.activeTab = tabKey
+      // 如果该标签页未加载过数据，则加载
+      if (!this.loadedTabs.has(tabKey)) {
+        this.loadTabData(tabKey)
+      }
+    },
+
+    // 根据标签页加载对应数据
+    async loadTabData(tabKey) {
       this.loading = true
       this.loadingProgress = 0
       try {
-        // 步骤1: 获取龙虎榜数据
-        this.updateProgress('正在获取龙虎榜数据...', 10)
-        const date = this.selectedDate.replace(/-/g, '')
-        const response = await fetch(`${API_BASE_URL}/api/longhubang/daily?date=${date}`)
-        const result = await response.json()
-
-        if (result.success) {
-          this.dailyData = result.data || []
-          this.dataTime = result.timestamp || ''
-        }
-        this.updateProgress('龙虎榜数据加载完成', 25)
-
-        // 步骤2: 获取汇总数据
-        this.updateProgress('正在获取汇总统计...', 40)
+        // 无论哪个标签页，都先加载汇总统计（显示在顶部）
+        this.updateProgress('正在获取汇总统计...', 10)
         await this.fetchSummary()
-        this.updateProgress('汇总统计加载完成', 55)
-
-        // 步骤3: 获取机构数据
-        this.updateProgress('正在获取机构统计...', 70)
-        await this.fetchInstitutionData()
-        this.updateProgress('机构统计加载完成', 85)
-
-        // 步骤4: 获取游资数据
-        this.updateProgress('正在获取游资统计...', 90)
-        await this.fetchTradersData()
-        this.updateProgress('全部数据加载完成', 100)
-
+        
+        switch(tabKey) {
+          case 'daily':
+            this.updateProgress('正在获取龙虎榜数据...', 40)
+            await this.fetchDailyDataOnly()
+            break
+          case 'institution':
+            this.updateProgress('正在获取机构统计数据...', 40)
+            await this.fetchInstitutionData()
+            break
+          case 'traders':
+            this.updateProgress('正在获取游资统计数据...', 40)
+            await this.fetchTradersData()
+            break
+        }
+        // 标记该标签页已加载
+        this.loadedTabs.add(tabKey)
+        this.updateProgress('加载完成', 100)
       } catch (error) {
-        console.error('获取龙虎榜数据失败:', error)
+        console.error(`加载 ${tabKey} 数据失败:`, error)
         this.updateProgress('加载失败: ' + error.message, 0)
       } finally {
         setTimeout(() => {
@@ -328,17 +334,51 @@ export default {
       }
     },
 
+    // 只获取当日龙虎榜数据（不含其他标签页）
+    async fetchDailyDataOnly() {
+      const date = this.selectedDate.replace(/-/g, '')
+      const response = await fetch(`${API_BASE_URL}/api/longhubang/daily?date=${date}`)
+      const result = await response.json()
+
+      if (result.success) {
+        this.dailyData = result.data || []
+        this.dataTime = result.timestamp || ''
+      }
+    },
+
+    // 刷新当前标签页
+    refreshCurrentTab() {
+      this.loadedTabs.delete(this.activeTab)
+      this.loadTabData(this.activeTab)
+    },
+
+    // 日期变更处理
+    async onDateChange() {
+      // 清空已加载状态，重新加载当前标签页
+      this.loadedTabs.clear()
+      this.dailyData = []
+      this.institutionData = []
+      this.tradersData = []
+      this.summary = null
+      await this.loadTabData(this.activeTab)
+    },
+
+    async fetchDailyData() {
+      this.loadTabData('daily')
+    },
+
     async fetchRecentData() {
       this.loading = true
       this.loadingProgress = 0
       try {
-        this.updateProgress('正在获取近5日龙虎榜数据...', 20)
+        this.updateProgress('正在获取近5日龙虎榜数据...', 30)
         const response = await fetch(`${API_BASE_URL}/api/longhubang/recent?days=5`)
         const result = await response.json()
 
         if (result.success) {
           this.dailyData = result.data || []
           this.dataTime = '近5日汇总'
+          this.activeTab = 'daily'
           this.updateProgress('近5日数据加载完成', 100)
         }
       } catch (error) {
@@ -358,7 +398,7 @@ export default {
         const result = await response.json()
 
         if (result.success) {
-          this.summary = result.data || {}
+          this.summary = result.summary || {}
         }
       } catch (error) {
         console.error('获取汇总数据失败:', error)

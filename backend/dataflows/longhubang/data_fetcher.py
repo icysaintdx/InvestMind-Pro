@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 """
 龙虎榜数据采集模块
-支持多数据源获取龙虎榜数据
+支持多数据源获取龙虎榜数据 - 优化版（带缓存）
 """
 
 import logging
 import math
+import time
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
 
@@ -14,6 +15,35 @@ import pandas as pd
 import akshare as ak
 
 logger = logging.getLogger(__name__)
+
+
+class LonghubangCache:
+    """简单的内存缓存"""
+    def __init__(self, ttl_seconds: int = 300):  # 默认5分钟
+        self._cache = {}
+        self._ttl = ttl_seconds
+    
+    def get(self, key: str) -> Optional[Any]:
+        """获取缓存"""
+        if key in self._cache:
+            data, expire_time = self._cache[key]
+            if time.time() < expire_time:
+                return data
+            else:
+                del self._cache[key]
+        return None
+    
+    def set(self, key: str, value: Any):
+        """设置缓存"""
+        self._cache[key] = (value, time.time() + self._ttl)
+    
+    def clear(self):
+        """清空缓存"""
+        self._cache.clear()
+
+
+# 全局缓存实例
+_cache = LonghubangCache(ttl_seconds=300)
 
 
 def clean_for_json(value):
@@ -107,7 +137,7 @@ class LonghubangDataFetcher:
 
     def get_longhubang_data(self, date: str = None) -> Dict[str, Any]:
         """
-        获取指定日期的龙虎榜数据
+        获取指定日期的龙虎榜数据（带缓存）
 
         Args:
             date: 日期，格式为 YYYY-MM-DD 或 YYYYMMDD，默认为最近有数据的交易日
@@ -115,44 +145,80 @@ class LonghubangDataFetcher:
         Returns:
             dict: 龙虎榜数据
         """
-        original_date = date
+        original_date_input = date
         
+        # 如果没有指定日期，使用今天的日期作为缓存key
         if date is None:
-            # 自动查找最近有数据的交易日
-            date = self._find_latest_trading_day()
-            if date is None:
+            query_date = datetime.now().strftime('%Y%m%d')
+        else:
+            query_date = date.replace('-', '')
+        
+        # 检查缓存（用查询日期作为key）
+        cache_key = f"lhb_data_{query_date}"
+        cached = _cache.get(cache_key)
+        if cached:
+            logger.info(f"[龙虎榜] ✅ 返回缓存数据: {query_date}, 缓存大小: {len(_cache._cache)}")
+            return cached
+        else:
+            logger.info(f"[龙虎榜] ❌ 缓存未命中: {query_date}, 缓存大小: {len(_cache._cache)}")
+        
+        # 检查是否是周末，如果是则查找最近交易日
+        actual_date = query_date
+        try:
+            check_date = datetime.strptime(query_date, '%Y%m%d')
+            if check_date.weekday() >= 5:
+                logger.info(f"[龙虎榜] {query_date} 是周末，查找最近交易日")
+                actual_date = self._find_latest_trading_day()
+                if actual_date is None:
+                    return {'success': False, 'data': [], 'message': f'{query_date} 是周末，未找到最近有数据的交易日'}
+                # 检查实际日期的缓存
+                actual_cache_key = f"lhb_data_{actual_date}"
+                cached = _cache.get(actual_cache_key)
+                if cached:
+                    # 同时存入查询日期的缓存，下次直接用
+                    _cache.set(cache_key, cached)
+                    logger.info(f"[龙虎榜] ✅ 返回实际日期缓存: {actual_date}")
+                    return cached
+        except ValueError:
+            pass
+
+        # 如果没有指定日期，查找最近有数据的交易日
+        if original_date_input is None:
+            actual_date = self._find_latest_trading_day()
+            if actual_date is None:
                 logger.warning("[龙虎榜] 未找到最近有数据的交易日")
                 return {'success': False, 'data': [], 'message': '未找到最近有数据的交易日，可能是非交易时间'}
-        else:
-            date = date.replace('-', '')
-            # 检查是否是周末
-            try:
-                check_date = datetime.strptime(date, '%Y%m%d')
-                if check_date.weekday() >= 5:
-                    logger.info(f"[龙虎榜] {date} 是周末，自动查找最近交易日")
-                    date = self._find_latest_trading_day()
-                    if date is None:
-                        return {'success': False, 'data': [], 'message': f'{original_date} 是周末，未找到最近有数据的交易日'}
-            except ValueError:
-                pass
+            # 检查缓存
+            actual_cache_key = f"lhb_data_{actual_date}"
+            cached = _cache.get(actual_cache_key)
+            if cached:
+                # 同时存入查询日期的缓存
+                _cache.set(cache_key, cached)
+                logger.info(f"[龙虎榜] ✅ 返回实际日期缓存: {actual_date}")
+                return cached
 
-        logger.info(f"[龙虎榜] 获取 {date} 的龙虎榜数据...")
+        logger.info(f"[龙虎榜] 获取 {actual_date} 的龙虎榜数据...")
 
         try:
             # 使用akshare获取龙虎榜数据
-            # 获取龙虎榜详情
-            df = ak.stock_lhb_detail_em(start_date=date, end_date=date)
+            df = ak.stock_lhb_detail_em(start_date=actual_date, end_date=actual_date)
 
             if df is None or (isinstance(df, pd.DataFrame) and df.empty):
-                logger.warning(f"[龙虎榜] {date} 无数据，尝试查找最近交易日")
+                logger.warning(f"[龙虎榜] {actual_date} 无数据，尝试查找最近交易日")
                 # 如果指定日期无数据，尝试查找最近有数据的交易日
-                date = self._find_latest_trading_day()
-                if date is None:
+                actual_date = self._find_latest_trading_day()
+                if actual_date is None:
                     return {'success': False, 'data': [], 'message': f'无数据，可能是非交易日'}
+                # 检查缓存
+                actual_cache_key = f"lhb_data_{actual_date}"
+                cached = _cache.get(actual_cache_key)
+                if cached:
+                    _cache.set(cache_key, cached)
+                    return cached
                 # 重新获取
-                df = ak.stock_lhb_detail_em(start_date=date, end_date=date)
+                df = ak.stock_lhb_detail_em(start_date=actual_date, end_date=actual_date)
                 if df is None or (isinstance(df, pd.DataFrame) and df.empty):
-                    return {'success': False, 'data': [], 'message': f'{date} 无数据'}
+                    return {'success': False, 'data': [], 'message': f'{actual_date} 无数据'}
 
             # 转换为标准格式
             data_list = []
@@ -180,12 +246,19 @@ class LonghubangDataFetcher:
 
             logger.info(f"[龙虎榜] 成功获取 {len(data_list)} 条记录")
             cleaned_data = clean_data_list(data_list)
-            return {
+            result = {
                 'success': True,
                 'data': cleaned_data,
-                'date': date,
+                'date': actual_date,
                 'count': len(cleaned_data)
             }
+            
+            # 存入缓存（同时存入查询日期和实际日期，确保下次命中）
+            _cache.set(cache_key, result)
+            actual_cache_key = f"lhb_data_{actual_date}"
+            _cache.set(actual_cache_key, result)
+            logger.info(f"[龙虎榜] 💾 数据已存入缓存: query={query_date}, actual={actual_date}, 缓存大小: {len(_cache._cache)}")
+            return result
 
         except TypeError as e:
             logger.warning(f"[龙虎榜] {date} API返回None，尝试查找最近交易日: {e}")

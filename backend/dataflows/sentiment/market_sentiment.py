@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 
 from backend.utils.logging_config import get_logger
@@ -63,39 +64,40 @@ class MarketSentimentFetcher:
         }
 
         try:
-            # 1. 获取市场涨跌统计
-            logger.info("[市场情绪] 获取市场涨跌统计...")
-            market_stats = self._get_market_stats()
+            # 并行获取独立数据源 (市场统计、涨跌停、北向资金、融资融券)
+            logger.info("[市场情绪] 并行获取多数据源...")
+            
+            with ThreadPoolExecutor(max_workers=4) as executor:
+                # 提交并行任务
+                future_market = executor.submit(self._get_market_stats)
+                future_limit = executor.submit(self._get_limit_stats)
+                future_north = executor.submit(self._get_north_flow)
+                future_margin = executor.submit(self._get_margin_trading)
+                
+                # 获取结果
+                market_stats = future_market.result(timeout=30)
+                limit_stats = future_limit.result(timeout=30)
+                north_flow = future_north.result(timeout=30)
+                margin_data = future_margin.result(timeout=30)
+            
             if market_stats:
                 sentiment_data["market_stats"] = market_stats
-
-            # 2. 获取涨跌停统计
-            logger.info("[市场情绪] 获取涨跌停统计...")
-            limit_stats = self._get_limit_stats()
             if limit_stats:
                 sentiment_data["limit_stats"] = limit_stats
+            if north_flow:
+                sentiment_data["north_flow"] = north_flow
+            if margin_data:
+                sentiment_data["margin_trading"] = margin_data
 
-            # 3. 计算恐慌贪婪指数
+            # 计算恐慌贪婪指数 (依赖市场统计和涨跌停数据)
             logger.info("[市场情绪] 计算恐慌贪婪指数...")
             fear_greed = self._calculate_fear_greed_index(market_stats, limit_stats)
             if fear_greed:
                 sentiment_data["fear_greed_index"] = fear_greed
 
-            # 4. 获取北向资金
-            logger.info("[市场情绪] 获取北向资金...")
-            north_flow = self._get_north_flow()
-            if north_flow:
-                sentiment_data["north_flow"] = north_flow
-
-            # 5. 获取融资融券数据
-            logger.info("[市场情绪] 获取融资融券数据...")
-            margin_data = self._get_margin_trading()
-            if margin_data:
-                sentiment_data["margin_trading"] = margin_data
-
             sentiment_data["success"] = True
             self._set_cache(cache_key, sentiment_data)
-            logger.info("[市场情绪] 数据获取完成")
+            logger.info("[市场情绪] 数据获取完成 (并行优化)")
 
         except Exception as e:
             logger.error(f"[市场情绪] 获取数据失败: {e}")

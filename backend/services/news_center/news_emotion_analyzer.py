@@ -90,14 +90,14 @@ class NewsEmotionAnalyzer:
                 logger.info(f"Loaded .env from: {env_path}")
                 break
         
-        api_key = os.getenv("SILICONFLOW_API_KEY")
+        api_key = os.getenv("MINIMAX_API_KEY", "icysaintdx") or os.getenv("SILICONFLOW_API_KEY")
         if not api_key:
-            raise ValueError("SILICONFLOW_API_KEY not configured")
+            raise ValueError("MINIMAX_API_KEY or SILICONFLOW_API_KEY not configured")
         
         from openai import OpenAI
         client = OpenAI(
             api_key=api_key,
-            base_url="https://api.siliconflow.cn/v1"
+            base_url=os.getenv("MINIMAX_BASE_URL", "https://kirocpa.zeabur.app/v1")
         )
         return client
     
@@ -123,6 +123,11 @@ class NewsEmotionAnalyzer:
             
             # 调用LLM
             response = await self._call_llm(prompt)
+            
+            # 如果LLM返回None（如余额不足），使用备用分析
+            if response is None:
+                self.logger.warning(f"LLM返回空，使用备用分析: {title[:50]}...")
+                return self._fallback_analysis(title)
             
             # 解析结果
             analysis = self._parse_response(response, title)
@@ -173,8 +178,8 @@ class NewsEmotionAnalyzer:
         
         return prompt
     
-    async def _call_llm(self, prompt: str) -> str:
-        """调用LLM"""
+    async def _call_llm(self, prompt: str) -> Optional[str]:
+        """调用LLM - 带余额不足保护"""
         try:
             # 方式1: 通过llm_service
             if hasattr(self._llm_client, 'generate'):
@@ -187,7 +192,7 @@ class NewsEmotionAnalyzer:
             response = await loop.run_in_executor(
                 None,
                 lambda: self._llm_client.chat.completions.create(
-                    model="Qwen/Qwen2.5-32B-Instruct",  # 使用配置的38B模型
+                    model="minimax-m2.1",  # 使用kirocpa中转的MiniMax模型
                     messages=[
                         {"role": "system", "content": "你是一个专业的金融新闻分析师。"},
                         {"role": "user", "content": prompt}
@@ -197,11 +202,16 @@ class NewsEmotionAnalyzer:
                 )
             )
             
-            return response.choices[0].message.content
+            return response.choices[0].message.content if response and response.choices else None
             
         except Exception as e:
+            error_msg = str(e)
+            # 余额不足时不抛异常，返回None让上层用fallback
+            if "balance" in error_msg.lower() or "insufficient" in error_msg.lower() or "30001" in error_msg:
+                self.logger.warning(f"LLM余额不足，使用备用分析: {error_msg[:100]}")
+                return None
             self.logger.error(f"LLM call failed: {e}")
-            raise
+            return None
     
     def _parse_response(self, response: str, title: str) -> SentimentAnalysis:
         """解析LLM响应"""
@@ -348,8 +358,8 @@ if __name__ == "__main__":
     )
     
     # 检查API key
-    if not os.getenv("SILICONFLOW_API_KEY"):
-        print("⚠️  SILICONFLOW_API_KEY not set, using fallback analysis")
+    if not os.getenv("MINIMAX_API_KEY", "icysaintdx") and not os.getenv("SILICONFLOW_API_KEY"):
+        print("⚠️  MINIMAX_API_KEY/SILICONFLOW_API_KEY not set, using fallback analysis")
     
     analyzer = NewsEmotionAnalyzer()
     

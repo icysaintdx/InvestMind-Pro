@@ -16,6 +16,15 @@
         <div class="stat-row down"><span>下跌</span><span>{{ marketStats.down_count }} ({{ marketStats.down_ratio }}%)</span></div>
         <div class="stat-row"><span>平盘</span><span>{{ marketStats.flat_count }}</span></div>
       </div>
+      <div class="stat-card empty" v-else-if="!loading">
+        <h3>市场涨跌</h3>
+        <div class="empty-content">
+          <span class="empty-icon">📊</span>
+          <p>暂无数据</p>
+          <button class="btn-small" @click="fetchData">点击加载</button>
+        </div>
+      </div>
+      
       <div class="stat-card" v-if="limitStats.limit_up_count !== undefined">
         <h3>涨跌停统计</h3>
         <div class="stat-row limit-up"><span>涨停</span><span>{{ limitStats.limit_up_count }}</span></div>
@@ -23,6 +32,15 @@
         <div class="stat-row"><span>涨停占比</span><span>{{ limitStats.limit_ratio }}%</span></div>
         <div class="interpretation">{{ limitStats.interpretation }}</div>
       </div>
+      <div class="stat-card empty" v-else-if="!loading">
+        <h3>涨跌停统计</h3>
+        <div class="empty-content">
+          <span class="empty-icon">📈</span>
+          <p>暂无数据</p>
+          <button class="btn-small" @click="fetchData">点击加载</button>
+        </div>
+      </div>
+      
       <div class="stat-card" v-if="northFlow.north_net_inflow !== undefined">
         <h3>北向资金</h3>
         <div class="stat-row" :class="northFlow.north_net_inflow > 0 ? 'up' : 'down'"><span>净流入</span><span>{{ formatMoney(northFlow.north_net_inflow) }}</span></div>
@@ -30,11 +48,28 @@
         <div class="stat-row"><span>深股通</span><span>{{ formatMoney(northFlow.sgt_net_inflow) }}</span></div>
         <div class="interpretation">{{ northFlow.interpretation }}</div>
       </div>
+      <div class="stat-card empty" v-else-if="!loading">
+        <h3>北向资金</h3>
+        <div class="empty-content">
+          <span class="empty-icon">🌊</span>
+          <p>暂无数据</p>
+          <button class="btn-small" @click="fetchData">点击加载</button>
+        </div>
+      </div>
+      
       <div class="stat-card" v-if="marginTrading.margin_balance">
         <h3>融资融券</h3>
         <div class="stat-row"><span>融资余额</span><span>{{ formatMoney(marginTrading.margin_balance) }}</span></div>
         <div class="stat-row"><span>融券余额</span><span>{{ formatMoney(marginTrading.short_balance) }}</span></div>
         <div class="interpretation">{{ marginTrading.interpretation }}</div>
+      </div>
+      <div class="stat-card empty" v-else-if="!loading">
+        <h3>融资融券</h3>
+        <div class="empty-content">
+          <span class="empty-icon">💰</span>
+          <p>暂无数据</p>
+          <button class="btn-small" @click="fetchData">点击加载</button>
+        </div>
       </div>
     </div>
     <div class="limit-stocks" v-if="limitStats.limit_up_stocks?.length">
@@ -180,6 +215,14 @@ export default {
 .arbr-interp{font-size:13px;color:#888;margin:4px 0}
 .btn-refresh{padding:12px 24px;border:1px solid #667eea;background:transparent;color:#667eea;border-radius:6px;cursor:pointer}
 .btn-refresh:hover{background:#667eea;color:#fff}.btn-refresh:disabled{opacity:.5}
+
+/* 空状态样式 */
+.stat-card.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:200px}
+.empty-content{display:flex;flex-direction:column;align-items:center;justify-content:center;color:#888}
+.empty-icon{font-size:32px;margin-bottom:12px;opacity:0.5}
+.empty-content p{margin:0 0 12px 0;font-size:14px}
+.btn-small{padding:8px 16px;font-size:12px;border:1px solid #667eea;background:transparent;color:#667eea;border-radius:4px;cursor:pointer;transition:all 0.2s}
+.btn-small:hover{background:#667eea;color:#fff}
 .loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1001}
 .loading-spinner{width:40px;height:40px;border:3px solid #333;border-top-color:#667eea;border-radius:50%;animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}

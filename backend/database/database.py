@@ -17,8 +17,10 @@ def get_default_db_path():
     # Docker 环境使用 /app/data 目录
     if os.path.exists('/app/data'):
         return "sqlite:////app/data/InvestMindPro.db"
-    # 本地开发使用当前目录
-    return "sqlite:///./InvestMindPro.db"
+    # 本地开发：使用项目根目录（backend的父目录），不依赖CWD
+    _project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    _db_path = os.path.join(_project_root, "InvestMindPro.db")
+    return f"sqlite:///{_db_path}"
 
 DATABASE_URL = os.getenv("DATABASE_URL", get_default_db_path())
 

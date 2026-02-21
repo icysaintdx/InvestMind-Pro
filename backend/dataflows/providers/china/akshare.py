@@ -93,6 +93,9 @@ class AKShareProvider(BaseStockDataProvider):
         self._stock_list_cache = None  # 缓存股票列表，避免重复获取
         self._cache_time = None  # 缓存时间
         self._failed_interfaces = {}  # 记录失败的接口和时间，用于临时禁用
+        # 添加接口结果缓存（带TTL）
+        self._interface_cache = {}  # {interface_name: {'data': result, 'timestamp': time}}
+        self._cache_ttl = 300  # 5分钟缓存
         self._initialize_akshare()
 
     def _get_timeout_for_interface(self, interface_name: str) -> int:
@@ -103,6 +106,24 @@ class AKShareProvider(BaseStockDataProvider):
             return TIMEOUT_CONFIG['slow']
         else:
             return TIMEOUT_CONFIG['normal']
+
+    def _get_cached_result(self, interface_name: str, cache_key: str = "") -> Optional[Any]:
+        """获取缓存的接口结果"""
+        key = f"{interface_name}:{cache_key}"
+        if key in self._interface_cache:
+            cached = self._interface_cache[key]
+            if time.time() - cached['timestamp'] < self._cache_ttl:
+                logger.debug(f"[AKShare缓存命中] {interface_name}")
+                return cached['data']
+        return None
+
+    def _set_cached_result(self, interface_name: str, data: Any, cache_key: str = ""):
+        """设置接口结果缓存"""
+        key = f"{interface_name}:{cache_key}"
+        self._interface_cache[key] = {
+            'data': data,
+            'timestamp': time.time()
+        }
 
     def _initialize_akshare(self):
         """初始化AKShare连接"""

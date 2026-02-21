@@ -248,6 +248,19 @@ async def execute_trade(
 
 # ==================== API端点 ====================
 
+@router.get("/status")
+async def get_auto_trading_status():
+    """获取自动交易服务状态"""
+    load_tasks()
+    running_tasks = [t for t in active_tasks.values() if t.get("status") == "running"]
+    return {
+        "success": True,
+        "service_status": "running" if running_tasks else "idle",
+        "active_tasks_count": len(running_tasks),
+        "total_tasks": len(active_tasks)
+    }
+
+
 @router.post("/start")
 async def start_auto_trading(request: StartTaskRequest, background_tasks: BackgroundTasks):
     """

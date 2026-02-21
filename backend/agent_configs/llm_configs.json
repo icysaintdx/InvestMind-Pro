@@ -3,10 +3,45 @@
   "updated_at": "2025-12-15T22:01:00+08:00",
   "description": "LLM配置管理 - 统一管理所有LLM调用的模型和参数",
   
-  "default_provider": "ollama",
-  "default_model": "qwen2.5:latest",
-  
+  "default_provider": "minimax",
+  "default_model": "kimi-k2.5",
+
   "providers": {
+    "minimax": {
+      "name": "Minimax (中转)",
+      "base_url": "https://kirocpa.zeabur.app/v1",
+      "available_models": [
+        "kimi-k2.5",
+        "kimi-k2.5"
+      ],
+      "default_model": "kimi-k2.5",
+      "requires_api_key": true,
+      "api_key_env": "MINIMAX_API_KEY"
+    },
+    "kimi": {
+      "name": "Kimi (中转)",
+      "base_url": "https://kirocpa.zeabur.app/v1",
+      "available_models": [
+        "kimi-k2.5",
+        "kimi-for-coding",
+        "kimi-k2-thinking",
+        "kimi-k2"
+      ],
+      "default_model": "kimi-k2.5",
+      "requires_api_key": true,
+      "api_key_env": "KIMI_API_KEY"
+    },
+    "glm": {
+      "name": "GLM (智谱AI)",
+      "base_url": "https://open.bigmodel.cn/api/coding/paas/v4",
+      "available_models": [
+        "glm-4.6",
+        "glm-4.7"
+      ],
+      "default_model": "glm-4.7",
+      "requires_api_key": true,
+      "api_key_env": "GLM_API_KEY"
+    },
     "ollama": {
       "name": "Ollama本地模型",
       "base_url": "http://localhost:11434",
@@ -61,8 +96,8 @@
     "strategy_selection": {
       "name": "策略选择",
       "description": "LLM驱动的策略选择和排序",
-      "provider": "ollama",
-      "model": "qwen2.5:latest",
+      "provider": "minimax",
+      "model": "kimi-k2.5",
       "temperature": 0.3,
       "max_tokens": 1500,
       "timeout": 30,
@@ -73,8 +108,8 @@
     "text_summarization": {
       "name": "文本摘要",
       "description": "智能体输出摘要和压缩",
-      "provider": "ollama",
-      "model": "qwen2.5:latest",
+      "provider": "minimax",
+      "model": "kimi-k2.5",
       "temperature": 0.5,
       "max_tokens": 1000,
       "timeout": 20,
@@ -85,8 +120,8 @@
     "market_analysis": {
       "name": "市场分析",
       "description": "市场趋势和情绪分析",
-      "provider": "ollama",
-      "model": "qwen2.5:latest",
+      "provider": "minimax",
+      "model": "kimi-k2.5",
       "temperature": 0.4,
       "max_tokens": 2000,
       "timeout": 30,
@@ -97,8 +132,8 @@
     "risk_assessment": {
       "name": "风险评估",
       "description": "投资风险评估和建议",
-      "provider": "ollama",
-      "model": "qwen2.5:latest",
+      "provider": "minimax",
+      "model": "kimi-k2.5",
       "temperature": 0.2,
       "max_tokens": 1500,
       "timeout": 25,
@@ -109,8 +144,8 @@
     "news_sentiment": {
       "name": "新闻情绪分析",
       "description": "新闻文本情绪分析",
-      "provider": "ollama",
-      "model": "qwen2.5:latest",
+      "provider": "minimax",
+      "model": "kimi-k2.5",
       "temperature": 0.3,
       "max_tokens": 1000,
       "timeout": 20,
@@ -122,8 +157,8 @@
   
   "fallback_config": {
     "enabled": true,
-    "fallback_provider": "ollama",
-    "fallback_model": "qwen2.5:7b",
+    "fallback_provider": "minimax",
+    "fallback_model": "kimi-k2.5",
     "max_fallback_attempts": 3
   },
   

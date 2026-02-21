@@ -19,6 +19,9 @@ class LLMProvider(Enum):
     DEEPSEEK = "deepseek"
     QWEN = "qwen"
     OLLAMA = "ollama"  # 本地模型
+    MINIMAX = "minimax"  # Minimax模型
+    KIMI = "kimi"  # Kimi模型
+    GLM = "glm"  # GLM模型
 
 
 class LLMClient:
@@ -58,6 +61,12 @@ class LLMClient:
             self._init_qwen()
         elif self.provider == "ollama":
             self._init_ollama()
+        elif self.provider == "minimax":
+            self._init_minimax()
+        elif self.provider == "kimi":
+            self._init_kimi()
+        elif self.provider == "glm":
+            self._init_glm()
         else:
             raise ValueError(f"不支持的LLM提供商: {self.provider}")
     
@@ -109,6 +118,46 @@ class LLMClient:
             logger.info(f"Ollama客户端初始化成功，模型: {self.model}")
         except ImportError:
             logger.warning("httpx库未安装，请运行: pip install httpx")
+            self.client = None
+    
+    def _init_minimax(self):
+        """初始化Minimax客户端（中转）"""
+        try:
+            from openai import AsyncOpenAI
+            # Minimax中转使用OpenAI兼容接口
+            self.client = AsyncOpenAI(
+                api_key=self.api_key or os.getenv("MINIMAX_API_KEY", "icysaintdx"),
+                base_url=self.base_url or os.getenv("MINIMAX_BASE_URL", "https://kirocpa.zeabur.app/v1")
+            )
+            logger.info(f"Minimax客户端初始化成功，模型: {self.model}")
+        except ImportError:
+            logger.warning("OpenAI库未安装，请运行: pip install openai")
+            self.client = None
+    
+    def _init_kimi(self):
+        """初始化Kimi客户端（中转）"""
+        try:
+            from openai import AsyncOpenAI
+            self.client = AsyncOpenAI(
+                api_key=self.api_key or os.getenv("KIMI_API_KEY", ""),
+                base_url=self.base_url or os.getenv("KIMI_BASE_URL", "https://kirocpa.zeabur.app/v1")
+            )
+            logger.info(f"Kimi客户端初始化成功，模型: {self.model}")
+        except ImportError:
+            logger.warning("OpenAI库未安装，请运行: pip install openai")
+            self.client = None
+    
+    def _init_glm(self):
+        """初始化GLM客户端（智谱AI）"""
+        try:
+            from openai import AsyncOpenAI
+            self.client = AsyncOpenAI(
+                api_key=self.api_key or os.getenv("GLM_API_KEY", ""),
+                base_url=self.base_url or os.getenv("GLM_BASE_URL", "https://open.bigmodel.cn/api/coding/paas/v4")
+            )
+            logger.info(f"GLM客户端初始化成功，模型: {self.model}")
+        except ImportError:
+            logger.warning("OpenAI库未安装，请运行: pip install openai")
             self.client = None
     
     async def generate(

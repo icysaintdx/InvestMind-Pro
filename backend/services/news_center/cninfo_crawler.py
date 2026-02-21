@@ -54,12 +54,6 @@ class CninfoCrawler:
     def _init_analyzers(self):
         """初始化分析器"""
         try:
-            import sys
-            from pathlib import Path
-            # 添加项目根目录到路径
-            project_root = Path(__file__).parent.parent.parent.parent
-            sys.path.insert(0, str(project_root))
-            
             from backend.services.news_center.news_priority_classifier import NewsPriorityClassifier
             self._priority_classifier = NewsPriorityClassifier()
             self.logger.info("Priority classifier initialized")
@@ -67,11 +61,6 @@ class CninfoCrawler:
             self.logger.warning(f"Failed to init priority classifier: {e}")
         
         try:
-            import sys
-            from pathlib import Path
-            project_root = Path(__file__).parent.parent.parent.parent
-            sys.path.insert(0, str(project_root))
-            
             from backend.services.news_center.news_emotion_analyzer import get_emotion_analyzer
             self._emotion_analyzer = get_emotion_analyzer()
             self.logger.info("Emotion analyzer initialized")

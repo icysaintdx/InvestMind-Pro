@@ -130,6 +130,20 @@ async def run_backtest(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/status")
+async def get_backtest_service_status():
+    """获取回测服务整体状态"""
+    running = [t for t in backtest_tasks.values() if t.status == "running"]
+    pending = [t for t in backtest_tasks.values() if t.status == "pending"]
+    return {
+        "success": True,
+        "service": "running",
+        "active_tasks": len(running),
+        "pending_tasks": len(pending),
+        "total_tasks": len(backtest_tasks)
+    }
+
+
 @router.get("/status/{task_id}", response_model=BacktestStatusResponse)
 async def get_backtest_status(task_id: str):
     """获取回测任务状态"""

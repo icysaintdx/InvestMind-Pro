@@ -464,6 +464,72 @@ class NewsStorage:
             logger.error(f"Failed to get latest news: {e}")
             return []
     
+    def get_market_news(self, limit: int = 5000, hours: int = 24) -> List[Dict[str, Any]]:
+        """
+        获取市场新闻（返回字典列表，用于新闻中心API）
+        
+        Args:
+            limit: 返回数量限制
+            hours: 最近多少小时
+            
+        Returns:
+            新闻字典列表
+        """
+        try:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            
+            start_time = (datetime.now() - timedelta(hours=hours)).isoformat()
+            
+            cursor.execute("""
+                SELECT * FROM news_articles 
+                WHERE publish_time >= ?
+                ORDER BY publish_time DESC
+                LIMIT ?
+            """, (start_time, limit))
+            
+            rows = cursor.fetchall()
+            conn.close()
+            
+            results = []
+            for row in rows:
+                try:
+                    keywords = json.loads(row['keywords']) if row['keywords'] else []
+                except (json.JSONDecodeError, TypeError):
+                    keywords = []
+                
+                stock_code = ''
+                try:
+                    related = json.loads(row['related_stocks']) if row['related_stocks'] else []
+                    if related and isinstance(related, list):
+                        stock_code = related[0] if isinstance(related[0], str) else str(related[0])
+                except (json.JSONDecodeError, TypeError):
+                    stock_code = ''
+                
+                results.append({
+                    'news_id': row['id'],
+                    'id': row['id'],
+                    'title': row['title'] or '',
+                    'summary': (row['content'] or '')[:200],
+                    'content': row['content'] or '',
+                    'pub_time': row['publish_time'] or '',
+                    'source': row['source'] or '',
+                    'sentiment': row['sentiment'] or 'neutral',
+                    'sentiment_score': row['sentiment_score'] or 0.0,
+                    'source_url': row['url'] or '',
+                    'keywords': keywords,
+                    'stock_code': stock_code,
+                    'stock_name': '',
+                    'category': row['category'] or '',
+                    'source_type': 'market'
+                })
+            
+            return results
+            
+        except Exception as e:
+            logger.error(f"Failed to get market news: {e}")
+            return []
+    
     def get_stats_by_date(self, date: str) -> Dict[str, Any]:
         """
         获取指定日期的新闻统计
@@ -513,7 +579,7 @@ class NewsStorage:
     
     def delete_old_news(self, days: int = 90) -> int:
         """
-        删除过期新闻
+        删除过期新闻 (别名: cleanup_old_news)
         
         Args:
             days: 保留最近多少天的新闻
@@ -543,6 +609,131 @@ class NewsStorage:
         except Exception as e:
             logger.error(f"Failed to delete old news: {e}")
             return 0
+    
+    # 别名方法，兼容API调用
+    cleanup_old_news = delete_old_news
+    
+    def search_news(self, keyword: str = "", limit: int = 5000, hours: int = 72) -> List[Dict[str, Any]]:
+        """
+        搜索新闻（关键词匹配标题和内容）
+        
+        Args:
+            keyword: 搜索关键词
+            limit: 返回数量限制
+            hours: 搜索最近N小时的新闻
+            
+        Returns:
+            匹配的新闻列表
+        """
+        try:
+            with self._lock:
+                conn = self._get_connection()
+                cursor = conn.cursor()
+                
+                # 计算时间范围
+                cutoff_time = (datetime.now() - timedelta(hours=hours)).strftime('%Y-%m-%d %H:%M:%S')
+                
+                # 关键词搜索（标题或内容匹配）
+                cursor.execute("""
+                    SELECT * FROM news_articles 
+                    WHERE publish_time >= ? 
+                    AND (title LIKE ? OR content LIKE ?)
+                    ORDER BY publish_time DESC
+                    LIMIT ?
+                """, (cutoff_time, f'%{keyword}%', f'%{keyword}%', limit))
+                
+                rows = cursor.fetchall()
+                conn.close()
+                
+                results = []
+                for row in rows:
+                    results.append({
+                        'id': row['id'],
+                        'title': row['title'],
+                        'content': row['content'],
+                        'source': row['source'],
+                        'source_key': row.get('source_key', ''),
+                        'publish_time': row['publish_time'],
+                        'priority': row.get('priority', 'P2'),
+                        'category': row.get('category', 'general'),
+                        'sentiment': row.get('sentiment', 'neutral'),
+                        'sentiment_score': row.get('sentiment_score', 0.0),
+                        'expected_return': row.get('expected_return', 0.0),
+                        'url': row.get('url', ''),
+                        'stock_codes': row.get('stock_codes', ''),
+                        'stock_names': row.get('stock_names', '')
+                    })
+                
+                logger.info(f"[NewsStorage] 搜索关键词'{keyword}'，找到 {len(results)} 条新闻")
+                return results
+                
+        except Exception as e:
+            logger.error(f"Failed to search news: {e}")
+            return []
+    
+    def get_statistics(self, hours: int = 24) -> Dict[str, Any]:
+        """
+        获取新闻统计数据
+        
+        Args:
+            hours: 统计最近N小时的数据
+            
+        Returns:
+            统计数据字典
+        """
+        try:
+            with self._lock:
+                conn = self._get_connection()
+                cursor = conn.cursor()
+                
+                # 计算时间范围
+                cutoff_time = (datetime.now() - timedelta(hours=hours)).strftime('%Y-%m-%d %H:%M:%S')
+                
+                # 总数量
+                cursor.execute(
+                    "SELECT COUNT(*) as total FROM news_articles WHERE publish_time >= ?",
+                    (cutoff_time,)
+                )
+                total = cursor.fetchone()['total'] or 0
+                
+                # 按情绪分类统计
+                cursor.execute("""
+                    SELECT sentiment, COUNT(*) as count 
+                    FROM news_articles 
+                    WHERE publish_time >= ? 
+                    GROUP BY sentiment
+                """, (cutoff_time,))
+                sentiment_counts = {row['sentiment']: row['count'] for row in cursor.fetchall()}
+                
+                # 按来源统计
+                cursor.execute("""
+                    SELECT source, COUNT(*) as count 
+                    FROM news_articles 
+                    WHERE publish_time >= ? 
+                    GROUP BY source
+                """, (cutoff_time,))
+                source_counts = {row['source']: row['count'] for row in cursor.fetchall()}
+                
+                conn.close()
+                
+                result = {
+                    "total": total,
+                    "hours": hours,
+                    "by_sentiment": {
+                        "positive": sentiment_counts.get("positive", 0),
+                        "negative": sentiment_counts.get("negative", 0),
+                        "neutral": sentiment_counts.get("neutral", 0)
+                    },
+                    "by_source": source_counts,
+                    "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                }
+                
+                logger.info(f"[NewsStorage] 统计数据: {total}条新闻({hours}小时)")
+                return result
+                
+        except Exception as e:
+            logger.error(f"Failed to get statistics: {e}")
+            return {"total": 0, "hours": hours, "by_sentiment": {}, "by_source": {}}
 
 
 # 全局实例

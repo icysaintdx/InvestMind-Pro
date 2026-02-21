@@ -192,6 +192,8 @@ class NewsMonitorCenter:
         config = self._sources.get(source_id)
         if not config:
             return
+        # 启动时延迟10秒，避免阻塞服务启动
+        await asyncio.sleep(10)
         while self._running:
             try:
                 await self._fetch_source(source_id)
@@ -1174,8 +1176,8 @@ class NewsMonitorCenter:
                 content=news_data.get('content', ''),
                 source=news_data.get('source', ''),
                 source_key=news_data.get('source_key', ''),
-                publish_time=news_data.get('publish_time', ''),
-                crawl_time=news_data.get('crawl_time', ''),
+                publish_time=news_data.get('pub_time', news_data.get('publish_time', '')),
+                crawl_time=news_data.get('crawl_time', '') or datetime.now().isoformat(),
                 priority=news_data.get('priority', 'P2'),
                 category=news_data.get('category', 'general'),
                 sub_category=news_data.get('sub_category', ''),
@@ -1459,85 +1461,428 @@ class NewsMonitorCenter:
 
     async def fetch_market_news(self) -> List[Dict]:
         """
-        获取市场新闻（用于新闻中心/实时新闻流）
-        只调用市场级别的新闻接口，不调用个股新闻接口
-
-        包含接口：
-        1. stock_info_global_em - 东方财富全球资讯
-        2. stock_info_global_cls - 财联社全球资讯
-        3. stock_info_global_futu - 富途牛牛
-        4. stock_info_global_ths - 同花顺
-        5. stock_info_global_sina - 新浪财经
-        6. stock_js_weibo_report - 微博热议
-        7. stock_info_cjzc_em - 财经早餐
-        8. news_cctv - 新闻联播
-        9. news_economic_baidu - 百度财经
-        10. 巨潮市场公告（不带个股参数）
+        获取市场新闻（并行优化版）
+        
+        优先从内存缓存返回（后台循环已填充），缓存为空时并行抓取
         """
         try:
+            # 优先从内存缓存返回（后台fetch_loop已持续填充）
+            cached_news = self._cache.get_latest_news(5000)
+            if cached_news:
+                news_list = [n.to_dict() for n in cached_news]
+                logger.info(f"[新闻中心] 从缓存返回 {len(news_list)} 条新闻")
+                return news_list
+
+            # 缓存为空，并行抓取
             import akshare as ak
-
-            loop = asyncio.get_event_loop()
-            news_list = []
             config = self._config_manager.config
-
+            
+            logger.info("[新闻中心] 缓存为空，开始并行获取市场新闻...")
+            start_time = time.time()
+            
+            # 定义所有数据源获取任务
+            tasks = []
+            
             # 1. 东方财富全球资讯
-            source_cfg = config.market_sources.get(
-                NewsSourceType.EASTMONEY_GLOBAL.value
-            )
+            source_cfg = config.market_sources.get(NewsSourceType.EASTMONEY_GLOBAL.value)
             if source_cfg and source_cfg.enabled:
-                try:
-                    df = await loop.run_in_executor(
-                        self._executor, ak.stock_info_global_em
-                    )
-                    if df is not None and not df.empty:
-                        for _, row in df.iterrows():
-                            title = str(row.get("标题", ""))
-                            if title:
-                                news_list.append(
-                                    {
-                                        "title": title,
-                                        "content": str(
-                                            row.get("摘要", row.get("内容", ""))
-                                        )[:1000],
-                                        "pub_time": str(row.get("发布时间", "")),
-                                        "source": source_cfg.name,  # 使用配置中的名称
-                                        "url": str(row.get("链接", "")),
-                                    }
-                                )
-                        logger.info(
-                            f"东方财富全球资讯: {len([n for n in news_list if n['source'] == source_cfg.name])}条"
-                        )
-                except Exception as e:
-                    logger.debug(f"stock_info_global_em失败: {e}")
-
-            # 2. 财联社全球资讯
+                tasks.append(self._fetch_eastmoney_global(ak, source_cfg))
+            
+            # 2. 财联社全球资讯  
             source_cfg = config.market_sources.get(NewsSourceType.CLS_GLOBAL.value)
             if source_cfg and source_cfg.enabled:
-                try:
-                    df = await loop.run_in_executor(
-                        self._executor, ak.stock_info_global_cls
-                    )
-                    if df is not None and not df.empty:
-                        count = 0
-                        for _, row in df.iterrows():
-                            title = str(row.get("标题", ""))
-                            if title:
-                                news_list.append(
-                                    {
-                                        "title": title,
-                                        "content": str(row.get("内容", ""))[:1000],
-                                        "pub_time": str(row.get("发布日期", ""))
-                                        + " "
-                                        + str(row.get("发布时间", "")),
-                                        "source": source_cfg.name,  # 使用配置中的名称
-                                        "url": "",
-                                    }
-                                )
-                                count += 1
-                        logger.info(f"财联社电报: {count}条")
-                except Exception as e:
-                    logger.debug(f"stock_info_global_cls失败: {e}")
+                tasks.append(self._fetch_cls_global(ak, source_cfg))
+            
+            # 3. 富途牛牛
+            source_cfg = config.market_sources.get(NewsSourceType.FUTU_GLOBAL.value)
+            if source_cfg and source_cfg.enabled:
+                tasks.append(self._fetch_futu(ak, source_cfg))
+            
+            # 4. 同花顺
+            source_cfg = config.market_sources.get(NewsSourceType.THS_GLOBAL.value)
+            if source_cfg and source_cfg.enabled:
+                tasks.append(self._fetch_ths(ak, source_cfg))
+            
+            # 5. 新浪财经
+            source_cfg = config.market_sources.get(NewsSourceType.SINA_GLOBAL.value)
+            if source_cfg and source_cfg.enabled:
+                tasks.append(self._fetch_sina_parallel(ak, source_cfg))
+            
+            # 6. 微博热议
+            source_cfg = config.market_sources.get(NewsSourceType.WEIBO_HOT.value)
+            if source_cfg and source_cfg.enabled:
+                tasks.append(self._fetch_weibo(ak, source_cfg))
+            
+            # 7. 财经早餐
+            source_cfg = config.market_sources.get(NewsSourceType.CJZC.value)
+            if source_cfg and source_cfg.enabled:
+                tasks.append(self._fetch_cjzc(ak, source_cfg))
+            
+            # 8. 新闻联播
+            source_cfg = config.market_sources.get(NewsSourceType.CCTV.value)
+            if source_cfg and source_cfg.enabled:
+                tasks.append(self._fetch_cctv(ak, source_cfg))
+            
+            # 9. 百度财经
+            source_cfg = config.market_sources.get(NewsSourceType.BAIDU.value)
+            if source_cfg and source_cfg.enabled:
+                tasks.append(self._fetch_baidu(ak, source_cfg))
+            
+            # 并行执行所有任务
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            
+            # 合并结果
+            all_news = []
+            for result in results:
+                if isinstance(result, list):
+                    all_news.extend(result)
+                elif isinstance(result, Exception):
+                    logger.debug(f"某个新闻源获取失败: {result}")
+            
+            # 去重（基于标题）
+            seen_titles = set()
+            unique_news = []
+            for news in all_news:
+                title = news.get("title", "")
+                if title and title not in seen_titles:
+                    seen_titles.add(title)
+                    unique_news.append(news)
+            
+            elapsed = time.time() - start_time
+            logger.info(f"[新闻中心] 并行获取完成: {len(unique_news)}条新闻, 耗时{elapsed:.2f}秒")
+            
+            return unique_news
+            
+        except Exception as e:
+            logger.error(f"[新闻中心] 获取市场新闻失败: {e}")
+            return []
+
+    # ========== 各数据源并行获取方法 ==========
+    
+    async def _fetch_eastmoney_global(self, ak, source_cfg) -> List[Dict]:
+        """获取东方财富全球资讯"""
+        try:
+            loop = asyncio.get_event_loop()
+            df = await asyncio.wait_for(
+                loop.run_in_executor(self._executor, ak.stock_info_global_em),
+                timeout=10
+            )
+            if df is None or df.empty:
+                return []
+            
+            news_list = []
+            for _, row in df.iterrows():
+                title = str(row.get("标题", ""))
+                if title:
+                    news_list.append({
+                        "title": title,
+                        "content": str(row.get("摘要", row.get("内容", "")))[:1000],
+                        "pub_time": str(row.get("发布时间", "")),
+                        "source": source_cfg.name,
+                        "url": str(row.get("链接", "")),
+                    })
+            logger.info(f"东方财富全球资讯: {len(news_list)}条")
+            return news_list
+        except Exception as e:
+            logger.debug(f"stock_info_global_em失败: {e}")
+            return []
+
+    async def _fetch_cls_global(self, ak, source_cfg) -> List[Dict]:
+        """获取财联社全球资讯"""
+        try:
+            loop = asyncio.get_event_loop()
+            df = await asyncio.wait_for(
+                loop.run_in_executor(self._executor, ak.stock_info_global_cls),
+                timeout=10
+            )
+            if df is None or df.empty:
+                return []
+            
+            news_list = []
+            for _, row in df.iterrows():
+                title = str(row.get("标题", ""))
+                if title:
+                    news_list.append({
+                        "title": title,
+                        "content": str(row.get("内容", ""))[:1000],
+                        "pub_time": str(row.get("发布日期", "")) + " " + str(row.get("发布时间", "")),
+                        "source": source_cfg.name,
+                        "url": "",
+                    })
+            logger.info(f"财联社电报: {len(news_list)}条")
+            return news_list
+        except Exception as e:
+            logger.debug(f"stock_info_global_cls失败: {e}")
+            return []
+
+    async def _fetch_futu(self, ak, source_cfg) -> List[Dict]:
+        """获取富途牛牛资讯"""
+        try:
+            loop = asyncio.get_event_loop()
+            df = await asyncio.wait_for(
+                loop.run_in_executor(self._executor, ak.stock_info_global_futu),
+                timeout=10
+            )
+            if df is None or df.empty:
+                return []
+            
+            news_list = []
+            for _, row in df.iterrows():
+                title = str(row.get("标题", ""))
+                if title:
+                    news_list.append({
+                        "title": title,
+                        "content": str(row.get("内容", ""))[:1000],
+                        "pub_time": str(row.get("发布时间", "")),
+                        "source": source_cfg.name,
+                        "url": str(row.get("链接", "")),
+                    })
+            logger.info(f"富途牛牛: {len(news_list)}条")
+            return news_list
+        except Exception as e:
+            logger.debug(f"stock_info_global_futu失败: {e}")
+            return []
+
+    async def _fetch_ths(self, ak, source_cfg) -> List[Dict]:
+        """获取同花顺资讯"""
+        try:
+            loop = asyncio.get_event_loop()
+            df = await asyncio.wait_for(
+                loop.run_in_executor(self._executor, ak.stock_info_global_ths),
+                timeout=10
+            )
+            if df is None or df.empty:
+                return []
+            
+            news_list = []
+            for _, row in df.iterrows():
+                title = str(row.get("标题", ""))
+                if title:
+                    news_list.append({
+                        "title": title,
+                        "content": str(row.get("内容", ""))[:1000],
+                        "pub_time": str(row.get("发布时间", "")),
+                        "source": source_cfg.name,
+                        "url": str(row.get("链接", "")),
+                    })
+            logger.info(f"同花顺: {len(news_list)}条")
+            return news_list
+        except Exception as e:
+            logger.debug(f"stock_info_global_ths失败: {e}")
+            return []
+
+    async def _fetch_sina_parallel(self, ak, source_cfg) -> List[Dict]:
+        """获取新浪财经（并行版）- 列名: ['时间', '内容']"""
+        try:
+            loop = asyncio.get_event_loop()
+            df = await asyncio.wait_for(
+                loop.run_in_executor(self._executor, ak.stock_info_global_sina),
+                timeout=10
+            )
+            if df is None or df.empty:
+                return []
+            
+            news_list = []
+            for _, row in df.iterrows():
+                content = str(row.get("内容", ""))
+                if content:
+                    title = content[:50] + "..." if len(content) > 50 else content
+                    news_list.append({
+                        "title": title,
+                        "content": content[:1000],
+                        "pub_time": str(row.get("时间", "")),
+                        "source": source_cfg.name,
+                        "url": "",
+                    })
+            logger.info(f"新浪财经: {len(news_list)}条")
+            return news_list
+        except Exception as e:
+            logger.debug(f"stock_info_global_sina失败: {e}")
+            return []
+
+    async def _fetch_weibo(self, ak, source_cfg) -> List[Dict]:
+        """获取微博热议 - 列名: name(股票名称), rate(涨跌幅)"""
+        try:
+            loop = asyncio.get_event_loop()
+            df = await asyncio.wait_for(
+                loop.run_in_executor(self._executor, ak.stock_js_weibo_report),
+                timeout=10
+            )
+            if df is None or df.empty:
+                return []
+            
+            news_list = []
+            for _, row in df.iterrows():
+                stock_name = str(row.get("name", row.get("股票", "")))
+                rate = row.get("rate", row.get("涨跌幅", 0))
+                if stock_name:
+                    try:
+                        rate_val = float(rate)
+                        rate_str = f"+{rate_val:.2f}%" if rate_val >= 0 else f"{rate_val:.2f}%"
+                    except:
+                        rate_str = str(rate)
+                    news_list.append({
+                        "title": f"[微博热议] {stock_name} {rate_str}",
+                        "content": f"微博股票热议榜，当前涨跌幅: {rate_str}",
+                        "pub_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "source": source_cfg.name,
+                        "url": "",
+                    })
+            logger.info(f"微博热议: {len(news_list)}条")
+            return news_list
+        except Exception as e:
+            logger.debug(f"stock_js_weibo_report失败: {e}")
+            return []
+
+    async def _fetch_cjzc(self, ak, source_cfg) -> List[Dict]:
+        """获取财经早餐"""
+        try:
+            loop = asyncio.get_event_loop()
+            df = await asyncio.wait_for(
+                loop.run_in_executor(self._executor, ak.stock_info_cjzc_em),
+                timeout=10
+            )
+            if df is None or df.empty:
+                return []
+            
+            news_list = []
+            for _, row in df.iterrows():
+                title = str(row.get("标题", ""))
+                if title:
+                    content = str(row.get("摘要", ""))
+                    news_list.append({
+                        "title": title,
+                        "content": content[:1000] if content else "",
+                        "pub_time": str(row.get("发布时间", "")),
+                        "source": source_cfg.name,
+                        "url": str(row.get("链接", "")),
+                    })
+            logger.info(f"财经早餐: {len(news_list)}条")
+            return news_list
+        except Exception as e:
+            logger.debug(f"stock_info_cjzc_em失败: {e}")
+            return []
+
+    async def _fetch_cctv(self, ak, source_cfg) -> List[Dict]:
+        """获取新闻联播"""
+        try:
+            loop = asyncio.get_event_loop()
+            df = None
+            # 尝试最近7天
+            for days_ago in range(7):
+                try_date = (datetime.now() - timedelta(days=days_ago)).strftime("%Y%m%d")
+                df = await asyncio.wait_for(
+                    loop.run_in_executor(self._executor, lambda d=try_date: ak.news_cctv(date=d)),
+                    timeout=10
+                )
+                if df is not None and not df.empty:
+                    break
+            
+            if df is None or df.empty:
+                return []
+            
+            news_list = []
+            for _, row in df.iterrows():
+                title = str(row.get("title", ""))
+                if title:
+                    raw_date = str(row.get("date", try_date))
+                    if len(raw_date) == 8 and raw_date.isdigit():
+                        formatted_date = f"{raw_date[:4]}-{raw_date[4:6]}-{raw_date[6:8]} 19:00:00"
+                    else:
+                        formatted_date = raw_date
+                    
+                    news_list.append({
+                        "title": title,
+                        "content": str(row.get("content", ""))[:1000],
+                        "pub_time": formatted_date,
+                        "source": source_cfg.name,
+                        "url": "",
+                    })
+            logger.info(f"新闻联播: {len(news_list)}条")
+            return news_list
+        except Exception as e:
+            logger.debug(f"news_cctv失败: {e}")
+            return []
+
+    async def _fetch_baidu(self, ak, source_cfg) -> List[Dict]:
+        """获取百度财经 - 列名: ['国家', '时间', '地区', '事件', '今值', '预期', '前值', '重要性']"""
+        try:
+            loop = asyncio.get_event_loop()
+            df = await asyncio.wait_for(
+                loop.run_in_executor(self._executor, ak.news_economic_baidu),
+                timeout=10
+            )
+            if df is None or df.empty:
+                return []
+            
+            def clean_value(val):
+                if val is None:
+                    return "-"
+                val_str = str(val).strip()
+                if val_str.lower() in ("nan", "none", "", "null"):
+                    return "-"
+                return val_str
+
+            news_list = []
+            for _, row in df.iterrows():
+                event = str(row.get("事件", ""))
+                if event:
+                    country = str(row.get("国家", ""))
+                    title = f"[{country}] {event}" if country else event
+                    today_val = clean_value(row.get("今值", ""))
+                    expect_val = clean_value(row.get("预期", ""))
+                    prev_val = clean_value(row.get("前值", ""))
+                    importance = clean_value(row.get("重要性", ""))
+                    content = f"今值: {today_val} | 预期: {expect_val} | 前值: {prev_val} | 重要性: {importance}"
+                    
+                    raw_time = str(row.get("时间", ""))
+                    if raw_time and ":" in raw_time and len(raw_time) <= 5:
+                        pub_time = datetime.now().strftime("%Y-%m-%d") + " " + raw_time + ":00"
+                    elif raw_time:
+                        pub_time = raw_time
+                    else:
+                        pub_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    
+                    news_list.append({
+                        "title": title,
+                        "content": content,
+                        "pub_time": pub_time,
+                        "source": source_cfg.name,
+                        "url": "",
+                    })
+            logger.info(f"百度财经: {len(news_list)}条")
+            return news_list
+        except Exception as e:
+            logger.debug(f"news_economic_baidu失败: {e}")
+            return []
+
+    async def _fetch_eastmoney_morning(self, ak, source_cfg) -> List[Dict]:
+        """获取东方财富早盘"""
+        try:
+            loop = asyncio.get_event_loop()
+            df = await asyncio.wait_for(
+                loop.run_in_executor(self._executor, ak.stock_info_global_em),
+                timeout=10
+            )
+            if df is None or df.empty:
+                return []
+            
+            news_list = []
+            for _, row in df.iterrows()[:20]:  # 只取前20条
+                title = str(row.get("标题", ""))
+                if title:
+                    news_list.append({
+                        "title": f"[早盘] {title}",
+                        "content": str(row.get("摘要", ""))[:1000],
+                        "pub_time": str(row.get("发布时间", "")),
+                        "source": source_cfg.name,
+                        "url": str(row.get("链接", "")),
+                    })
+            logger.info(f"东方财富早盘: {len(news_list)}条")
+            return news_list
+        except Exception as e:
+            logger.debug(f"东方财富早盘失败: {e}")
+            return []
 
             # 3. 富途牛牛
             source_cfg = config.market_sources.get(NewsSourceType.FUTU_GLOBAL.value)
@@ -1832,50 +2177,139 @@ class NewsMonitorCenter:
                 )
                 news_list.extend(management_data)
 
-            # ==================== Tushare 新闻聚合接口（免费）====================
-            # 14. Tushare 全平台聚合新闻
-            source_cfg = config.market_sources.get(
-                NewsSourceType.TUSHARE_NEWS_ALL.value
-            )
-            if source_cfg and source_cfg.enabled:
-                tushare_all_news = await self._fetch_tushare_news_list(
-                    source_id=0,  # 0 = 全平台聚合
-                    limit=source_cfg.limit,
-                    source_name=source_cfg.name,
-                )
-                news_list.extend(tushare_all_news)
+            # 14. AKShare 新闻联播（免费替代 Tushare 付费版）
+            try:
+                import akshare as ak
+                from datetime import datetime, timedelta
 
-            # 15. Tushare 雪球新闻
-            source_cfg = config.market_sources.get(NewsSourceType.TUSHARE_XUEQIU.value)
-            if source_cfg and source_cfg.enabled:
-                tushare_xueqiu_news = await self._fetch_tushare_news_list(
-                    source_id=6,  # 6 = 雪球
-                    limit=source_cfg.limit,
-                    source_name=source_cfg.name,
-                )
-                news_list.extend(tushare_xueqiu_news)
+                loop = asyncio.get_event_loop()
+                
+                # 获取今天和昨天的新闻联播
+                dates = [
+                    datetime.now().strftime("%Y%m%d"),
+                    (datetime.now() - timedelta(days=1)).strftime("%Y%m%d")
+                ]
+                
+                cctv_news_count = 0
+                for date_str in dates:
+                    try:
+                        df = await loop.run_in_executor(
+                            self._executor, lambda d=date_str: ak.news_cctv(date=d)
+                        )
+                        if df is not None and not df.empty:
+                            for _, row in df.iterrows():
+                                title = str(row.get("title", ""))
+                                content = str(row.get("content", ""))[:500]
+                                pub_date = str(row.get("date", ""))
+                                
+                                if title and content:
+                                    news_list.append({
+                                        "title": f"[新闻联播] {title}",
+                                        "content": content,
+                                        "pub_time": f"{pub_date[:4]}-{pub_date[4:6]}-{pub_date[6:]} 19:00" if len(pub_date) >= 8 else pub_date,
+                                        "source": "新闻联播",
+                                        "url": "",
+                                        "importance": "high",
+                                    })
+                                    cctv_news_count += 1
+                    except Exception as e:
+                        logger.debug(f"AKShare news_cctv({date_str})失败: {e}")
+                
+                if cctv_news_count > 0:
+                    logger.info(f"AKShare 新闻联播: {cctv_news_count}条")
+                    
+            except Exception as e:
+                logger.debug(f"AKShare 新闻联播获取失败: {e}")
 
-            # 16. Tushare 华尔街见闻
-            source_cfg = config.market_sources.get(
-                NewsSourceType.TUSHARE_WALLSTREET.value
-            )
-            if source_cfg and source_cfg.enabled:
-                tushare_wallstreet_news = await self._fetch_tushare_news_list(
-                    source_id=10,  # 10 = 华尔街见闻
-                    limit=source_cfg.limit,
-                    source_name=source_cfg.name,
-                )
-                news_list.extend(tushare_wallstreet_news)
+            # ==================== Tushare 新闻聚合接口（优化策略）====================
+            # 使用智能配额管理，优先获取高价值数据源
+            try:
+                from backend.dataflows.news.tushare_quota_manager import get_quota_manager
+                
+                quota_mgr = get_quota_manager()
+                remaining = quota_mgr.get_remaining_quota()
+                
+                if remaining > 0:
+                    # 获取优化后的数据源列表
+                    optimized_sources = quota_mgr.get_optimized_sources()
+                    
+                    for source_config in optimized_sources:
+                        source_id = source_config["source_id"]
+                        limit = source_config["limit"]
+                        name = source_config["name"]
+                        
+                        # 调用 Tushare 接口
+                        try:
+                            from backend.dataflows.news.tushare_news_api import get_tushare_news_api
+                            api = get_tushare_news_api()
+                            
+                            if not api.is_available():
+                                continue
+                            
+                            # 使用 major_news 接口获取指定源的新闻
+                            source_name_map = {
+                                1: "新浪财经",
+                                2: "财联社",
+                                3: "同花顺",
+                                4: "新浪财经",
+                                5: "新浪财经",
+                                6: "同花顺",  # 雪球映射到同花顺
+                                7: "财联社",  # 第一财经映射到财联社
+                                8: "新浪财经",
+                                9: "同花顺",
+                                10: "华尔街见闻",
+                            }
+                            
+                            from datetime import datetime, timedelta
+                            end_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                            start_date = (datetime.now() - timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
+                            
+                            source_name = source_name_map.get(source_id, "新浪财经")
+                            df = api.pro.major_news(src=source_name, start_date=start_date, end_date=end_date)
+                            
+                            if df is not None and not df.empty:
+                                for _, row in df.head(limit).iterrows():
+                                    news_list.append({
+                                        "title": str(row.get("title", "")),
+                                        "content": str(row.get("content", ""))[:500] if row.get("content") else "",
+                                        "pub_time": str(row.get("pub_time", "")),
+                                        "source": f"Tushare-{name}",
+                                        "url": str(row.get("url", "")),
+                                    })
+                                
+                                logger.info(f"Tushare-{name}: {min(len(df), limit)}条")
+                            
+                            # 记录调用
+                            quota_mgr.record_call(source_id)
+                            
+                        except Exception as e:
+                            error_msg = str(e)
+                            if "每天最多访问" in error_msg or "40次" in error_msg:
+                                logger.warning(f"Tushare额度已用完")
+                                break
+                            else:
+                                logger.warning(f"Tushare-{name}获取失败: {e}")
+                else:
+                    logger.info("Tushare今日额度已用完，跳过")
+                    
+            except Exception as e:
+                logger.warning(f"Tushare优化策略执行失败: {e}")
 
-            # 17. Tushare 第一财经
-            source_cfg = config.market_sources.get(NewsSourceType.TUSHARE_YICAI.value)
-            if source_cfg and source_cfg.enabled:
-                tushare_yicai_news = await self._fetch_tushare_news_list(
-                    source_id=7,  # 7 = 第一财经
-                    limit=source_cfg.limit,
-                    source_name=source_cfg.name,
-                )
-                news_list.extend(tushare_yicai_news)
+            # ==================== 备用新闻源（当Tushare额度用完时）====================
+            try:
+                from backend.dataflows.news.alternative_news_api import get_alternative_news_api
+                
+                alt_api = get_alternative_news_api()
+                alt_news = await alt_api.get_all_alternative_news(limit_per_source=10)
+                
+                if alt_news:
+                    news_list.extend(alt_news)
+                    logger.info(f"备用新闻源获取: {len(alt_news)}条")
+                
+                await alt_api.close()
+                
+            except Exception as e:
+                logger.warning(f"备用新闻源获取失败: {e}")
 
             # ==================== Tushare 付费接口（需要权限）====================
             # 18. Tushare 新闻快讯（付费）

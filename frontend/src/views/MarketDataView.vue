@@ -95,80 +95,98 @@
 
           <!-- 涨幅榜 -->
           <div class="table-container" v-show="rankType === 'gainers'">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>排名</th>
-                  <th>代码</th>
-                  <th>名称</th>
-                  <th>涨跌幅</th>
-                  <th>现价</th>
-                  <th>成交额</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(stock, idx) in topGainers" :key="stock.code" @click="selectStock(stock.code, stock.name)" class="clickable">
-                  <td class="rank">{{ idx + 1 }}</td>
-                  <td class="code">{{ stock.code }}</td>
-                  <td class="name">{{ stock.name }}</td>
-                  <td class="up">+{{ stock.change_pct?.toFixed(2) }}%</td>
-                  <td>{{ stock.price?.toFixed(2) }}</td>
-                  <td>{{ formatAmount(stock.amount) }}</td>
-                </tr>
-              </tbody>
-            </table>
+            <div v-if="topGainers.length > 0">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>排名</th>
+                    <th>代码</th>
+                    <th>名称</th>
+                    <th>涨跌幅</th>
+                    <th>现价</th>
+                    <th>成交额</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(stock, idx) in topGainers" :key="stock.code" @click="selectStock(stock.code, stock.name)" class="clickable">
+                    <td class="rank">{{ idx + 1 }}</td>
+                    <td class="code">{{ stock.code }}</td>
+                    <td class="name">{{ stock.name }}</td>
+                    <td class="up">+{{ stock.change_pct?.toFixed(2) }}%</td>
+                    <td>{{ stock.price?.toFixed(2) }}</td>
+                    <td>{{ formatAmount(stock.amount) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="empty-state" v-else>
+              <p>暂无涨幅榜数据</p>
+              <button class="btn-small" @click="fetchTopGainers">点击刷新</button>
+            </div>
           </div>
 
           <!-- 跌幅榜 -->
           <div class="table-container" v-show="rankType === 'losers'">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>排名</th>
-                  <th>代码</th>
-                  <th>名称</th>
-                  <th>涨跌幅</th>
-                  <th>现价</th>
-                  <th>成交额</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(stock, idx) in topLosers" :key="stock.code" @click="selectStock(stock.code, stock.name)" class="clickable">
-                  <td class="rank">{{ idx + 1 }}</td>
-                  <td class="code">{{ stock.code }}</td>
-                  <td class="name">{{ stock.name }}</td>
-                  <td class="down">{{ stock.change_pct?.toFixed(2) }}%</td>
-                  <td>{{ stock.price?.toFixed(2) }}</td>
-                  <td>{{ formatAmount(stock.amount) }}</td>
-                </tr>
-              </tbody>
-            </table>
+            <div v-if="topLosers.length > 0">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>排名</th>
+                    <th>代码</th>
+                    <th>名称</th>
+                    <th>涨跌幅</th>
+                    <th>现价</th>
+                    <th>成交额</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(stock, idx) in topLosers" :key="stock.code" @click="selectStock(stock.code, stock.name)" class="clickable">
+                    <td class="rank">{{ idx + 1 }}</td>
+                    <td class="code">{{ stock.code }}</td>
+                    <td class="name">{{ stock.name }}</td>
+                    <td class="down">{{ stock.change_pct?.toFixed(2) }}%</td>
+                    <td>{{ stock.price?.toFixed(2) }}</td>
+                    <td>{{ formatAmount(stock.amount) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="empty-state" v-else>
+              <p>暂无跌幅榜数据</p>
+              <button class="btn-small" @click="fetchTopLosers">点击刷新</button>
+            </div>
           </div>
 
           <!-- 成交额榜 -->
           <div class="table-container" v-show="rankType === 'amount'">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>排名</th>
-                  <th>代码</th>
-                  <th>名称</th>
-                  <th>成交额</th>
-                  <th>涨跌幅</th>
-                  <th>现价</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(stock, idx) in topAmount" :key="stock.code" @click="selectStock(stock.code, stock.name)" class="clickable">
-                  <td class="rank">{{ idx + 1 }}</td>
-                  <td class="code">{{ stock.code }}</td>
-                  <td class="name">{{ stock.name }}</td>
-                  <td class="amount">{{ formatAmount(stock.amount) }}</td>
-                  <td :class="stock.change_pct > 0 ? 'up' : 'down'">{{ stock.change_pct > 0 ? '+' : '' }}{{ stock.change_pct?.toFixed(2) }}%</td>
-                  <td>{{ stock.price?.toFixed(2) }}</td>
-                </tr>
-              </tbody>
-            </table>
+            <div v-if="topAmount.length > 0">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>排名</th>
+                    <th>代码</th>
+                    <th>名称</th>
+                    <th>成交额</th>
+                    <th>涨跌幅</th>
+                    <th>现价</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(stock, idx) in topAmount" :key="stock.code" @click="selectStock(stock.code, stock.name)" class="clickable">
+                    <td class="rank">{{ idx + 1 }}</td>
+                    <td class="code">{{ stock.code }}</td>
+                    <td class="name">{{ stock.name }}</td>
+                    <td class="amount">{{ formatAmount(stock.amount) }}</td>
+                    <td :class="stock.change_pct > 0 ? 'up' : 'down'">{{ stock.change_pct > 0 ? '+' : '' }}{{ stock.change_pct?.toFixed(2) }}%</td>
+                    <td>{{ stock.price?.toFixed(2) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="empty-state" v-else>
+              <p>暂无成交额榜数据</p>
+              <button class="btn-small" @click="fetchTopAmount">点击刷新</button>
+            </div>
           </div>
         </div>
       </div>
@@ -287,21 +305,32 @@ export default {
 
     async fetchOverview() {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/market/overview`)
+        // 使用市场情绪API获取市场概览数据
+        const response = await fetch(`${API_BASE_URL}/api/sentiment/market`)
         const result = await response.json()
-        // 后端返回 statistics 字段
-        if (result.statistics) {
+        if (result.success && result.market_stats) {
           this.overview = {
-            total_stocks: result.statistics.total,
-            up_count: result.statistics.rise,
-            down_count: result.statistics.fall,
-            flat_count: result.statistics.flat,
-            limit_up: result.statistics.limit_up,
-            limit_down: result.statistics.limit_down
+            total_stocks: result.market_stats.total_count,
+            up_count: result.market_stats.up_count,
+            down_count: result.market_stats.down_count,
+            flat_count: result.market_stats.flat_count,
+            limit_up: result.limit_stats?.limit_up_count || 0,
+            limit_down: result.limit_stats?.limit_down_count || 0
+          }
+        } else {
+          // API返回成功但没有数据，使用默认值
+          this.overview = {
+            total_stocks: 0, up_count: 0, down_count: 0, 
+            flat_count: 0, limit_up: 0, limit_down: 0
           }
         }
       } catch (error) {
         console.error('获取市场概览失败:', error)
+        // 降级处理：使用默认值
+        this.overview = {
+          total_stocks: 0, up_count: 0, down_count: 0, 
+          flat_count: 0, limit_up: 0, limit_down: 0
+        }
       }
     },
 
@@ -323,7 +352,9 @@ export default {
       this.selectedSector = sector
       this.loading.sectorStocks = true
       try {
-        const response = await fetch(`${API_BASE_URL}/api/market/sector-stocks/${encodeURIComponent(sector.name)}?sector_type=${this.sectorType}`)
+        // 使用板块代码(code)而不是名称(name)调用API
+        const sectorCode = sector.code || sector.name
+        const response = await fetch(`${API_BASE_URL}/api/sector-rotation/sector-stocks/${encodeURIComponent(sectorCode)}?sector_type=${this.sectorType}`)
         const result = await response.json()
         // 后端返回 stocks 字段
         this.sectorStocks = result.stocks || []
@@ -336,34 +367,54 @@ export default {
 
     async fetchTopGainers() {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/market/top-gainers`)
+        // 从市场情绪API获取涨停股作为涨幅榜
+        const response = await fetch(`${API_BASE_URL}/api/sentiment/market`)
         const result = await response.json()
-        // 后端返回 stocks 字段
-        this.topGainers = result.stocks || []
+        if (result.success && result.limit_stats?.limit_up_stocks) {
+          this.topGainers = result.limit_stats.limit_up_stocks.map(stock => ({
+            code: stock.code,
+            name: stock.name,
+            change_pct: stock.change_pct,
+            price: 0, // 暂无价格数据
+            volume: 0
+          }))
+        }
       } catch (error) {
         console.error('获取涨幅榜失败:', error)
+        this.topGainers = []
       }
     },
 
     async fetchTopLosers() {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/market/top-losers`)
+        // 从市场情绪API获取跌停股作为跌幅榜
+        const response = await fetch(`${API_BASE_URL}/api/sentiment/market`)
         const result = await response.json()
-        // 后端返回 stocks 字段
-        this.topLosers = result.stocks || []
+        if (result.success && result.limit_stats?.limit_down_stocks) {
+          this.topLosers = result.limit_stats.limit_down_stocks.map(stock => ({
+            code: stock.code,
+            name: stock.name,
+            change_pct: stock.change_pct,
+            price: 0,
+            volume: 0
+          }))
+        }
       } catch (error) {
         console.error('获取跌幅榜失败:', error)
+        this.topLosers = []
       }
     },
 
     async fetchTopAmount() {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/market/top-amount`)
+        const response = await fetch(`${API_BASE_URL}/api/market/top-amount?limit=20`)
         const result = await response.json()
-        // 后端返回 stocks 字段
-        this.topAmount = result.stocks || []
+        if (result.success && result.data) {
+          this.topAmount = result.data
+        }
       } catch (error) {
         console.error('获取成交额榜失败:', error)
+        this.topAmount = []
       }
     },
 
@@ -805,6 +856,26 @@ export default {
   padding: 20px;
   color: #666;
   font-size: 14px;
+}
+
+.empty-state p {
+  margin: 0 0 12px 0;
+}
+
+.btn-small {
+  padding: 8px 16px;
+  font-size: 12px;
+  border: 1px solid #667eea;
+  background: transparent;
+  color: #667eea;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-small:hover {
+  background: #667eea;
+  color: #fff;
 }
 
 .loading-inline {

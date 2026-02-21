@@ -299,6 +299,17 @@ export default {
           const data = await response.json()
           if (data.success && data.models) {
             allModels.value = data.models
+            // 注入 Minimax (kirocpa中转) 模型到列表最前面
+            const minimaxModels = [
+              { provider: 'MINIMAX', name: 'minimax-m2.1', label: 'MiniMax M2.1', type: 'llm', channel: 'kirocpa中转' },
+              { provider: 'MINIMAX', name: 'minimax-m2', label: 'MiniMax M2', type: 'llm', channel: 'kirocpa中转' },
+            ]
+            // 避免重复：过滤掉已存在的minimax模型
+            const existingNames = new Set(allModels.value.map(m => m.name))
+            const newModels = minimaxModels.filter(m => !existingNames.has(m.name))
+            if (newModels.length > 0) {
+              allModels.value = [...newModels, ...allModels.value]
+            }
             modelsLoaded.value = true // 标记已加载
             console.log(`[ModelManager] 首次加载 ${data.models.length} 个模型`)
             console.log(`[ModelManager] 第一个模型示例:`, data.models[0])
@@ -514,7 +525,8 @@ export default {
       { value: 'gemini', label: 'Gemini' },
       { value: 'mistral', label: 'Mistral' },
       { value: 'yi', label: 'Yi' },
-      { value: 'glm', label: 'GLM' }
+      { value: 'glm', label: 'GLM' },
+      { value: 'minimax', label: 'Minimax' }
     ]
 
     // 删除硬编码的模型列表，使用动态加载
@@ -850,6 +862,7 @@ export default {
           if (brand === 'mistral') return provider === 'mistral' || name.includes('mistral')
           if (brand === 'yi') return provider === 'yi' || name.includes('yi-')
           if (brand === 'glm') return provider === 'glm' || name.includes('glm')
+          if (brand === 'minimax') return provider === 'minimax' || name.includes('minimax')
           return true
         })
         console.log(`[品牌筛选] 品牌: '${brand}', 筛选前: ${beforeBrand}, 筛选后: ${models.length}`)

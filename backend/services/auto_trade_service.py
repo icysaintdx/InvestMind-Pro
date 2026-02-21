@@ -604,7 +604,7 @@ class AutoTradeService:
             import os
 
             # 获取LLM配置
-            api_key = os.getenv("DEEPSEEK_API_KEY") or os.getenv("SILICONFLOW_API_KEY")
+            api_key = os.getenv("DEEPSEEK_API_KEY") or os.getenv("MINIMAX_API_KEY", "icysaintdx") or os.getenv("SILICONFLOW_API_KEY")
             if not api_key:
                 logger.warning("[AutoTradeService] 未配置LLM API密钥，跳过LLM确认")
                 return {"should_buy": True, "confidence": 0.7, "reason": "未配置LLM，使用规则引擎结果"}
@@ -635,13 +635,13 @@ class AutoTradeService:
 """
 
             # 使用DeepSeek或SiliconFlow
-            provider = "deepseek" if os.getenv("DEEPSEEK_API_KEY") else "siliconflow"
+            provider = "deepseek" if os.getenv("DEEPSEEK_API_KEY") else "minimax"
             base_url = None
             model = "deepseek-chat"
 
-            if provider == "siliconflow":
-                base_url = "https://api.siliconflow.cn/v1"
-                model = "deepseek-ai/DeepSeek-V2.5"
+            if provider == "minimax":
+                base_url = "https://kirocpa.zeabur.app/v1"
+                model = "minimax-m2.1"
 
             client = LLMClient(
                 provider=provider if provider == "deepseek" else "openai",
@@ -683,7 +683,7 @@ class AutoTradeService:
             import os
 
             # 获取LLM配置
-            api_key = os.getenv("DEEPSEEK_API_KEY") or os.getenv("SILICONFLOW_API_KEY")
+            api_key = os.getenv("DEEPSEEK_API_KEY") or os.getenv("MINIMAX_API_KEY", "icysaintdx") or os.getenv("SILICONFLOW_API_KEY")
             if not api_key:
                 logger.warning("[AutoTradeService] 未配置LLM API密钥，跳过LLM确认")
                 return {"should_sell": True, "confidence": 0.7, "reason": "未配置LLM，使用规则引擎结果"}
@@ -725,13 +725,13 @@ class AutoTradeService:
 """
 
             # 使用DeepSeek或SiliconFlow
-            provider = "deepseek" if os.getenv("DEEPSEEK_API_KEY") else "siliconflow"
+            provider = "deepseek" if os.getenv("DEEPSEEK_API_KEY") else "minimax"
             base_url = None
             model = "deepseek-chat"
 
-            if provider == "siliconflow":
-                base_url = "https://api.siliconflow.cn/v1"
-                model = "deepseek-ai/DeepSeek-V2.5"
+            if provider == "minimax":
+                base_url = "https://kirocpa.zeabur.app/v1"
+                model = "minimax-m2.1"
 
             client = LLMClient(
                 provider=provider if provider == "deepseek" else "openai",

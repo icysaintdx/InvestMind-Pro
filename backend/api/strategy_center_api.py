@@ -485,11 +485,16 @@ def _get_llm_config() -> Optional[Dict[str, Any]]:
                 base_url = None
                 model_type = "openai"  # 默认使用OpenAI兼容接口
 
+                # Minimax模型 (kirocpa中转)
+                if model_name.startswith("minimax"):
+                    api_key = os.getenv("MINIMAX_API_KEY", "icysaintdx")
+                    base_url = "https://kirocpa.zeabur.app/v1"
+                    logger.info(f"使用Minimax模型(kirocpa): {model_name}")
                 # SiliconFlow模型（包含/的通常是SiliconFlow格式）
-                if "/" in model_name:
-                    api_key = os.getenv("SILICONFLOW_API_KEY")
-                    base_url = "https://api.siliconflow.cn/v1"
-                    logger.info(f"使用SiliconFlow模型: {model_name}")
+                elif "/" in model_name:
+                    api_key = os.getenv("MINIMAX_API_KEY", "icysaintdx") or os.getenv("SILICONFLOW_API_KEY")
+                    base_url = "https://kirocpa.zeabur.app/v1"
+                    logger.info(f"使用kirocpa中转模型: {model_name}")
                 # DeepSeek模型
                 elif model_name.startswith("deepseek"):
                     api_key = os.getenv("DEEPSEEK_API_KEY")
@@ -505,11 +510,11 @@ def _get_llm_config() -> Optional[Dict[str, Any]]:
                     api_key = os.getenv("DASHSCOPE_API_KEY") or os.getenv("QWEN_API_KEY")
                     model_type = "dashscope"
                     logger.info(f"使用Qwen模型: {model_name}")
-                # 其他模型尝试SiliconFlow
+                # 其他模型尝试kirocpa中转
                 else:
-                    api_key = os.getenv("SILICONFLOW_API_KEY")
-                    base_url = "https://api.siliconflow.cn/v1"
-                    logger.info(f"使用SiliconFlow模型(默认): {model_name}")
+                    api_key = os.getenv("MINIMAX_API_KEY", "icysaintdx") or os.getenv("SILICONFLOW_API_KEY")
+                    base_url = "https://kirocpa.zeabur.app/v1"
+                    logger.info(f"使用kirocpa中转(默认): {model_name}")
 
                 if api_key:
                     return {
@@ -524,7 +529,16 @@ def _get_llm_config() -> Optional[Dict[str, Any]]:
     except Exception as e:
         logger.error(f"读取agent_configs.json失败: {e}")
 
-    # 降级：尝试环境变量中的配置
+    # 降级：优先使用kirocpa中转
+    minimax_key = os.getenv("MINIMAX_API_KEY", "icysaintdx")
+    if minimax_key:
+        return {
+            "type": "openai",
+            "model": "minimax-m2.1",
+            "api_key": minimax_key,
+            "base_url": "https://kirocpa.zeabur.app/v1"
+        }
+
     siliconflow_key = os.getenv("SILICONFLOW_API_KEY")
     if siliconflow_key:
         return {

@@ -4,7 +4,7 @@
 支持 SQLite（开发）和 PostgreSQL（生产）
 """
 
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, JSON, Index
+from sqlalchemy import Column, Integer, Float, String, Text, DateTime, ForeignKey, JSON, Index
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -446,6 +446,82 @@ class MarketNews(Base):
             'keywords': self.keywords,
             'extra_data': self.extra_data,
             'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+
+class NewsArticle(Base):
+    """新闻文章表 - 每日定时采集的新闻数据"""
+    __tablename__ = 'news_articles'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    title = Column(String(500), nullable=False)
+    content = Column(Text)
+    source = Column(String(100), nullable=False, index=True)  # 东方财富/财联社/新浪财经 等
+    stock_code = Column(String(20), index=True)  # 关联股票代码，市场新闻可为空
+    publish_time = Column(DateTime, index=True)  # 发布时间
+    crawl_time = Column(DateTime, default=datetime.utcnow, index=True)  # 采集时间
+    sentiment_score = Column(Integer)  # 情绪分值 0-100，50为中性
+
+    # 去重用hash
+    news_hash = Column(String(64), unique=True, nullable=False, index=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        Index('idx_news_articles_source_time', 'source', 'publish_time'),
+        Index('idx_news_articles_stock_time', 'stock_code', 'publish_time'),
+    )
+
+    def __repr__(self):
+        return f"<NewsArticle(title='{self.title[:30]}...', source='{self.source}')>"
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'content': self.content,
+            'source': self.source,
+            'stock_code': self.stock_code,
+            'publish_time': self.publish_time.isoformat() if self.publish_time else None,
+            'crawl_time': self.crawl_time.isoformat() if self.crawl_time else None,
+            'sentiment_score': self.sentiment_score,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+
+class CninfoDataCache(Base):
+    """巨潮资讯数据缓存表 — 避免重复请求API"""
+    __tablename__ = 'cninfo_data_cache'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    stock_code = Column(String(20), nullable=False, index=True)
+    data_type = Column(String(50), nullable=False, index=True)  # announcement/balance_sheet/income_statement/cash_flow/financial_indicator/top_shareholder/shareholder_count/company_info
+    report_date = Column(String(10), index=True)  # 报告期 YYYY-MM-DD，公告类可为空
+    data = Column(JSON, nullable=False)  # 缓存的原始JSON数据
+    record_count = Column(Integer, default=0)  # 记录条数
+    fetch_time = Column(DateTime, default=datetime.utcnow, index=True)
+    cache_hash = Column(String(64), unique=True, nullable=False, index=True)  # 请求参数hash，用于去重
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        Index('idx_cninfo_stock_type', 'stock_code', 'data_type'),
+        Index('idx_cninfo_stock_type_date', 'stock_code', 'data_type', 'report_date'),
+    )
+
+    def __repr__(self):
+        return f"<CninfoDataCache(stock={self.stock_code}, type={self.data_type}, date={self.report_date})>"
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'stock_code': self.stock_code,
+            'data_type': self.data_type,
+            'report_date': self.report_date,
+            'data': self.data,
+            'record_count': self.record_count,
+            'fetch_time': self.fetch_time.isoformat() if self.fetch_time else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
         }
 
 

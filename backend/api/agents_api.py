@@ -232,32 +232,73 @@ async def call_agent(request: AgentCallRequest):
                 if hasattr(module, create_func_name):
                     create_func = getattr(module, create_func_name)
                     
+                    # 从配置文件读取模型配置
+                    import json
+                    import os
+                    config_file = os.path.join(os.path.dirname(__file__), "..", "agent_configs.json")
+                    agent_model = None
+                    agent_provider = None
+                    
+                    try:
+                        if os.path.exists(config_file):
+                            with open(config_file, 'r', encoding='utf-8') as f:
+                                config_data = json.load(f)
+                            
+                            # 查找当前智能体的配置
+                            agents_config = config_data.get("agents", [])
+                            for agent_config in agents_config:
+                                if agent_config.get("id") == request.agent_id:
+                                    agent_model = agent_config.get("modelName")
+                                    # 根据模型名推断 provider
+                                    if agent_model:
+                                        if "qwen" in agent_model.lower():
+                                            agent_provider = "qwen"
+                                        elif "deepseek" in agent_model.lower():
+                                            agent_provider = "deepseek"
+                                        elif "gemini" in agent_model.lower():
+                                            agent_provider = "gemini"
+                                    break
+                            
+                            # 如果没找到智能体配置，使用默认模型
+                            if not agent_model:
+                                agent_model = config_data.get("summarizerModel", "Qwen/Qwen3-8B")
+                                agent_provider = "qwen"
+                    except Exception as e:
+                        logger.warning(f"读取模型配置失败: {e}")
+                    
+                    # 优先使用请求参数，其次是配置文件，最后是默认值
+                    provider = request.params.get("provider") or agent_provider
+                    model = request.params.get("model") or agent_model
+                    
                     # 创建LLM客户端
                     # 根据智能体类型选择合适的模型和参数
                     if agent.type == AgentType.ANALYST:
                         # 分析师使用较精确的模型
                         llm = create_agent_llm(
-                            provider=request.params.get("provider", "deepseek"),
-                            model=request.params.get("model", "deepseek-chat"),
+                            provider=provider or "qwen",
+                            model=model or "Qwen/Qwen3-8B",
                             temperature=0.3
                         )
                     elif agent.type in [AgentType.RESEARCHER, AgentType.DEBATOR]:
                         # 研究员和辩论员使用稍高的创造性
                         llm = create_agent_llm(
-                            provider=request.params.get("provider", "qwen"),
-                            model=request.params.get("model", "qwen-plus"),
+                            provider=provider or "qwen",
+                            model=model or "Qwen/Qwen3-8B",
                             temperature=0.5
                         )
                     elif agent.type == AgentType.MANAGER:
                         # 管理者使用平衡的参数
                         llm = create_agent_llm(
-                            provider=request.params.get("provider", "deepseek"),
-                            model=request.params.get("model", "deepseek-chat"),
+                            provider=provider or "qwen",
+                            model=model or "Qwen/Qwen3-8B",
                             temperature=0.4
                         )
                     else:
                         # 默认配置
-                        llm = create_agent_llm()
+                        llm = create_agent_llm(
+                            provider=provider or "qwen",
+                            model=model or "Qwen/Qwen3-8B"
+                        )
                     
                     # 创建智能体实例
                     # 注意：有些智能体可能需要toolkit参数

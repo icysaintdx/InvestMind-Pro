@@ -550,13 +550,21 @@ export default {
 
       try {
         const response = await axios.get(`${API_BASE_URL}/api/akshare/social-media/all`)
-        const data = response.data.data
+        console.log('[NewsDataPanel] 社交媒体数据响应:', response.data)
 
-        weiboStockHot.value = data.weibo_stock_hot || []
-        baiduHotSearch.value = data.baidu_hot_search || []
+        if (!response.data.success) {
+          throw new Error(response.data.message || 'API返回错误')
+        }
+
+        const data = response.data.data || {}
+        weiboStockHot.value = data.weibo_stock_hot || data.weiboStockHot || []
+        baiduHotSearch.value = data.baidu_hot_search || data.baiduHotSearch || []
+
+        console.log('[NewsDataPanel] 微博数据:', weiboStockHot.value.length, '条')
+        console.log('[NewsDataPanel] 百度数据:', baiduHotSearch.value.length, '条')
       } catch (err) {
-        socialMediaError.value = '加载失败'
-        console.error('加载社交媒体数据失败:', err)
+        socialMediaError.value = '加载失败: ' + (err.message || '网络错误')
+        console.error('[NewsDataPanel] 加载社交媒体数据失败:', err)
       } finally {
         socialMediaLoading.value = false
       }

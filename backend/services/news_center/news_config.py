@@ -208,7 +208,7 @@ class NewsConfigManager:
             NewsSourceType.WEIBO_HOT.value: SourceConfig(
                 source_type=NewsSourceType.WEIBO_HOT.value,
                 name="微博热议",
-                enabled=True,
+                enabled=False,  # 已禁用 - 数据质量低，只有涨跌幅无新闻价值
                 interval=120,
                 priority=5,
             ),
@@ -317,7 +317,7 @@ class NewsConfigManager:
             NewsSourceType.TUSHARE_CCTV.value: SourceConfig(
                 source_type=NewsSourceType.TUSHARE_CCTV.value,
                 name="Tushare新闻联播(付费)",
-                enabled=True,  # 启用 - 5000积分可用
+                enabled=False,  # 已禁用 - 使用 AKShare news_cctv 免费替代
                 interval=600,
                 priority=6,
                 limit=20,

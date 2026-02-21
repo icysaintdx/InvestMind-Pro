@@ -92,18 +92,59 @@ async function fetchStockData(symbol) {
     });
     const data = await response.json();
     if (!data.success) throw new Error(data.error || '获取股票数据失败');
-    const d = data.data.data;
-    return `【实时行情】股票: ${d.name} (${d.gid})\n价格: ¥${d.nowPri} | 涨跌: ${d.increPer}%\n开盘: ¥${d.todayStartPri} | 昨收: ¥${d.yestodEndPri}\n最高: ¥${d.todayMax} | 最低: ¥${d.todayMin}`;
+    // 兼容两种后端返回格式：扁平结构(akshare) 和 嵌套结构(聚合数据)
+    if (data.data && data.data.data) {
+        const d = data.data.data;
+        return `【实时行情】股票: ${d.name} (${d.gid})\n价格: ¥${d.nowPri} | 涨跌: ${d.increPer}%\n开盘: ¥${d.todayStartPri} | 昨收: ¥${d.yestodEndPri}\n最高: ¥${d.todayMax} | 最低: ¥${d.todayMin}`;
+    }
+    // 扁平结构（akshare数据源）
+    return `【实时行情】股票: ${data.name} (${data.symbol})\n价格: ¥${data.price} | 涨跌: ${data.change}%\n开盘: ¥${data.open} | 昨收: ¥${data.close}\n最高: ¥${data.high} | 最低: ¥${data.low}\n成交量: ${data.volume} | 成交额: ¥${data.amount}`;
+}
+
+// 结构化摘要指令：要求每个智能体在分析末尾输出机器可读的精简摘要
+const DIGEST_INSTRUCTION = `\n\n【输出格式要求】
+分析完成后，必须在末尾附加以下格式的结构化摘要（供后续决策层使用）：
+[DIGEST]
+方向: 看多/看空/中性
+置信度: 高/中/低
+核心判断: （一句话，30字以内）
+关键数据: （最重要的2-3个数据点）
+风险提示: （最大的1-2个风险）
+[/DIGEST]`;
+
+// 从分析结果中提取[DIGEST]标记内容
+function extractDigest(text) {
+    if (!text) return '';
+    const match = text.match(/\[DIGEST\]([\s\S]*?)\[\/DIGEST\]/);
+    if (match) return match[1].trim();
+    // fallback: 取最后200字
+    return text.length > 200 ? '...' + text.slice(-200) : text;
+}
+
+// 构建下游上下文：只用各智能体的DIGEST
+function buildDigestContext(otherOutputs) {
+    const entries = Object.entries(otherOutputs).filter(([_, v]) => v && !v.startsWith('分析失败'));
+    if (entries.length === 0) return '';
+    return '【团队分析摘要】\n' + entries.map(([role, content]) => {
+        const agent = AGENTS.find(a => a.role === role);
+        const title = agent ? agent.title : role;
+        return `${title}: ${extractDigest(content)}`;
+    }).join('\n\n');
 }
 
 // 调用AI
-async function generateAgentResponse(config, stockSymbol, stockData, context = '', otherOutputs = {}) {
-    const prompt = `作为${config.title}，分析股票 ${stockSymbol}：\n\n${stockData}\n\n${Object.entries(otherOutputs).map(([role, content]) => {
-        const agent = AGENTS.find(a => a.role === role);
-        return agent ? `【${agent.title}】\n${content}\n` : '';
-    }).join('\n')}\n\n${config.systemPrompt}`;
+async function generateAgentResponse(config, stockSymbol, stockData, context = '', otherOutputs = {}, stage = 1) {
+    const digestContext = Object.keys(otherOutputs).length > 0
+        ? buildDigestContext(otherOutputs)
+        : '';
+    // 第一阶段分析师加DIGEST输出要求，后续阶段也加（层层传递）
+    const digestSuffix = DIGEST_INSTRUCTION;
+    const prompt = `作为${config.title}，分析股票 ${stockSymbol}：\n\n${stockData}\n\n${digestContext}\n\n${config.systemPrompt}${digestSuffix}`;
 
-    const endpoint = config.modelProvider === 'GEMINI' ? '/api/ai/gemini' : config.modelProvider === 'QWEN' ? '/api/ai/qwen' : config.modelProvider === 'SILICONFLOW' ? '/api/ai/siliconflow' : '/api/ai/deepseek';
+    // AUTO或模型名含斜杠(如Qwen/Qwen3-8B)走SiliconFlow，其余按provider路由
+    const provider = config.modelProvider;
+    const modelName = config.modelName || '';
+    const endpoint = provider === 'GEMINI' ? '/api/ai/gemini' : provider === 'QWEN' ? '/api/ai/qwen' : (provider === 'SILICONFLOW' || provider === 'AUTO' || modelName.includes('/')) ? '/api/ai/siliconflow' : provider === 'DEEPSEEK' ? '/api/ai/deepseek' : '/api/ai/siliconflow';
 
     const response = await fetch(`${API_BASE}${endpoint}`, {
         method: 'POST',
@@ -192,7 +233,7 @@ async function startAnalysis() {
         await Promise.all(AGENTS.slice(0, 5).map(agent => {
             updateAgentStatus(agent.id, 'loading', '正在分析，请耐心等待（最长可能需要3分钟）...');
             const config = appState.agentConfigs.find(c => c.id === agent.id);
-            return generateAgentResponse(config, stockCode, stockData)
+            return generateAgentResponse(config, stockCode, stockData, '', {}, 1)
                 .then(result => {
                     updateAgentStatus(agent.id, 'success', result.text, result.usage);
                     appState.outputs[agent.role] = result.text;
@@ -203,12 +244,12 @@ async function startAnalysis() {
                 });
         }));
 
-        // 第二阶段：2个经理
+        // 第二阶段：2个经理（传精简上下文）
         console.log('第二阶段：经理团队...');
         await Promise.all(AGENTS.slice(5, 7).map(agent => {
-            updateAgentStatus(agent.id, 'loading', '正在分析，请耐心等待...');
+            updateAgentStatus(agent.id, 'loading', '正在整合分析...');
             const config = appState.agentConfigs.find(c => c.id === agent.id);
-            return generateAgentResponse(config, stockCode, stockData, '', appState.outputs)
+            return generateAgentResponse(config, stockCode, stockData, '', appState.outputs, 2)
                 .then(result => {
                     updateAgentStatus(agent.id, 'success', result.text, result.usage);
                     appState.outputs[agent.role] = result.text;
@@ -219,12 +260,12 @@ async function startAnalysis() {
                 });
         }));
 
-        // 第三阶段：2个风控
+        // 第三阶段：2个风控（更精简上下文）
         console.log('第三阶段：风控团队...');
         await Promise.all(AGENTS.slice(7, 9).map(agent => {
-            updateAgentStatus(agent.id, 'loading', '正在分析，请耐心等待...');
+            updateAgentStatus(agent.id, 'loading', '正在评估风险...');
             const config = appState.agentConfigs.find(c => c.id === agent.id);
-            return generateAgentResponse(config, stockCode, stockData, '', appState.outputs)
+            return generateAgentResponse(config, stockCode, stockData, '', appState.outputs, 3)
                 .then(result => {
                     updateAgentStatus(agent.id, 'success', result.text, result.usage);
                     appState.outputs[agent.role] = result.text;
@@ -235,12 +276,12 @@ async function startAnalysis() {
                 });
         }));
 
-        // 第四阶段：总经理
+        // 第四阶段：总经理（最精简上下文）
         console.log('第四阶段：总经理决策...');
         const gmAgent = AGENTS[9];
-        updateAgentStatus(gmAgent.id, 'loading', '正在综合分析所有信息，请耐心等待...');
+        updateAgentStatus(gmAgent.id, 'loading', '正在综合决策...');
         const gmConfig = appState.agentConfigs.find(c => c.id === gmAgent.id);
-        const gmResult = await generateAgentResponse(gmConfig, stockCode, stockData, '', appState.outputs);
+        const gmResult = await generateAgentResponse(gmConfig, stockCode, stockData, '', appState.outputs, 4);
         updateAgentStatus(gmAgent.id, 'success', gmResult.text, gmResult.usage);
         appState.outputs[gmAgent.role] = gmResult.text;
         
