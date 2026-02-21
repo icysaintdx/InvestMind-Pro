@@ -1081,15 +1081,57 @@ class NewsMonitorCenter:
                 except:
                     pass
 
+            # ========== EventBus: 发布批量新闻事件 ==========
+            try:
+                from backend.services.event_bus import get_event_bus, Event, EventType
+                _bus = get_event_bus()
+                asyncio.create_task(_bus.publish(Event(
+                    event_type=EventType.NEWS_BATCH,
+                    data={"count": new_count, "source": source_id, "p0": len(p0_news), "p1": len(p1_news)},
+                    source="news_monitor",
+                )))
+            except Exception as _be:
+                logger.debug(f"EventBus NEWS_BATCH 发布失败: {_be}")
+
         # P0级新闻：立即处理，最高优先级
         if p0_news:
             logger.warning(f"[{source_id}] 🚨 Found {len(p0_news)} P0 CRITICAL news!")
             await self._process_p0_news(p0_news)
 
+            # ========== EventBus: 发布紧急新闻事件 ==========
+            try:
+                from backend.services.event_bus import get_event_bus, Event, EventType
+                _bus = get_event_bus()
+                _related = []
+                for _n in p0_news:
+                    _related.extend(_n.get("related_stocks", []))
+                await _bus.publish(Event(
+                    event_type=EventType.NEWS_URGENT,
+                    data={"news": p0_news, "related_stocks": list(set(_related)), "priority": "P0"},
+                    source="news_monitor",
+                ))
+            except Exception as _be:
+                logger.debug(f"EventBus NEWS_URGENT 发布失败: {_be}")
+
         # P1级新闻：优先处理
         if p1_news:
             logger.info(f"[{source_id}] ⚠️  Found {len(p1_news)} P1 IMPORTANT news")
             await self._process_p1_news(p1_news)
+
+            # ========== EventBus: P1也发布紧急事件 ==========
+            try:
+                from backend.services.event_bus import get_event_bus, Event, EventType
+                _bus = get_event_bus()
+                _related = []
+                for _n in p1_news:
+                    _related.extend(_n.get("related_stocks", []))
+                await _bus.publish(Event(
+                    event_type=EventType.NEWS_URGENT,
+                    data={"news": p1_news, "related_stocks": list(set(_related)), "priority": "P1"},
+                    source="news_monitor",
+                ))
+            except Exception as _be:
+                logger.debug(f"EventBus NEWS_URGENT(P1) 发布失败: {_be}")
 
         # P2级新闻：常规处理
         if p2_news:
