@@ -58,13 +58,20 @@ TEST_STOCKS = {
 # 策略列表（Phase 1: Top3 原策略信号分析）
 # 策略列表（通宵完整版：23策略全量）
 STRATEGIES = [
+    # 技术分析
     "vegas_adx", "ema_breakout", "macd_crossover", "bollinger_breakout",
     "turtle_trading", "trident", "scalping_blade",
+    # 价值投资
     "buffett_value", "lynch_growth", "graham_margin",
+    # 动量/突破
     "limit_up_trading", "volume_price_surge", "dragon_leader",
+    # 均值回归/特殊
     "martingale_refined",
+    # AI/情绪策略
     "sentiment_resonance", "debate_weighted", "ai_sentiment_strategy",
+    # 复合策略
     "wavetrend_jma", "ensemble_top3", "ema_breakout_v2",
+    # WT参数扫描
     "wavetrend_jma_t40", "wavetrend_jma_t50", "wavetrend_jma_t60", "wavetrend_jma_t70",
 ]
 DB_PATH = str(project_root / "InvestMindPro.db")
@@ -431,6 +438,9 @@ def load_strategy(strategy_id: str):
             t_val = strategy_id.split('_t')[1]
             config.parameters['long_wt2_th'] = threshold_map.get(f't{t_val}', -50)
             return WaveTrendJMAVariant(config)
+        elif strategy_id == "ema_breakout_v2":
+            from backend.strategies.ema_breakout_v2 import EMABreakoutV2Strategy
+            return EMABreakoutV2Strategy(config)
         else:
             logger.error(f"未知策略: {strategy_id}")
             return None
