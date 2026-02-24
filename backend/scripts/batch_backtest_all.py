@@ -189,7 +189,6 @@ class BatchBacktester:
         avg_cost = 0.0
         trades = []
         equity_curve = []
-        signal_log = []  # 信号日志
 
         # 初始化策略
         try:
@@ -222,17 +221,6 @@ class BatchBacktester:
                 signal_type = "hold"
                 confidence = 0.0
 
-            # 记录所有信号（用于分析）
-            signal_log.append({
-                'date': str(bar.name),
-                'stock': stock_code,
-                'strategy': strategy_id,
-                'signal': signal_type,
-                'price': price,
-                'confidence': confidence,
-                'position': position,
-                'metadata': getattr(signal, 'metadata', {}) if signal else {}
-            })
             if signal_type in ("buy", "strong_buy") and position == 0:
                 # 计算买入数量（满仓的95%）
                 max_value = cash * 0.95
@@ -294,7 +282,6 @@ class BatchBacktester:
         metrics['stock_code'] = stock_code
         metrics['final_value'] = final_value
         metrics['trades_detail'] = trades[:20]  # 只保留前20笔交易详情
-        metrics['signal_log'] = signal_log  # 信号日志
         return metrics
 
     def _calc_metrics(self, equity_curve: List[Dict], trades: List[Dict], final_value: float) -> Dict[str, Any]:
@@ -463,7 +450,6 @@ def run_batch_backtest():
     backtester = BatchBacktester(INITIAL_CAPITAL)
     all_results = {}
     errors = []
-    all_signal_logs = []  # 收集所有信号日志
 
     # 预加载所有股票数据
     stock_data = {}
@@ -527,8 +513,6 @@ def run_batch_backtest():
                     strategy_results[code] = result
                     
                     # 收集信号日志
-                    if 'signal_log' in result:
-                        all_signal_logs.extend(result['signal_log'])
 
             except Exception as e:
                 print(f"异常: {str(e)[:50]}")
@@ -540,11 +524,6 @@ def run_batch_backtest():
         all_results[strategy_id] = strategy_results
 
     # 保存信号日志到文件
-    if all_signal_logs:
-        signal_log_path = str(project_root / "signal_logs.json")
-        with open(signal_log_path, 'w', encoding='utf-8') as f:
-            json.dump(all_signal_logs, f, ensure_ascii=False, indent=2)
-        logger.info(f"\n信号日志已保存: {signal_log_path}")
 
     return all_results, errors
 
