@@ -69,7 +69,11 @@ STRATEGIES = [
     # AI/情绪策略
     "sentiment_resonance", "debate_weighted", "ai_sentiment_strategy",
     # 复合策略
-    "wavetrend_jma"
+    "wavetrend_jma",
+    # Top3 融合策略
+    "ensemble_top3",
+    # WT+JMA 参数扫描
+    "wavetrend_jma_t40", "wavetrend_jma_t50", "wavetrend_jma_t60", "wavetrend_jma_t70",
 ]
 
 DB_PATH = str(project_root / "InvestMindPro.db")
@@ -414,6 +418,16 @@ def load_strategy(strategy_id: str):
         elif strategy_id == "wavetrend_jma":
             from backend.strategies.wavetrend_jma import WaveTrendJMAStrategy
             return WaveTrendJMAStrategy(config)
+        elif strategy_id == "ensemble_top3":
+            from backend.strategies.ensemble_top3 import EnsembleTop3Strategy
+            return EnsembleTop3Strategy(config)
+        elif strategy_id.startswith("wavetrend_jma_t"):
+            from backend.strategies.wavetrend_jma_scans import WaveTrendJMAVariant
+            # 动态设置阈值
+            threshold_map = {'t40': -40, 't50': -50, 't60': -60, 't70': -70}
+            t_val = strategy_id.split('_t')[1]
+            config.parameters['long_wt2_th'] = threshold_map.get(f't{t_val}', -50)
+            return WaveTrendJMAVariant(config)
         else:
             logger.error(f"未知策略: {strategy_id}")
             return None
@@ -686,7 +700,7 @@ def generate_markdown_report(all_results: Dict[str, Dict], errors: List[Dict]):
         '动量/突破': ['limit_up_trading', 'volume_price_surge', 'dragon_leader'],
         '均值回归': ['martingale_refined'],
         'AI/情绪': ['sentiment_resonance', 'debate_weighted', 'ai_sentiment_strategy'],
-        '复合策略': ['wavetrend_jma']
+        '复合策略': ['wavetrend_jma', 'ensemble_top3', 'wavetrend_jma_t40', 'wavetrend_jma_t50', 'wavetrend_jma_t60', 'wavetrend_jma_t70']
     }
 
     lines.append("| 类别 | 策略数 | 平均收益 | 平均夏普 | 平均胜率 |")
