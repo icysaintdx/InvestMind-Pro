@@ -56,10 +56,17 @@ TEST_STOCKS = {
 }
 
 # 策略列表（Phase 1: Top3 原策略信号分析）
+# 策略列表（通宵完整版：23策略全量）
 STRATEGIES = [
-    "ema_breakout", "sentiment_resonance", "graham_margin",
+    "vegas_adx", "ema_breakout", "macd_crossover", "bollinger_breakout",
+    "turtle_trading", "trident", "scalping_blade",
+    "buffett_value", "lynch_growth", "graham_margin",
+    "limit_up_trading", "volume_price_surge", "dragon_leader",
+    "martingale_refined",
+    "sentiment_resonance", "debate_weighted", "ai_sentiment_strategy",
+    "wavetrend_jma", "ensemble_top3", "ema_breakout_v2",
+    "wavetrend_jma_t40", "wavetrend_jma_t50", "wavetrend_jma_t60", "wavetrend_jma_t70",
 ]
-
 DB_PATH = str(project_root / "InvestMindPro.db")
 REPORT_MD_PATH = str(project_root / "FULL_BACKTEST_REPORT.md")
 RESULTS_JSON_PATH = str(project_root / "backtest_results.json")
