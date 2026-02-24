@@ -67,7 +67,9 @@ STRATEGIES = [
     # 均值回归/特殊
     "martingale_refined",
     # AI/情绪策略
-    "sentiment_resonance", "debate_weighted", "ai_sentiment_strategy"
+    "sentiment_resonance", "debate_weighted", "ai_sentiment_strategy",
+    # 复合策略
+    "wavetrend_jma"
 ]
 
 DB_PATH = str(project_root / "InvestMindPro.db")
@@ -409,6 +411,9 @@ def load_strategy(strategy_id: str):
             from backend.strategies.ai_sentiment_strategy import AISentimentStrategy
             config.category = StrategyCategory.AI
             return AISentimentStrategy(config)
+        elif strategy_id == "wavetrend_jma":
+            from backend.strategies.wavetrend_jma import WaveTrendJMAStrategy
+            return WaveTrendJMAStrategy(config)
         else:
             logger.error(f"未知策略: {strategy_id}")
             return None
@@ -680,7 +685,8 @@ def generate_markdown_report(all_results: Dict[str, Dict], errors: List[Dict]):
         '价值投资': ['buffett_value', 'lynch_growth', 'graham_margin'],
         '动量/突破': ['limit_up_trading', 'volume_price_surge', 'dragon_leader'],
         '均值回归': ['martingale_refined'],
-        'AI/情绪': ['sentiment_resonance', 'debate_weighted', 'ai_sentiment_strategy']
+        'AI/情绪': ['sentiment_resonance', 'debate_weighted', 'ai_sentiment_strategy'],
+        '复合策略': ['wavetrend_jma']
     }
 
     lines.append("| 类别 | 策略数 | 平均收益 | 平均夏普 | 平均胜率 |")

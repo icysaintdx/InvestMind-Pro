@@ -23,7 +23,7 @@ from .base import (
 
 def _rolling_rank(series: pd.Series, window: int) -> pd.Series:
     return series.rolling(window).apply(
-        lambda x: (x[-1] - x.min()) / (x.max() - x.min() + 1e-9), raw=False
+        lambda x: (x[-1] - x.min()) / (x.max() - x.min() + 1e-9), raw=True
     )
 
 

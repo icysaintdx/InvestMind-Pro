@@ -91,7 +91,8 @@ class BuffettValueStrategy(BaseStrategy):
         self.entry_price = 0
         
     def initialize(self, data: pd.DataFrame):
-        """初始化策略"""
+        """初始化策略，预计算指标"""
+        self._data_with_indicators = self.calculate_indicators(data)
         self._initialized = True
     
     def get_required_indicators(self) -> List[str]:
@@ -293,6 +294,12 @@ class BuffettValueStrategy(BaseStrategy):
         1. 持有时间>最短持有期 且 (基本面恶化 或 估值过高 或 达到止损/止盈)
         2. 持有时间>最长持有期
         """
+        # 使用预计算的指标数据
+        if hasattr(self, '_data_with_indicators') and self._data_with_indicators is not None:
+            data = self._data_with_indicators.iloc[:len(data)]
+        elif 'simulated_roe' not in data.columns:
+            data = self.calculate_indicators(data)
+
         # 使用数据长度作为索引
         current_idx = len(data) - 1
 
