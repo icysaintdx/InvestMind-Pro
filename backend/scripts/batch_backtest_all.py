@@ -55,25 +55,9 @@ TEST_STOCKS = {
     "601888": "中国中免",
 }
 
-# 策略列表（按类别分组）
+# 策略列表（Phase 1: Top3 原策略信号分析）
 STRATEGIES = [
-    # 技术分析
-    "vegas_adx", "ema_breakout", "macd_crossover", "bollinger_breakout",
-    "turtle_trading", "trident", "scalping_blade",
-    # 价值投资
-    "buffett_value", "lynch_growth", "graham_margin",
-    # 动量/突破
-    "limit_up_trading", "volume_price_surge", "dragon_leader",
-    # 均值回归/特殊
-    "martingale_refined",
-    # AI/情绪策略
-    "sentiment_resonance", "debate_weighted", "ai_sentiment_strategy",
-    # 复合策略
-    "wavetrend_jma",
-    # Top3 融合策略
-    "ensemble_top3",
-    # WT+JMA 参数扫描
-    "wavetrend_jma_t40", "wavetrend_jma_t50", "wavetrend_jma_t60", "wavetrend_jma_t70",
+    "ema_breakout", "sentiment_resonance", "graham_margin",
 ]
 
 DB_PATH = str(project_root / "InvestMindPro.db")
@@ -191,6 +175,7 @@ class BatchBacktester:
         avg_cost = 0.0
         trades = []
         equity_curve = []
+        signal_log = []  # 信号日志
 
         # 初始化策略
         try:
@@ -223,7 +208,17 @@ class BatchBacktester:
                 signal_type = "hold"
                 confidence = 0.0
 
-            # 执行交易逻辑
+            # 记录所有信号（用于分析）
+            signal_log.append({
+                'date': str(bar.name),
+                'stock': stock_code,
+                'strategy': strategy_id,
+                'signal': signal_type,
+                'price': price,
+                'confidence': confidence,
+                'position': position,
+                'metadata': getattr(signal, 'metadata', {}) if signal else {}
+            })
             if signal_type in ("buy", "strong_buy") and position == 0:
                 # 计算买入数量（满仓的95%）
                 max_value = cash * 0.95
@@ -285,6 +280,7 @@ class BatchBacktester:
         metrics['stock_code'] = stock_code
         metrics['final_value'] = final_value
         metrics['trades_detail'] = trades[:20]  # 只保留前20笔交易详情
+        metrics['signal_log'] = signal_log  # 信号日志
         return metrics
 
     def _calc_metrics(self, equity_curve: List[Dict], trades: List[Dict], final_value: float) -> Dict[str, Any]:
@@ -450,6 +446,7 @@ def run_batch_backtest():
     backtester = BatchBacktester(INITIAL_CAPITAL)
     all_results = {}
     errors = []
+    all_signal_logs = []  # 收集所有信号日志
 
     # 预加载所有股票数据
     stock_data = {}
@@ -511,6 +508,10 @@ def run_batch_backtest():
                     print(f"收益={result['total_return']:+.2%} 夏普={result['sharpe_ratio']:.2f} "
                           f"回撤={result['max_drawdown']:.2%} 交易={result['total_trades']}")
                     strategy_results[code] = result
+                    
+                    # 收集信号日志
+                    if 'signal_log' in result:
+                        all_signal_logs.extend(result['signal_log'])
 
             except Exception as e:
                 print(f"异常: {str(e)[:50]}")
@@ -520,6 +521,13 @@ def run_batch_backtest():
                     logger.warning(f"dragon_leader 策略已知有问题，继续下一个...")
 
         all_results[strategy_id] = strategy_results
+
+    # 保存信号日志到文件
+    if all_signal_logs:
+        signal_log_path = str(project_root / "signal_logs.json")
+        with open(signal_log_path, 'w', encoding='utf-8') as f:
+            json.dump(all_signal_logs, f, ensure_ascii=False, indent=2)
+        logger.info(f"\n信号日志已保存: {signal_log_path}")
 
     return all_results, errors
 
