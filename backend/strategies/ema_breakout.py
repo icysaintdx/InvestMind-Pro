@@ -45,11 +45,11 @@ class EMABreakoutStrategy(BaseStrategy):
         self.name = "EMA均线突破策略"
         self.category = "技术分析"
         
-        # 策略参数（第三轮优化：EMA20/40）
-        self.ema_short = self.parameters.get('ema_short', 20)   # 优化：20
-        self.ema_mid1 = self.parameters.get('ema_mid1', 30)
-        self.ema_mid2 = self.parameters.get('ema_mid2', 35)
-        self.ema_long = self.parameters.get('ema_long', 40)  # 优化：40
+        # 策略参数（第四轮优化：EMA30/60）
+        self.ema_short = self.parameters.get('ema_short', 30)   # 优化：30
+        self.ema_mid1 = self.parameters.get('ema_mid1', 40)
+        self.ema_mid2 = self.parameters.get('ema_mid2', 50)
+        self.ema_long = self.parameters.get('ema_long', 60)  # 优化：60
         self.volume_multiplier = self.parameters.get('volume_multiplier', 1.5)
         self.use_volume_confirm = self.parameters.get('use_volume_confirm', True)
         
