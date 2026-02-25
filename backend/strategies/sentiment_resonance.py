@@ -37,13 +37,13 @@ class SentimentResonanceStrategy(BaseStrategy):
         self.name = "情绪共振AI策略"
         self.category = "AI合成"
         
-        # 策略参数
+        # 策略参数（优化后 - 收紧阈值）
         self.params = {
-            # 共振阈值
-            "news_threshold": 0.3,          # 新闻情绪阈值（绝对值）
-            "technical_threshold": 60,       # 技术得分阈值
-            "fund_threshold": 0.2,           # 资金流向阈值（绝对值）
-            "resonance_score_min": 2.5,      # 最低共振得分（满分3）
+            # 共振阈值（收紧以减少交易次数）
+            "news_threshold": 0.5,          # 0.3→0.5 新闻情绪阈值更严格
+            "technical_threshold": 70,       # 60→70 技术得分要求更高
+            "fund_threshold": 0.4,           # 0.2→0.4 资金流向要求更高
+            "resonance_score_min": 2.8,      # 2.5→2.8 最低共振得分更高（满分3）
             
             # 技术指标参数
             "rsi_period": 14,
@@ -52,16 +52,16 @@ class SentimentResonanceStrategy(BaseStrategy):
             "macd_signal": 9,
             
             # 时间窗口
-            "news_window": 3,                # 新闻情绪统计窗口（天）
-            "fund_window": 5,                # 资金流向统计窗口（天）
+            "news_window": 3,
+            "fund_window": 5,
         }
         
-        # 风险参数
+        # 风险参数（收紧止损）
         self.risk_params = {
             "max_position_pct": 0.40,
-            "stop_loss_pct": 0.04,
+            "stop_loss_pct": 0.03,           # 0.04→0.03 更紧止损
             "take_profit_pct": 0.12,
-            "max_drawdown_pct": 0.10
+            "max_drawdown_pct": 0.08         # 0.10→0.08 更严格回撤控制
         }
     
     def calculate_indicators(self, data: pd.DataFrame) -> pd.DataFrame:

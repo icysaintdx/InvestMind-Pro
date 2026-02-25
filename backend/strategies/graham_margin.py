@@ -79,20 +79,22 @@ class GrahamMarginStrategy(BaseStrategy):
         self.min_dividend_yield = self.parameters.get('min_dividend_yield', 0.03)  # 最低股息率 3%
         self.profit_years = self.parameters.get('profit_years', 5)  # 连续盈利年数
         
-        # 持有策略
-        self.target_return = self.parameters.get('target_return', 0.50)  # 目标回报 50%
-        self.max_holding_days = self.parameters.get('max_holding_days', 1095)  # 最长持有天数（3年）
+        # 持有策略（收紧）
+        self.target_return = self.parameters.get('target_return', 0.30)  # 目标回报 30%（降低）
+        self.max_holding_days = self.parameters.get('max_holding_days', 252)  # 最长持有天数（1年，从3年缩短）
         
-        # 风险参数
+        # 风险参数（收紧止损）
         self.max_position = self.parameters.get('max_position', 0.25)  # 最大仓位 25%（保守）
-        self.stop_loss_pct = self.parameters.get('stop_loss', 0.15)  # 止损 -15%
-        self.take_profit_pct = self.parameters.get('take_profit', 0.80)  # 止盈 +80%
+        self.stop_loss_pct = self.parameters.get('stop_loss', 0.08)  # 止损 -8%（从15%收紧）
+        self.take_profit_pct = self.parameters.get('take_profit', 0.30)  # 止盈 +30%（从80%降低）
+        self.max_drawdown_exit = self.parameters.get('max_drawdown_exit', 0.10)  # 从高点回撤10%强制离场（新增）
         
         # 内部状态
         self.holding_position = None
         self.entry_date = None
         self.entry_price = 0
         self.intrinsic_value = 0
+        self.max_price_since_entry = 0  # 新增：记录入场后最高价
         
     def initialize(self, data: pd.DataFrame):
         """初始化策略"""
@@ -129,11 +131,12 @@ class GrahamMarginStrategy(BaseStrategy):
         # 模拟估值指标（实际应从财报数据获取）
         
         # 模拟PE（使用价格相对位置，低位=低PE）
-        # 放宽窗口从250降到60
-        df['price_percentile'] = df['close'].rolling(window=60).apply(
-            lambda x: (x.iloc[-1] - x.min()) / (x.max() - x.min()) if (x.max() - x.min()) > 0 else 0.5
-        )
-        df['simulated_pe'] = 5 + df['price_percentile'] * 15  # PE在5-20之间（放宽范围）
+        # 使用向量化操作替代apply，大幅提升性能
+        rolling_min = df['close'].rolling(window=60).min()
+        rolling_max = df['close'].rolling(window=60).max()
+        df['price_percentile'] = (df['close'] - rolling_min) / (rolling_max - rolling_min)
+        df['price_percentile'] = df['price_percentile'].fillna(0.5)
+        df['simulated_pe'] = 5 + df['price_percentile'] * 15  # PE在5-20之间
         
         # 模拟PB（使用价格趋势）
         # 使用sma_50代替sma_200以减少数据要求
@@ -352,9 +355,9 @@ class GrahamMarginStrategy(BaseStrategy):
         strength = self.check_financial_strength(data, current_idx)
         profitability = self.check_profitability(data, current_idx)
         
-        # 买入逻辑
+        # 买入逻辑（收紧：4个条件满足3个）
         if self.holding_position is None:
-            # 放宽买入条件：只需要满足2个条件即可
+            # 收紧买入条件：需要满足3个条件（从2个提高）
             conditions_met = sum([
                 valuation['is_undervalued'],
                 safety['has_safety_margin'],
@@ -362,7 +365,7 @@ class GrahamMarginStrategy(BaseStrategy):
                 profitability['is_profitable']
             ])
 
-            if conditions_met >= 2:
+            if conditions_met >= 3:  # 从2提高到3
                 
                 # 计算综合得分
                 total_score = (
@@ -391,6 +394,7 @@ class GrahamMarginStrategy(BaseStrategy):
                 self.entry_date = current_date
                 self.entry_price = current_price
                 self.intrinsic_value = safety['intrinsic_value']
+                self.max_price_since_entry = current_price  # 初始化最高价
                 
                 return StrategySignal(
                     signal_type=SignalType.BUY,
@@ -414,8 +418,19 @@ class GrahamMarginStrategy(BaseStrategy):
             holding_days = (current_date - self.entry_date).days
             profit_pct = (current_price - self.entry_price) / self.entry_price
             
+            # 更新最高价
+            self.max_price_since_entry = max(self.max_price_since_entry, current_price)
+            
+            # 计算从高点回撤
+            drawdown_from_peak = (self.max_price_since_entry - current_price) / self.max_price_since_entry
+            
             should_sell = False
             sell_reasons = []
+            
+            # 检查回撤控制（新增）
+            if drawdown_from_peak >= self.max_drawdown_exit:
+                should_sell = True
+                sell_reasons.append(f"从高点回撤{drawdown_from_peak:.2%}，触发强制离场")
             
             # 检查价值回归
             if current_price >= self.intrinsic_value * 0.95:  # 接近内在价值
@@ -456,6 +471,7 @@ class GrahamMarginStrategy(BaseStrategy):
                 self.entry_date = None
                 self.entry_price = 0
                 self.intrinsic_value = 0
+                self.max_price_since_entry = 0  # 重置最高价
                 
                 return StrategySignal(
                     signal_type=SignalType.SELL,
