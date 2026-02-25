@@ -58,10 +58,18 @@ TEST_STOCKS = {
 # 策略列表（Phase 1: Top3 原策略信号分析）
 # 策略列表（通宵完整版：23策略全量）
 STRATEGIES = [
-    "ema_breakout", "ema_breakout_v2",
-    "sentiment_resonance", "graham_margin",
-    "ensemble_top3",
-    "wavetrend_jma", "wavetrend_jma_t50", "wavetrend_jma_t60"
+    # 短线策略 (1-20天)
+    "ema_breakout_short",
+    "scalping_blade",
+    "limit_up_trading",
+    # 中短线策略 (20-60天)
+    "ema_breakout_mid",
+    "sentiment_resonance",
+    "wavetrend_jma",
+    # 中长线策略 (60-250天)
+    "ema_breakout_long",
+    "graham_margin",
+    "buffett_value",
 ]
 DB_PATH = str(project_root / "InvestMindPro.db")
 REPORT_MD_PATH = str(project_root / "FULL_BACKTEST_REPORT.md")
@@ -355,6 +363,15 @@ def load_strategy(strategy_id: str):
         elif strategy_id == "ema_breakout":
             from backend.strategies.ema_breakout import EMABreakoutStrategy
             return EMABreakoutStrategy(config)
+        elif strategy_id == "ema_breakout_short":
+            from backend.strategies.ema_breakout_short import EMABreakoutShortStrategy
+            return EMABreakoutShortStrategy(config)
+        elif strategy_id == "ema_breakout_mid":
+            from backend.strategies.ema_breakout_mid import EMABreakoutMidStrategy
+            return EMABreakoutMidStrategy(config)
+        elif strategy_id == "ema_breakout_long":
+            from backend.strategies.ema_breakout_long import EMABreakoutLongStrategy
+            return EMABreakoutLongStrategy(config)
         elif strategy_id == "macd_crossover":
             from backend.strategies.macd_crossover import MACDCrossoverStrategy
             return MACDCrossoverStrategy(config)
