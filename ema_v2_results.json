@@ -1,0 +1,800 @@
+{
+  "600519": {
+    "total_return": 0.09512652160000012,
+    "annual_return": 0.018352808394070053,
+    "max_drawdown": -0.29227810029527806,
+    "sharpe_ratio": -0.08497253209403462,
+    "sortino_ratio": -0.06700644912301179,
+    "calmar_ratio": 0.06279228028213153,
+    "volatility": 0.13707007804640461,
+    "win_rate": 0.3333333333333333,
+    "total_trades": 31,
+    "buy_trades": 16,
+    "sell_trades": 15,
+    "win_trades": 5,
+    "lose_trades": 10,
+    "stock_code": "600519",
+    "final_value": 1095126.5216,
+    "trades_detail": [
+      {
+        "date": "2020-10-13 00:00:00",
+        "action": "BUY",
+        "price": 1524.79,
+        "shares": 600,
+        "commission": 274.4622,
+        "slippage": 457.437
+      },
+      {
+        "date": "2020-10-27 00:00:00",
+        "action": "SELL",
+        "price": 1410.79,
+        "shares": 600,
+        "commission": 253.94219999999999,
+        "slippage": 423.237,
+        "stamp_tax": 846.474,
+        "profit": -69923.65320000006,
+        "profit_pct": -0.07642981787656011
+      },
+      {
+        "date": "2020-11-06 00:00:00",
+        "action": "BUY",
+        "price": 1486.41,
+        "shares": 500,
+        "commission": 222.96149999999997,
+        "slippage": 371.6025
+      },
+      {
+        "date": "2021-03-02 00:00:00",
+        "action": "SELL",
+        "price": 1843.79,
+        "shares": 500,
+        "commission": 276.5685,
+        "slippage": 460.9475,
+        "stamp_tax": 921.895,
+        "profit": 177030.58899999992,
+        "profit_pct": 0.23819886706897817
+      },
+      {
+        "date": "2021-04-06 00:00:00",
+        "action": "BUY",
+        "price": 1911.82,
+        "shares": 500,
+        "commission": 286.77299999999997,
+        "slippage": 477.955
+      },
+      {
+        "date": "2021-04-09 00:00:00",
+        "action": "SELL",
+        "price": 1805.79,
+        "shares": 500,
+        "commission": 270.8685,
+        "slippage": 451.4475,
+        "stamp_tax": 902.895,
+        "profit": -54640.21100000001,
+        "profit_pct": -0.057160413637267114
+      },
+      {
+        "date": "2021-04-20 00:00:00",
+        "action": "BUY",
+        "price": 1880.59,
+        "shares": 500,
+        "commission": 282.08849999999995,
+        "slippage": 470.14750000000004
+      },
+      {
+        "date": "2021-04-29 00:00:00",
+        "action": "SELL",
+        "price": 1812.15,
+        "shares": 500,
+        "commission": 271.8225,
+        "slippage": 453.0375,
+        "stamp_tax": 906.075,
+        "profit": -35850.93499999994,
+        "profit_pct": -0.03812732706225168
+      },
+      {
+        "date": "2021-05-20 00:00:00",
+        "action": "BUY",
+        "price": 1844.67,
+        "shares": 500,
+        "commission": 276.7005,
+        "slippage": 461.1675
+      },
+      {
+        "date": "2021-06-21 00:00:00",
+        "action": "SELL",
+        "price": 1867.43,
+        "shares": 500,
+        "commission": 280.11449999999996,
+        "slippage": 466.8575,
+        "stamp_tax": 933.715,
+        "profit": 9699.312999999966,
+        "profit_pct": 0.010516041351569621
+      }
+    ]
+  },
+  "601318": {
+    "total_return": -0.28608291659999985,
+    "annual_return": -0.06521979614342766,
+    "max_drawdown": -0.4658295933675981,
+    "sharpe_ratio": -0.5177281406902061,
+    "sortino_ratio": -0.46512497607501396,
+    "calmar_ratio": -0.1400078420779099,
+    "volatility": 0.18391852530265393,
+    "win_rate": 0.16666666666666666,
+    "total_trades": 48,
+    "buy_trades": 24,
+    "sell_trades": 24,
+    "win_trades": 4,
+    "lose_trades": 20,
+    "stock_code": "601318",
+    "final_value": 713917.0834000001,
+    "trades_detail": [
+      {
+        "date": "2020-04-23 00:00:00",
+        "action": "BUY",
+        "price": 57.97,
+        "shares": 16300,
+        "commission": 283.4733,
+        "slippage": 472.45550000000003
+      },
+      {
+        "date": "2020-04-24 00:00:00",
+        "action": "SELL",
+        "price": 56.31,
+        "shares": 16300,
+        "commission": 275.35589999999996,
+        "slippage": 458.92650000000003,
+        "stamp_tax": 917.8530000000001,
+        "profit": -28710.135399999912,
+        "profit_pct": -0.030383957219251245
+      },
+      {
+        "date": "2020-04-29 00:00:00",
+        "action": "BUY",
+        "price": 59.81,
+        "shares": 15400,
+        "commission": 276.32219999999995,
+        "slippage": 460.53700000000003
+      },
+      {
+        "date": "2020-05-25 00:00:00",
+        "action": "SELL",
+        "price": 57.14,
+        "shares": 15400,
+        "commission": 263.98679999999996,
+        "slippage": 439.978,
+        "stamp_tax": 879.956,
+        "profit": -42701.92079999996,
+        "profit_pct": -0.046361009864571104
+      },
+      {
+        "date": "2020-06-02 00:00:00",
+        "action": "BUY",
+        "price": 61.39,
+        "shares": 14300,
+        "commission": 263.3631,
+        "slippage": 438.93850000000003
+      },
+      {
+        "date": "2020-06-23 00:00:00",
+        "action": "SELL",
+        "price": 59.07,
+        "shares": 14300,
+        "commission": 253.41029999999998,
+        "slippage": 422.3505,
+        "stamp_tax": 844.701,
+        "profit": -34696.46179999993,
+        "profit_pct": -0.03952314709236024
+      },
+      {
+        "date": "2020-07-02 00:00:00",
+        "action": "BUY",
+        "price": 63.11,
+        "shares": 13400,
+        "commission": 253.70219999999998,
+        "slippage": 422.837
+      },
+      {
+        "date": "2020-07-29 00:00:00",
+        "action": "SELL",
+        "price": 64.41,
+        "shares": 13400,
+        "commission": 258.9282,
+        "slippage": 431.547,
+        "stamp_tax": 863.094,
+        "profit": 15866.430799999973,
+        "profit_pct": 0.01876187608936774
+      },
+      {
+        "date": "2020-11-05 00:00:00",
+        "action": "BUY",
+        "price": 68.85,
+        "shares": 12500,
+        "commission": 258.18749999999994,
+        "slippage": 430.31249999999994
+      },
+      {
+        "date": "2020-12-22 00:00:00",
+        "action": "SELL",
+        "price": 72.06,
+        "shares": 12500,
+        "commission": 270.22499999999997,
+        "slippage": 450.375,
+        "stamp_tax": 900.75,
+        "profit": 38503.65000000014,
+        "profit_pct": 0.04473917211328993
+      }
+    ]
+  },
+  "000858": {
+    "total_return": 0.0020525535999995626,
+    "annual_return": 0.00041045509518622403,
+    "max_drawdown": -0.19940814405484872,
+    "sharpe_ratio": -0.2316100071581443,
+    "sortino_ratio": -0.154397755618813,
+    "calmar_ratio": 0.002058366758949049,
+    "volatility": 0.12775589996251718,
+    "win_rate": 0.2222222222222222,
+    "total_trades": 18,
+    "buy_trades": 9,
+    "sell_trades": 9,
+    "win_trades": 2,
+    "lose_trades": 7,
+    "stock_code": "000858",
+    "final_value": 1002052.5535999995,
+    "trades_detail": [
+      {
+        "date": "2021-04-06 00:00:00",
+        "action": "BUY",
+        "price": 262.38,
+        "shares": 3600,
+        "commission": 283.37039999999996,
+        "slippage": 472.284
+      },
+      {
+        "date": "2021-04-09 00:00:00",
+        "action": "SELL",
+        "price": 242.92,
+        "shares": 3600,
+        "commission": 262.3536,
+        "slippage": 437.25600000000003,
+        "stamp_tax": 874.5120000000001,
+        "profit": -71630.12160000007,
+        "profit_pct": -0.07583373732754028
+      },
+      {
+        "date": "2021-04-23 00:00:00",
+        "action": "BUY",
+        "price": 257.62,
+        "shares": 3400,
+        "commission": 262.7724,
+        "slippage": 437.954
+      },
+      {
+        "date": "2021-06-17 00:00:00",
+        "action": "SELL",
+        "price": 271.84,
+        "shares": 3400,
+        "commission": 277.2767999999999,
+        "slippage": 462.12799999999993,
+        "stamp_tax": 924.2559999999999,
+        "profit": 46684.33919999981,
+        "profit_pct": 0.05329822218771813
+      },
+      {
+        "date": "2022-09-30 00:00:00",
+        "action": "BUY",
+        "price": 152.46,
+        "shares": 6000,
+        "commission": 274.428,
+        "slippage": 457.38
+      },
+      {
+        "date": "2022-10-10 00:00:00",
+        "action": "SELL",
+        "price": 142.13,
+        "shares": 6000,
+        "commission": 255.83399999999997,
+        "slippage": 426.39,
+        "stamp_tax": 852.78,
+        "profit": -63515.00400000007,
+        "profit_pct": -0.06943351698806252
+      },
+      {
+        "date": "2022-11-17 00:00:00",
+        "action": "BUY",
+        "price": 135.83,
+        "shares": 6300,
+        "commission": 256.7187,
+        "slippage": 427.8645000000001
+      },
+      {
+        "date": "2022-11-24 00:00:00",
+        "action": "SELL",
+        "price": 131.04,
+        "shares": 6300,
+        "commission": 247.66559999999998,
+        "slippage": 412.776,
+        "stamp_tax": 825.552,
+        "profit": -31662.993600000045,
+        "profit_pct": -0.03700119266730477
+      },
+      {
+        "date": "2022-11-29 00:00:00",
+        "action": "BUY",
+        "price": 138.28,
+        "shares": 6000,
+        "commission": 248.90399999999997,
+        "slippage": 414.84000000000003
+      },
+      {
+        "date": "2023-03-08 00:00:00",
+        "action": "SELL",
+        "price": 182.53,
+        "shares": 6000,
+        "commission": 328.554,
+        "slippage": 547.59,
+        "stamp_tax": 1095.18,
+        "profit": 263528.676,
+        "profit_pct": 0.31762688747468903
+      }
+    ]
+  },
+  "000333": {
+    "total_return": -0.026356967400000486,
+    "annual_return": -0.005331503558031803,
+    "max_drawdown": -0.5691606366075895,
+    "sharpe_ratio": -0.18134167132943182,
+    "sortino_ratio": -0.1410183274240571,
+    "calmar_ratio": -0.009367309007540577,
+    "volatility": 0.1948338917305296,
+    "win_rate": 0.26666666666666666,
+    "total_trades": 30,
+    "buy_trades": 15,
+    "sell_trades": 15,
+    "win_trades": 4,
+    "lose_trades": 11,
+    "stock_code": "000333",
+    "final_value": 973643.0325999996,
+    "trades_detail": [
+      {
+        "date": "2020-04-22 00:00:00",
+        "action": "BUY",
+        "price": 37.05,
+        "shares": 25600,
+        "commission": 284.5439999999999,
+        "slippage": 474.23999999999995
+      },
+      {
+        "date": "2020-09-07 00:00:00",
+        "action": "SELL",
+        "price": 53.95,
+        "shares": 25600,
+        "commission": 414.33599999999996,
+        "slippage": 690.5600000000001,
+        "stamp_tax": 1381.1200000000001,
+        "profit": 430153.98400000005,
+        "profit_pct": 0.45351929824561416
+      },
+      {
+        "date": "2020-09-17 00:00:00",
+        "action": "BUY",
+        "price": 57.85,
+        "shares": 23400,
+        "commission": 406.10699999999997,
+        "slippage": 676.845
+      },
+      {
+        "date": "2020-12-10 00:00:00",
+        "action": "SELL",
+        "price": 72.35,
+        "shares": 23400,
+        "commission": 507.8969999999999,
+        "slippage": 846.4949999999999,
+        "stamp_tax": 1692.9899999999998,
+        "profit": 336252.61799999955,
+        "profit_pct": 0.24839706136560036
+      },
+      {
+        "date": "2020-12-17 00:00:00",
+        "action": "BUY",
+        "price": 76.92,
+        "shares": 21700,
+        "commission": 500.7492,
+        "slippage": 834.582
+      },
+      {
+        "date": "2021-02-08 00:00:00",
+        "action": "SELL",
+        "price": 83.91,
+        "shares": 21700,
+        "commission": 546.2541,
+        "slippage": 910.4235,
+        "stamp_tax": 1820.847,
+        "profit": 148405.47539999988,
+        "profit_pct": 0.08891006240249602
+      },
+      {
+        "date": "2021-02-09 00:00:00",
+        "action": "BUY",
+        "price": 89.15,
+        "shares": 20300,
+        "commission": 542.9235,
+        "slippage": 904.8725000000001
+      },
+      {
+        "date": "2021-02-22 00:00:00",
+        "action": "SELL",
+        "price": 77.69,
+        "shares": 20300,
+        "commission": 473.1321,
+        "slippage": 788.5535,
+        "stamp_tax": 1577.107,
+        "profit": -235476.79260000004,
+        "profit_pct": -0.13011600673022997
+      },
+      {
+        "date": "2021-05-25 00:00:00",
+        "action": "BUY",
+        "price": 70.53,
+        "shares": 22500,
+        "commission": 476.0775,
+        "slippage": 793.4625
+      },
+      {
+        "date": "2021-06-04 00:00:00",
+        "action": "SELL",
+        "price": 66.58,
+        "shares": 22500,
+        "commission": 449.41499999999996,
+        "slippage": 749.025,
+        "stamp_tax": 1498.05,
+        "profit": -91571.48999999999,
+        "profit_pct": -0.05770372890968382
+      }
+    ]
+  },
+  "000651": {
+    "total_return": -0.03524498179999991,
+    "annual_return": -0.007155407911701217,
+    "max_drawdown": -0.3759339950189057,
+    "sharpe_ratio": -0.2298121050727025,
+    "sortino_ratio": -0.18365517882486163,
+    "calmar_ratio": -0.019033681461399554,
+    "volatility": 0.1616773315746221,
+    "win_rate": 0.4166666666666667,
+    "total_trades": 25,
+    "buy_trades": 13,
+    "sell_trades": 12,
+    "win_trades": 5,
+    "lose_trades": 7,
+    "stock_code": "000651",
+    "final_value": 964755.0182,
+    "trades_detail": [
+      {
+        "date": "2020-04-29 00:00:00",
+        "action": "BUY",
+        "price": 38.7,
+        "shares": 24500,
+        "commission": 284.445,
+        "slippage": 474.07500000000005
+      },
+      {
+        "date": "2020-06-30 00:00:00",
+        "action": "SELL",
+        "price": 41.25,
+        "shares": 24500,
+        "commission": 303.1875,
+        "slippage": 505.3125,
+        "stamp_tax": 1010.625,
+        "profit": 60655.87499999988,
+        "profit_pct": 0.06397286821705413
+      },
+      {
+        "date": "2020-07-02 00:00:00",
+        "action": "BUY",
+        "price": 42.89,
+        "shares": 23400,
+        "commission": 301.08779999999996,
+        "slippage": 501.813
+      },
+      {
+        "date": "2020-07-17 00:00:00",
+        "action": "SELL",
+        "price": 41.89,
+        "shares": 23400,
+        "commission": 294.0678,
+        "slippage": 490.113,
+        "stamp_tax": 980.226,
+        "profit": -25164.406799999997,
+        "profit_pct": -0.025073490324084867
+      },
+      {
+        "date": "2020-07-20 00:00:00",
+        "action": "BUY",
+        "price": 43.61,
+        "shares": 22500,
+        "commission": 294.36749999999995,
+        "slippage": 490.6125
+      },
+      {
+        "date": "2020-07-27 00:00:00",
+        "action": "SELL",
+        "price": 41.46,
+        "shares": 22500,
+        "commission": 279.85499999999996,
+        "slippage": 466.425,
+        "stamp_tax": 932.85,
+        "profit": -50054.130000000005,
+        "profit_pct": -0.05101187800963082
+      },
+      {
+        "date": "2020-09-21 00:00:00",
+        "action": "BUY",
+        "price": 41.23,
+        "shares": 22600,
+        "commission": 279.53939999999994,
+        "slippage": 465.89899999999994
+      },
+      {
+        "date": "2020-09-24 00:00:00",
+        "action": "SELL",
+        "price": 39.01,
+        "shares": 22600,
+        "commission": 264.4878,
+        "slippage": 440.813,
+        "stamp_tax": 881.626,
+        "profit": -51758.9267999999,
+        "profit_pct": -0.05554736842105253
+      },
+      {
+        "date": "2021-01-06 00:00:00",
+        "action": "BUY",
+        "price": 49.75,
+        "shares": 17700,
+        "commission": 264.17249999999996,
+        "slippage": 440.2875
+      },
+      {
+        "date": "2021-01-20 00:00:00",
+        "action": "SELL",
+        "price": 46.68,
+        "shares": 17700,
+        "commission": 247.87079999999997,
+        "slippage": 413.118,
+        "stamp_tax": 826.236,
+        "profit": -55826.22480000008,
+        "profit_pct": -0.06339746733668351
+      }
+    ]
+  },
+  "600276": {
+    "total_return": -0.3399537292,
+    "annual_return": -0.07978319413173007,
+    "max_drawdown": -0.38540370517780387,
+    "sharpe_ratio": -0.6785756870447821,
+    "sortino_ratio": -0.536336399702787,
+    "calmar_ratio": -0.20701200600788863,
+    "volatility": 0.16178474446946256,
+    "win_rate": 0.2631578947368421,
+    "total_trades": 38,
+    "buy_trades": 19,
+    "sell_trades": 19,
+    "win_trades": 5,
+    "lose_trades": 14,
+    "stock_code": "600276",
+    "final_value": 660046.2708,
+    "trades_detail": [
+      {
+        "date": "2020-08-26 00:00:00",
+        "action": "BUY",
+        "price": 77.93,
+        "shares": 12100,
+        "commission": 282.8859,
+        "slippage": 471.47650000000004
+      },
+      {
+        "date": "2020-09-08 00:00:00",
+        "action": "SELL",
+        "price": 76.06,
+        "shares": 12100,
+        "commission": 276.09779999999995,
+        "slippage": 460.163,
+        "stamp_tax": 920.326,
+        "profit": -24283.58680000005,
+        "profit_pct": -0.025752701142050607
+      },
+      {
+        "date": "2021-02-10 00:00:00",
+        "action": "BUY",
+        "price": 90.11,
+        "shares": 10200,
+        "commission": 275.73659999999995,
+        "slippage": 459.56100000000004
+      },
+      {
+        "date": "2021-02-18 00:00:00",
+        "action": "SELL",
+        "price": 86.53,
+        "shares": 10200,
+        "commission": 264.7818,
+        "slippage": 441.303,
+        "stamp_tax": 882.606,
+        "profit": -38104.69079999998,
+        "profit_pct": -0.041457707246698464
+      },
+      {
+        "date": "2021-05-26 00:00:00",
+        "action": "BUY",
+        "price": 71.02,
+        "shares": 12500,
+        "commission": 266.325,
+        "slippage": 443.875
+      },
+      {
+        "date": "2021-06-04 00:00:00",
+        "action": "SELL",
+        "price": 67.99,
+        "shares": 12500,
+        "commission": 254.96249999999995,
+        "slippage": 424.93749999999994,
+        "stamp_tax": 849.8749999999999,
+        "profit": -39404.77500000014,
+        "profit_pct": -0.044387243030132514
+      },
+      {
+        "date": "2021-06-10 00:00:00",
+        "action": "BUY",
+        "price": 72.28,
+        "shares": 11700,
+        "commission": 253.70279999999997,
+        "slippage": 422.838
+      },
+      {
+        "date": "2021-06-24 00:00:00",
+        "action": "SELL",
+        "price": 67.28,
+        "shares": 11700,
+        "commission": 236.15279999999998,
+        "slippage": 393.588,
+        "stamp_tax": 787.176,
+        "profit": -59916.916800000006,
+        "profit_pct": -0.07085091311566133
+      },
+      {
+        "date": "2021-09-29 00:00:00",
+        "action": "BUY",
+        "price": 49.2,
+        "shares": 16100,
+        "commission": 237.63599999999997,
+        "slippage": 396.06
+      },
+      {
+        "date": "2021-10-27 00:00:00",
+        "action": "SELL",
+        "price": 48.34,
+        "shares": 16100,
+        "commission": 233.48219999999998,
+        "slippage": 389.137,
+        "stamp_tax": 778.274,
+        "profit": -15246.893199999933,
+        "profit_pct": -0.019248211382113738
+      }
+    ]
+  },
+  "601888": {
+    "total_return": 1.291255340200001,
+    "annual_return": 0.18049464992826514,
+    "max_drawdown": -0.5602298407322943,
+    "sharpe_ratio": 0.47283589582147184,
+    "sortino_ratio": 0.49201970254303584,
+    "calmar_ratio": 0.3221796427200929,
+    "volatility": 0.3182809326834341,
+    "win_rate": 0.2631578947368421,
+    "total_trades": 38,
+    "buy_trades": 19,
+    "sell_trades": 19,
+    "win_trades": 5,
+    "lose_trades": 14,
+    "stock_code": "601888",
+    "final_value": 2291255.340200001,
+    "trades_detail": [
+      {
+        "date": "2020-04-13 00:00:00",
+        "action": "BUY",
+        "price": 71.46,
+        "shares": 13200,
+        "commission": 282.98159999999996,
+        "slippage": 471.63599999999997
+      },
+      {
+        "date": "2020-10-15 00:00:00",
+        "action": "SELL",
+        "price": 196.58,
+        "shares": 13200,
+        "commission": 778.4567999999999,
+        "slippage": 1297.428,
+        "stamp_tax": 2594.856,
+        "profit": 1646913.2592000002,
+        "profit_pct": 1.745957962496502
+      },
+      {
+        "date": "2020-12-03 00:00:00",
+        "action": "BUY",
+        "price": 188.68,
+        "shares": 13300,
+        "commission": 752.8331999999999,
+        "slippage": 1254.722
+      },
+      {
+        "date": "2021-03-05 00:00:00",
+        "action": "SELL",
+        "price": 299.63,
+        "shares": 13300,
+        "commission": 1195.5237,
+        "slippage": 1992.5395,
+        "stamp_tax": 3985.079,
+        "profit": 1468461.8578000003,
+        "profit_pct": 0.5851741891032437
+      },
+      {
+        "date": "2021-03-30 00:00:00",
+        "action": "BUY",
+        "price": 311.63,
+        "shares": 12500,
+        "commission": 1168.6125,
+        "slippage": 1947.6875
+      },
+      {
+        "date": "2021-04-12 00:00:00",
+        "action": "SELL",
+        "price": 289.14,
+        "shares": 12500,
+        "commission": 1084.2749999999999,
+        "slippage": 1807.125,
+        "stamp_tax": 3614.25,
+        "profit": -287630.6499999999,
+        "profit_pct": -0.07383901421557613
+      },
+      {
+        "date": "2021-04-29 00:00:00",
+        "action": "BUY",
+        "price": 304.07,
+        "shares": 11900,
+        "commission": 1085.5299,
+        "slippage": 1809.2165
+      },
+      {
+        "date": "2021-05-07 00:00:00",
+        "action": "SELL",
+        "price": 281.75,
+        "shares": 11900,
+        "commission": 1005.8475,
+        "slippage": 1676.4125000000001,
+        "stamp_tax": 3352.8250000000003,
+        "profit": -271643.0850000004,
+        "profit_pct": -0.07507202288946636
+      },
+      {
+        "date": "2021-05-14 00:00:00",
+        "action": "BUY",
+        "price": 303.33,
+        "shares": 11100,
+        "commission": 1010.0889,
+        "slippage": 1683.4815
+      },
+      {
+        "date": "2021-06-11 00:00:00",
+        "action": "SELL",
+        "price": 304.75,
+        "shares": 11100,
+        "commission": 1014.8174999999999,
+        "slippage": 1691.3625,
+        "stamp_tax": 3382.725,
+        "profit": 9673.095000000205,
+        "profit_pct": 0.0028729436587215853
+      }
+    ]
+  }
+}
