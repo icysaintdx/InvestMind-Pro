@@ -71,3 +71,4 @@ config/secrets.json
 *.db
 *.db-shm
 *.db-wal
+venv_linux/
