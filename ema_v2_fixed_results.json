@@ -1,0 +1,84 @@
+{
+  "timestamp": "2026-02-27T05:00:31.027136",
+  "parameters": {
+    "ema_fast": 5,
+    "ema_slow": 30,
+    "atr_multiplier": 2.0
+  },
+  "results": [
+    {
+      "stock_code": "000333",
+      "stock_name": "美的集团",
+      "success": true,
+      "total_return_pct": -0.11824243499999983,
+      "final_capital": 88175.75650000002,
+      "win_rate": 0.30434782608695654,
+      "total_trades": 47,
+      "sell_trades": 23,
+      "stop_loss_hits": 4
+    },
+    {
+      "stock_code": "000651",
+      "stock_name": "格力电器",
+      "success": true,
+      "total_return_pct": -0.19477457599999995,
+      "final_capital": 80522.5424,
+      "win_rate": 0.3125,
+      "total_trades": 33,
+      "sell_trades": 16,
+      "stop_loss_hits": 2
+    },
+    {
+      "stock_code": "000858",
+      "stock_name": "五粮液",
+      "success": true,
+      "total_return_pct": 0.17095959500000027,
+      "final_capital": 117095.95950000003,
+      "win_rate": 0.42857142857142855,
+      "total_trades": 28,
+      "sell_trades": 14,
+      "stop_loss_hits": 2
+    },
+    {
+      "stock_code": "600276",
+      "stock_name": "恒瑞医药",
+      "success": true,
+      "total_return_pct": -0.0452521100000001,
+      "final_capital": 95474.78899999999,
+      "win_rate": 0.2413793103448276,
+      "total_trades": 58,
+      "sell_trades": 29,
+      "stop_loss_hits": 2
+    },
+    {
+      "stock_code": "600519",
+      "stock_name": "贵州茅台",
+      "success": true,
+      "total_return_pct": 0,
+      "win_rate": 0,
+      "total_trades": 0
+    },
+    {
+      "stock_code": "601318",
+      "stock_name": "中国平安",
+      "success": true,
+      "total_return_pct": -0.07336337899999955,
+      "final_capital": 92663.66210000005,
+      "win_rate": 0.18518518518518517,
+      "total_trades": 54,
+      "sell_trades": 27,
+      "stop_loss_hits": 3
+    },
+    {
+      "stock_code": "601888",
+      "stock_name": "中国中免",
+      "success": true,
+      "total_return_pct": 0.2134263459999996,
+      "final_capital": 121342.63459999996,
+      "win_rate": 0.19047619047619047,
+      "total_trades": 42,
+      "sell_trades": 21,
+      "stop_loss_hits": 1
+    }
+  ]
+}
