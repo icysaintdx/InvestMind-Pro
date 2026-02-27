@@ -1,0 +1,1062 @@
+{
+  "603993": [
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 5,
+        "slow_ema": 20,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "total_return": 385.5095347723613,
+      "win_rate": 38.88888888888889,
+      "total_trades": 36,
+      "max_drawdown": -30.44955780612813,
+      "sharpe_ratio": 0.6266115709353983
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 5,
+        "slow_ema": 25,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "total_return": 408.0408249919221,
+      "win_rate": 38.23529411764706,
+      "total_trades": 34,
+      "max_drawdown": -21.503488095085196,
+      "sharpe_ratio": 0.6387229393677416
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 5,
+        "slow_ema": 30,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "total_return": 276.76048632326575,
+      "win_rate": 37.03703703703704,
+      "total_trades": 27,
+      "max_drawdown": -19.696965536894094,
+      "sharpe_ratio": 0.5769118225836464
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 5,
+        "slow_ema": 35,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "total_return": 171.4377973661432,
+      "win_rate": 28.57142857142857,
+      "total_trades": 28,
+      "max_drawdown": -29.52639073040207,
+      "sharpe_ratio": 0.4816124017781129
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 5,
+        "slow_ema": 40,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "total_return": 8.760389848322463,
+      "win_rate": 26.923076923076923,
+      "total_trades": 26,
+      "max_drawdown": -30.97646499520858,
+      "sharpe_ratio": 0.17333618240879722
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 8,
+        "slow_ema": 20,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "total_return": 231.97152124923412,
+      "win_rate": 34.285714285714285,
+      "total_trades": 35,
+      "max_drawdown": -29.436007169511875,
+      "sharpe_ratio": 0.5225555304987797
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 8,
+        "slow_ema": 25,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "total_return": 137.82244172319673,
+      "win_rate": 32.0,
+      "total_trades": 25,
+      "max_drawdown": -30.895299809577136,
+      "sharpe_ratio": 0.4455045687808645
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 8,
+        "slow_ema": 30,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "total_return": -0.5824984804236737,
+      "win_rate": 30.434782608695656,
+      "total_trades": 23,
+      "max_drawdown": -31.31662584464623,
+      "sharpe_ratio": 0.13236183781583
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 8,
+        "slow_ema": 35,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "total_return": -2.4056527455613104,
+      "win_rate": 33.33333333333333,
+      "total_trades": 21,
+      "max_drawdown": -35.68726094221634,
+      "sharpe_ratio": 0.1239446983006894
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 8,
+        "slow_ema": 40,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "total_return": -0.6948618343801354,
+      "win_rate": 33.33333333333333,
+      "total_trades": 21,
+      "max_drawdown": -32.74089196014343,
+      "sharpe_ratio": 0.1312591523839881
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 10,
+        "slow_ema": 20,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "total_return": 174.90845690377708,
+      "win_rate": 33.33333333333333,
+      "total_trades": 27,
+      "max_drawdown": -30.699258106909284,
+      "sharpe_ratio": 0.488467221401314
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 10,
+        "slow_ema": 25,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "total_return": 111.93639281048364,
+      "win_rate": 33.33333333333333,
+      "total_trades": 24,
+      "max_drawdown": -29.571155895446932,
+      "sharpe_ratio": 0.409533378919281
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 10,
+        "slow_ema": 30,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "total_return": 5.526494289830356,
+      "win_rate": 35.0,
+      "total_trades": 20,
+      "max_drawdown": -31.499288363604734,
+      "sharpe_ratio": 0.16424597767145507
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 10,
+        "slow_ema": 35,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "total_return": 1.9510850192122744,
+      "win_rate": 35.0,
+      "total_trades": 20,
+      "max_drawdown": -33.9142819497571,
+      "sharpe_ratio": 0.1451077819548231
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 10,
+        "slow_ema": 40,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "total_return": 22.505032670481306,
+      "win_rate": 35.0,
+      "total_trades": 20,
+      "max_drawdown": -34.64949312022514,
+      "sharpe_ratio": 0.23971939620197782
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 12,
+        "slow_ema": 20,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "total_return": 132.42380506420244,
+      "win_rate": 33.33333333333333,
+      "total_trades": 24,
+      "max_drawdown": -27.905948194186564,
+      "sharpe_ratio": 0.4386986969663559
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 12,
+        "slow_ema": 25,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "total_return": 7.527949640962878,
+      "win_rate": 33.33333333333333,
+      "total_trades": 21,
+      "max_drawdown": -31.79455005169267,
+      "sharpe_ratio": 0.1713667877693141
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 12,
+        "slow_ema": 30,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "total_return": -4.616876891812659,
+      "win_rate": 33.33333333333333,
+      "total_trades": 21,
+      "max_drawdown": -37.78364120124627,
+      "sharpe_ratio": 0.10926954179922908
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 12,
+        "slow_ema": 35,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "total_return": 23.117313782429076,
+      "win_rate": 31.57894736842105,
+      "total_trades": 19,
+      "max_drawdown": -36.785079893576444,
+      "sharpe_ratio": 0.24391956616378446
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 12,
+        "slow_ema": 40,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "total_return": 1.3156204174712767,
+      "win_rate": 31.57894736842105,
+      "total_trades": 19,
+      "max_drawdown": -39.1581863598086,
+      "sharpe_ratio": 0.14329960792384694
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 15,
+        "slow_ema": 20,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "total_return": 126.64570113832063,
+      "win_rate": 34.78260869565217,
+      "total_trades": 23,
+      "max_drawdown": -31.08790235268492,
+      "sharpe_ratio": 0.42809593386802586
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 15,
+        "slow_ema": 25,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "total_return": -4.52173580857832,
+      "win_rate": 35.0,
+      "total_trades": 20,
+      "max_drawdown": -38.31205077917865,
+      "sharpe_ratio": 0.11436679807620842
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 15,
+        "slow_ema": 30,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "total_return": 14.483231161122065,
+      "win_rate": 31.57894736842105,
+      "total_trades": 19,
+      "max_drawdown": -38.620467885552614,
+      "sharpe_ratio": 0.2103463268399021
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 15,
+        "slow_ema": 35,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "total_return": -10.710563016990928,
+      "win_rate": 27.77777777777778,
+      "total_trades": 18,
+      "max_drawdown": -40.18306960008176,
+      "sharpe_ratio": 0.08267518219611109
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 15,
+        "slow_ema": 40,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "total_return": -16.751791144969143,
+      "win_rate": 23.52941176470588,
+      "total_trades": 17,
+      "max_drawdown": -41.38730971704865,
+      "sharpe_ratio": 0.03846924219279382
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 10,
+        "slow_ema": 30,
+        "atr_period": 14,
+        "atr_multiplier": 1.5,
+        "market_filter": true
+      },
+      "total_return": 55.312877963024775,
+      "win_rate": 57.14285714285714,
+      "total_trades": 21,
+      "max_drawdown": -20.418583329381438,
+      "sharpe_ratio": 0.4817481015373087
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 10,
+        "slow_ema": 30,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": 22.60719954854966,
+      "win_rate": 38.095238095238095,
+      "total_trades": 21,
+      "max_drawdown": -31.499288363604744,
+      "sharpe_ratio": 0.24223753126379746
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 10,
+        "slow_ema": 30,
+        "atr_period": 14,
+        "atr_multiplier": 2.5,
+        "market_filter": true
+      },
+      "total_return": 5.723005452381243,
+      "win_rate": 35.0,
+      "total_trades": 20,
+      "max_drawdown": -31.499288363604744,
+      "sharpe_ratio": 0.16524599469520906
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 10,
+        "slow_ema": 30,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "total_return": 5.526494289830356,
+      "win_rate": 35.0,
+      "total_trades": 20,
+      "max_drawdown": -31.499288363604734,
+      "sharpe_ratio": 0.16424597767145507
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 10,
+        "slow_ema": 30,
+        "atr_period": 14,
+        "atr_multiplier": 3.5,
+        "market_filter": true
+      },
+      "total_return": 5.526494289830356,
+      "win_rate": 35.0,
+      "total_trades": 20,
+      "max_drawdown": -31.499288363604734,
+      "sharpe_ratio": 0.16424597767145507
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 10,
+        "slow_ema": 30,
+        "atr_period": 14,
+        "atr_multiplier": 4.0,
+        "market_filter": true
+      },
+      "total_return": 5.526494289830356,
+      "win_rate": 35.0,
+      "total_trades": 20,
+      "max_drawdown": -31.499288363604734,
+      "sharpe_ratio": 0.16424597767145507
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 10,
+        "slow_ema": 30,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "total_return": 5.526494289830356,
+      "win_rate": 35.0,
+      "total_trades": 20,
+      "max_drawdown": -31.499288363604734,
+      "sharpe_ratio": 0.16424597767145507
+    },
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "params": {
+        "fast_ema": 10,
+        "slow_ema": 30,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": false
+      },
+      "total_return": 5.526494289830356,
+      "win_rate": 35.0,
+      "total_trades": 20,
+      "max_drawdown": -31.499288363604734,
+      "sharpe_ratio": 0.16424597767145507
+    }
+  ],
+  "603288": [
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 5,
+        "slow_ema": 20,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": -29.768895253629772,
+      "win_rate": 22.22222222222222,
+      "total_trades": 45,
+      "max_drawdown": -51.067992031973766,
+      "sharpe_ratio": -0.10848599373021482
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 5,
+        "slow_ema": 25,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": -24.811123596136284,
+      "win_rate": 23.809523809523807,
+      "total_trades": 42,
+      "max_drawdown": -45.58116810449285,
+      "sharpe_ratio": -0.10346227330449098
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 5,
+        "slow_ema": 30,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": -2.4242538889939897,
+      "win_rate": 29.411764705882355,
+      "total_trades": 34,
+      "max_drawdown": -38.005719076170216,
+      "sharpe_ratio": 0.07930591267918138
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 5,
+        "slow_ema": 35,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": 2.5495933802673387,
+      "win_rate": 31.03448275862069,
+      "total_trades": 29,
+      "max_drawdown": -39.94859933283897,
+      "sharpe_ratio": 0.11527898222209902
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 5,
+        "slow_ema": 40,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": -2.9416889779245685,
+      "win_rate": 25.0,
+      "total_trades": 28,
+      "max_drawdown": -40.997969798644576,
+      "sharpe_ratio": 0.0701467194326215
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 8,
+        "slow_ema": 20,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": -24.763038566776537,
+      "win_rate": 27.77777777777778,
+      "total_trades": 36,
+      "max_drawdown": -47.54497035886047,
+      "sharpe_ratio": -0.106999187571618
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 8,
+        "slow_ema": 25,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": -22.792116311452002,
+      "win_rate": 28.125,
+      "total_trades": 32,
+      "max_drawdown": -47.127481840610486,
+      "sharpe_ratio": -0.0945558316888622
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 8,
+        "slow_ema": 30,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": -16.35860085623506,
+      "win_rate": 23.333333333333332,
+      "total_trades": 30,
+      "max_drawdown": -44.98709538254679,
+      "sharpe_ratio": -0.04358348373661427
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 8,
+        "slow_ema": 35,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": 0.9719260833432636,
+      "win_rate": 25.0,
+      "total_trades": 24,
+      "max_drawdown": -37.42660949343852,
+      "sharpe_ratio": 0.09823858551938615
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 8,
+        "slow_ema": 40,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": 12.212915001052854,
+      "win_rate": 30.434782608695656,
+      "total_trades": 23,
+      "max_drawdown": -31.685842537641683,
+      "sharpe_ratio": 0.1828198740889415
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 10,
+        "slow_ema": 20,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": -11.431782619936508,
+      "win_rate": 32.25806451612903,
+      "total_trades": 31,
+      "max_drawdown": -38.2734160848236,
+      "sharpe_ratio": 0.006784144114586455
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 10,
+        "slow_ema": 25,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": -22.75831445393138,
+      "win_rate": 23.333333333333332,
+      "total_trades": 30,
+      "max_drawdown": -49.044934106574026,
+      "sharpe_ratio": -0.09938652986104846
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 10,
+        "slow_ema": 30,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": -6.664137756228083,
+      "win_rate": 24.0,
+      "total_trades": 25,
+      "max_drawdown": -39.055781930739585,
+      "sharpe_ratio": 0.03786724917978553
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 10,
+        "slow_ema": 35,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": 3.286060205537826,
+      "win_rate": 31.818181818181817,
+      "total_trades": 22,
+      "max_drawdown": -37.00377367912677,
+      "sharpe_ratio": 0.11529263960587678
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 10,
+        "slow_ema": 40,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": 27.271062115899735,
+      "win_rate": 35.294117647058826,
+      "total_trades": 17,
+      "max_drawdown": -21.79279616771029,
+      "sharpe_ratio": 0.28946826339160847
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 12,
+        "slow_ema": 20,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": -15.586453735912976,
+      "win_rate": 30.0,
+      "total_trades": 30,
+      "max_drawdown": -42.944208799809026,
+      "sharpe_ratio": -0.03325018364728465
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 12,
+        "slow_ema": 25,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": -14.594437299756944,
+      "win_rate": 21.428571428571427,
+      "total_trades": 28,
+      "max_drawdown": -44.02999929667673,
+      "sharpe_ratio": -0.028528119171558244
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 12,
+        "slow_ema": 30,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": -3.2037287181724965,
+      "win_rate": 33.33333333333333,
+      "total_trades": 24,
+      "max_drawdown": -34.71528510802788,
+      "sharpe_ratio": 0.060534376025519455
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 12,
+        "slow_ema": 35,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": 18.354375853400096,
+      "win_rate": 35.0,
+      "total_trades": 20,
+      "max_drawdown": -26.22283657934949,
+      "sharpe_ratio": 0.22804301686221576
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 12,
+        "slow_ema": 40,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": 20.880933805757987,
+      "win_rate": 37.5,
+      "total_trades": 16,
+      "max_drawdown": -22.798705346852945,
+      "sharpe_ratio": 0.2459025354834691
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 15,
+        "slow_ema": 20,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": -10.263444933043182,
+      "win_rate": 29.629629629629626,
+      "total_trades": 27,
+      "max_drawdown": -42.71084858755074,
+      "sharpe_ratio": 0.012433160304393523
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 15,
+        "slow_ema": 25,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": -9.73126450555405,
+      "win_rate": 33.33333333333333,
+      "total_trades": 24,
+      "max_drawdown": -38.989170691746175,
+      "sharpe_ratio": 0.0034885600971005393
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 15,
+        "slow_ema": 30,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": 17.420590630830628,
+      "win_rate": 36.84210526315789,
+      "total_trades": 19,
+      "max_drawdown": -21.95764528936613,
+      "sharpe_ratio": 0.2213098214050206
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 15,
+        "slow_ema": 35,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": 16.087477482592657,
+      "win_rate": 35.294117647058826,
+      "total_trades": 17,
+      "max_drawdown": -23.607713668209644,
+      "sharpe_ratio": 0.2119293486371549
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 15,
+        "slow_ema": 40,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": 9.832641476867881,
+      "win_rate": 25.0,
+      "total_trades": 16,
+      "max_drawdown": -27.962790479682237,
+      "sharpe_ratio": 0.16609789938297062
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 8,
+        "slow_ema": 25,
+        "atr_period": 14,
+        "atr_multiplier": 1.5,
+        "market_filter": true
+      },
+      "total_return": -12.8578334374994,
+      "win_rate": 28.125,
+      "total_trades": 32,
+      "max_drawdown": -43.101106931720736,
+      "sharpe_ratio": -0.0011452426471753902
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 8,
+        "slow_ema": 25,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": -22.792116311452002,
+      "win_rate": 28.125,
+      "total_trades": 32,
+      "max_drawdown": -47.127481840610486,
+      "sharpe_ratio": -0.0945558316888622
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 8,
+        "slow_ema": 25,
+        "atr_period": 14,
+        "atr_multiplier": 2.5,
+        "market_filter": true
+      },
+      "total_return": -1.2711786533842824,
+      "win_rate": 28.125,
+      "total_trades": 32,
+      "max_drawdown": -47.12748184061047,
+      "sharpe_ratio": 0.12330112232346763
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 8,
+        "slow_ema": 25,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "total_return": -1.2711786533842824,
+      "win_rate": 28.125,
+      "total_trades": 32,
+      "max_drawdown": -47.12748184061047,
+      "sharpe_ratio": 0.12330112232346763
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 8,
+        "slow_ema": 25,
+        "atr_period": 14,
+        "atr_multiplier": 3.5,
+        "market_filter": true
+      },
+      "total_return": -7.514480324820847,
+      "win_rate": 28.125,
+      "total_trades": 32,
+      "max_drawdown": -47.12748184061047,
+      "sharpe_ratio": 0.08708765659972341
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 8,
+        "slow_ema": 25,
+        "atr_period": 14,
+        "atr_multiplier": 4.0,
+        "market_filter": true
+      },
+      "total_return": -9.522357217076351,
+      "win_rate": 28.125,
+      "total_trades": 32,
+      "max_drawdown": -48.27535350549866,
+      "sharpe_ratio": 0.07707394255535745
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 8,
+        "slow_ema": 25,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": -22.792116311452002,
+      "win_rate": 28.125,
+      "total_trades": 32,
+      "max_drawdown": -47.127481840610486,
+      "sharpe_ratio": -0.0945558316888622
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "params": {
+        "fast_ema": 8,
+        "slow_ema": 25,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": false
+      },
+      "total_return": -22.792116311452002,
+      "win_rate": 28.125,
+      "total_trades": 32,
+      "max_drawdown": -47.127481840610486,
+      "sharpe_ratio": -0.0945558316888622
+    }
+  ]
+}

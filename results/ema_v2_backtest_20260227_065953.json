@@ -1,0 +1,27 @@
+{
+  "timestamp": "20260227_065953",
+  "symbols": [
+    "600519",
+    "601888",
+    "000333",
+    "600276",
+    "000858",
+    "000651",
+    "601318"
+  ],
+  "avg_return": 41.14350460113367,
+  "avg_win_rate": 36.91609977324263,
+  "total_trades": 87,
+  "results": [
+    {
+      "symbol": "600519",
+      "name": "贵州茅台",
+      "type": "low_volatility",
+      "total_return": 39.21234974367562,
+      "win_rate": 40.0,
+      "total_trades": 15,
+      "max_drawdown": -17.731408188215884,
+      "sharpe_ratio": 0.7656848800915081,
+      "trades": [
+        {
+          "entry_date": 

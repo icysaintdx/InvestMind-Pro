@@ -1,0 +1,525 @@
+{
+  "timestamp": "2026-02-28 04:22:20",
+  "extended_stocks": [
+    {
+      "symbol": "603501",
+      "name": "韦尔股份",
+      "sector": "科技/半导体",
+      "is_extended": true,
+      "total_return": 44.09545370081227,
+      "win_rate": 40.74074074074074,
+      "total_trades": 27,
+      "max_drawdown": -19.861211080253533,
+      "sharpe_ratio": 0.3475858057043079,
+      "params": {
+        "fast_ema": 5,
+        "slow_ema": 20,
+        "atr_multiplier": 2.0
+      },
+      "trades_file": "/home/icysaintdx/.openclaw/workspace/InvestMindPro/results/individual_backtests/603501_trades.json"
+    },
+    {
+      "symbol": "603259",
+      "name": "药明康德",
+      "sector": "医药/CXO",
+      "is_extended": true,
+      "total_return": 200.00763702030673,
+      "win_rate": 55.55555555555556,
+      "total_trades": 9,
+      "max_drawdown": -15.77063675072296,
+      "sharpe_ratio": 0.6890543558167598,
+      "params": {
+        "fast_ema": 12,
+        "slow_ema": 35,
+        "atr_multiplier": 2.0
+      },
+      "trades_file": "/home/icysaintdx/.openclaw/workspace/InvestMindPro/results/individual_backtests/603259_trades.json"
+    },
+    {
+      "symbol": "002475",
+      "name": "立讯精密",
+      "sector": "科技/消费电子",
+      "is_extended": true,
+      "total_return": 131.34967624293907,
+      "win_rate": 41.17647058823529,
+      "total_trades": 17,
+      "max_drawdown": -23.44692873814971,
+      "sharpe_ratio": 0.4863600803258871,
+      "params": {
+        "fast_ema": 10,
+        "slow_ema": 25,
+        "atr_multiplier": 2.5
+      },
+      "trades_file": "/home/icysaintdx/.openclaw/workspace/InvestMindPro/results/individual_backtests/002475_trades.json"
+    },
+    {
+      "symbol": "300274",
+      "name": "阳光电源",
+      "sector": "新能源/逆变器",
+      "is_extended": true,
+      "total_return": 2868.5912216492247,
+      "win_rate": 45.45454545454545,
+      "total_trades": 11,
+      "max_drawdown": -18.710605408827995,
+      "sharpe_ratio": 0.5148007427176693,
+      "params": {
+        "fast_ema": 10,
+        "slow_ema": 20,
+        "atr_multiplier": 2.0
+      },
+      "trades_file": "/home/icysaintdx/.openclaw/workspace/InvestMindPro/results/individual_backtests/300274_trades.json"
+    },
+    {
+      "symbol": "300760",
+      "name": "迈瑞医疗",
+      "sector": "医药/医疗器械",
+      "is_extended": true,
+      "total_return": 79.74772867422624,
+      "win_rate": 40.0,
+      "total_trades": 10,
+      "max_drawdown": -18.766790416746044,
+      "sharpe_ratio": 0.4578432718372424,
+      "params": {
+        "fast_ema": 12,
+        "slow_ema": 35,
+        "atr_multiplier": 1.5
+      },
+      "trades_file": "/home/icysaintdx/.openclaw/workspace/InvestMindPro/results/individual_backtests/300760_trades.json"
+    },
+    {
+      "symbol": "600438",
+      "name": "通威股份",
+      "sector": "新能源/硅料",
+      "is_extended": true,
+      "total_return": 266.4187103073342,
+      "win_rate": 58.333333333333336,
+      "total_trades": 12,
+      "max_drawdown": -8.02769207798961,
+      "sharpe_ratio": 0.6181167006566864,
+      "params": {
+        "fast_ema": 3,
+        "slow_ema": 40,
+        "atr_multiplier": 2.0
+      },
+      "trades_file": "/home/icysaintdx/.openclaw/workspace/InvestMindPro/results/individual_backtests/600438_trades.json"
+    },
+    {
+      "symbol": "601899",
+      "name": "紫金矿业",
+      "sector": "有色/资源",
+      "is_extended": true,
+      "total_return": 182.10419828515148,
+      "win_rate": 40.0,
+      "total_trades": 15,
+      "max_drawdown": -18.00579591628787,
+      "sharpe_ratio": 0.5826574109220971,
+      "params": {
+        "fast_ema": 10,
+        "slow_ema": 20,
+        "atr_multiplier": 2.0
+      },
+      "trades_file": "/home/icysaintdx/.openclaw/workspace/InvestMindPro/results/individual_backtests/601899_trades.json"
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "sector": "消费/调味品",
+      "is_extended": true,
+      "total_return": 5.610642386122621,
+      "win_rate": 26.31578947368421,
+      "total_trades": 19,
+      "max_drawdown": -25.354349482824894,
+      "sharpe_ratio": 0.12933923432209748,
+      "params": {
+        "fast_ema": 5,
+        "slow_ema": 30,
+        "atr_multiplier": 1.5
+      },
+      "trades_file": "/home/icysaintdx/.openclaw/workspace/InvestMindPro/results/individual_backtests/603288_trades.json"
+    }
+  ],
+  "original_stocks": [
+    {
+      "symbol": "000001",
+      "name": "平安银行",
+      "sector": "金融",
+      "is_extended": false,
+      "total_return": 16.633473337948132,
+      "win_rate": 33.33333333333333,
+      "total_trades": 21,
+      "max_drawdown": -16.680562917559193,
+      "sharpe_ratio": 0.28201986011718244,
+      "params": {
+        "fast_ema": 7,
+        "slow_ema": 20,
+        "atr_multiplier": 1.0
+      },
+      "trades_file": "/home/icysaintdx/.openclaw/workspace/InvestMindPro/results/individual_backtests/000001_trades.json"
+    },
+    {
+      "symbol": "000333",
+      "name": "美的集团",
+      "sector": "家电",
+      "is_extended": false,
+      "total_return": 48.49903917450167,
+      "win_rate": 50.0,
+      "total_trades": 16,
+      "max_drawdown": -8.12138783732502,
+      "sharpe_ratio": 0.5379497505473815,
+      "params": {
+        "fast_ema": 3,
+        "slow_ema": 40,
+        "atr_multiplier": 1.5
+      },
+      "trades_file": "/home/icysaintdx/.openclaw/workspace/InvestMindPro/results/individual_backtests/000333_trades.json"
+    },
+    {
+      "symbol": "000568",
+      "name": "泸州老窖",
+      "sector": "白酒",
+      "is_extended": false,
+      "total_return": 142.00885659479295,
+      "win_rate": 50.0,
+      "total_trades": 6,
+      "max_drawdown": -13.28826203520225,
+      "sharpe_ratio": 0.38018091604078713,
+      "params": {
+        "fast_ema": 15,
+        "slow_ema": 40,
+        "atr_multiplier": 2.5
+      },
+      "trades_file": "/home/icysaintdx/.openclaw/workspace/InvestMindPro/results/individual_backtests/000568_trades.json"
+    },
+    {
+      "symbol": "000651",
+      "name": "格力电器",
+      "sector": "家电",
+      "is_extended": false,
+      "total_return": -31.55755994910611,
+      "win_rate": 23.52941176470588,
+      "total_trades": 17,
+      "max_drawdown": -31.55755994910611,
+      "sharpe_ratio": -0.7774656494991271,
+      "params": {
+        "fast_ema": 10,
+        "slow_ema": 30,
+        "atr_multiplier": 1.5
+      },
+      "trades_file": "/home/icysaintdx/.openclaw/workspace/InvestMindPro/results/individual_backtests/000651_trades.json"
+    },
+    {
+      "symbol": "000858",
+      "name": "五粮液",
+      "sector": "白酒",
+      "is_extended": false,
+      "total_return": 47.11283909611945,
+      "win_rate": 33.33333333333333,
+      "total_trades": 12,
+      "max_drawdown": -25.381278652304495,
+      "sharpe_ratio": 0.31280629255242026,
+      "params": {
+        "fast_ema": 8,
+        "slow_ema": 35,
+        "atr_multiplier": 2.5
+      },
+      "trades_file": "/home/icysaintdx/.openclaw/workspace/InvestMindPro/results/individual_backtests/000858_trades.json"
+    },
+    {
+      "symbol": "002415",
+      "name": "海康威视",
+      "sector": "科技",
+      "is_extended": false,
+      "total_return": 78.31885062739163,
+      "win_rate": 50.0,
+      "total_trades": 14,
+      "max_drawdown": -17.42415194433652,
+      "sharpe_ratio": 0.6280451644213931,
+      "params": {
+        "fast_ema": 12,
+        "slow_ema": 15,
+        "atr_multiplier": 3.0
+      },
+      "trades_file": "/home/icysaintdx/.openclaw/workspace/InvestMindPro/results/individual_backtests/002415_trades.json"
+    },
+    {
+      "symbol": "002460",
+      "name": "赣锋锂业",
+      "sector": "新能源",
+      "is_extended": false,
+      "total_return": 290.7495686643184,
+      "win_rate": 40.0,
+      "total_trades": 15,
+      "max_drawdown": -19.50505982596569,
+      "sharpe_ratio": 0.6092374342863944,
+      "params": {
+        "fast_ema": 3,
+        "slow_ema": 35,
+        "atr_multiplier": 1.5
+      },
+      "trades_file": "/home/icysaintdx/.openclaw/workspace/InvestMindPro/results/individual_backtests/002460_trades.json"
+    },
+    {
+      "symbol": "002594",
+      "name": "比亚迪",
+      "sector": "新能源",
+      "is_extended": false,
+      "total_return": 447.0817161795843,
+      "win_rate": 42.857142857142854,
+      "total_trades": 14,
+      "max_drawdown": -9.177447433509865,
+      "sharpe_ratio": 0.6279077655650114,
+      "params": {
+        "fast_ema": 7,
+        "slow_ema": 30,
+        "atr_multiplier": 2.5
+      },
+      "trades_file": "/home/icysaintdx/.openclaw/workspace/InvestMindPro/results/individual_backtests/002594_trades.json"
+    },
+    {
+      "symbol": "002714",
+      "name": "牧原股份",
+      "sector": "农牧",
+      "is_extended": false,
+      "total_return": 53.45676685193935,
+      "win_rate": 45.45454545454545,
+      "total_trades": 11,
+      "max_drawdown": -18.853213550384464,
+      "sharpe_ratio": 0.4411551427079178,
+      "params": {
+        "fast_ema": 12,
+        "slow_ema": 20,
+        "atr_multiplier": 2.0
+      },
+      "trades_file": "/home/icysaintdx/.openclaw/workspace/InvestMindPro/results/individual_backtests/002714_trades.json"
+    },
+    {
+      "symbol": "300014",
+      "name": "亿纬锂能",
+      "sector": "新能源",
+      "is_extended": false,
+      "total_return": 11.488168825517029,
+      "win_rate": 33.33333333333333,
+      "total_trades": 15,
+      "max_drawdown": -57.74097011625498,
+      "sharpe_ratio": 0.22455866331728733,
+      "params": {
+        "fast_ema": 5,
+        "slow_ema": 40,
+        "atr_multiplier": 2.0
+      },
+      "trades_file": "/home/icysaintdx/.openclaw/workspace/InvestMindPro/results/individual_backtests/300014_trades.json"
+    },
+    {
+      "symbol": "300033",
+      "name": "同花顺",
+      "sector": "金融",
+      "is_extended": false,
+      "total_return": 39.24226158485722,
+      "win_rate": 45.45454545454545,
+      "total_trades": 11,
+      "max_drawdown": -13.025780189959304,
+      "sharpe_ratio": 0.3482259884629139,
+      "params": {
+        "fast_ema": 15,
+        "slow_ema": 35,
+        "atr_multiplier": 1.0
+      },
+      "trades_file": "/home/icysaintdx/.openclaw/workspace/InvestMindPro/results/individual_backtests/300033_trades.json"
+    },
+    {
+      "symbol": "300124",
+      "name": "汇川技术",
+      "sector": "科技",
+      "is_extended": false,
+      "total_return": 69.00196116951311,
+      "win_rate": 25.0,
+      "total_trades": 20,
+      "max_drawdown": -51.97562608831875,
+      "sharpe_ratio": 0.3073219178042652,
+      "params": {
+        "fast_ema": 3,
+        "slow_ema": 40,
+        "atr_multiplier": 1.5
+      },
+      "trades_file": "/home/icysaintdx/.openclaw/workspace/InvestMindPro/results/individual_backtests/300124_trades.json"
+    },
+    {
+      "symbol": "300750",
+      "name": "宁德时代",
+      "sector": "新能源",
+      "is_extended": false,
+      "total_return": 335.20249374796714,
+      "win_rate": 41.17647058823529,
+      "total_trades": 17,
+      "max_drawdown": -17.443253502264817,
+      "sharpe_ratio": 0.7469417876424319,
+      "params": {
+        "fast_ema": 3,
+        "slow_ema": 35,
+        "atr_multiplier": 2.0
+      },
+      "trades_file": "/home/icysaintdx/.openclaw/workspace/InvestMindPro/results/individual_backtests/300750_trades.json"
+    },
+    {
+      "symbol": "600036",
+      "name": "招商银行",
+      "sector": "金融",
+      "is_extended": false,
+      "total_return": 5.483699113428826,
+      "win_rate": 31.818181818181817,
+      "total_trades": 22,
+      "max_drawdown": -19.293834109047125,
+      "sharpe_ratio": 0.13910963740827523,
+      "params": {
+        "fast_ema": 7,
+        "slow_ema": 25,
+        "atr_multiplier": 1.0
+      },
+      "trades_file": "/home/icysaintdx/.openclaw/workspace/InvestMindPro/results/individual_backtests/600036_trades.json"
+    },
+    {
+      "symbol": "600276",
+      "name": "恒瑞医药",
+      "sector": "医药",
+      "is_extended": false,
+      "total_return": -5.701946956742933,
+      "win_rate": 37.5,
+      "total_trades": 16,
+      "max_drawdown": -23.924375317986982,
+      "sharpe_ratio": -0.021317706994344588,
+      "params": {
+        "fast_ema": 7,
+        "slow_ema": 40,
+        "atr_multiplier": 1.5
+      },
+      "trades_file": "/home/icysaintdx/.openclaw/workspace/InvestMindPro/results/individual_backtests/600276_trades.json"
+    },
+    {
+      "symbol": "600519",
+      "name": "贵州茅台",
+      "sector": "白酒",
+      "is_extended": false,
+      "total_return": 35.333516239968446,
+      "win_rate": 16.666666666666664,
+      "total_trades": 12,
+      "max_drawdown": -17.56448197386991,
+      "sharpe_ratio": 0.30269825764777447,
+      "params": {
+        "fast_ema": 15,
+        "slow_ema": 40,
+        "atr_multiplier": 1.5
+      },
+      "trades_file": "/home/icysaintdx/.openclaw/workspace/InvestMindPro/results/individual_backtests/600519_trades.json"
+    },
+    {
+      "symbol": "600887",
+      "name": "伊利股份",
+      "sector": "消费",
+      "is_extended": false,
+      "total_return": 4.412015657631971,
+      "win_rate": 25.0,
+      "total_trades": 8,
+      "max_drawdown": -15.591322329696267,
+      "sharpe_ratio": 0.11346581436468293,
+      "params": {
+        "fast_ema": 15,
+        "slow_ema": 40,
+        "atr_multiplier": 3.0
+      },
+      "trades_file": "/home/icysaintdx/.openclaw/workspace/InvestMindPro/results/individual_backtests/600887_trades.json"
+    },
+    {
+      "symbol": "600900",
+      "name": "长江电力",
+      "sector": "电力",
+      "is_extended": false,
+      "total_return": 9.703065161570063,
+      "win_rate": 40.0,
+      "total_trades": 15,
+      "max_drawdown": -6.408777673309494,
+      "sharpe_ratio": 0.34260610765437616,
+      "params": {
+        "fast_ema": 12,
+        "slow_ema": 20,
+        "atr_multiplier": 1.0
+      },
+      "trades_file": "/home/icysaintdx/.openclaw/workspace/InvestMindPro/results/individual_backtests/600900_trades.json"
+    },
+    {
+      "symbol": "601012",
+      "name": "隆基绿能",
+      "sector": "新能源",
+      "is_extended": false,
+      "total_return": 235.82115575884305,
+      "win_rate": 50.0,
+      "total_trades": 12,
+      "max_drawdown": -18.481251057654692,
+      "sharpe_ratio": 0.5082037437478506,
+      "params": {
+        "fast_ema": 12,
+        "slow_ema": 18,
+        "atr_multiplier": 1.5
+      },
+      "trades_file": "/home/icysaintdx/.openclaw/workspace/InvestMindPro/results/individual_backtests/601012_trades.json"
+    },
+    {
+      "symbol": "601288",
+      "name": "农业银行",
+      "sector": "金融",
+      "is_extended": false,
+      "total_return": 12.726449373675875,
+      "win_rate": 42.857142857142854,
+      "total_trades": 14,
+      "max_drawdown": -4.600317957549838,
+      "sharpe_ratio": 0.4392053732550507,
+      "params": {
+        "fast_ema": 12,
+        "slow_ema": 30,
+        "atr_multiplier": 1.0
+      },
+      "trades_file": "/home/icysaintdx/.openclaw/workspace/InvestMindPro/results/individual_backtests/601288_trades.json"
+    },
+    {
+      "symbol": "601318",
+      "name": "中国平安",
+      "sector": "金融",
+      "is_extended": false,
+      "total_return": 3.564213170004514,
+      "win_rate": 28.57142857142857,
+      "total_trades": 14,
+      "max_drawdown": -25.29047191925905,
+      "sharpe_ratio": 0.10476190998749031,
+      "params": {
+        "fast_ema": 10,
+        "slow_ema": 50,
+        "atr_multiplier": 1.5
+      },
+      "trades_file": "/home/icysaintdx/.openclaw/workspace/InvestMindPro/results/individual_backtests/601318_trades.json"
+    },
+    {
+      "symbol": "601888",
+      "name": "中国中免",
+      "sector": "消费",
+      "is_extended": false,
+      "total_return": 209.1046659899726,
+      "win_rate": 50.0,
+      "total_trades": 6,
+      "max_drawdown": -20.274868434553568,
+      "sharpe_ratio": 0.5067788697556579,
+      "params": {
+        "fast_ema": 15,
+        "slow_ema": 40,
+        "atr_multiplier": 2.0
+      },
+      "trades_file": "/home/icysaintdx/.openclaw/workspace/InvestMindPro/results/individual_backtests/601888_trades.json"
+    }
+  ],
+  "summary": {
+    "extended_count": 8,
+    "original_count": 22,
+    "total_count": 30,
+    "extended_avg_return": 472.24065853326465,
+    "original_avg_return": 93.5311486097135,
+    "total_avg_return": 194.52035125599377
+  }
+}

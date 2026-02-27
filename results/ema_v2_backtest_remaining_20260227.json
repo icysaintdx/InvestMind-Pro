@@ -1,0 +1,64 @@
+{
+  "backtest_date": "2026-02-27",
+  "backtest_time": "11:17:33",
+  "strategy": "EMA V2.1",
+  "data_source": "simulated",
+  "note": "akshare proxy failed, using simulated data",
+  "results": [
+    {
+      "symbol": "300750",
+      "name": "宁德时代",
+      "volatility_type": "high_volatility",
+      "total_return": -2.05,
+      "win_rate": 33.3,
+      "trade_count": 9,
+      "max_drawdown": -13.70,
+      "sharpe_ratio": 0.01,
+      "signal_close": 9,
+      "stop_loss_close": 0
+    },
+    {
+      "symbol": "002594",
+      "name": "比亚迪",
+      "volatility_type": "high_volatility",
+      "total_return": 75.55,
+      "win_rate": 37.5,
+      "trade_count": 8,
+      "max_drawdown": -15.64,
+      "sharpe_ratio": 0.78,
+      "signal_close": 8,
+      "stop_loss_close": 0
+    },
+    {
+      "symbol": "000001",
+      "name": "平安银行",
+      "volatility_type": "low_volatility",
+      "total_return": 48.01,
+      "win_rate": 53.8,
+      "trade_count": 13,
+      "max_drawdown": -8.23,
+      "sharpe_ratio": 1.01,
+      "signal_close": 13,
+      "stop_loss_close": 0
+    },
+    {
+      "symbol": "600036",
+      "name": "招商银行",
+      "volatility_type": "low_volatility",
+      "total_return": 48.37,
+      "win_rate": 60.0,
+      "trade_count": 15,
+      "max_drawdown": -8.44,
+      "sharpe_ratio": 1.07,
+      "signal_close": 15,
+      "stop_loss_close": 0
+    }
+  ],
+  "summary": {
+    "avg_return": 42.47,
+    "avg_win_rate": 46.2,
+    "total_trades": 45,
+    "high_volatility_avg": 36.75,
+    "low_volatility_avg": 48.19
+  }
+}

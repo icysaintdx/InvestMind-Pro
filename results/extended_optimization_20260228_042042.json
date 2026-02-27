@@ -1,0 +1,150 @@
+{
+  "timestamp": "2026-02-28 04:20:42",
+  "stocks_count": 8,
+  "results": [
+    {
+      "symbol": "603501",
+      "name": "韦尔股份",
+      "volatility_type": "high_volatility",
+      "best_params": {
+        "fast_ema": 5,
+        "slow_ema": 20,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": 44.09545370081227,
+      "win_rate": 40.74074074074074,
+      "total_trades": 27,
+      "max_drawdown": -19.861211080253533,
+      "sharpe_ratio": 0.3475858057043079,
+      "score": 44.604612990929105
+    },
+    {
+      "symbol": "603259",
+      "name": "药明康德",
+      "volatility_type": "medium_volatility",
+      "best_params": {
+        "fast_ema": 12,
+        "slow_ema": 35,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": 200.00763702030673,
+      "win_rate": 55.55555555555556,
+      "total_trades": 9,
+      "max_drawdown": -15.77063675072296,
+      "sharpe_ratio": 0.6890543558167598,
+      "score": 212.01477804736155
+    },
+    {
+      "symbol": "002475",
+      "name": "立讯精密",
+      "volatility_type": "medium_volatility",
+      "best_params": {
+        "fast_ema": 10,
+        "slow_ema": 25,
+        "atr_period": 14,
+        "atr_multiplier": 2.5,
+        "market_filter": true
+      },
+      "total_return": 131.34967624293907,
+      "win_rate": 41.17647058823529,
+      "total_trades": 17,
+      "max_drawdown": -23.44692873814971,
+      "sharpe_ratio": 0.4863600803258871,
+      "score": 128.490982798907
+    },
+    {
+      "symbol": "300274",
+      "name": "阳光电源",
+      "volatility_type": "high_volatility",
+      "best_params": {
+        "fast_ema": 10,
+        "slow_ema": 20,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": 2868.5912216492247,
+      "win_rate": 45.45454545454545,
+      "total_trades": 11,
+      "max_drawdown": -18.710605408827995,
+      "sharpe_ratio": 0.5148007427176693,
+      "score": 2872.607888967669
+    },
+    {
+      "symbol": "300760",
+      "name": "迈瑞医疗",
+      "volatility_type": "medium_volatility",
+      "best_params": {
+        "fast_ema": 12,
+        "slow_ema": 35,
+        "atr_period": 14,
+        "atr_multiplier": 1.5,
+        "market_filter": true
+      },
+      "total_return": 79.74772867422624,
+      "win_rate": 40.0,
+      "total_trades": 10,
+      "max_drawdown": -18.766790416746044,
+      "sharpe_ratio": 0.4578432718372424,
+      "score": 80.98093825748019
+    },
+    {
+      "symbol": "600438",
+      "name": "通威股份",
+      "volatility_type": "high_volatility",
+      "best_params": {
+        "fast_ema": 3,
+        "slow_ema": 40,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": 266.4187103073342,
+      "win_rate": 58.333333333333336,
+      "total_trades": 12,
+      "max_drawdown": -8.02769207798961,
+      "sharpe_ratio": 0.6181167006566864,
+      "score": 287.55768489601127
+    },
+    {
+      "symbol": "601899",
+      "name": "紫金矿业",
+      "volatility_type": "medium_volatility",
+      "best_params": {
+        "fast_ema": 10,
+        "slow_ema": 20,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "total_return": 182.10419828515148,
+      "win_rate": 40.0,
+      "total_trades": 15,
+      "max_drawdown": -18.00579591628787,
+      "sharpe_ratio": 0.5826574109220971,
+      "score": 184.09840236886362
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "volatility_type": "low_volatility",
+      "best_params": {
+        "fast_ema": 5,
+        "slow_ema": 30,
+        "atr_period": 14,
+        "atr_multiplier": 1.5,
+        "market_filter": true
+      },
+      "total_return": 5.610642386122621,
+      "win_rate": 26.31578947368421,
+      "total_trades": 19,
+      "max_drawdown": -25.354349482824894,
+      "sharpe_ratio": 0.12933923432209748,
+      "score": -6.585812359860167
+    }
+  ]
+}

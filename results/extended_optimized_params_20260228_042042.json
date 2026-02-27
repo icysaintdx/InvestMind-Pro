@@ -1,0 +1,66 @@
+{
+  "603501": {
+    "name": "韦尔股份",
+    "fast_ema": 5,
+    "slow_ema": 20,
+    "atr_period": 14,
+    "atr_multiplier": 2.0,
+    "market_filter": true
+  },
+  "603259": {
+    "name": "药明康德",
+    "fast_ema": 12,
+    "slow_ema": 35,
+    "atr_period": 14,
+    "atr_multiplier": 2.0,
+    "market_filter": true
+  },
+  "002475": {
+    "name": "立讯精密",
+    "fast_ema": 10,
+    "slow_ema": 25,
+    "atr_period": 14,
+    "atr_multiplier": 2.5,
+    "market_filter": true
+  },
+  "300274": {
+    "name": "阳光电源",
+    "fast_ema": 10,
+    "slow_ema": 20,
+    "atr_period": 14,
+    "atr_multiplier": 2.0,
+    "market_filter": true
+  },
+  "300760": {
+    "name": "迈瑞医疗",
+    "fast_ema": 12,
+    "slow_ema": 35,
+    "atr_period": 14,
+    "atr_multiplier": 1.5,
+    "market_filter": true
+  },
+  "600438": {
+    "name": "通威股份",
+    "fast_ema": 3,
+    "slow_ema": 40,
+    "atr_period": 14,
+    "atr_multiplier": 2.0,
+    "market_filter": true
+  },
+  "601899": {
+    "name": "紫金矿业",
+    "fast_ema": 10,
+    "slow_ema": 20,
+    "atr_period": 14,
+    "atr_multiplier": 2.0,
+    "market_filter": true
+  },
+  "603288": {
+    "name": "海天味业",
+    "fast_ema": 5,
+    "slow_ema": 30,
+    "atr_period": 14,
+    "atr_multiplier": 1.5,
+    "market_filter": true
+  }
+}

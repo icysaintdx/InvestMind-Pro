@@ -1,0 +1,3880 @@
+{
+  "timestamp": "20260227_121830",
+  "total_stocks": 20,
+  "successful": 20,
+  "failed": [],
+  "avg_return": 100.0203986668544,
+  "avg_win_rate": 34.28207738970123,
+  "total_trades": 381,
+  "results": [
+    {
+      "symbol": "601888",
+      "name": "中国中免",
+      "type": "high_volatility",
+      "data_source": "baostock",
+      "data_rows": 1488,
+      "date_range": "2020-01-02 ~ 2026-02-26",
+      "total_return": 147.0082920610327,
+      "win_rate": 25.0,
+      "total_trades": 12,
+      "max_drawdown": -38.92346029280299,
+      "sharpe_ratio": 0.4137276457996587,
+      "params": {
+        "fast_ema": 10,
+        "slow_ema": 30,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "trades": [
+        {
+          "entry_date": "2020-01-03 00:00:00",
+          "exit_date": "2020-01-20 00:00:00",
+          "entry_price": 85.1886681,
+          "exit_price": 81.3683805,
+          "pnl": -4484.502088371071,
+          "pnl_pct": -4.484502088371068,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-04-17 00:00:00",
+          "exit_date": "2020-10-16 00:00:00",
+          "entry_price": 76.1248485,
+          "exit_price": 191.20324671,
+          "pnl": 144391.36130301602,
+          "pnl_pct": 151.17061048732333,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-12-07 00:00:00",
+          "exit_date": "2021-03-08 00:00:00",
+          "entry_price": 195.26360175,
+          "exit_price": 262.22186403,
+          "pnl": 82266.97786017478,
+          "pnl_pct": 34.29121540312876,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-03-30 00:00:00",
+          "exit_date": "2021-04-12 00:00:00",
+          "entry_price": 298.77445836,
+          "exit_price": 277.63617483,
+          "pnl": -22793.788837966164,
+          "pnl_pct": -7.074996854158789,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-04-30 00:00:00",
+          "exit_date": "2021-05-06 00:00:00",
+          "entry_price": 293.23846503,
+          "exit_price": 277.9275429,
+          "pnl": -15631.593915761221,
+          "pnl_pct": -5.221321196192186,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-05-17 00:00:00",
+          "exit_date": "2021-06-15 00:00:00",
+          "entry_price": 300.19370283,
+          "exit_price": 279.78853896,
+          "pnl": -19287.325662390565,
+          "pnl_pct": -6.797332414915946,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-07-18 00:00:00",
+          "exit_date": "2024-07-24 00:00:00",
+          "entry_price": 68.7413388,
+          "exit_price": 63.8627316,
+          "pnl": -18768.938588005334,
+          "pnl_pct": -7.097050021376649,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-12-02 00:00:00",
+          "exit_date": "2024-12-23 00:00:00",
+          "entry_price": 71.1414568,
+          "exit_price": 67.301268,
+          "pnl": -13262.371042097657,
+          "pnl_pct": -5.3979619939410695,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-03-14 00:00:00",
+          "exit_date": "2025-03-31 00:00:00",
+          "entry_price": 62.7753312,
+          "exit_price": 58.974328,
+          "pnl": -14073.46594617607,
+          "pnl_pct": -6.054931335830204,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-04-10 00:00:00",
+          "exit_date": "2025-05-08 00:00:00",
+          "entry_price": 68.7805244,
+          "exit_price": 61.9818228,
+          "pnl": -21583.72155522025,
+          "pnl_pct": -9.884631818829225,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-07-01 00:00:00",
+          "exit_date": "2025-12-18 00:00:00",
+          "entry_price": 60.41919972,
+          "exit_price": 76.5,
+          "pnl": 52371.785836672345,
+          "pnl_pct": 26.61538112805708,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-12-19 00:00:00",
+          "exit_date": "2026-02-25 00:00:00",
+          "entry_price": 82.81,
+          "exit_price": 82.1,
+          "pnl": -2136.1253028420856,
+          "pnl_pct": -0.8573843738678977,
+          "exit_reason": "signal"
+        }
+      ]
+    },
+    {
+      "symbol": "300750",
+      "name": "宁德时代",
+      "type": "high_volatility",
+      "data_source": "baostock",
+      "data_rows": 1488,
+      "date_range": "2020-01-02 ~ 2026-02-26",
+      "total_return": 249.6173700679384,
+      "win_rate": 35.294117647058826,
+      "total_trades": 17,
+      "max_drawdown": -21.319256166899205,
+      "sharpe_ratio": 0.7096706735579073,
+      "params": {
+        "fast_ema": 10,
+        "slow_ema": 30,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "trades": [
+        {
+          "entry_date": "2020-01-03 00:00:00",
+          "exit_date": "2020-03-12 00:00:00",
+          "entry_price": 57.1789652,
+          "exit_price": 70.0448848,
+          "pnl": 22501.141031492476,
+          "pnl_pct": 22.501141031492477,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-04-17 00:00:00",
+          "exit_date": "2020-08-21 00:00:00",
+          "entry_price": 71.4802308,
+          "exit_price": 100.48227337,
+          "pnl": 49703.01952451052,
+          "pnl_pct": 40.57351556564923,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-08-24 00:00:00",
+          "exit_date": "2020-09-09 00:00:00",
+          "entry_price": 105.59446519,
+          "exit_price": 96.34756608,
+          "pnl": -15079.904956366956,
+          "pnl_pct": -8.756992228107507,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-09-30 00:00:00",
+          "exit_date": "2021-02-26 00:00:00",
+          "entry_price": 109.3528148,
+          "exit_price": 168.43574337,
+          "pnl": 84893.66448578806,
+          "pnl_pct": 54.02963671128107,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-04-16 00:00:00",
+          "exit_date": "2021-08-16 00:00:00",
+          "entry_price": 174.50451096,
+          "exit_price": 249.45192,
+          "pnl": 103943.53677086349,
+          "pnl_pct": 42.948694350474106,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-04-19 00:00:00",
+          "exit_date": "2023-04-20 00:00:00",
+          "entry_price": 214.93251861,
+          "exit_price": 207.406188,
+          "pnl": -12114.594475777601,
+          "pnl_pct": -3.5017179618393124,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-04-21 00:00:00",
+          "exit_date": "2023-04-24 00:00:00",
+          "entry_price": 212.11472747,
+          "exit_price": 207.86709064,
+          "pnl": -6685.345450272695,
+          "pnl_pct": -2.0025185807057033,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-04-27 00:00:00",
+          "exit_date": "2023-05-29 00:00:00",
+          "entry_price": 219.206757,
+          "exit_price": 205.97843582,
+          "pnl": -19742.993705660243,
+          "pnl_pct": -6.034632034632049,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-06-20 00:00:00",
+          "exit_date": "2023-07-20 00:00:00",
+          "entry_price": 216.359916,
+          "exit_price": 209.76473435,
+          "pnl": -9370.871650924608,
+          "pnl_pct": -3.0482456140350833,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-07-25 00:00:00",
+          "exit_date": "2024-08-01 00:00:00",
+          "entry_price": 182.50772686,
+          "exit_price": 175.2844146,
+          "pnl": -11796.164977319757,
+          "pnl_pct": -3.9578117509188715,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-02-10 00:00:00",
+          "exit_date": "2025-02-11 00:00:00",
+          "entry_price": 252.4663656,
+          "exit_price": 245.9703264,
+          "pnl": -7365.341017084959,
+          "pnl_pct": -2.5730315341458643,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-02-13 00:00:00",
+          "exit_date": "2025-03-11 00:00:00",
+          "entry_price": 255.33829872,
+          "exit_price": 249.2916096,
+          "pnl": -6604.327790411074,
+          "pnl_pct": -2.368108955966186,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-05-09 00:00:00",
+          "exit_date": "2025-06-13 00:00:00",
+          "entry_price": 247.376228,
+          "exit_price": 247.30648,
+          "pnl": -76.7701584775434,
+          "pnl_pct": -0.028195110162321235,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-06-30 00:00:00",
+          "exit_date": "2025-08-12 00:00:00",
+          "entry_price": 251.312008,
+          "exit_price": 262.3023,
+          "pnl": 11903.979364692983,
+          "pnl_pct": 4.373166283403385,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-08-13 00:00:00",
+          "exit_date": "2025-11-27 00:00:00",
+          "entry_price": 272.61504,
+          "exit_price": 371.2,
+          "pnl": 102741.49607426694,
+          "pnl_pct": 36.16270034111102,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-12-05 00:00:00",
+          "exit_date": "2025-12-19 00:00:00",
+          "entry_price": 389.09,
+          "exit_price": 374.0,
+          "pnl": -15003.146812089788,
+          "pnl_pct": -3.8782800894394565,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2026-02-11 00:00:00",
+          "exit_date": "2026-02-26 00:00:00",
+          "entry_price": 368.0,
+          "exit_price": 346.0,
+          "pnl": -22230.00618929088,
+          "pnl_pct": -5.978260869565222,
+          "exit_reason": "signal"
+        }
+      ]
+    },
+    {
+      "symbol": "002594",
+      "name": "比亚迪",
+      "type": "high_volatility",
+      "data_source": "baostock",
+      "data_rows": 1488,
+      "date_range": "2020-01-02 ~ 2026-02-26",
+      "total_return": 296.32859036073484,
+      "win_rate": 43.75,
+      "total_trades": 16,
+      "max_drawdown": -20.042632433674434,
+      "sharpe_ratio": 0.5718424348609712,
+      "params": {
+        "fast_ema": 10,
+        "slow_ema": 30,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "trades": [
+        {
+          "entry_date": "2020-01-06 00:00:00",
+          "exit_date": "2020-01-07 00:00:00",
+          "entry_price": 15.61795236,
+          "exit_price": 15.54355035,
+          "pnl": -476.38773819386915,
+          "pnl_pct": -0.47638773819387303,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-01-13 00:00:00",
+          "exit_date": "2020-03-13 00:00:00",
+          "entry_price": 16.69516407,
+          "exit_price": 18.00528642,
+          "pnl": 7809.9327583862605,
+          "pnl_pct": 7.847316411548144,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-04-16 00:00:00",
+          "exit_date": "2020-05-22 00:00:00",
+          "entry_price": 19.41245487,
+          "exit_price": 18.12497661,
+          "pnl": -7118.605385441857,
+          "pnl_pct": -6.632227962006332,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-06-02 00:00:00",
+          "exit_date": "2020-08-20 00:00:00",
+          "entry_price": 19.732707,
+          "exit_price": 25.4283631,
+          "pnl": 28926.078527482234,
+          "pnl_pct": 28.864038269052482,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-08-27 00:00:00",
+          "exit_date": "2021-02-26 00:00:00",
+          "entry_price": 27.65233324,
+          "exit_price": 63.86063894,
+          "pnl": 169098.83963293995,
+          "pnl_pct": 130.94123156169516,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-05-25 00:00:00",
+          "exit_date": "2021-09-03 00:00:00",
+          "entry_price": 57.14340744,
+          "exit_price": 82.30216324,
+          "pnl": 131307.25114658088,
+          "pnl_pct": 44.027398657345465,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-04-28 00:00:00",
+          "exit_date": "2023-05-29 00:00:00",
+          "entry_price": 82.89429038,
+          "exit_price": 79.35315619,
+          "pnl": -18349.683032648165,
+          "pnl_pct": -4.2718674274994095,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-06-02 00:00:00",
+          "exit_date": "2023-07-27 00:00:00",
+          "entry_price": 83.93103598,
+          "exit_price": 84.76367229,
+          "pnl": 4079.2765559576874,
+          "pnl_pct": 0.9920481741681364,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-05-29 00:00:00",
+          "exit_date": "2024-08-02 00:00:00",
+          "entry_price": 73.1176047,
+          "exit_price": 77.33817546,
+          "pnl": 23971.035633956784,
+          "pnl_pct": 5.772304463907041,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-12-30 00:00:00",
+          "exit_date": "2024-12-31 00:00:00",
+          "entry_price": 93.87770093,
+          "exit_price": 93.11018262,
+          "pnl": -3591.1689174031235,
+          "pnl_pct": -0.817572546405132,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-02-05 00:00:00",
+          "exit_date": "2025-04-07 00:00:00",
+          "entry_price": 93.1562996,
+          "exit_price": 105.98999632,
+          "pnl": 60018.31660295544,
+          "pnl_pct": 13.77652050919378,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-04-24 00:00:00",
+          "exit_date": "2025-06-03 00:00:00",
+          "entry_price": 120.562962,
+          "exit_price": 117.268892,
+          "pnl": -13543.029666245164,
+          "pnl_pct": -2.732240437158473,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-08-25 00:00:00",
+          "exit_date": "2025-09-04 00:00:00",
+          "entry_price": 111.61,
+          "exit_price": 104.0,
+          "pnl": -32873.6083241687,
+          "pnl_pct": -6.818385449332498,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-09-18 00:00:00",
+          "exit_date": "2025-09-23 00:00:00",
+          "entry_price": 109.71,
+          "exit_price": 105.6,
+          "pnl": -16830.2925752802,
+          "pnl_pct": -3.7462400875034163,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-10-09 00:00:00",
+          "exit_date": "2025-10-13 00:00:00",
+          "entry_price": 110.6,
+          "exit_price": 105.69,
+          "pnl": -19197.298916136442,
+          "pnl_pct": -4.439421338155514,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-12-30 00:00:00",
+          "exit_date": "2026-01-15 00:00:00",
+          "entry_price": 99.75,
+          "exit_price": 95.67,
+          "pnl": -16902.06594200687,
+          "pnl_pct": -4.090225563909778,
+          "exit_reason": "signal"
+        }
+      ]
+    },
+    {
+      "symbol": "300014",
+      "name": "亿纬锂能",
+      "type": "high_volatility",
+      "data_source": "baostock",
+      "data_rows": 1488,
+      "date_range": "2020-01-02 ~ 2026-02-26",
+      "total_return": 290.72426312272484,
+      "win_rate": 50.0,
+      "total_trades": 12,
+      "max_drawdown": -19.606740335582888,
+      "sharpe_ratio": 0.7246779090670791,
+      "params": {
+        "fast_ema": 10,
+        "slow_ema": 30,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "trades": [
+        {
+          "entry_date": "2020-01-07 00:00:00",
+          "exit_date": "2020-03-17 00:00:00",
+          "entry_price": 26.14422568,
+          "exit_price": 30.02723276,
+          "pnl": 14852.255054432342,
+          "pnl_pct": 14.852255054432351,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-04-21 00:00:00",
+          "exit_date": "2020-05-22 00:00:00",
+          "entry_price": 31.95857136,
+          "exit_price": 30.80485067,
+          "pnl": -4146.224856449769,
+          "pnl_pct": -3.610050890585237,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-06-01 00:00:00",
+          "exit_date": "2020-08-19 00:00:00",
+          "entry_price": 34.58620835,
+          "exit_price": 48.50855852,
+          "pnl": 44563.66256600394,
+          "pnl_pct": 40.25405164136762,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-10-12 00:00:00",
+          "exit_date": "2021-02-25 00:00:00",
+          "entry_price": 52.99238016,
+          "exit_price": 85.90924788,
+          "pnl": 96447.67648113854,
+          "pnl_pct": 62.116228070175424,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-04-23 00:00:00",
+          "exit_date": "2021-08-16 00:00:00",
+          "entry_price": 82.8974368,
+          "exit_price": 102.14066265,
+          "pnl": 58431.89335803187,
+          "pnl_pct": 23.21329415338449,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-05-16 00:00:00",
+          "exit_date": "2023-05-29 00:00:00",
+          "entry_price": 68.1502275,
+          "exit_price": 62.766117,
+          "pnl": -24502.89547968001,
+          "pnl_pct": -7.900355871886122,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-05-22 00:00:00",
+          "exit_date": "2024-05-27 00:00:00",
+          "entry_price": 38.4046252,
+          "exit_price": 36.1768415,
+          "pnl": -16569.835464554846,
+          "pnl_pct": -5.800821355236129,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-05-30 00:00:00",
+          "exit_date": "2024-07-03 00:00:00",
+          "entry_price": 37.90189525,
+          "exit_price": 37.655459,
+          "pnl": -1749.5223124767515,
+          "pnl_pct": -0.6501950585175553,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-02-24 00:00:00",
+          "exit_date": "2025-04-02 00:00:00",
+          "entry_price": 45.1274061,
+          "exit_price": 45.86671485,
+          "pnl": 4379.5381609836995,
+          "pnl_pct": 1.6382699868938477,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-05-14 00:00:00",
+          "exit_date": "2025-06-13 00:00:00",
+          "entry_price": 45.6597084,
+          "exit_price": 42.64083666,
+          "pnl": -17964.35515219246,
+          "pnl_pct": -6.611675470095646,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-06-27 00:00:00",
+          "exit_date": "2025-08-05 00:00:00",
+          "entry_price": 44.80377765,
+          "exit_price": 44.02631499,
+          "pnl": -4403.090323405649,
+          "pnl_pct": -1.7352614015572754,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-08-12 00:00:00",
+          "exit_date": "2025-11-21 00:00:00",
+          "entry_price": 45.78058971,
+          "exit_price": 71.74,
+          "pnl": 141385.1610908939,
+          "pnl_pct": 56.70396658156109,
+          "exit_reason": "signal"
+        }
+      ]
+    },
+    {
+      "symbol": "300124",
+      "name": "汇川技术",
+      "type": "high_volatility",
+      "data_source": "baostock",
+      "data_rows": 1488,
+      "date_range": "2020-01-02 ~ 2026-02-26",
+      "total_return": 212.86318529514153,
+      "win_rate": 42.857142857142854,
+      "total_trades": 14,
+      "max_drawdown": -20.897692282209743,
+      "sharpe_ratio": 0.42870741103874316,
+      "params": {
+        "fast_ema": 10,
+        "slow_ema": 30,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "trades": [
+        {
+          "entry_date": "2020-01-03 00:00:00",
+          "exit_date": "2020-01-22 00:00:00",
+          "entry_price": 19.9150324,
+          "exit_price": 19.22430032,
+          "pnl": -3468.3954619124797,
+          "pnl_pct": -3.468395461912477,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-02-20 00:00:00",
+          "exit_date": "2020-03-02 00:00:00",
+          "entry_price": 19.850478,
+          "exit_price": 18.81115216,
+          "pnl": -5054.175066872225,
+          "pnl_pct": -5.235772357723578,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-04-13 00:00:00",
+          "exit_date": "2021-02-26 00:00:00",
+          "entry_price": 18.6562216,
+          "exit_price": 55.25657643,
+          "pnl": 179463.2616061325,
+          "pnl_pct": 196.18310510419755,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-04-07 00:00:00",
+          "exit_date": "2021-04-09 00:00:00",
+          "entry_price": 60.45246977,
+          "exit_price": 52.76876715,
+          "pnl": -34437.430030836396,
+          "pnl_pct": -12.710320437252165,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-04-30 00:00:00",
+          "exit_date": "2021-05-11 00:00:00",
+          "entry_price": 57.95170315,
+          "exit_price": 52.51609902,
+          "pnl": -22182.921857800236,
+          "pnl_pct": -9.379541643376188,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-05-18 00:00:00",
+          "exit_date": "2021-08-18 00:00:00",
+          "entry_price": 57.64072699,
+          "exit_price": 67.5106896,
+          "pnl": 36698.59567735994,
+          "pnl_pct": 17.123244492930034,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-06-16 00:00:00",
+          "exit_date": "2023-08-23 00:00:00",
+          "entry_price": 62.6637317,
+          "exit_price": 65.7204991,
+          "pnl": 12244.826091027851,
+          "pnl_pct": 4.878048780487809,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-12-26 00:00:00",
+          "exit_date": "2024-12-27 00:00:00",
+          "entry_price": 59.7020968,
+          "exit_price": 59.0164369,
+          "pnl": -3023.5019151198,
+          "pnl_pct": -1.1484687083888057,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-12-30 00:00:00",
+          "exit_date": "2024-12-31 00:00:00",
+          "entry_price": 59.7020968,
+          "exit_price": 58.2115318,
+          "pnl": -6497.343351580689,
+          "pnl_pct": -2.4966711051930712,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-01-15 00:00:00",
+          "exit_date": "2025-03-26 00:00:00",
+          "entry_price": 60.3281341,
+          "exit_price": 68.1386947,
+          "pnl": 32851.57827913905,
+          "pnl_pct": 12.946796244440794,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-05-06 00:00:00",
+          "exit_date": "2025-05-27 00:00:00",
+          "entry_price": 71.3384409,
+          "exit_price": 65.3563067,
+          "pnl": -24032.579101498995,
+          "pnl_pct": -8.385569020754968,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-07-18 00:00:00",
+          "exit_date": "2025-08-01 00:00:00",
+          "entry_price": 65.19,
+          "exit_price": 63.41,
+          "pnl": -7169.200927521228,
+          "pnl_pct": -2.730480134990032,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-08-05 00:00:00",
+          "exit_date": "2025-10-28 00:00:00",
+          "entry_price": 64.81,
+          "exit_price": 77.31,
+          "pnl": 49257.96828045774,
+          "pnl_pct": 19.287147045209064,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-12-29 00:00:00",
+          "exit_date": "2026-02-03 00:00:00",
+          "entry_price": 73.45,
+          "exit_price": 75.43,
+          "pnl": 8212.50307416653,
+          "pnl_pct": 2.6957113682777534,
+          "exit_reason": "signal"
+        }
+      ]
+    },
+    {
+      "symbol": "002460",
+      "name": "赣锋锂业",
+      "type": "high_volatility",
+      "data_source": "baostock",
+      "data_rows": 1488,
+      "date_range": "2020-01-02 ~ 2026-02-26",
+      "total_return": 497.0099326269838,
+      "win_rate": 45.45454545454545,
+      "total_trades": 11,
+      "max_drawdown": -10.559899064817515,
+      "sharpe_ratio": 0.7339577485404801,
+      "params": {
+        "fast_ema": 10,
+        "slow_ema": 30,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "trades": [
+        {
+          "entry_date": "2020-01-03 00:00:00",
+          "exit_date": "2020-03-16 00:00:00",
+          "entry_price": 24.51677304,
+          "exit_price": 29.1128256,
+          "pnl": 18746.56404617922,
+          "pnl_pct": 18.746564046179227,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-05-06 00:00:00",
+          "exit_date": "2020-08-03 00:00:00",
+          "entry_price": 32.9877966,
+          "exit_price": 38.79518388,
+          "pnl": 20904.92111211473,
+          "pnl_pct": 17.6046534735818,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-08-04 00:00:00",
+          "exit_date": "2020-08-07 00:00:00",
+          "entry_price": 39.79739844,
+          "exit_price": 37.97580576,
+          "pnl": -6392.079208368405,
+          "pnl_pct": -4.577165220350521,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-09-22 00:00:00",
+          "exit_date": "2020-09-24 00:00:00",
+          "entry_price": 36.50634252,
+          "exit_price": 34.21750116,
+          "pnl": -8354.97666686604,
+          "pnl_pct": -6.269708773882399,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-09-29 00:00:00",
+          "exit_date": "2021-02-26 00:00:00",
+          "entry_price": 37.06162356,
+          "exit_price": 67.05357144,
+          "pnl": 101078.33314355389,
+          "pnl_pct": 80.9245386442536,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-04-30 00:00:00",
+          "exit_date": "2021-09-22 00:00:00",
+          "entry_price": 74.14356228,
+          "exit_price": 115.22809806,
+          "pnl": 125221.88849676939,
+          "pnl_pct": 55.41214168378639,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-05-17 00:00:00",
+          "exit_date": "2023-05-23 00:00:00",
+          "entry_price": 64.702952,
+          "exit_price": 62.4193184,
+          "pnl": -12395.458267884067,
+          "pnl_pct": -3.52941176470587,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-02-18 00:00:00",
+          "exit_date": "2025-03-24 00:00:00",
+          "entry_price": 35.22372654,
+          "exit_price": 34.6462884,
+          "pnl": -5554.249059926189,
+          "pnl_pct": -1.6393442622950727,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-06-12 00:00:00",
+          "exit_date": "2025-06-19 00:00:00",
+          "entry_price": 31.7590977,
+          "exit_price": 30.98254296,
+          "pnl": -8148.553479766366,
+          "pnl_pct": -2.445141065830725,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-06-24 00:00:00",
+          "exit_date": "2025-11-27 00:00:00",
+          "entry_price": 32.5555641,
+          "exit_price": 61.27,
+          "pnl": 286748.1138089298,
+          "pnl_pct": 88.201315792897,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-12-23 00:00:00",
+          "exit_date": "2026-02-06 00:00:00",
+          "entry_price": 66.36,
+          "exit_price": 64.75,
+          "pnl": -14844.571297752023,
+          "pnl_pct": -2.4261603375527407,
+          "exit_reason": "signal"
+        }
+      ]
+    },
+    {
+      "symbol": "000858",
+      "name": "五粮液",
+      "type": "medium_volatility",
+      "data_source": "baostock",
+      "data_rows": 1488,
+      "date_range": "2020-01-02 ~ 2026-02-26",
+      "total_return": 25.168228621274498,
+      "win_rate": 33.33333333333333,
+      "total_trades": 15,
+      "max_drawdown": -24.321295504263283,
+      "sharpe_ratio": 0.24127241268283456,
+      "params": {
+        "fast_ema": 8,
+        "slow_ema": 25,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "trades": [
+        {
+          "entry_date": "2020-01-13 00:00:00",
+          "exit_date": "2020-01-23 00:00:00",
+          "entry_price": 118.28210414,
+          "exit_price": 106.84856264,
+          "pnl": -9666.332521838754,
+          "pnl_pct": -9.66633252183875,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-03-05 00:00:00",
+          "exit_date": "2020-03-16 00:00:00",
+          "entry_price": 112.8109428,
+          "exit_price": 97.8202995,
+          "pnl": -12003.798155881788,
+          "pnl_pct": -13.288288288288285,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-04-08 00:00:00",
+          "exit_date": "2020-07-16 00:00:00",
+          "entry_price": 106.10326512,
+          "exit_price": 173.00580104,
+          "pnl": 49390.25099760952,
+          "pnl_pct": 63.05417259717218,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-10-12 00:00:00",
+          "exit_date": "2021-02-22 00:00:00",
+          "entry_price": 207.5022445,
+          "exit_price": 268.71004204,
+          "pnl": 37674.13352641691,
+          "pnl_pct": 29.497414684591526,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-04-06 00:00:00",
+          "exit_date": "2021-04-09 00:00:00",
+          "entry_price": 244.41918984,
+          "exit_price": 227.7160102,
+          "pnl": -11302.753827254926,
+          "pnl_pct": -6.833824975417901,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-04-23 00:00:00",
+          "exit_date": "2021-06-17 00:00:00",
+          "entry_price": 240.33352,
+          "exit_price": 252.53902948,
+          "pnl": 7825.646893824671,
+          "pnl_pct": 5.078571428571443,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-06-14 00:00:00",
+          "exit_date": "2023-06-29 00:00:00",
+          "entry_price": 156.34614008,
+          "exit_price": 147.48649731,
+          "pnl": -9175.33416080281,
+          "pnl_pct": -5.6666846814808824,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-07-19 00:00:00",
+          "exit_date": "2024-07-24 00:00:00",
+          "entry_price": 124.58386024,
+          "exit_price": 117.71129832,
+          "pnl": -8425.87124760349,
+          "pnl_pct": -5.51641433068506,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-12-11 00:00:00",
+          "exit_date": "2024-12-16 00:00:00",
+          "entry_price": 139.5055368,
+          "exit_price": 135.01409348,
+          "pnl": -4646.316456736905,
+          "pnl_pct": -3.219544846050848,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-02-24 00:00:00",
+          "exit_date": "2025-02-25 00:00:00",
+          "entry_price": 125.6515013,
+          "exit_price": 122.65072625,
+          "pnl": -3335.552076575871,
+          "pnl_pct": -2.3881728582259343,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-02-27 00:00:00",
+          "exit_date": "2025-03-05 00:00:00",
+          "entry_price": 126.46123425,
+          "exit_price": 122.51735847,
+          "pnl": -4251.774479100474,
+          "pnl_pct": -3.1186440677966054,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-03-06 00:00:00",
+          "exit_date": "2025-04-01 00:00:00",
+          "entry_price": 125.44192336,
+          "exit_price": 125.54671233,
+          "pnl": 110.33606344263632,
+          "pnl_pct": 0.08353584447144957,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-05-13 00:00:00",
+          "exit_date": "2025-05-20 00:00:00",
+          "entry_price": 126.68986473,
+          "exit_price": 123.01272451,
+          "pnl": -3836.8566763232184,
+          "pnl_pct": -2.902473870215805,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-07-14 00:00:00",
+          "exit_date": "2025-09-19 00:00:00",
+          "entry_price": 119.46895207,
+          "exit_price": 121.25705592,
+          "pnl": 1921.1138678191505,
+          "pnl_pct": 1.496710081588648,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2026-02-05 00:00:00",
+          "exit_date": "2026-02-12 00:00:00",
+          "entry_price": 108.89,
+          "exit_price": 104.62,
+          "pnl": -5108.663125720145,
+          "pnl_pct": -3.9213885572596197,
+          "exit_reason": "signal"
+        }
+      ]
+    },
+    {
+      "symbol": "000333",
+      "name": "美的集团",
+      "type": "medium_volatility",
+      "data_source": "baostock",
+      "data_rows": 1488,
+      "date_range": "2020-01-02 ~ 2026-02-26",
+      "total_return": 39.49816373031187,
+      "win_rate": 44.44444444444444,
+      "total_trades": 18,
+      "max_drawdown": -22.853100132003078,
+      "sharpe_ratio": 0.39701629370007074,
+      "params": {
+        "fast_ema": 8,
+        "slow_ema": 25,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "trades": [
+        {
+          "entry_date": "2020-01-14 00:00:00",
+          "exit_date": "2020-01-21 00:00:00",
+          "entry_price": 47.90855088,
+          "exit_price": 46.4844156,
+          "pnl": -2972.611890447565,
+          "pnl_pct": -2.972611890447563,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-04-22 00:00:00",
+          "exit_date": "2020-09-07 00:00:00",
+          "entry_price": 41.1239064,
+          "exit_price": 54.80739,
+          "pnl": 32284.692534654132,
+          "pnl_pct": 33.27379326979501,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-09-17 00:00:00",
+          "exit_date": "2020-12-10 00:00:00",
+          "entry_price": 58.01202,
+          "exit_price": 69.92667,
+          "pnl": 26558.430160637334,
+          "pnl_pct": 20.538243626062336,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-12-17 00:00:00",
+          "exit_date": "2021-02-08 00:00:00",
+          "entry_price": 73.681839,
+          "exit_price": 79.425522,
+          "pnl": 12150.494820183561,
+          "pnl_pct": 7.795249247239888,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-02-09 00:00:00",
+          "exit_date": "2021-02-18 00:00:00",
+          "entry_price": 83.73123,
+          "exit_price": 80.77311,
+          "pnl": -5935.972720805669,
+          "pnl_pct": -3.5328753680078484,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-05-25 00:00:00",
+          "exit_date": "2021-06-04 00:00:00",
+          "entry_price": 68.431176,
+          "exit_price": 65.14652349,
+          "pnl": -7779.977508530361,
+          "pnl_pct": -4.799935792423016,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-03-01 00:00:00",
+          "exit_date": "2023-03-09 00:00:00",
+          "entry_price": 47.23111564,
+          "exit_price": 45.5708494,
+          "pnl": -5424.124979123531,
+          "pnl_pct": -3.515195898938117,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-03-30 00:00:00",
+          "exit_date": "2023-05-24 00:00:00",
+          "entry_price": 47.10140734,
+          "exit_price": 46.3490992,
+          "pnl": -2377.9403242594954,
+          "pnl_pct": -1.5972094731044661,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-06-07 00:00:00",
+          "exit_date": "2023-08-10 00:00:00",
+          "entry_price": 50.170536,
+          "exit_price": 51.1694064,
+          "pnl": 2916.8016126975467,
+          "pnl_pct": 1.9909502262443368,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-11-14 00:00:00",
+          "exit_date": "2024-11-15 00:00:00",
+          "entry_price": 69.80637524,
+          "exit_price": 68.48873725,
+          "pnl": -2820.3898760178895,
+          "pnl_pct": -1.8875611080934163,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-12-09 00:00:00",
+          "exit_date": "2025-01-21 00:00:00",
+          "entry_price": 69.32292533,
+          "exit_price": 70.5268104,
+          "pnl": 2545.894165497259,
+          "pnl_pct": 1.736633392588538,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-03-18 00:00:00",
+          "exit_date": "2025-04-07 00:00:00",
+          "entry_price": 71.07661618,
+          "exit_price": 63.68267638,
+          "pnl": -15515.248182941936,
+          "pnl_pct": -10.402774073086164,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-04-29 00:00:00",
+          "exit_date": "2025-06-03 00:00:00",
+          "entry_price": 70.3372222,
+          "exit_price": 71.95820131,
+          "pnl": 3079.614309403508,
+          "pnl_pct": 2.3045822102425895,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-06-26 00:00:00",
+          "exit_date": "2025-06-30 00:00:00",
+          "entry_price": 72.6432712,
+          "exit_price": 71.7488944,
+          "pnl": -1683.1558947859467,
+          "pnl_pct": -1.2311901504788003,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-07-03 00:00:00",
+          "exit_date": "2025-07-09 00:00:00",
+          "entry_price": 72.43458328,
+          "exit_price": 71.3513936,
+          "pnl": -2019.1918203665248,
+          "pnl_pct": -1.4954040334751006,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-07-14 00:00:00",
+          "exit_date": "2025-07-29 00:00:00",
+          "entry_price": 72.6432712,
+          "exit_price": 70.79489248,
+          "pnl": -3384.3174390530453,
+          "pnl_pct": -2.5444596443228495,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-08-19 00:00:00",
+          "exit_date": "2025-09-23 00:00:00",
+          "entry_price": 72.22589536,
+          "exit_price": 73.07058456,
+          "pnl": 1515.9541472445078,
+          "pnl_pct": 1.1695101816180609,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-10-24 00:00:00",
+          "exit_date": "2025-12-26 00:00:00",
+          "entry_price": 74.14383672,
+          "exit_price": 78.87,
+          "pnl": 8359.212616325965,
+          "pnl_pct": 6.374317123415252,
+          "exit_reason": "signal"
+        }
+      ]
+    },
+    {
+      "symbol": "000651",
+      "name": "格力电器",
+      "type": "medium_volatility",
+      "data_source": "baostock",
+      "data_rows": 1488,
+      "date_range": "2020-01-02 ~ 2026-02-26",
+      "total_return": 0.429359016749484,
+      "win_rate": 31.57894736842105,
+      "total_trades": 19,
+      "max_drawdown": -14.122475365278863,
+      "sharpe_ratio": 0.06294861591314353,
+      "params": {
+        "fast_ema": 8,
+        "slow_ema": 25,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "trades": [
+        {
+          "entry_date": "2020-01-09 00:00:00",
+          "exit_date": "2020-01-21 00:00:00",
+          "entry_price": 47.3014226,
+          "exit_price": 45.0135175,
+          "pnl": -4836.863194046944,
+          "pnl_pct": -4.8368631940469475,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-04-29 00:00:00",
+          "exit_date": "2020-05-07 00:00:00",
+          "entry_price": 37.3781419,
+          "exit_price": 36.6200195,
+          "pnl": -1930.146925437669,
+          "pnl_pct": -2.0282506338283324,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-05-08 00:00:00",
+          "exit_date": "2020-06-30 00:00:00",
+          "entry_price": 38.57624605,
+          "exit_price": 39.05615428,
+          "pnl": 1159.8660764754738,
+          "pnl_pct": 1.2440511432293633,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-07-02 00:00:00",
+          "exit_date": "2020-07-17 00:00:00",
+          "entry_price": 40.18841684,
+          "exit_price": 39.49801284,
+          "pnl": -1621.5917532552992,
+          "pnl_pct": -1.7179178835251663,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-07-20 00:00:00",
+          "exit_date": "2020-07-27 00:00:00",
+          "entry_price": 40.68550772,
+          "exit_price": 39.20113912,
+          "pnl": -3384.6634657734767,
+          "pnl_pct": -3.6483964025114446,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-09-21 00:00:00",
+          "exit_date": "2020-09-24 00:00:00",
+          "entry_price": 39.0423462,
+          "exit_price": 37.50964932,
+          "pnl": -3509.0761032409423,
+          "pnl_pct": -3.9257294429708156,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-10-14 00:00:00",
+          "exit_date": "2020-12-14 00:00:00",
+          "entry_price": 39.7672704,
+          "exit_price": 43.9847184,
+          "pnl": 9107.590007375893,
+          "pnl_pct": 10.605324322184305,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-01-06 00:00:00",
+          "exit_date": "2021-01-20 00:00:00",
+          "entry_price": 44.9028188,
+          "exit_price": 42.75124,
+          "pnl": -4551.339190748203,
+          "pnl_pct": -4.79163415014826,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-03-17 00:00:00",
+          "exit_date": "2021-04-14 00:00:00",
+          "entry_price": 43.592248,
+          "exit_price": 41.9943328,
+          "pnl": -3314.9358204031314,
+          "pnl_pct": -3.665594855305454,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-06-13 00:00:00",
+          "exit_date": "2023-08-14 00:00:00",
+          "entry_price": 30.32455398,
+          "exit_price": 30.93049836,
+          "pnl": 1740.8061896412055,
+          "pnl_pct": 1.9981971718352032,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-06-06 00:00:00",
+          "exit_date": "2024-06-07 00:00:00",
+          "entry_price": 35.84380198,
+          "exit_price": 35.4897678,
+          "pnl": -877.6789878689607,
+          "pnl_pct": -0.9877138039026678,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-07-31 00:00:00",
+          "exit_date": "2024-10-09 00:00:00",
+          "entry_price": 34.55718996,
+          "exit_price": 43.83251223,
+          "pnl": 23614.79904085089,
+          "pnl_pct": 26.840499128361415,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-12-18 00:00:00",
+          "exit_date": "2025-01-23 00:00:00",
+          "entry_price": 39.73550295,
+          "exit_price": 40.48540197,
+          "pnl": 2106.083958948828,
+          "pnl_pct": 1.8872266973532836,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-03-17 00:00:00",
+          "exit_date": "2025-04-07 00:00:00",
+          "entry_price": 39.5983263,
+          "exit_price": 39.5983263,
+          "pnl": 0.0,
+          "pnl_pct": 0.0,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-07-01 00:00:00",
+          "exit_date": "2025-07-31 00:00:00",
+          "entry_price": 42.47007075,
+          "exit_price": 42.6289247,
+          "pnl": 425.2911874923681,
+          "pnl_pct": 0.3740374037403793,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-08-07 00:00:00",
+          "exit_date": "2025-08-29 00:00:00",
+          "entry_price": 43.918445,
+          "exit_price": 41.557152,
+          "pnl": -6136.145769586382,
+          "pnl_pct": -5.37654054008514,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-11-12 00:00:00",
+          "exit_date": "2025-11-18 00:00:00",
+          "entry_price": 40.142648,
+          "exit_price": 39.1281072,
+          "pnl": -2729.3238167786267,
+          "pnl_pct": -2.5273390036452015,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-12-02 00:00:00",
+          "exit_date": "2025-12-31 00:00:00",
+          "entry_price": 39.898768,
+          "exit_price": 39.2354144,
+          "pnl": -1750.0884248136415,
+          "pnl_pct": -1.662591687041548,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2026-01-20 00:00:00",
+          "exit_date": "2026-01-26 00:00:00",
+          "entry_price": 40.2694656,
+          "exit_price": 39.07,
+          "pnl": -3083.223992081916,
+          "pnl_pct": -2.9785982558457325,
+          "exit_reason": "signal"
+        }
+      ]
+    },
+    {
+      "symbol": "600276",
+      "name": "恒瑞医药",
+      "type": "medium_volatility",
+      "data_source": "baostock",
+      "data_rows": 1488,
+      "date_range": "2020-01-02 ~ 2026-02-26",
+      "total_return": 6.8359684812204655,
+      "win_rate": 31.57894736842105,
+      "total_trades": 19,
+      "max_drawdown": -17.89524666649312,
+      "sharpe_ratio": 0.14264677840265833,
+      "params": {
+        "fast_ema": 8,
+        "slow_ema": 25,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "trades": [
+        {
+          "entry_date": "2020-01-17 00:00:00",
+          "exit_date": "2020-02-26 00:00:00",
+          "entry_price": 61.66883586,
+          "exit_price": 58.96155628,
+          "pnl": -4390.028678579304,
+          "pnl_pct": -4.390028678579306,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-03-06 00:00:00",
+          "exit_date": "2020-03-12 00:00:00",
+          "entry_price": 62.75038725,
+          "exit_price": 58.75748998,
+          "pnl": -6083.799801157068,
+          "pnl_pct": -6.363143631436319,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-03-27 00:00:00",
+          "exit_date": "2020-07-16 00:00:00",
+          "entry_price": 61.82528669,
+          "exit_price": 78.8345335,
+          "pnl": 24630.25776132568,
+          "pnl_pct": 27.51179609612904,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-08-26 00:00:00",
+          "exit_date": "2020-09-08 00:00:00",
+          "entry_price": 77.3863018,
+          "exit_price": 75.5453293,
+          "pnl": -2715.7112062124647,
+          "pnl_pct": -2.3789384647917022,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-10-12 00:00:00",
+          "exit_date": "2020-10-22 00:00:00",
+          "entry_price": 77.075382,
+          "exit_price": 73.2788876,
+          "pnl": -5489.224329827479,
+          "pnl_pct": -4.925690021231421,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-12-04 00:00:00",
+          "exit_date": "2021-01-29 00:00:00",
+          "entry_price": 74.7189372,
+          "exit_price": 84.8974696,
+          "pnl": 14433.164500598265,
+          "pnl_pct": 13.62242663162505,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-02-10 00:00:00",
+          "exit_date": "2021-02-18 00:00:00",
+          "entry_price": 89.348532,
+          "exit_price": 85.830229,
+          "pnl": -4740.421524344644,
+          "pnl_pct": -3.937728937728946,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-05-26 00:00:00",
+          "exit_date": "2021-06-04 00:00:00",
+          "entry_price": 70.6033409,
+          "exit_price": 67.6250565,
+          "pnl": -4878.259609078269,
+          "pnl_pct": -4.218333526480478,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-06-10 00:00:00",
+          "exit_date": "2021-06-24 00:00:00",
+          "entry_price": 71.844264,
+          "exit_price": 66.923424,
+          "pnl": -7586.710761145527,
+          "pnl_pct": -6.849315068493144,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-03-28 00:00:00",
+          "exit_date": "2023-06-01 00:00:00",
+          "entry_price": 42.484344,
+          "exit_price": 45.37920744,
+          "pnl": 7030.587218840167,
+          "pnl_pct": 6.813953488372104,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-07-17 00:00:00",
+          "exit_date": "2024-09-20 00:00:00",
+          "entry_price": 41.58986122,
+          "exit_price": 42.55637213,
+          "pnl": 2561.1777183350837,
+          "pnl_pct": 2.3239099185433654,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-11-06 00:00:00",
+          "exit_date": "2024-11-18 00:00:00",
+          "entry_price": 48.57464625,
+          "exit_price": 47.0302216,
+          "pnl": -3585.540482001431,
+          "pnl_pct": -3.1794871794871837,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-11-20 00:00:00",
+          "exit_date": "2024-12-11 00:00:00",
+          "entry_price": 50.27849538,
+          "exit_price": 47.97680445,
+          "pnl": -4998.384537526741,
+          "pnl_pct": -4.577883472057076,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-02-17 00:00:00",
+          "exit_date": "2025-03-12 00:00:00",
+          "entry_price": 45.09719978,
+          "exit_price": 44.838135,
+          "pnl": -598.5118787008035,
+          "pnl_pct": -0.5744586831639364,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-03-17 00:00:00",
+          "exit_date": "2025-03-24 00:00:00",
+          "entry_price": 46.31281144,
+          "exit_price": 44.19047305,
+          "pnl": -4747.067686140679,
+          "pnl_pct": -4.582616179001708,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-03-27 00:00:00",
+          "exit_date": "2025-06-18 00:00:00",
+          "entry_price": 48.21594117,
+          "exit_price": 51.81,
+          "pnl": 7367.734678662812,
+          "pnl_pct": 7.4540883010622006,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-07-09 00:00:00",
+          "exit_date": "2025-10-14 00:00:00",
+          "entry_price": 57.19,
+          "exit_price": 64.27,
+          "pnl": 13148.479989368363,
+          "pnl_pct": 12.37978667599231,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-12-11 00:00:00",
+          "exit_date": "2025-12-16 00:00:00",
+          "entry_price": 63.4,
+          "exit_price": 59.15,
+          "pnl": -8001.110423229775,
+          "pnl_pct": -6.703470031545744,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2026-01-06 00:00:00",
+          "exit_date": "2026-01-20 00:00:00",
+          "entry_price": 63.06,
+          "exit_price": 60.5,
+          "pnl": -4520.662467965697,
+          "pnl_pct": -4.059625753250873,
+          "exit_reason": "signal"
+        }
+      ]
+    },
+    {
+      "symbol": "000568",
+      "name": "泸州老窖",
+      "type": "medium_volatility",
+      "data_source": "baostock",
+      "data_rows": 1488,
+      "date_range": "2020-01-02 ~ 2026-02-26",
+      "total_return": 89.58261163258273,
+      "win_rate": 29.411764705882355,
+      "total_trades": 17,
+      "max_drawdown": -27.36784593007951,
+      "sharpe_ratio": 0.38330512602510886,
+      "params": {
+        "fast_ema": 8,
+        "slow_ema": 25,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "trades": [
+        {
+          "entry_date": "2020-01-03 00:00:00",
+          "exit_date": "2020-01-08 00:00:00",
+          "entry_price": 72.98567092,
+          "exit_price": 72.1859678,
+          "pnl": -1095.6987993938737,
+          "pnl_pct": -1.0956987993938738,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-01-09 00:00:00",
+          "exit_date": "2020-02-03 00:00:00",
+          "entry_price": 74.44045,
+          "exit_price": 63.28714372,
+          "pnl": -14818.690157027951,
+          "pnl_pct": -14.982857142857142,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-03-11 00:00:00",
+          "exit_date": "2020-03-13 00:00:00",
+          "entry_price": 69.34446948,
+          "exit_price": 67.14103216,
+          "pnl": -2671.840664984273,
+          "pnl_pct": -3.177524230155815,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-04-10 00:00:00",
+          "exit_date": "2020-07-16 00:00:00",
+          "entry_price": 65.3799838,
+          "exit_price": 97.91258732,
+          "pnl": 40510.898884546914,
+          "pnl_pct": 49.75927130774234,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-08-14 00:00:00",
+          "exit_date": "2021-02-26 00:00:00",
+          "entry_price": 100.03945732,
+          "exit_price": 202.62424181,
+          "pnl": 125026.82696853548,
+          "pnl_pct": 102.54432324823411,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-04-02 00:00:00",
+          "exit_date": "2021-06-08 00:00:00",
+          "entry_price": 213.5561819,
+          "exit_price": 225.72001122,
+          "pnl": 14065.974694599705,
+          "pnl_pct": 5.695845098830166,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-03-29 00:00:00",
+          "exit_date": "2023-04-12 00:00:00",
+          "entry_price": 224.31661442,
+          "exit_price": 206.27964081,
+          "pnl": -20988.036249652076,
+          "pnl_pct": -8.040854957015542,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-06-14 00:00:00",
+          "exit_date": "2023-06-29 00:00:00",
+          "entry_price": 201.8654918,
+          "exit_price": 187.77382973,
+          "pnl": -16755.779554770477,
+          "pnl_pct": -6.980718667835239,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-12-11 00:00:00",
+          "exit_date": "2024-12-16 00:00:00",
+          "entry_price": 133.1847171,
+          "exit_price": 124.9843842,
+          "pnl": -13747.210187969758,
+          "pnl_pct": -6.157112526539288,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-02-24 00:00:00",
+          "exit_date": "2025-04-07 00:00:00",
+          "entry_price": 116.2078576,
+          "exit_price": 119.74606976,
+          "pnl": 6379.508499833473,
+          "pnl_pct": 3.044727123512514,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-04-10 00:00:00",
+          "exit_date": "2025-04-14 00:00:00",
+          "entry_price": 126.6508288,
+          "exit_price": 123.47502112,
+          "pnl": -5413.906814264153,
+          "pnl_pct": -2.5075301204819267,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-04-17 00:00:00",
+          "exit_date": "2025-04-22 00:00:00",
+          "entry_price": 126.20259168,
+          "exit_price": 123.16030144,
+          "pnl": -5074.205612605268,
+          "pnl_pct": -2.4106400665004135,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-07-11 00:00:00",
+          "exit_date": "2025-09-25 00:00:00",
+          "entry_price": 113.5851936,
+          "exit_price": 128.04280138,
+          "pnl": 26146.458725509478,
+          "pnl_pct": 12.728426409971782,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-10-16 00:00:00",
+          "exit_date": "2025-10-27 00:00:00",
+          "entry_price": 135.54971365,
+          "exit_price": 127.9834582,
+          "pnl": -12925.697869044385,
+          "pnl_pct": -5.581904414447281,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-11-04 00:00:00",
+          "exit_date": "2025-11-05 00:00:00",
+          "entry_price": 131.6429543,
+          "exit_price": 130.72313501,
+          "pnl": -1527.6776839435427,
+          "pnl_pct": -0.6987227648384886,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-11-10 00:00:00",
+          "exit_date": "2025-11-26 00:00:00",
+          "entry_price": 140.93016197,
+          "exit_price": 133.45292129,
+          "pnl": -11519.114231146263,
+          "pnl_pct": -5.305635483191795,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2026-02-02 00:00:00",
+          "exit_date": "2026-02-24 00:00:00",
+          "entry_price": 122.0,
+          "exit_price": 112.5,
+          "pnl": -16009.19831564032,
+          "pnl_pct": -7.786885245901642,
+          "exit_reason": "signal"
+        }
+      ]
+    },
+    {
+      "symbol": "600887",
+      "name": "伊利股份",
+      "type": "medium_volatility",
+      "data_source": "baostock",
+      "data_rows": 1488,
+      "date_range": "2020-01-02 ~ 2026-02-26",
+      "total_return": -7.821561597740555,
+      "win_rate": 17.647058823529413,
+      "total_trades": 17,
+      "max_drawdown": -34.44645807659588,
+      "sharpe_ratio": -0.013359033637989197,
+      "params": {
+        "fast_ema": 8,
+        "slow_ema": 25,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "trades": [
+        {
+          "entry_date": "2020-01-08 00:00:00",
+          "exit_date": "2020-01-23 00:00:00",
+          "entry_price": 26.10084303,
+          "exit_price": 24.84404568,
+          "pnl": -4815.159987573778,
+          "pnl_pct": -4.8151599875737805,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-04-03 00:00:00",
+          "exit_date": "2020-04-29 00:00:00",
+          "entry_price": 23.86293291,
+          "exit_price": 23.74941573,
+          "pnl": -452.7991030152886,
+          "pnl_pct": -0.47570506286103154,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-06-08 00:00:00",
+          "exit_date": "2020-10-30 00:00:00",
+          "entry_price": 24.55214436,
+          "exit_price": 33.09195133,
+          "pnl": 32950.00759927565,
+          "pnl_pct": 34.782326320600056,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-12-07 00:00:00",
+          "exit_date": "2021-02-01 00:00:00",
+          "entry_price": 33.46676578,
+          "exit_price": 36.85675425,
+          "pnl": 12933.44792011832,
+          "pnl_pct": 10.129417620706803,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-02-10 00:00:00",
+          "exit_date": "2021-02-25 00:00:00",
+          "entry_price": 38.72249729,
+          "exit_price": 36.7318161,
+          "pnl": -7228.888717247648,
+          "pnl_pct": -5.1408905140890475,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-04-29 00:00:00",
+          "exit_date": "2021-05-07 00:00:00",
+          "entry_price": 35.04931568,
+          "exit_price": 32.15907981,
+          "pnl": -10999.323402069947,
+          "pnl_pct": -8.246197718631176,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-05-25 00:00:00",
+          "exit_date": "2021-06-07 00:00:00",
+          "entry_price": 34.15809021,
+          "exit_price": 31.39279249,
+          "pnl": -9907.968395696107,
+          "pnl_pct": -8.095586442331125,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-05-05 00:00:00",
+          "exit_date": "2023-05-31 00:00:00",
+          "entry_price": 25.92690686,
+          "exit_price": 25.14150746,
+          "pnl": -3407.3168738610575,
+          "pnl_pct": -3.029283069673505,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-06-06 00:00:00",
+          "exit_date": "2023-06-29 00:00:00",
+          "entry_price": 25.743647,
+          "exit_price": 25.52342052,
+          "pnl": -933.0668034380403,
+          "pnl_pct": -0.855459523664226,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-05-17 00:00:00",
+          "exit_date": "2024-06-11 00:00:00",
+          "entry_price": 25.41492564,
+          "exit_price": 25.21545024,
+          "pnl": -848.7554545309007,
+          "pnl_pct": -0.7848750093765844,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-03-03 00:00:00",
+          "exit_date": "2025-03-04 00:00:00",
+          "entry_price": 26.3290068,
+          "exit_price": 26.20632684,
+          "pnl": -499.9183864392429,
+          "pnl_pct": -0.46594982078852487,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-03-06 00:00:00",
+          "exit_date": "2025-03-10 00:00:00",
+          "entry_price": 26.41393908,
+          "exit_price": 25.82885004,
+          "pnl": -2365.486252419564,
+          "pnl_pct": -2.215076813147554,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-03-14 00:00:00",
+          "exit_date": "2025-04-07 00:00:00",
+          "entry_price": 28.074837,
+          "exit_price": 26.03646228,
+          "pnl": -7581.764969045421,
+          "pnl_pct": -7.260504201680673,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-04-08 00:00:00",
+          "exit_date": "2025-06-12 00:00:00",
+          "entry_price": 27.11227116,
+          "exit_price": 27.7422782,
+          "pnl": 2250.33808250045,
+          "pnl_pct": 2.3236970310679173,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-07-22 00:00:00",
+          "exit_date": "2025-07-29 00:00:00",
+          "entry_price": 27.8996254,
+          "exit_price": 27.0637184,
+          "pnl": -2968.9581765271087,
+          "pnl_pct": -2.99612266478676,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-08-25 00:00:00",
+          "exit_date": "2025-09-22 00:00:00",
+          "entry_price": 27.7029414,
+          "exit_price": 27.093221,
+          "pnl": -2115.6237128015214,
+          "pnl_pct": -2.2009229676961284,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-11-10 00:00:00",
+          "exit_date": "2026-01-08 00:00:00",
+          "entry_price": 27.8012834,
+          "exit_price": 27.26,
+          "pnl": -1830.324964969381,
+          "pnl_pct": -1.9469727070225762,
+          "exit_reason": "signal"
+        }
+      ]
+    },
+    {
+      "symbol": "002415",
+      "name": "海康威视",
+      "type": "medium_volatility",
+      "data_source": "baostock",
+      "data_rows": 1488,
+      "date_range": "2020-01-02 ~ 2026-02-26",
+      "total_return": 51.261588494632804,
+      "win_rate": 40.0,
+      "total_trades": 15,
+      "max_drawdown": -14.628325352690968,
+      "sharpe_ratio": 0.500738725294724,
+      "params": {
+        "fast_ema": 8,
+        "slow_ema": 25,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "trades": [
+        {
+          "entry_date": "2020-01-03 00:00:00",
+          "exit_date": "2020-02-03 00:00:00",
+          "entry_price": 29.44432317,
+          "exit_price": 27.97943147,
+          "pnl": -4975.124378109449,
+          "pnl_pct": -4.975124378109452,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-04-29 00:00:00",
+          "exit_date": "2020-05-19 00:00:00",
+          "entry_price": 26.85922017,
+          "exit_price": 26.15262535,
+          "pnl": -2499.8523583557967,
+          "pnl_pct": -2.630734680782798,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-06-18 00:00:00",
+          "exit_date": "2020-09-07 00:00:00",
+          "entry_price": 26.50407,
+          "exit_price": 32.14943691,
+          "pnl": 19707.8299551329,
+          "pnl_pct": 21.300000000000008,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-10-09 00:00:00",
+          "exit_date": "2020-12-08 00:00:00",
+          "entry_price": 33.70434235,
+          "exit_price": 39.12000732,
+          "pnl": 18033.74548441502,
+          "pnl_pct": 16.068152031454797,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-12-15 00:00:00",
+          "exit_date": "2020-12-22 00:00:00",
+          "entry_price": 41.26683699,
+          "exit_price": 39.59708058,
+          "pnl": -5270.902837697002,
+          "pnl_pct": -4.046242774566489,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-12-23 00:00:00",
+          "exit_date": "2021-02-24 00:00:00",
+          "entry_price": 40.42754144,
+          "exit_price": 49.52727214,
+          "pnl": 28134.95776690281,
+          "pnl_pct": 22.50874125874127,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-04-07 00:00:00",
+          "exit_date": "2021-04-12 00:00:00",
+          "entry_price": 49.30640489,
+          "exit_price": 47.40694654,
+          "pnl": -5899.138242419293,
+          "pnl_pct": -3.852356208564778,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-04-16 00:00:00",
+          "exit_date": "2021-06-08 00:00:00",
+          "entry_price": 50.38423707,
+          "exit_price": 53.37117974,
+          "pnl": 8728.366673008804,
+          "pnl_pct": 5.928327674884071,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-06-25 00:00:00",
+          "exit_date": "2021-07-09 00:00:00",
+          "entry_price": 56.81534739,
+          "exit_price": 53.99739204,
+          "pnl": -7735.374405574955,
+          "pnl_pct": -4.9598488427019305,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-07-12 00:00:00",
+          "exit_date": "2021-07-30 00:00:00",
+          "entry_price": 56.0012714,
+          "exit_price": 54.569929,
+          "pnl": -3788.485818717006,
+          "pnl_pct": -2.5559105431309903,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-12-10 00:00:00",
+          "exit_date": "2025-01-02 00:00:00",
+          "entry_price": 30.82700856,
+          "exit_price": 28.5417408,
+          "pnl": -10707.330990223612,
+          "pnl_pct": -7.413199874882704,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-02-06 00:00:00",
+          "exit_date": "2025-03-26 00:00:00",
+          "entry_price": 29.28421176,
+          "exit_price": 29.891688,
+          "pnl": 2774.0887466074373,
+          "pnl_pct": 2.0744155416529297,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-06-05 00:00:00",
+          "exit_date": "2025-06-12 00:00:00",
+          "entry_price": 28.14661312,
+          "exit_price": 27.66234906,
+          "pnl": -2348.5379916269435,
+          "pnl_pct": -1.7205056179775302,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-07-15 00:00:00",
+          "exit_date": "2025-07-16 00:00:00",
+          "entry_price": 27.60305142,
+          "exit_price": 27.39550968,
+          "pnl": -1008.678508295811,
+          "pnl_pct": -0.7518796992481147,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-07-17 00:00:00",
+          "exit_date": "2025-11-07 00:00:00",
+          "entry_price": 27.61293436,
+          "exit_price": 31.37,
+          "pnl": 18116.025399585727,
+          "pnl_pct": 13.606180317592287,
+          "exit_reason": "signal"
+        }
+      ]
+    },
+    {
+      "symbol": "600519",
+      "name": "贵州茅台",
+      "type": "low_volatility",
+      "data_source": "baostock",
+      "data_rows": 1488,
+      "date_range": "2020-01-02 ~ 2026-02-26",
+      "total_return": 41.59991504397744,
+      "win_rate": 32.0,
+      "total_trades": 25,
+      "max_drawdown": -22.96857705963196,
+      "sharpe_ratio": 0.3243057489459165,
+      "params": {
+        "fast_ema": 5,
+        "slow_ema": 20,
+        "atr_period": 14,
+        "atr_multiplier": 1.5,
+        "market_filter": true
+      },
+      "trades": [
+        {
+          "entry_date": "2020-02-12 00:00:00",
+          "exit_date": "2020-02-26 00:00:00",
+          "entry_price": 950.68789524,
+          "exit_price": 930.2665644,
+          "pnl": -2148.0583630282426,
+          "pnl_pct": -2.148058363028238,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-03-03 00:00:00",
+          "exit_date": "2020-03-16 00:00:00",
+          "entry_price": 964.316556,
+          "exit_price": 924.461604,
+          "pnl": -4044.195251842501,
+          "pnl_pct": -4.132973944294704,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-03-31 00:00:00",
+          "exit_date": "2020-07-16 00:00:00",
+          "entry_price": 962.583732,
+          "exit_price": 1414.71942,
+          "pnl": 44062.48364850811,
+          "pnl_pct": 46.97105020262278,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-08-14 00:00:00",
+          "exit_date": "2020-09-10 00:00:00",
+          "entry_price": 1455.91633,
+          "exit_price": 1495.184874,
+          "pnl": 3718.595006325682,
+          "pnl_pct": 2.697170379289582,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-09-11 00:00:00",
+          "exit_date": "2020-09-17 00:00:00",
+          "entry_price": 1519.02649,
+          "exit_price": 1464.2608956,
+          "pnl": -5104.714246103232,
+          "pnl_pct": -3.6053087132140837,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-10-12 00:00:00",
+          "exit_date": "2020-10-26 00:00:00",
+          "entry_price": 1534.4621833,
+          "exit_price": 1440.13879,
+          "pnl": -8389.678547778933,
+          "pnl_pct": -6.147000188505725,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-11-05 00:00:00",
+          "exit_date": "2021-02-18 00:00:00",
+          "entry_price": 1509.297007,
+          "exit_price": 2165.90563,
+          "pnl": 55726.545789847994,
+          "pnl_pct": 43.50426854056568,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-04-02 00:00:00",
+          "exit_date": "2021-04-12 00:00:00",
+          "entry_price": 1895.05786,
+          "exit_price": 1760.8523517,
+          "pnl": -13017.960197539795,
+          "pnl_pct": -7.081868640148004,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-04-19 00:00:00",
+          "exit_date": "2021-04-29 00:00:00",
+          "entry_price": 1830.19464,
+          "exit_price": 1776.1653308,
+          "pnl": -5042.288323543245,
+          "pnl_pct": -2.9521072796934833,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-05-18 00:00:00",
+          "exit_date": "2021-06-18 00:00:00",
+          "entry_price": 1805.0469943,
+          "exit_price": 1832.7716382,
+          "pnl": 2546.0041832237903,
+          "pnl_pct": 1.5359513623495191,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-03-30 00:00:00",
+          "exit_date": "2023-04-11 00:00:00",
+          "entry_price": 1630.2978,
+          "exit_price": 1580.9360055,
+          "pnl": -5095.953881413785,
+          "pnl_pct": -3.027777777777785,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-06-14 00:00:00",
+          "exit_date": "2023-06-19 00:00:00",
+          "entry_price": 1564.07148048,
+          "exit_price": 1579.577424,
+          "pnl": 1618.0444214196482,
+          "pnl_pct": 0.9913833039933317,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-07-19 00:00:00",
+          "exit_date": "2024-07-23 00:00:00",
+          "entry_price": 1448.58992058,
+          "exit_price": 1381.535595,
+          "pnl": -7629.823657065893,
+          "pnl_pct": -4.628937743343675,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-12-12 00:00:00",
+          "exit_date": "2024-12-13 00:00:00",
+          "entry_price": 1486.7411922,
+          "exit_price": 1442.304171,
+          "pnl": -4698.501230802934,
+          "pnl_pct": -2.988887469664059,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-12-17 00:00:00",
+          "exit_date": "2025-01-02 00:00:00",
+          "entry_price": 1479.335022,
+          "exit_price": 1434.961728,
+          "pnl": -4574.3184553725305,
+          "pnl_pct": -2.999543263702975,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-02-14 00:00:00",
+          "exit_date": "2025-04-07 00:00:00",
+          "entry_price": 1422.4251,
+          "exit_price": 1446.534,
+          "pnl": 2507.223404997208,
+          "pnl_pct": 1.6949152542373058,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-04-16 00:00:00",
+          "exit_date": "2025-04-22 00:00:00",
+          "entry_price": 1503.59494452,
+          "exit_price": 1493.5945728,
+          "pnl": -1000.528744517434,
+          "pnl_pct": -0.665097455697583,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-05-08 00:00:00",
+          "exit_date": "2025-05-19 00:00:00",
+          "entry_price": 1521.93699564,
+          "exit_price": 1522.69883688,
+          "pnl": 74.80212882396472,
+          "pnl_pct": 0.05005734417276031,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-07-18 00:00:00",
+          "exit_date": "2025-07-25 00:00:00",
+          "entry_price": 1412.938872,
+          "exit_price": 1430.63748,
+          "pnl": 1872.7475284025782,
+          "pnl_pct": 1.2526096033403045,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-08-20 00:00:00",
+          "exit_date": "2025-08-27 00:00:00",
+          "entry_price": 1425.7212,
+          "exit_price": 1423.754688,
+          "pnl": -208.80058650005222,
+          "pnl_pct": -0.13793103448275223,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-10-16 00:00:00",
+          "exit_date": "2025-10-17 00:00:00",
+          "entry_price": 1460.04666696,
+          "exit_price": 1430.63748,
+          "pnl": -3044.9948431654843,
+          "pnl_pct": -2.0142634907166057,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-10-21 00:00:00",
+          "exit_date": "2025-10-24 00:00:00",
+          "entry_price": 1437.77591856,
+          "exit_price": 1425.7212,
+          "pnl": -1241.9354158207564,
+          "pnl_pct": -0.8384281865058241,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-11-11 00:00:00",
+          "exit_date": "2025-11-26 00:00:00",
+          "entry_price": 1434.56067144,
+          "exit_price": 1424.8854324,
+          "pnl": -990.6479088765789,
+          "pnl_pct": -0.6744391668208949,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-12-25 00:00:00",
+          "exit_date": "2025-12-29 00:00:00",
+          "entry_price": 1414.17,
+          "exit_price": 1402.0,
+          "pnl": -1255.5283632067092,
+          "pnl_pct": -0.8605754612246108,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2026-01-06 00:00:00",
+          "exit_date": "2026-01-14 00:00:00",
+          "entry_price": 1428.01,
+          "exit_price": 1398.01,
+          "pnl": -3038.603050993429,
+          "pnl_pct": -2.100825624470415,
+          "exit_reason": "signal"
+        }
+      ]
+    },
+    {
+      "symbol": "601318",
+      "name": "中国平安",
+      "type": "low_volatility",
+      "data_source": "baostock",
+      "data_rows": 1488,
+      "date_range": "2020-01-02 ~ 2026-02-26",
+      "total_return": -0.46316622813454883,
+      "win_rate": 25.925925925925924,
+      "total_trades": 27,
+      "max_drawdown": -28.411431187425713,
+      "sharpe_ratio": 0.04628213166650381,
+      "params": {
+        "fast_ema": 5,
+        "slow_ema": 20,
+        "atr_period": 14,
+        "atr_multiplier": 1.5,
+        "market_filter": true
+      },
+      "trades": [
+        {
+          "entry_date": "2020-01-03 00:00:00",
+          "exit_date": "2020-01-06 00:00:00",
+          "entry_price": 66.18867,
+          "exit_price": 65.72796,
+          "pnl": -696.0556844547654,
+          "pnl_pct": -0.6960556844547661,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-01-14 00:00:00",
+          "exit_date": "2020-01-16 00:00:00",
+          "entry_price": 66.6724155,
+          "exit_price": 65.6895675,
+          "pnl": -1463.8840115616542,
+          "pnl_pct": -1.4741448808015756,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-01-17 00:00:00",
+          "exit_date": "2020-01-22 00:00:00",
+          "entry_price": 66.2270625,
+          "exit_price": 65.436177,
+          "pnl": -1168.4088360939513,
+          "pnl_pct": -1.1942028985507225,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-04-17 00:00:00",
+          "exit_date": "2020-05-22 00:00:00",
+          "entry_price": 55.59234,
+          "exit_price": 54.80712428,
+          "pnl": -1365.4417211246796,
+          "pnl_pct": -1.4124530825649795,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-06-02 00:00:00",
+          "exit_date": "2020-06-19 00:00:00",
+          "entry_price": 58.05865932,
+          "exit_price": 57.38646698,
+          "pnl": -1103.4375388020635,
+          "pnl_pct": -1.1577813677975168,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-07-02 00:00:00",
+          "exit_date": "2020-07-10 00:00:00",
+          "entry_price": 59.403044,
+          "exit_price": 64.35850846,
+          "pnl": 7858.494418401107,
+          "pnl_pct": 8.342105263157883,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-08-17 00:00:00",
+          "exit_date": "2020-08-26 00:00:00",
+          "entry_price": 63.3893009,
+          "exit_price": 60.0283392,
+          "pnl": -5411.386516564313,
+          "pnl_pct": -5.30209617755858,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-09-14 00:00:00",
+          "exit_date": "2020-09-29 00:00:00",
+          "entry_price": 61.39617245,
+          "exit_price": 60.6353664,
+          "pnl": -1197.66119914386,
+          "pnl_pct": -1.2391750489325504,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-10-12 00:00:00",
+          "exit_date": "2020-10-29 00:00:00",
+          "entry_price": 63.84082978,
+          "exit_price": 62.10387918,
+          "pnl": -2597.0180757289495,
+          "pnl_pct": -2.7207519168933936,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-11-06 00:00:00",
+          "exit_date": "2020-12-15 00:00:00",
+          "entry_price": 64.1882199,
+          "exit_price": 68.1358349,
+          "pnl": 5710.651957867581,
+          "pnl_pct": 6.150061500615012,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-12-17 00:00:00",
+          "exit_date": "2020-12-21 00:00:00",
+          "entry_price": 70.25175654,
+          "exit_price": 68.72797715,
+          "pnl": -2137.9197110597156,
+          "pnl_pct": -2.1690267475837244,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-01-12 00:00:00",
+          "exit_date": "2021-01-21 00:00:00",
+          "entry_price": 69.33590986,
+          "exit_price": 66.66732212,
+          "pnl": -3711.30054448035,
+          "pnl_pct": -3.848781598724671,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-02-22 00:00:00",
+          "exit_date": "2021-03-18 00:00:00",
+          "entry_price": 65.530409,
+          "exit_price": 64.28296266,
+          "pnl": -1764.9672217935322,
+          "pnl_pct": -1.9036144578313374,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-05-27 00:00:00",
+          "exit_date": "2021-06-01 00:00:00",
+          "entry_price": 58.6339803,
+          "exit_price": 57.21035691,
+          "pnl": -2208.2914623918423,
+          "pnl_pct": -2.427983539094647,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-03-02 00:00:00",
+          "exit_date": "2023-03-06 00:00:00",
+          "entry_price": 43.3318368,
+          "exit_price": 41.93347872,
+          "pnl": -2863.8299928679676,
+          "pnl_pct": -3.2270916334661393,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-04-17 00:00:00",
+          "exit_date": "2023-04-21 00:00:00",
+          "entry_price": 40.98397632,
+          "exit_price": 40.34522016,
+          "pnl": -1338.4764628590729,
+          "pnl_pct": -1.5585509688289756,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-04-27 00:00:00",
+          "exit_date": "2023-05-24 00:00:00",
+          "entry_price": 43.47857808,
+          "exit_price": 41.83852848,
+          "pnl": -3188.9622405191494,
+          "pnl_pct": -3.772086559459986,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-06-13 00:00:00",
+          "exit_date": "2023-06-20 00:00:00",
+          "entry_price": 42.83982192,
+          "exit_price": 41.71878324,
+          "pnl": -2128.833699414821,
+          "pnl_pct": -2.616814519195365,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-07-12 00:00:00",
+          "exit_date": "2024-07-16 00:00:00",
+          "entry_price": 38.74631244,
+          "exit_price": 37.39364127,
+          "pnl": -2765.7608826508294,
+          "pnl_pct": -3.4910965323336263,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-07-17 00:00:00",
+          "exit_date": "2024-08-08 00:00:00",
+          "entry_price": 38.39225757,
+          "exit_price": 38.40186402,
+          "pnl": 19.13107743460198,
+          "pnl_pct": 0.02502184192343382,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-12-10 00:00:00",
+          "exit_date": "2024-12-13 00:00:00",
+          "entry_price": 53.18351028,
+          "exit_price": 51.38586556,
+          "pnl": -2584.97098716506,
+          "pnl_pct": -3.380079108234446,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-02-10 00:00:00",
+          "exit_date": "2025-03-03 00:00:00",
+          "entry_price": 48.6702746,
+          "exit_price": 48.12524402,
+          "pnl": -827.4705752272184,
+          "pnl_pct": -1.1198428290766227,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-03-07 00:00:00",
+          "exit_date": "2025-03-20 00:00:00",
+          "entry_price": 49.243991,
+          "exit_price": 50.19062306,
+          "pnl": 1404.5351085223579,
+          "pnl_pct": 1.922330097087377,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-04-24 00:00:00",
+          "exit_date": "2025-07-31 00:00:00",
+          "entry_price": 48.97625668,
+          "exit_price": 57.7409827,
+          "pnl": 13326.826207519418,
+          "pnl_pct": 17.895867536930755,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-10-15 00:00:00",
+          "exit_date": "2025-12-01 00:00:00",
+          "entry_price": 56.8752123,
+          "exit_price": 58.63,
+          "pnl": 2708.7823506825857,
+          "pnl_pct": 3.0853294942338128,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-12-05 00:00:00",
+          "exit_date": "2026-01-08 00:00:00",
+          "entry_price": 61.99,
+          "exit_price": 70.38,
+          "pnl": 12249.257043349488,
+          "pnl_pct": 13.53444103887722,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2026-02-04 00:00:00",
+          "exit_date": "2026-02-13 00:00:00",
+          "entry_price": 67.4,
+          "exit_price": 65.29,
+          "pnl": -3216.7670280079033,
+          "pnl_pct": -3.1305637982195877,
+          "exit_reason": "signal"
+        }
+      ]
+    },
+    {
+      "symbol": "000001",
+      "name": "平安银行",
+      "type": "low_volatility",
+      "data_source": "baostock",
+      "data_rows": 1488,
+      "date_range": "2020-01-02 ~ 2026-02-26",
+      "total_return": -4.169289971838909,
+      "win_rate": 25.925925925925924,
+      "total_trades": 27,
+      "max_drawdown": -21.813890837531915,
+      "sharpe_ratio": -0.007159449343616967,
+      "params": {
+        "fast_ema": 5,
+        "slow_ema": 20,
+        "atr_period": 14,
+        "atr_multiplier": 1.5,
+        "market_filter": true
+      },
+      "trades": [
+        {
+          "entry_date": "2020-01-03 00:00:00",
+          "exit_date": "2020-01-09 00:00:00",
+          "entry_price": 13.93619266,
+          "exit_price": 13.61982973,
+          "pnl": -2270.0814901047756,
+          "pnl_pct": -2.2700814901047806,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-02-21 00:00:00",
+          "exit_date": "2020-02-24 00:00:00",
+          "entry_price": 12.63829346,
+          "exit_price": 12.35437801,
+          "pnl": -2195.4731372569554,
+          "pnl_pct": -2.246469833119391,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-04-21 00:00:00",
+          "exit_date": "2020-05-18 00:00:00",
+          "entry_price": 10.91046515,
+          "exit_price": 10.7076684,
+          "pnl": -1775.733185365032,
+          "pnl_pct": -1.8587360594795599,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-06-02 00:00:00",
+          "exit_date": "2020-06-12 00:00:00",
+          "entry_price": 11.1808096,
+          "exit_price": 10.71872448,
+          "pnl": -3874.8988062636863,
+          "pnl_pct": -4.132841328413283,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-07-02 00:00:00",
+          "exit_date": "2020-07-24 00:00:00",
+          "entry_price": 11.08179136,
+          "exit_price": 11.139552,
+          "pnl": 468.4934427900697,
+          "pnl_pct": 0.5212211466865124,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-08-11 00:00:00",
+          "exit_date": "2020-09-29 00:00:00",
+          "entry_price": 11.65939776,
+          "exit_price": 12.2122496,
+          "pnl": 4284.221201128509,
+          "pnl_pct": 4.741684359518761,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-10-12 00:00:00",
+          "exit_date": "2020-12-11 00:00:00",
+          "entry_price": 13.1199168,
+          "exit_price": 15.28181504,
+          "pnl": 15594.195183981867,
+          "pnl_pct": 16.477987421383645,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-12-16 00:00:00",
+          "exit_date": "2020-12-18 00:00:00",
+          "entry_price": 15.68613952,
+          "exit_price": 15.14979072,
+          "pnl": -3769.067337495601,
+          "pnl_pct": -3.419253024723823,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-12-29 00:00:00",
+          "exit_date": "2021-01-05 00:00:00",
+          "entry_price": 15.81816384,
+          "exit_price": 14.99301184,
+          "pnl": -5553.555340188552,
+          "pnl_pct": -5.216484089723528,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-01-06 00:00:00",
+          "exit_date": "2021-02-23 00:00:00",
+          "entry_price": 16.13997312,
+          "exit_price": 18.09558336,
+          "pnl": 12226.595003016622,
+          "pnl_pct": 12.1165644171779,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-03-31 00:00:00",
+          "exit_date": "2021-04-09 00:00:00",
+          "entry_price": 18.16159552,
+          "exit_price": 17.5757376,
+          "pnl": -3649.5063075562016,
+          "pnl_pct": -3.2258064516129004,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-04-21 00:00:00",
+          "exit_date": "2021-06-15 00:00:00",
+          "entry_price": 18.98674752,
+          "exit_price": 19.3106808,
+          "pnl": 1867.929007865218,
+          "pnl_pct": 1.706102004352128,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-03-02 00:00:00",
+          "exit_date": "2023-03-06 00:00:00",
+          "entry_price": 12.05568368,
+          "exit_price": 11.72550695,
+          "pnl": -3049.6991651316757,
+          "pnl_pct": -2.73876404494382,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-04-18 00:00:00",
+          "exit_date": "2023-04-21 00:00:00",
+          "entry_price": 11.005891,
+          "exit_price": 10.5825875,
+          "pnl": -4165.516118054603,
+          "pnl_pct": -3.8461538461538436,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-05-05 00:00:00",
+          "exit_date": "2023-05-17 00:00:00",
+          "entry_price": 10.92969637,
+          "exit_price": 10.57412143,
+          "pnl": -3387.9100882705993,
+          "pnl_pct": -3.253292021688614,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-07-01 00:00:00",
+          "exit_date": "2024-07-05 00:00:00",
+          "entry_price": 9.6170544,
+          "exit_price": 9.26396448,
+          "pnl": -3699.033554393816,
+          "pnl_pct": -3.6714975845410613,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-07-12 00:00:00",
+          "exit_date": "2024-07-24 00:00:00",
+          "entry_price": 9.57988704,
+          "exit_price": 9.41263392,
+          "pnl": -1694.391142149964,
+          "pnl_pct": -1.745877788554795,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-08-01 00:00:00",
+          "exit_date": "2024-08-02 00:00:00",
+          "entry_price": 9.54271968,
+          "exit_price": 9.42192576,
+          "pnl": -1207.0451666651886,
+          "pnl_pct": -1.2658227848101111,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-11-18 00:00:00",
+          "exit_date": "2024-11-22 00:00:00",
+          "entry_price": 11.15670725,
+          "exit_price": 10.71043896,
+          "pnl": -3765.9809199954325,
+          "pnl_pct": -4.0000000000000036,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-12-06 00:00:00",
+          "exit_date": "2024-12-13 00:00:00",
+          "entry_price": 11.07125162,
+          "exit_price": 10.97630092,
+          "pnl": -775.1590229836215,
+          "pnl_pct": -0.8576329331046351,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-02-13 00:00:00",
+          "exit_date": "2025-03-04 00:00:00",
+          "entry_price": 10.9193305,
+          "exit_price": 10.92882557,
+          "pnl": 77.92033309297544,
+          "pnl_pct": 0.08695652173913437,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-03-05 00:00:00",
+          "exit_date": "2025-03-17 00:00:00",
+          "entry_price": 11.07125162,
+          "exit_price": 10.9193305,
+          "pnl": -1230.686838970841,
+          "pnl_pct": -1.3722126929674117,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-05-09 00:00:00",
+          "exit_date": "2025-07-25 00:00:00",
+          "entry_price": 10.58700305,
+          "exit_price": 12.09382395,
+          "pnl": 12589.660276094482,
+          "pnl_pct": 14.232742664601394,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-10-16 00:00:00",
+          "exit_date": "2025-10-31 00:00:00",
+          "entry_price": 11.54,
+          "exit_price": 11.32,
+          "pnl": -1926.3397662016462,
+          "pnl_pct": -1.9064124783362169,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-11-04 00:00:00",
+          "exit_date": "2025-12-03 00:00:00",
+          "entry_price": 11.59,
+          "exit_price": 11.55,
+          "pnl": -342.08433843285405,
+          "pnl_pct": -0.3451251078515849,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-12-19 00:00:00",
+          "exit_date": "2025-12-30 00:00:00",
+          "entry_price": 11.62,
+          "exit_price": 11.48,
+          "pnl": -1190.0825629215406,
+          "pnl_pct": -1.2048192771084265,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2026-01-06 00:00:00",
+          "exit_date": "2026-01-09 00:00:00",
+          "entry_price": 11.67,
+          "exit_price": 11.46,
+          "pnl": -1756.0601314060855,
+          "pnl_pct": -1.7994858611825149,
+          "exit_reason": "signal"
+        }
+      ]
+    },
+    {
+      "symbol": "600036",
+      "name": "招商银行",
+      "type": "low_volatility",
+      "data_source": "baostock",
+      "data_rows": 1488,
+      "date_range": "2020-01-02 ~ 2026-02-26",
+      "total_return": -6.629061686743327,
+      "win_rate": 29.166666666666668,
+      "total_trades": 24,
+      "max_drawdown": -21.83958125710725,
+      "sharpe_ratio": -0.08741545614592394,
+      "params": {
+        "fast_ema": 5,
+        "slow_ema": 20,
+        "atr_period": 14,
+        "atr_multiplier": 1.5,
+        "market_filter": true
+      },
+      "trades": [
+        {
+          "entry_date": "2020-01-03 00:00:00",
+          "exit_date": "2020-01-08 00:00:00",
+          "entry_price": 29.8266274,
+          "exit_price": 29.07717661,
+          "pnl": -2512.6903553299526,
+          "pnl_pct": -2.5126903553299496,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-01-10 00:00:00",
+          "exit_date": "2020-01-14 00:00:00",
+          "entry_price": 29.55409984,
+          "exit_price": 29.37998501,
+          "pnl": -574.3360967795643,
+          "pnl_pct": -0.5891393442623016,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-04-20 00:00:00",
+          "exit_date": "2020-05-25 00:00:00",
+          "entry_price": 24.9059909,
+          "exit_price": 25.04982489,
+          "pnl": 559.6797864467878,
+          "pnl_pct": 0.5775075987841882,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-06-01 00:00:00",
+          "exit_date": "2020-06-15 00:00:00",
+          "entry_price": 26.35947122,
+          "exit_price": 25.41319497,
+          "pnl": -3499.161880181552,
+          "pnl_pct": -3.5898908673176355,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-07-02 00:00:00",
+          "exit_date": "2020-07-24 00:00:00",
+          "entry_price": 26.7228413,
+          "exit_price": 27.0048848,
+          "pnl": 991.8336205121348,
+          "pnl_pct": 1.0554397896304524,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-08-05 00:00:00",
+          "exit_date": "2020-09-03 00:00:00",
+          "entry_price": 28.3317144,
+          "exit_price": 28.86244624,
+          "pnl": 1778.964767238962,
+          "pnl_pct": 1.8732782369146106,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-09-09 00:00:00",
+          "exit_date": "2020-09-25 00:00:00",
+          "entry_price": 29.3463488,
+          "exit_price": 29.01854384,
+          "pnl": -1080.6543014255603,
+          "pnl_pct": -1.1170212765957532,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-10-14 00:00:00",
+          "exit_date": "2020-12-11 00:00:00",
+          "entry_price": 29.6975684,
+          "exit_price": 33.31122784,
+          "pnl": 11640.542248421236,
+          "pnl_pct": 12.168199737187901,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-01-07 00:00:00",
+          "exit_date": "2021-02-26 00:00:00",
+          "entry_price": 35.8243992,
+          "exit_price": 39.8829368,
+          "pnl": 12156.464586106602,
+          "pnl_pct": 11.328976034858385,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-03-15 00:00:00",
+          "exit_date": "2021-03-25 00:00:00",
+          "entry_price": 41.45171768,
+          "exit_price": 39.81269288,
+          "pnl": -4723.5426282718745,
+          "pnl_pct": -3.954057616268125,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-04-21 00:00:00",
+          "exit_date": "2021-06-15 00:00:00",
+          "entry_price": 41.28001032,
+          "exit_price": 42.7707424,
+          "pnl": 4143.464936968579,
+          "pnl_pct": 3.61126867082624,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-04-18 00:00:00",
+          "exit_date": "2023-04-24 00:00:00",
+          "entry_price": 29.7976168,
+          "exit_price": 28.060536,
+          "pnl": -6930.257134027696,
+          "pnl_pct": -5.829596412556059,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-05-08 00:00:00",
+          "exit_date": "2023-05-12 00:00:00",
+          "entry_price": 29.730806,
+          "exit_price": 28.4279954,
+          "pnl": -4905.68763419938,
+          "pnl_pct": -4.382022471910119,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-05-15 00:00:00",
+          "exit_date": "2023-05-19 00:00:00",
+          "entry_price": 28.9791845,
+          "exit_price": 28.35283325,
+          "pnl": -2313.6445226688447,
+          "pnl_pct": -2.161383285302587,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-06-09 00:00:00",
+          "exit_date": "2023-06-21 00:00:00",
+          "entry_price": 28.1774549,
+          "exit_price": 27.70142795,
+          "pnl": -1769.3140478334853,
+          "pnl_pct": -1.6893894487255534,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-06-27 00:00:00",
+          "exit_date": "2024-07-08 00:00:00",
+          "entry_price": 30.1941945,
+          "exit_price": 29.95623675,
+          "pnl": -811.4316568343136,
+          "pnl_pct": -0.7880910683012221,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-07-09 00:00:00",
+          "exit_date": "2024-07-26 00:00:00",
+          "entry_price": 30.37927275,
+          "exit_price": 30.24665748,
+          "pnl": -445.91851826521577,
+          "pnl_pct": -0.43653207596945354,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-12-09 00:00:00",
+          "exit_date": "2024-12-13 00:00:00",
+          "entry_price": 35.2270308,
+          "exit_price": 34.8532692,
+          "pnl": -1079.0908346936585,
+          "pnl_pct": -1.0610079575596898,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-05-09 00:00:00",
+          "exit_date": "2025-06-27 00:00:00",
+          "entry_price": 40.62788592,
+          "exit_price": 43.18815288,
+          "pnl": 6341.14773961366,
+          "pnl_pct": 6.301747930082802,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-08-05 00:00:00",
+          "exit_date": "2025-08-11 00:00:00",
+          "entry_price": 44.11055975,
+          "exit_price": 42.9895179,
+          "pnl": -2718.4822825638917,
+          "pnl_pct": -2.541436464088387,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-10-21 00:00:00",
+          "exit_date": "2025-10-29 00:00:00",
+          "entry_price": 40.92290162,
+          "exit_price": 39.74337063,
+          "pnl": -3004.762787246343,
+          "pnl_pct": -2.882324916626955,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-11-04 00:00:00",
+          "exit_date": "2025-12-10 00:00:00",
+          "entry_price": 41.92696519,
+          "exit_price": 40.6499523,
+          "pnl": -3083.6663830860703,
+          "pnl_pct": -3.04580330155777,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2026-01-06 00:00:00",
+          "exit_date": "2026-01-08 00:00:00",
+          "entry_price": 41.65401587,
+          "exit_price": 40.53297402,
+          "pnl": -2641.7827080549046,
+          "pnl_pct": -2.691317575473917,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2026-02-06 00:00:00",
+          "exit_date": "2026-02-13 00:00:00",
+          "entry_price": 39.6,
+          "exit_price": 38.71,
+          "pnl": -2146.7356005889565,
+          "pnl_pct": -2.2474747474747536,
+          "exit_reason": "signal"
+        }
+      ]
+    },
+    {
+      "symbol": "601398",
+      "name": "工商银行",
+      "type": "low_volatility",
+      "data_source": "baostock",
+      "data_rows": 1488,
+      "date_range": "2020-01-02 ~ 2026-02-26",
+      "total_return": 44.43186605904179,
+      "win_rate": 33.33333333333333,
+      "total_trades": 30,
+      "max_drawdown": -5.336397895247966,
+      "sharpe_ratio": 0.576937100203874,
+      "params": {
+        "fast_ema": 5,
+        "slow_ema": 20,
+        "atr_period": 14,
+        "atr_multiplier": 1.5,
+        "market_filter": true
+      },
+      "trades": [
+        {
+          "entry_date": "2020-01-03 00:00:00",
+          "exit_date": "2020-01-08 00:00:00",
+          "entry_price": 4.26223841,
+          "exit_price": 4.20531369,
+          "pnl": -1335.5592654424152,
+          "pnl_pct": -1.3355592654424098,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-04-30 00:00:00",
+          "exit_date": "2020-05-06 00:00:00",
+          "entry_price": 3.67876003,
+          "exit_price": 3.63606649,
+          "pnl": -1145.041865391376,
+          "pnl_pct": -1.1605415860734936,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-05-13 00:00:00",
+          "exit_date": "2020-05-14 00:00:00",
+          "entry_price": 3.65029767,
+          "exit_price": 3.6289509,
+          "pnl": -570.2888822758276,
+          "pnl_pct": -0.5847953216374324,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-05-28 00:00:00",
+          "exit_date": "2020-06-23 00:00:00",
+          "entry_price": 3.67876003,
+          "exit_price": 3.65741326,
+          "pnl": -562.5673693629905,
+          "pnl_pct": -0.5802707930367412,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-06-29 00:00:00",
+          "exit_date": "2020-07-17 00:00:00",
+          "entry_price": 3.73568475,
+          "exit_price": 3.78808804,
+          "pnl": 1352.0873100664198,
+          "pnl_pct": 1.4027760238601417,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-08-17 00:00:00",
+          "exit_date": "2020-08-20 00:00:00",
+          "entry_price": 3.81054706,
+          "exit_price": 3.74317,
+          "pnl": -1728.187955497732,
+          "pnl_pct": -1.7681728880157177,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-10-16 00:00:00",
+          "exit_date": "2020-10-30 00:00:00",
+          "entry_price": 3.73568366,
+          "exit_price": 3.68327928,
+          "pnl": -1346.8398673440338,
+          "pnl_pct": -1.4028056112224463,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-11-10 00:00:00",
+          "exit_date": "2020-12-10 00:00:00",
+          "entry_price": 3.75814268,
+          "exit_price": 3.78808804,
+          "pnl": 754.2916502370604,
+          "pnl_pct": 0.7968127490039834,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-01-13 00:00:00",
+          "exit_date": "2021-01-28 00:00:00",
+          "entry_price": 3.78808804,
+          "exit_price": 3.76562902,
+          "pnl": -565.7187376777981,
+          "pnl_pct": -0.5928853754940677,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-01-29 00:00:00",
+          "exit_date": "2021-03-25 00:00:00",
+          "entry_price": 3.81054706,
+          "exit_price": 4.01267824,
+          "pnl": 5031.451327047932,
+          "pnl_pct": 5.304518664047131,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-03-29 00:00:00",
+          "exit_date": "2021-04-20 00:00:00",
+          "entry_price": 4.08754164,
+          "exit_price": 4.03513726,
+          "pnl": -1280.559312107181,
+          "pnl_pct": -1.2820512820512886,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-07-01 00:00:00",
+          "exit_date": "2021-07-08 00:00:00",
+          "entry_price": 3.93781484,
+          "exit_price": 3.86131515,
+          "pnl": -1915.555801251573,
+          "pnl_pct": -1.9426939332678361,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-03-02 00:00:00",
+          "exit_date": "2023-05-10 00:00:00",
+          "entry_price": 3.63105504,
+          "exit_price": 4.22782566,
+          "pnl": 15890.771521761642,
+          "pnl_pct": 16.435185185185162,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-06-05 00:00:00",
+          "exit_date": "2023-06-16 00:00:00",
+          "entry_price": 4.16898912,
+          "exit_price": 4.10174736,
+          "pnl": -1815.7787540768063,
+          "pnl_pct": -1.6129032258064502,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-05-17 00:00:00",
+          "exit_date": "2024-06-11 00:00:00",
+          "entry_price": 4.89947353,
+          "exit_price": 4.87260256,
+          "pnl": -607.4725996271601,
+          "pnl_pct": -0.5484460694698323,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-06-14 00:00:00",
+          "exit_date": "2024-06-17 00:00:00",
+          "entry_price": 4.9263445,
+          "exit_price": 4.86364557,
+          "pnl": -1401.9731268970997,
+          "pnl_pct": -1.2727272727272698,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-06-19 00:00:00",
+          "exit_date": "2024-08-29 00:00:00",
+          "entry_price": 4.9263445,
+          "exit_price": 5.86447102,
+          "pnl": 20709.90530528664,
+          "pnl_pct": 19.04305555569652,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-11-05 00:00:00",
+          "exit_date": "2024-11-06 00:00:00",
+          "entry_price": 5.79847215,
+          "exit_price": 5.74190169,
+          "pnl": -1263.0533031946238,
+          "pnl_pct": -0.9756097560975729,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-11-07 00:00:00",
+          "exit_date": "2024-11-11 00:00:00",
+          "entry_price": 5.79847215,
+          "exit_price": 5.69475964,
+          "pnl": -2293.006525230548,
+          "pnl_pct": -1.788617886178867,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-11-18 00:00:00",
+          "exit_date": "2024-11-22 00:00:00",
+          "entry_price": 5.83618579,
+          "exit_price": 5.70418805,
+          "pnl": -2847.652104178217,
+          "pnl_pct": -2.2617124394184174,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-11-26 00:00:00",
+          "exit_date": "2025-01-22 00:00:00",
+          "entry_price": 5.80790056,
+          "exit_price": 6.2004964,
+          "pnl": 8318.41898293089,
+          "pnl_pct": 6.7596859819514465,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-01-24 00:00:00",
+          "exit_date": "2025-03-04 00:00:00",
+          "entry_price": 6.4219427,
+          "exit_price": 6.5278518,
+          "pnl": 2166.648241237669,
+          "pnl_pct": 1.6491754122938573,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-03-05 00:00:00",
+          "exit_date": "2025-03-06 00:00:00",
+          "entry_price": 6.6145047,
+          "exit_price": 6.5759923,
+          "pnl": -777.5506193246769,
+          "pnl_pct": -0.5822416302765698,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-03-20 00:00:00",
+          "exit_date": "2025-03-21 00:00:00",
+          "entry_price": 6.5856204,
+          "exit_price": 6.5085956,
+          "pnl": -1552.8276988267671,
+          "pnl_pct": -1.1695906432748537,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-03-25 00:00:00",
+          "exit_date": "2025-04-07 00:00:00",
+          "entry_price": 6.5952485,
+          "exit_price": 6.5085956,
+          "pnl": -1723.9787809602371,
+          "pnl_pct": -1.3138686131386912,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-04-15 00:00:00",
+          "exit_date": "2025-04-30 00:00:00",
+          "entry_price": 6.7011576,
+          "exit_price": 6.7492981,
+          "pnl": 930.243978232043,
+          "pnl_pct": 0.7183908045977017,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-06-11 00:00:00",
+          "exit_date": "2025-06-27 00:00:00",
+          "entry_price": 6.8552072,
+          "exit_price": 7.221075,
+          "pnl": 6960.62895846779,
+          "pnl_pct": 5.337078651685401,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-08-04 00:00:00",
+          "exit_date": "2025-08-18 00:00:00",
+          "entry_price": 7.54509312,
+          "exit_price": 7.39772802,
+          "pnl": -2683.219427863302,
+          "pnl_pct": -1.953125,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-10-15 00:00:00",
+          "exit_date": "2025-12-03 00:00:00",
+          "entry_price": 7.32895764,
+          "exit_price": 7.9085937,
+          "pnl": 10653.02855421653,
+          "pnl_pct": 7.908847184986589,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-12-24 00:00:00",
+          "exit_date": "2025-12-25 00:00:00",
+          "entry_price": 7.91,
+          "exit_price": 7.86,
+          "pnl": -918.7777739124762,
+          "pnl_pct": -0.6321112515802807,
+          "exit_reason": "signal"
+        }
+      ]
+    },
+    {
+      "symbol": "601288",
+      "name": "农业银行",
+      "type": "low_volatility",
+      "data_source": "baostock",
+      "data_rows": 1488,
+      "date_range": "2020-01-02 ~ 2026-02-26",
+      "total_return": 9.05327792979416,
+      "win_rate": 27.27272727272727,
+      "total_trades": 22,
+      "max_drawdown": -7.233344507355579,
+      "sharpe_ratio": 0.25298973978981126,
+      "params": {
+        "fast_ema": 5,
+        "slow_ema": 20,
+        "atr_period": 14,
+        "atr_multiplier": 1.5,
+        "market_filter": true
+      },
+      "trades": [
+        {
+          "entry_date": "2020-03-05 00:00:00",
+          "exit_date": "2020-03-09 00:00:00",
+          "entry_price": 2.45566112,
+          "exit_price": 2.39287433,
+          "pnl": -2556.818181818168,
+          "pnl_pct": -2.5568181818181657,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-04-07 00:00:00",
+          "exit_date": "2020-04-28 00:00:00",
+          "entry_price": 2.38589802,
+          "exit_price": 2.3719454,
+          "pnl": -569.843168527378,
+          "pnl_pct": -0.5847953216374213,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-04-29 00:00:00",
+          "exit_date": "2020-05-13 00:00:00",
+          "entry_price": 2.39985064,
+          "exit_price": 2.37892171,
+          "pnl": -844.8256277586038,
+          "pnl_pct": -0.8720930232558044,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-05-28 00:00:00",
+          "exit_date": "2020-06-11 00:00:00",
+          "entry_price": 2.39287433,
+          "exit_price": 2.35799278,
+          "pnl": -1399.8325513395955,
+          "pnl_pct": -1.4577259475218707,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-07-02 00:00:00",
+          "exit_date": "2020-07-10 00:00:00",
+          "entry_price": 2.40682695,
+          "exit_price": 2.46598464,
+          "pnl": 2325.88975471884,
+          "pnl_pct": 2.457912065510137,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-08-17 00:00:00",
+          "exit_date": "2020-08-20 00:00:00",
+          "entry_price": 2.4219492,
+          "exit_price": 2.37791376,
+          "pnl": -1762.8103677322583,
+          "pnl_pct": -1.8181818181817966,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-10-16 00:00:00",
+          "exit_date": "2020-10-29 00:00:00",
+          "entry_price": 2.34121756,
+          "exit_price": 2.3118606,
+          "pnl": -1193.6270828531965,
+          "pnl_pct": -1.253918495297801,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-11-09 00:00:00",
+          "exit_date": "2020-12-10 00:00:00",
+          "entry_price": 2.35589604,
+          "exit_price": 2.37057452,
+          "pnl": 585.658148128896,
+          "pnl_pct": 0.6230529595015355,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-01-14 00:00:00",
+          "exit_date": "2021-01-22 00:00:00",
+          "entry_price": 2.33387832,
+          "exit_price": 2.30452136,
+          "pnl": -1189.733219154963,
+          "pnl_pct": -1.2578616352201366,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-02-05 00:00:00",
+          "exit_date": "2021-04-08 00:00:00",
+          "entry_price": 2.34121756,
+          "exit_price": 2.45130616,
+          "pnl": 4391.570111457538,
+          "pnl_pct": 4.702194357366785,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-04-09 00:00:00",
+          "exit_date": "2021-04-16 00:00:00",
+          "entry_price": 2.46598464,
+          "exit_price": 2.4586454,
+          "pnl": -291.02865421166433,
+          "pnl_pct": -0.29761904761904656,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-05-28 00:00:00",
+          "exit_date": "2021-06-01 00:00:00",
+          "entry_price": 2.40727072,
+          "exit_price": 2.385253,
+          "pnl": -891.7188947644162,
+          "pnl_pct": -0.9146341463414642,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-06-02 00:00:00",
+          "exit_date": "2021-06-17 00:00:00",
+          "entry_price": 2.41460996,
+          "exit_price": 2.39993292,
+          "pnl": -587.1939407478565,
+          "pnl_pct": -0.6078430986013128,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-06-06 00:00:00",
+          "exit_date": "2023-06-20 00:00:00",
+          "entry_price": 2.98654808,
+          "exit_price": 2.936213,
+          "pnl": -1618.2419043606255,
+          "pnl_pct": -1.6853932584269704,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-05-21 00:00:00",
+          "exit_date": "2024-06-11 00:00:00",
+          "entry_price": 3.93901641,
+          "exit_price": 3.92861955,
+          "pnl": -249.15788913996238,
+          "pnl_pct": -0.2639455873706176,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-11-21 00:00:00",
+          "exit_date": "2024-11-22 00:00:00",
+          "entry_price": 4.49388855,
+          "exit_price": 4.4279405,
+          "pnl": -1381.6310392521564,
+          "pnl_pct": -1.4675052410901501,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-11-26 00:00:00",
+          "exit_date": "2025-01-20 00:00:00",
+          "entry_price": 4.53157315,
+          "exit_price": 4.83018609,
+          "pnl": 6112.9596309453145,
+          "pnl_pct": 6.589608732234642,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-01-27 00:00:00",
+          "exit_date": "2025-02-07 00:00:00",
+          "entry_price": 4.97480244,
+          "exit_price": 4.83982718,
+          "pnl": -2682.780255291195,
+          "pnl_pct": -2.7131782945736482,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-02-11 00:00:00",
+          "exit_date": "2025-03-03 00:00:00",
+          "entry_price": 4.92659699,
+          "exit_price": 4.92659699,
+          "pnl": 0.0,
+          "pnl_pct": 0.0,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-03-19 00:00:00",
+          "exit_date": "2025-04-07 00:00:00",
+          "entry_price": 4.98444353,
+          "exit_price": 4.84946827,
+          "pnl": -2604.9433039771375,
+          "pnl_pct": -2.7079303675048405,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-04-14 00:00:00",
+          "exit_date": "2025-04-30 00:00:00",
+          "entry_price": 4.99408462,
+          "exit_price": 5.22547078,
+          "pnl": 4336.303856262005,
+          "pnl_pct": 4.633204633204646,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-10-14 00:00:00",
+          "exit_date": "2025-11-26 00:00:00",
+          "entry_price": 7.01917128,
+          "exit_price": 7.81658064,
+          "pnl": 11125.082509210733,
+          "pnl_pct": 11.36044880785414,
+          "exit_reason": "signal"
+        }
+      ]
+    },
+    {
+      "symbol": "600900",
+      "name": "长江电力",
+      "type": "low_volatility",
+      "data_source": "baostock",
+      "data_rows": 1488,
+      "date_range": "2020-01-02 ~ 2026-02-26",
+      "total_return": 18.078440277404226,
+      "win_rate": 41.66666666666667,
+      "total_trades": 24,
+      "max_drawdown": -8.0902184933081,
+      "sharpe_ratio": 0.42526780547685494,
+      "params": {
+        "fast_ema": 5,
+        "slow_ema": 20,
+        "atr_period": 14,
+        "atr_multiplier": 1.5,
+        "market_filter": true
+      },
+      "trades": [
+        {
+          "entry_date": "2020-01-03 00:00:00",
+          "exit_date": "2020-01-06 00:00:00",
+          "entry_price": 15.07663017,
+          "exit_price": 14.7762342,
+          "pnl": -1992.4609585352737,
+          "pnl_pct": -1.9924609585352693,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-03-05 00:00:00",
+          "exit_date": "2020-03-13 00:00:00",
+          "entry_price": 14.38653132,
+          "exit_price": 13.801977,
+          "pnl": -3982.247635996301,
+          "pnl_pct": -4.063205417607218,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-04-02 00:00:00",
+          "exit_date": "2020-04-20 00:00:00",
+          "entry_price": 14.01306606,
+          "exit_price": 13.801977,
+          "pnl": -1416.3717129444774,
+          "pnl_pct": -1.5063731170335992,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-04-22 00:00:00",
+          "exit_date": "2020-05-08 00:00:00",
+          "entry_price": 13.98059082,
+          "exit_price": 13.87504629,
+          "pnl": -699.1381858320592,
+          "pnl_pct": -0.7549361207897731,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-05-28 00:00:00",
+          "exit_date": "2020-07-16 00:00:00",
+          "entry_price": 14.16732345,
+          "exit_price": 15.53128353,
+          "pnl": 8848.620798352,
+          "pnl_pct": 9.62750716332379,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-08-19 00:00:00",
+          "exit_date": "2020-09-25 00:00:00",
+          "entry_price": 15.59862812,
+          "exit_price": 15.87642344,
+          "pnl": 1794.4021997120553,
+          "pnl_pct": 1.7808958445763468,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-11-02 00:00:00",
+          "exit_date": "2020-11-24 00:00:00",
+          "entry_price": 16.65930116,
+          "exit_price": 16.59195684,
+          "pnl": -414.56414150480344,
+          "pnl_pct": -0.4042445679635964,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2020-11-26 00:00:00",
+          "exit_date": "2020-12-14 00:00:00",
+          "entry_price": 17.02969492,
+          "exit_price": 16.64246508,
+          "pnl": -2322.47111058307,
+          "pnl_pct": -2.2738507167572863,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-01-28 00:00:00",
+          "exit_date": "2021-04-15 00:00:00",
+          "entry_price": 16.83608,
+          "exit_price": 17.10545728,
+          "pnl": 1597.0523080426926,
+          "pnl_pct": 1.6000000000000014,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-06-03 00:00:00",
+          "exit_date": "2021-06-07 00:00:00",
+          "entry_price": 16.7518996,
+          "exit_price": 16.61721096,
+          "pnl": -815.379469834862,
+          "pnl_pct": -0.8040201005025116,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2021-06-08 00:00:00",
+          "exit_date": "2021-07-12 00:00:00",
+          "entry_price": 16.68455528,
+          "exit_price": 16.80240784,
+          "pnl": 710.5772902483626,
+          "pnl_pct": 0.7063572149344166,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-03-16 00:00:00",
+          "exit_date": "2023-03-21 00:00:00",
+          "entry_price": 19.12168461,
+          "exit_price": 18.87826854,
+          "pnl": -1289.6353245121825,
+          "pnl_pct": -1.2729844413012614,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-03-31 00:00:00",
+          "exit_date": "2023-04-24 00:00:00",
+          "entry_price": 19.15774625,
+          "exit_price": 18.95940723,
+          "pnl": -1035.4844467037426,
+          "pnl_pct": -1.0352941176470565,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-04-25 00:00:00",
+          "exit_date": "2023-06-02 00:00:00",
+          "entry_price": 19.08562297,
+          "exit_price": 20.13141053,
+          "pnl": 5423.720526570325,
+          "pnl_pct": 5.47945205479452,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2023-06-09 00:00:00",
+          "exit_date": "2023-06-13 00:00:00",
+          "entry_price": 20.60922726,
+          "exit_price": 20.1043643,
+          "pnl": -2557.642488032726,
+          "pnl_pct": -2.4496937882764636,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-05-17 00:00:00",
+          "exit_date": "2024-06-14 00:00:00",
+          "entry_price": 24.12487244,
+          "exit_price": 26.1087642,
+          "pnl": 8375.478379158467,
+          "pnl_pct": 8.223429014740113,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2024-12-03 00:00:00",
+          "exit_date": "2025-01-07 00:00:00",
+          "entry_price": 26.8578258,
+          "exit_price": 27.5785188,
+          "pnl": 2957.722433656651,
+          "pnl_pct": 2.683363148479434,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-01-21 00:00:00",
+          "exit_date": "2025-01-22 00:00:00",
+          "entry_price": 28.02054384,
+          "exit_price": 27.56890956,
+          "pnl": -1824.2669367898604,
+          "pnl_pct": -1.6117969821673461,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-03-24 00:00:00",
+          "exit_date": "2025-06-05 00:00:00",
+          "entry_price": 26.8151789,
+          "exit_price": 28.8480986,
+          "pnl": 8442.296541566411,
+          "pnl_pct": 7.581227436823101,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-06-11 00:00:00",
+          "exit_date": "2025-06-27 00:00:00",
+          "entry_price": 29.21596026,
+          "exit_price": 29.25468254,
+          "pnl": 158.7809252035031,
+          "pnl_pct": 0.1325381047051044,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-07-14 00:00:00",
+          "exit_date": "2025-07-17 00:00:00",
+          "entry_price": 29.63222477,
+          "exit_price": 29.19659912,
+          "pnl": -1763.5264634452392,
+          "pnl_pct": -1.4701078079059182,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-09-04 00:00:00",
+          "exit_date": "2025-09-10 00:00:00",
+          "entry_price": 28.00610787,
+          "exit_price": 27.78785269,
+          "pnl": -921.1123540954687,
+          "pnl_pct": -0.7793127878143791,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-10-13 00:00:00",
+          "exit_date": "2025-11-18 00:00:00",
+          "entry_price": 27.56959751,
+          "exit_price": 27.92674235,
+          "pnl": 1519.207127115227,
+          "pnl_pct": 1.29543001079524,
+          "exit_reason": "signal"
+        },
+        {
+          "entry_date": "2025-12-04 00:00:00",
+          "exit_date": "2025-12-05 00:00:00",
+          "entry_price": 28.01602856,
+          "exit_price": 27.84737683,
+          "pnl": -715.1170234114129,
+          "pnl_pct": -0.601983002832851,
+          "exit_reason": "signal"
+        }
+      ]
+    }
+  ]
+}

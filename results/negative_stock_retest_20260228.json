@@ -1,0 +1,178 @@
+{
+  "timestamp": "2026-02-28 00:59:47",
+  "backtest_period": {
+    "start": "2020-01-01",
+    "end": "2026-02-27"
+  },
+  "summary": {
+    "total_stocks": 5,
+    "positive_count": 2,
+    "negative_to_positive": 2,
+    "improved_count": 4,
+    "avg_old_return": -28.42,
+    "avg_new_return": -11.87,
+    "avg_improvement": 16.54
+  },
+  "stocks": [
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "category": "消费股",
+      "old_return": -10.8389427753481,
+      "old_win_rate": 20.833333333333336,
+      "old_trades": 24,
+      "old_max_drawdown": -33.502000621662226,
+      "old_sharpe": 0.004590711595017481,
+      "old_params": {
+        "fast_ema": 5,
+        "slow_ema": 20,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "new_return": 23.08300371375821,
+      "new_win_rate": 28.57142857142857,
+      "new_trades": 7,
+      "new_max_drawdown": -9.626071997885523,
+      "new_sharpe": 0.29920980526533486,
+      "new_params": {
+        "fast_ema": 10,
+        "slow_ema": 40,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "improvement": 33.92194648910631,
+      "status": "✅ 负收益转正收益",
+      "data_length": 1489
+    },
+    {
+      "symbol": "002714",
+      "name": "牧原股份",
+      "category": "猪周期股",
+      "old_return": -26.230259683805517,
+      "old_win_rate": 30.0,
+      "old_trades": 20,
+      "old_max_drawdown": -43.79738837015638,
+      "old_sharpe": -0.08212949115638271,
+      "old_params": {
+        "fast_ema": 5,
+        "slow_ema": 20,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "new_return": -29.15115134066716,
+      "new_win_rate": 20.0,
+      "new_trades": 25,
+      "new_max_drawdown": -48.61657155426689,
+      "new_sharpe": -0.08352741082492532,
+      "new_params": {
+        "fast_ema": 3,
+        "slow_ema": 30,
+        "atr_period": 14,
+        "atr_multiplier": 2.5,
+        "market_filter": true
+      },
+      "improvement": -2.9208916568616416,
+      "status": "⚠️ 仍为负收益",
+      "data_length": 1488
+    },
+    {
+      "symbol": "688981",
+      "name": "中芯国际",
+      "category": "科技股",
+      "old_return": -27.837684315754434,
+      "old_win_rate": 32.0,
+      "old_trades": 25,
+      "old_max_drawdown": -39.127255411314955,
+      "old_sharpe": -0.34347241155347885,
+      "old_params": {
+        "fast_ema": 5,
+        "slow_ema": 20,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "new_return": 0.30605733986270206,
+      "new_win_rate": 28.57142857142857,
+      "new_trades": 14,
+      "new_max_drawdown": -37.68786956742034,
+      "new_sharpe": 0.08881039003962032,
+      "new_params": {
+        "fast_ema": 5,
+        "slow_ema": 35,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "improvement": 28.143741655617134,
+      "status": "✅ 负收益转正收益",
+      "data_length": 1361
+    },
+    {
+      "symbol": "000651",
+      "name": "格力电器",
+      "category": "家电股",
+      "old_return": -31.55755994910611,
+      "old_win_rate": 23.52941176470588,
+      "old_trades": 17,
+      "old_max_drawdown": -31.55755994910611,
+      "old_sharpe": -0.7774656494991271,
+      "old_params": {
+        "fast_ema": 10,
+        "slow_ema": 30,
+        "atr_period": 14,
+        "atr_multiplier": 1.5,
+        "market_filter": true
+      },
+      "new_return": -28.508908547058613,
+      "new_win_rate": 11.11111111111111,
+      "new_trades": 9,
+      "new_max_drawdown": -28.508908547058613,
+      "new_sharpe": -0.8905145342816465,
+      "new_params": {
+        "fast_ema": 15,
+        "slow_ema": 60,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "improvement": 3.048651402047497,
+      "status": "⚠️ 仍为负收益",
+      "data_length": 1489
+    },
+    {
+      "symbol": "300033",
+      "name": "同花顺",
+      "category": "券商股",
+      "old_return": -45.62079934871161,
+      "old_win_rate": 18.75,
+      "old_trades": 32,
+      "old_max_drawdown": -52.247694334616334,
+      "old_sharpe": -0.39884542013029706,
+      "old_params": {
+        "fast_ema": 5,
+        "slow_ema": 20,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "new_return": -25.09149010950918,
+      "new_win_rate": 19.047619047619047,
+      "new_trades": 42,
+      "new_max_drawdown": -45.66747570497188,
+      "new_sharpe": -0.07709248488840845,
+      "new_params": {
+        "fast_ema": 3,
+        "slow_ema": 15,
+        "atr_period": 14,
+        "atr_multiplier": 2.5,
+        "market_filter": true
+      },
+      "improvement": 20.529309239202426,
+      "status": "⚠️ 仍为负收益",
+      "data_length": 1488
+    }
+  ]
+}

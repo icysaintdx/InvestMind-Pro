@@ -1,0 +1,39 @@
+{
+  "validation_date": "2026-02-27 18:58:36",
+  "results": [
+    {
+      "symbol": "603993",
+      "name": "洛阳钼业",
+      "original_return": 5.526494289830356,
+      "optimized_return": 12.662747994391363,
+      "improvement": 7.136253704561008,
+      "optimized_params": {
+        "fast_ema": 10,
+        "slow_ema": 40,
+        "atr_period": 14,
+        "atr_multiplier": 2.5,
+        "market_filter": true
+      },
+      "win_rate": 35.0,
+      "total_trades": 20,
+      "max_drawdown": -34.64949312022513
+    },
+    {
+      "symbol": "603288",
+      "name": "海天味业",
+      "original_return": -22.792116311452002,
+      "optimized_return": 27.271062115899735,
+      "improvement": 50.06317842735174,
+      "optimized_params": {
+        "fast_ema": 10,
+        "slow_ema": 40,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "win_rate": 35.294117647058826,
+      "total_trades": 17,
+      "max_drawdown": -21.79279616771029
+    }
+  ]
+}
