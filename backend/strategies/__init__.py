@@ -29,6 +29,8 @@ from .martingale_refined import MartingaleRefinedStrategy
 from .scalping_blade import ScalpingBladeStrategy
 from .trident import TridentStrategy
 from .sentiment_resonance import SentimentResonanceStrategy
+from .ai_sentiment_strategy import AISentimentStrategy
+from .ai_sentiment_strategy_v2 import AISentimentStrategyV2
 from .debate_weighted import DebateWeightedStrategy
 from .limit_up_trading import LimitUpTradingStrategy
 from .volume_price_surge import VolumePriceSurgeStrategy
@@ -56,6 +58,8 @@ __all__ = [
     'ScalpingBladeStrategy',
     'TridentStrategy',
     'SentimentResonanceStrategy',
+    'AISentimentStrategy',
+    'AISentimentStrategyV2',
     'DebateWeightedStrategy',
     'LimitUpTradingStrategy',
     'VolumePriceSurgeStrategy'
