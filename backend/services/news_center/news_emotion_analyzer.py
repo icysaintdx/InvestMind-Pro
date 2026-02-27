@@ -55,14 +55,14 @@ class NewsEmotionAnalyzer:
         self._init_llm()
         
     def _init_llm(self):
-        """初始化LLM客户端"""
+        """初始化LLM客户端 - 使用统一配置"""
         try:
-            # 尝试使用已配置的LLM
-            from backend.services.llm.llm_service import get_llm_service
-            self._llm_client = get_llm_service()
-            self.logger.info("LLM client initialized via llm_service")
+            # 使用统一LLM配置模块
+            from backend.services.llm.llm_config import get_llm_client
+            self._llm_client = get_llm_client()
+            self.logger.info("LLM client initialized via unified llm_config (kimi-k2.5)")
         except Exception as e:
-            self.logger.warning(f"Failed to init via llm_service: {e}")
+            self.logger.warning(f"Failed to init via llm_config: {e}")
             # 备用：直接初始化
             try:
                 self._llm_client = self._create_direct_llm_client()
@@ -179,25 +179,40 @@ class NewsEmotionAnalyzer:
         return prompt
     
     async def _call_llm(self, prompt: str) -> Optional[str]:
-        """调用LLM - 带余额不足保护"""
+        """调用LLM - 使用统一配置模块"""
         try:
-            # 方式1: 通过llm_service
+            # 方式1: 使用统一LLM配置模块 (推荐)
+            if hasattr(self._llm_client, 'chat'):
+                import asyncio
+                loop = asyncio.get_event_loop()
+                return await loop.run_in_executor(
+                    None,
+                    lambda: self._llm_client.chat(
+                        messages=[
+                            {"role": "system", "content": "你是一个专业的金融新闻分析师。"},
+                            {"role": "user", "content": prompt}
+                        ]
+                        # 使用默认配置: kimi-k2.5, temperature=0.3, max_tokens=800
+                    )
+                )
+            
+            # 方式2: 通过llm_service (兼容旧代码)
             if hasattr(self._llm_client, 'generate'):
                 return await self._llm_client.generate(prompt)
             
-            # 方式2: 直接调用OpenAI格式
+            # 方式3: 直接调用OpenAI格式 (兼容旧代码)
             import asyncio
             loop = asyncio.get_event_loop()
             
             response = await loop.run_in_executor(
                 None,
                 lambda: self._llm_client.chat.completions.create(
-                    model="minimax-m2.1",  # 使用kirocpa中转的MiniMax模型
+                    model="kimi-k2.5",  # 改为使用kimi-k2.5模型
                     messages=[
                         {"role": "system", "content": "你是一个专业的金融新闻分析师。"},
                         {"role": "user", "content": prompt}
                     ],
-                    temperature=0.3,  # 低温度，更确定性的输出
+                    temperature=0.3,
                     max_tokens=800
                 )
             )
