@@ -1,0 +1,286 @@
+{
+  "generated_at": "2026-02-28T16:26:24.274104",
+  "data_source": "real_only",
+  "excluded_sources": [
+    "微博热议",
+    "东财公告",
+    "巨潮状态变动",
+    "新闻联播"
+  ],
+  "included_sources": [
+    "巨潮公告",
+    "新浪财经",
+    "东方财富",
+    "财联社",
+    "同花顺",
+    "富途牛牛",
+    "百度财经",
+    "新浪个股",
+    "东财个股",
+    "财经早餐"
+  ],
+  "opportunities": [
+    {
+      "stock_code": "002138",
+      "score": 5,
+      "sentiment": 69.6525,
+      "news_count": 31,
+      "p0_count": 4,
+      "expected_return": 0.5,
+      "reasons": [
+        "情绪积极(69.65)",
+        "关注度高(31条)",
+        "重要新闻(4条P0)"
+      ],
+      "latest_date": "2026-02-28"
+    },
+    {
+      "stock_code": "600539",
+      "score": 5,
+      "sentiment": 50.3828125,
+      "news_count": 32,
+      "p0_count": 2,
+      "expected_return": 0.5,
+      "reasons": [
+        "情绪积极(50.38)",
+        "关注度高(32条)",
+        "重要新闻(2条P0)"
+      ],
+      "latest_date": "2026-02-28"
+    },
+    {
+      "stock_code": "002270",
+      "score": 5,
+      "sentiment": 50.0,
+      "news_count": 28,
+      "p0_count": 2,
+      "expected_return": 0.5,
+      "reasons": [
+        "情绪积极(50.00)",
+        "关注度高(28条)",
+        "重要新闻(2条P0)"
+      ],
+      "latest_date": "2026-02-27"
+    },
+    {
+      "stock_code": "600539",
+      "score": 5,
+      "sentiment": 50.3828125,
+      "news_count": 32,
+      "p0_count": 2,
+      "expected_return": 0.5166666666666667,
+      "reasons": [
+        "情绪积极(50.38)",
+        "关注度高(32条)",
+        "重要新闻(2条P0)"
+      ],
+      "latest_date": "2026-02-28"
+    },
+    {
+      "stock_code": "688511",
+      "score": 5,
+      "sentiment": 26.462285714285716,
+      "news_count": 35,
+      "p0_count": 9,
+      "expected_return": 0.5,
+      "reasons": [
+        "情绪积极(26.46)",
+        "关注度高(35条)",
+        "重要新闻(9条P0)"
+      ],
+      "latest_date": "2026-02-28"
+    },
+    {
+      "stock_code": "688100",
+      "score": 5,
+      "sentiment": 50.0,
+      "news_count": 20,
+      "p0_count": 1,
+      "expected_return": 0.5,
+      "reasons": [
+        "情绪积极(50.00)",
+        "关注度高(20条)",
+        "重要新闻(1条P0)"
+      ],
+      "latest_date": "2026-02-28"
+    },
+    {
+      "stock_code": "001389",
+      "score": 5,
+      "sentiment": 50.0,
+      "news_count": 27,
+      "p0_count": 1,
+      "expected_return": 0.6875,
+      "reasons": [
+        "情绪积极(50.00)",
+        "关注度高(27条)",
+        "重要新闻(1条P0)"
+      ],
+      "latest_date": "2026-02-28"
+    },
+    {
+      "stock_code": "001389",
+      "score": 5,
+      "sentiment": 50.0,
+      "news_count": 27,
+      "p0_count": 1,
+      "expected_return": 0.5,
+      "reasons": [
+        "情绪积极(50.00)",
+        "关注度高(27条)",
+        "重要新闻(1条P0)"
+      ],
+      "latest_date": "2026-02-28"
+    },
+    {
+      "stock_code": "603682",
+      "score": 5,
+      "sentiment": 50.47115384615385,
+      "news_count": 26,
+      "p0_count": 2,
+      "expected_return": 0.5,
+      "reasons": [
+        "情绪积极(50.47)",
+        "关注度高(26条)",
+        "重要新闻(2条P0)"
+      ],
+      "latest_date": "2026-02-28"
+    },
+    {
+      "stock_code": "002800",
+      "score": 5,
+      "sentiment": 50.0,
+      "news_count": 26,
+      "p0_count": 2,
+      "expected_return": 0.5,
+      "reasons": [
+        "情绪积极(50.00)",
+        "关注度高(26条)",
+        "重要新闻(2条P0)"
+      ],
+      "latest_date": "2026-02-28"
+    },
+    {
+      "stock_code": "002647",
+      "score": 5,
+      "sentiment": 26.703181818181818,
+      "news_count": 22,
+      "p0_count": 3,
+      "expected_return": 0.5,
+      "reasons": [
+        "情绪积极(26.70)",
+        "关注度高(22条)",
+        "重要新闻(3条P0)"
+      ],
+      "latest_date": "2026-02-28"
+    },
+    {
+      "stock_code": "603103",
+      "score": 5,
+      "sentiment": 50.0,
+      "news_count": 21,
+      "p0_count": 2,
+      "expected_return": 0.5,
+      "reasons": [
+        "情绪积极(50.00)",
+        "关注度高(21条)",
+        "重要新闻(2条P0)"
+      ],
+      "latest_date": "2026-02-28"
+    },
+    {
+      "stock_code": "603005",
+      "score": 5,
+      "sentiment": 69.03999999999999,
+      "news_count": 23,
+      "p0_count": 3,
+      "expected_return": 0.5,
+      "reasons": [
+        "情绪积极(69.04)",
+        "关注度高(23条)",
+        "重要新闻(3条P0)"
+      ],
+      "latest_date": "2026-02-28"
+    },
+    {
+      "stock_code": "300048",
+      "score": 5,
+      "sentiment": 69.76058823529411,
+      "news_count": 18,
+      "p0_count": 2,
+      "expected_return": 0.75,
+      "reasons": [
+        "情绪积极(69.76)",
+        "关注度高(18条)",
+        "重要新闻(2条P0)"
+      ],
+      "latest_date": "2026-02-28"
+    },
+    {
+      "stock_code": "000651",
+      "score": 4,
+      "sentiment": 24.950000000000003,
+      "news_count": 10,
+      "p0_count": 0,
+      "expected_return": 2.54,
+      "reasons": [
+        "情绪积极(24.95)",
+        "关注度高(10条)",
+        "预期收益2.5%"
+      ],
+      "latest_date": "2026-02-26"
+    },
+    {
+      "stock_code": "002044",
+      "score": 3,
+      "sentiment": 48.0859375,
+      "news_count": 32,
+      "p0_count": 0,
+      "expected_return": 0.5,
+      "reasons": [
+        "情绪积极(48.09)",
+        "关注度高(32条)"
+      ],
+      "latest_date": "2026-02-27"
+    },
+    {
+      "stock_code": "600519",
+      "score": 3,
+      "sentiment": 55.21966666666667,
+      "news_count": 14,
+      "p0_count": 0,
+      "expected_return": 0.48846153846153845,
+      "reasons": [
+        "情绪积极(55.22)",
+        "关注度高(14条)"
+      ],
+      "latest_date": "2026-02-28"
+    },
+    {
+      "stock_code": "000681",
+      "score": 3,
+      "sentiment": 49.5462962962963,
+      "news_count": 27,
+      "p0_count": 0,
+      "expected_return": 0.6666666666666666,
+      "reasons": [
+        "情绪积极(49.55)",
+        "关注度高(27条)"
+      ],
+      "latest_date": "2026-02-28"
+    },
+    {
+      "stock_code": "300059",
+      "score": 3,
+      "sentiment": 62.65388888888889,
+      "news_count": 10,
+      "p0_count": 0,
+      "expected_return": 0.5,
+      "reasons": [
+        "情绪积极(62.65)",
+        "关注度高(10条)"
+      ],
+      "latest_date": "2026-02-27"
+    }
+  ]
+}

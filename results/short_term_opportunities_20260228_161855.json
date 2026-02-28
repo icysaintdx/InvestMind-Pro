@@ -1,0 +1,59 @@
+{
+  "generated_at": "2026-02-28T16:18:55.864904",
+  "analysis_period": " to 20260221",
+  "total_news": 41429,
+  "opportunities": [
+    {
+      "stock_code": "600519",
+      "score": 3,
+      "sentiment": 53.38878459687123,
+      "trend": -15.527217637957705,
+      "news_count": 277,
+      "expected_return": 0.5535714285714286,
+      "reasons": [
+        "情绪积极",
+        "新闻热度高"
+      ],
+      "latest_date": "2026-02-28"
+    },
+    {
+      "stock_code": "300750",
+      "score": 3,
+      "sentiment": 67.57133333333333,
+      "trend": 28.57769230769231,
+      "news_count": 1,
+      "expected_return": 0.99,
+      "reasons": [
+        "情绪积极",
+        "情绪上升"
+      ],
+      "latest_date": "2026-02-27"
+    },
+    {
+      "stock_code": "000018",
+      "score": 3,
+      "sentiment": 38.21333333333333,
+      "trend": 4.420000000000002,
+      "news_count": 1,
+      "expected_return": 0.5,
+      "reasons": [
+        "情绪积极",
+        "情绪上升"
+      ],
+      "latest_date": "2020-01-07"
+    },
+    {
+      "stock_code": "002044",
+      "score": 3,
+      "sentiment": 57.528645833333336,
+      "trend": -14.1640625,
+      "news_count": 32,
+      "expected_return": 0.5,
+      "reasons": [
+        "情绪积极",
+        "新闻热度高"
+      ],
+      "latest_date": "2026-02-27"
+    }
+  ]
+}
