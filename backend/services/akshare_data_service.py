@@ -13,9 +13,9 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
-from utils.logging_config import get_logger
+import logging
 
-logger = get_logger("services.akshare_data")
+logger = logging.getLogger("services.akshare_data")
 
 # ==================== 线程池 & 缓存 ====================
 _executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="akdata")

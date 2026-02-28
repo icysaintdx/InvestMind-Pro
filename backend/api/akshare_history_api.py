@@ -6,8 +6,8 @@ AKShare历史数据扩展API
 
 from fastapi import APIRouter, HTTPException, Query
 from typing import Optional
+import logging
 
-from utils.logging_config import get_logger
 from services.akshare_data_service import (
     get_individual_fund_flow,
     get_lhb_history,
@@ -20,7 +20,7 @@ from services.akshare_data_service import (
     clear_cache,
 )
 
-logger = get_logger("api.akshare_history")
+logger = logging.getLogger("api.akshare_history")
 router = APIRouter(prefix="/api/data", tags=["AKShare历史数据"])
 
 
