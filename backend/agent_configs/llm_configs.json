@@ -3,7 +3,7 @@
   "updated_at": "2025-12-15T22:01:00+08:00",
   "description": "LLM配置管理 - 统一管理所有LLM调用的模型和参数",
   
-  "default_provider": "minimax",
+  "default_provider": "kimi",
   "default_model": "kimi-k2.5",
 
   "providers": {
@@ -96,7 +96,7 @@
     "strategy_selection": {
       "name": "策略选择",
       "description": "LLM驱动的策略选择和排序",
-      "provider": "minimax",
+      "provider": "kimi",
       "model": "kimi-k2.5",
       "temperature": 0.3,
       "max_tokens": 1500,
@@ -108,7 +108,7 @@
     "text_summarization": {
       "name": "文本摘要",
       "description": "智能体输出摘要和压缩",
-      "provider": "minimax",
+      "provider": "kimi",
       "model": "kimi-k2.5",
       "temperature": 0.5,
       "max_tokens": 1000,
@@ -120,7 +120,7 @@
     "market_analysis": {
       "name": "市场分析",
       "description": "市场趋势和情绪分析",
-      "provider": "minimax",
+      "provider": "kimi",
       "model": "kimi-k2.5",
       "temperature": 0.4,
       "max_tokens": 2000,
@@ -132,7 +132,7 @@
     "risk_assessment": {
       "name": "风险评估",
       "description": "投资风险评估和建议",
-      "provider": "minimax",
+      "provider": "kimi",
       "model": "kimi-k2.5",
       "temperature": 0.2,
       "max_tokens": 1500,
@@ -144,7 +144,7 @@
     "news_sentiment": {
       "name": "新闻情绪分析",
       "description": "新闻文本情绪分析",
-      "provider": "minimax",
+      "provider": "kimi",
       "model": "kimi-k2.5",
       "temperature": 0.3,
       "max_tokens": 1000,
@@ -157,7 +157,7 @@
   
   "fallback_config": {
     "enabled": true,
-    "fallback_provider": "minimax",
+    "fallback_provider": "kimi",
     "fallback_model": "kimi-k2.5",
     "max_fallback_attempts": 3
   },
