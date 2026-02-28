@@ -1,0 +1,321 @@
+{
+  "symbol": "600438",
+  "success": true,
+  "best_params": {
+    "ema_fast": 10,
+    "ema_slow": 30,
+    "atr_period": 14,
+    "atr_multiplier": 1.5,
+    "market_filter": true
+  },
+  "best_result": {
+    "return": -4.740150300000008,
+    "win_rate": 0.0,
+    "trades": 14,
+    "max_drawdown": 22.1158101,
+    "sharpe": -29.13333729617946
+  },
+  "all_results": [
+    {
+      "params": {
+        "ema_fast": 10,
+        "ema_slow": 30,
+        "atr_period": 14,
+        "atr_multiplier": 1.5,
+        "market_filter": true
+      },
+      "return": -4.740150300000008,
+      "win_rate": 0.0,
+      "trades": 14,
+      "max_dd": 22.1158101,
+      "sharpe": -29.13333729617946,
+      "score": -11.05790505
+    },
+    {
+      "params": {
+        "ema_fast": 10,
+        "ema_slow": 35,
+        "atr_period": 14,
+        "atr_multiplier": 1.5,
+        "market_filter": true
+      },
+      "return": -5.21104330000002,
+      "win_rate": 0.0,
+      "trades": 12,
+      "max_dd": 22.366028800000016,
+      "sharpe": -39.943876662536596,
+      "score": -11.183014400000008
+    },
+    {
+      "params": {
+        "ema_fast": 8,
+        "ema_slow": 35,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "return": -4.1886494999999995,
+      "win_rate": 0.0,
+      "trades": 10,
+      "max_dd": 22.554742499999993,
+      "sharpe": -39.49256652908321,
+      "score": -11.277371249999996
+    },
+    {
+      "params": {
+        "ema_fast": 8,
+        "ema_slow": 30,
+        "atr_period": 14,
+        "atr_multiplier": 1.5,
+        "market_filter": true
+      },
+      "return": -5.427510800000033,
+      "win_rate": 0.0,
+      "trades": 18,
+      "max_dd": 22.73501140000002,
+      "sharpe": -36.158085627935115,
+      "score": -11.36750570000001
+    },
+    {
+      "params": {
+        "ema_fast": 12,
+        "ema_slow": 30,
+        "atr_period": 14,
+        "atr_multiplier": 1.5,
+        "market_filter": true
+      },
+      "return": -5.39059120000001,
+      "win_rate": 0.0,
+      "trades": 10,
+      "max_dd": 23.177438200000005,
+      "sharpe": -44.66062265147602,
+      "score": -11.588719100000002
+    },
+    {
+      "params": {
+        "ema_fast": 7,
+        "ema_slow": 30,
+        "atr_period": 14,
+        "atr_multiplier": 1.5,
+        "market_filter": true
+      },
+      "return": -5.25182140000003,
+      "win_rate": 9.090909090909092,
+      "trades": 22,
+      "max_dd": 23.579963800000026,
+      "sharpe": -15.85641508450829,
+      "score": -11.789981900000013
+    },
+    {
+      "params": {
+        "ema_fast": 15,
+        "ema_slow": 40,
+        "atr_period": 14,
+        "atr_multiplier": 1.5,
+        "market_filter": true
+      },
+      "return": -5.7589041,
+      "win_rate": 0.0,
+      "trades": 12,
+      "max_dd": 23.863926899999992,
+      "sharpe": -28.572017824272063,
+      "score": -11.931963449999996
+    },
+    {
+      "params": {
+        "ema_fast": 15,
+        "ema_slow": 40,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "return": -5.7589041,
+      "win_rate": 0.0,
+      "trades": 12,
+      "max_dd": 23.863926899999992,
+      "sharpe": -28.572017824272063,
+      "score": -11.931963449999996
+    },
+    {
+      "params": {
+        "ema_fast": 15,
+        "ema_slow": 40,
+        "atr_period": 14,
+        "atr_multiplier": 2.5,
+        "market_filter": true
+      },
+      "return": -5.7589041,
+      "win_rate": 0.0,
+      "trades": 12,
+      "max_dd": 23.863926899999992,
+      "sharpe": -28.572017824272063,
+      "score": -11.931963449999996
+    },
+    {
+      "params": {
+        "ema_fast": 15,
+        "ema_slow": 40,
+        "atr_period": 14,
+        "atr_multiplier": 3.0,
+        "market_filter": true
+      },
+      "return": -5.7589041,
+      "win_rate": 0.0,
+      "trades": 12,
+      "max_dd": 23.863926899999992,
+      "sharpe": -28.572017824272063,
+      "score": -11.931963449999996
+    },
+    {
+      "params": {
+        "ema_fast": 15,
+        "ema_slow": 40,
+        "atr_period": 14,
+        "atr_multiplier": 4.0,
+        "market_filter": true
+      },
+      "return": -5.7589041,
+      "win_rate": 0.0,
+      "trades": 12,
+      "max_dd": 23.863926899999992,
+      "sharpe": -28.572017824272063,
+      "score": -11.931963449999996
+    },
+    {
+      "params": {
+        "ema_fast": 8,
+        "ema_slow": 25,
+        "atr_period": 14,
+        "atr_multiplier": 1.5,
+        "market_filter": true
+      },
+      "return": -5.836756799999988,
+      "win_rate": 8.333333333333332,
+      "trades": 24,
+      "max_dd": 24.164899199999983,
+      "sharpe": -22.91378648757894,
+      "score": -12.082449599999991
+    },
+    {
+      "params": {
+        "ema_fast": 5,
+        "ema_slow": 25,
+        "atr_period": 14,
+        "atr_multiplier": 1.5,
+        "market_filter": true
+      },
+      "return": -3.566588900000017,
+      "win_rate": 14.285714285714285,
+      "trades": 42,
+      "max_dd": 24.201542299999986,
+      "sharpe": -2.108124181253767,
+      "score": -12.100771149999993
+    },
+    {
+      "params": {
+        "ema_fast": 5,
+        "ema_slow": 25,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "return": -3.566588900000017,
+      "win_rate": 14.285714285714285,
+      "trades": 42,
+      "max_dd": 24.201542299999986,
+      "sharpe": -2.108124181253767,
+      "score": -12.100771149999993
+    },
+    {
+      "params": {
+        "ema_fast": 5,
+        "ema_slow": 25,
+        "atr_period": 14,
+        "atr_multiplier": 2.5,
+        "market_filter": true
+      },
+      "return": -3.566588900000017,
+      "win_rate": 14.285714285714285,
+      "trades": 42,
+      "max_dd": 24.201542299999986,
+      "sharpe": -2.108124181253767,
+      "score": -12.100771149999993
+    },
+    {
+      "params": {
+        "ema_fast": 3,
+        "ema_slow": 20,
+        "atr_period": 14,
+        "atr_multiplier": 1.5,
+        "market_filter": true
+      },
+      "return": -5.7797982000000045,
+      "win_rate": 10.714285714285714,
+      "trades": 56,
+      "max_dd": 24.472114900000015,
+      "sharpe": -2.4168254155186073,
+      "score": -12.236057450000008
+    },
+    {
+      "params": {
+        "ema_fast": 3,
+        "ema_slow": 20,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "return": -5.7797982000000045,
+      "win_rate": 10.714285714285714,
+      "trades": 56,
+      "max_dd": 24.472114900000015,
+      "sharpe": -2.4168254155186073,
+      "score": -12.236057450000008
+    },
+    {
+      "params": {
+        "ema_fast": 3,
+        "ema_slow": 20,
+        "atr_period": 14,
+        "atr_multiplier": 2.5,
+        "market_filter": true
+      },
+      "return": -5.7797982000000045,
+      "win_rate": 10.714285714285714,
+      "trades": 56,
+      "max_dd": 24.472114900000015,
+      "sharpe": -2.4168254155186073,
+      "score": -12.236057450000008
+    },
+    {
+      "params": {
+        "ema_fast": 12,
+        "ema_slow": 25,
+        "atr_period": 14,
+        "atr_multiplier": 1.5,
+        "market_filter": true
+      },
+      "return": -8.070342900000018,
+      "win_rate": 0.0,
+      "trades": 20,
+      "max_dd": 24.80855490000002,
+      "sharpe": -57.18111291696956,
+      "score": -12.40427745000001
+    },
+    {
+      "params": {
+        "ema_fast": 7,
+        "ema_slow": 25,
+        "atr_period": 14,
+        "atr_multiplier": 2.0,
+        "market_filter": true
+      },
+      "return": -7.471701199999996,
+      "win_rate": 7.142857142857142,
+      "trades": 28,
+      "max_dd": 25.799843599999996,
+      "sharpe": -24.25401488580195,
+      "score": -12.899921799999998
+    }
+  ],
+  "tested_combinations": 29
+}
