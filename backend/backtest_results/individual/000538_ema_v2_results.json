@@ -1,0 +1,112 @@
+{
+  "stock_code": "000538",
+  "stock_name": "云南白药",
+  "industry": "医药",
+  "success": true,
+  "data_period": {
+    "start": "2022-11-08",
+    "end": "2024-12-30",
+    "days": 522
+  },
+  "all_results": [
+    {
+      "params": {
+        "ema_fast": 5,
+        "ema_slow": 30
+      },
+      "success": true,
+      "total_return_pct": -0.19537734600000012,
+      "win_rate": 0.1111111111111111,
+      "total_trades": 19
+    },
+    {
+      "params": {
+        "ema_fast": 5,
+        "ema_slow": 60
+      },
+      "success": true,
+      "total_return_pct": -0.01577905800000008,
+      "win_rate": 0.14285714285714285,
+      "total_trades": 14
+    },
+    {
+      "params": {
+        "ema_fast": 5,
+        "ema_slow": 120
+      },
+      "success": true,
+      "total_return_pct": -0.0074942970000000785,
+      "win_rate": 0.0,
+      "total_trades": 2
+    },
+    {
+      "params": {
+        "ema_fast": 10,
+        "ema_slow": 30
+      },
+      "success": true,
+      "total_return_pct": -0.19086378900000026,
+      "win_rate": 0.16666666666666666,
+      "total_trades": 13
+    },
+    {
+      "params": {
+        "ema_fast": 10,
+        "ema_slow": 60
+      },
+      "success": true,
+      "total_return_pct": -0.00496548300000024,
+      "win_rate": 0.25,
+      "total_trades": 8
+    },
+    {
+      "params": {
+        "ema_fast": 10,
+        "ema_slow": 120
+      },
+      "success": true,
+      "total_return_pct": -0.006538784999999916,
+      "win_rate": 0.5,
+      "total_trades": 4
+    },
+    {
+      "params": {
+        "ema_fast": 20,
+        "ema_slow": 60
+      },
+      "success": true,
+      "total_return_pct": -0.011245709999999963,
+      "win_rate": 0.3333333333333333,
+      "total_trades": 6
+    },
+    {
+      "params": {
+        "ema_fast": 20,
+        "ema_slow": 120
+      },
+      "success": true,
+      "total_return_pct": -0.015538941000000049,
+      "win_rate": 0.0,
+      "total_trades": 4
+    },
+    {
+      "params": {
+        "ema_fast": 8,
+        "ema_slow": 25
+      },
+      "success": true,
+      "total_return_pct": -0.19147600500000014,
+      "win_rate": 0.16666666666666666,
+      "total_trades": 13
+    }
+  ],
+  "best_by_return": {
+    "params": {
+      "ema_fast": 10,
+      "ema_slow": 60
+    },
+    "total_return_pct": -0.00496548300000024,
+    "win_rate": 0.25,
+    "total_trades": 8
+  }
+}

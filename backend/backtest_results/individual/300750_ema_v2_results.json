@@ -1,0 +1,112 @@
+{
+  "stock_code": "300750",
+  "stock_name": "宁德时代",
+  "industry": "科技/新能源",
+  "success": true,
+  "data_period": {
+    "start": "2022-11-08",
+    "end": "2024-12-30",
+    "days": 522
+  },
+  "all_results": [
+    {
+      "params": {
+        "ema_fast": 5,
+        "ema_slow": 30
+      },
+      "success": true,
+      "total_return_pct": 0.026210350000000035,
+      "win_rate": 1.0,
+      "total_trades": 2
+    },
+    {
+      "params": {
+        "ema_fast": 5,
+        "ema_slow": 60
+      },
+      "success": true,
+      "total_return_pct": -0.190152062,
+      "win_rate": 0.5,
+      "total_trades": 5
+    },
+    {
+      "params": {
+        "ema_fast": 5,
+        "ema_slow": 120
+      },
+      "success": true,
+      "total_return_pct": -0.19717395099999993,
+      "win_rate": 0.0,
+      "total_trades": 5
+    },
+    {
+      "params": {
+        "ema_fast": 10,
+        "ema_slow": 30
+      },
+      "success": true,
+      "total_return_pct": -0.16668381500000018,
+      "win_rate": 0.5,
+      "total_trades": 5
+    },
+    {
+      "params": {
+        "ema_fast": 10,
+        "ema_slow": 60
+      },
+      "success": true,
+      "total_return_pct": -0.18720614499999996,
+      "win_rate": 0,
+      "total_trades": 1
+    },
+    {
+      "params": {
+        "ema_fast": 10,
+        "ema_slow": 120
+      },
+      "success": true,
+      "total_return_pct": -0.19174021699999996,
+      "win_rate": 0.0,
+      "total_trades": 3
+    },
+    {
+      "params": {
+        "ema_fast": 20,
+        "ema_slow": 60
+      },
+      "success": true,
+      "total_return_pct": -0.18893666400000003,
+      "win_rate": 0,
+      "total_trades": 1
+    },
+    {
+      "params": {
+        "ema_fast": 20,
+        "ema_slow": 120
+      },
+      "success": true,
+      "total_return_pct": -0.014502425999999978,
+      "win_rate": 0.0,
+      "total_trades": 2
+    },
+    {
+      "params": {
+        "ema_fast": 8,
+        "ema_slow": 25
+      },
+      "success": true,
+      "total_return_pct": 0.02074871199999994,
+      "win_rate": 1.0,
+      "total_trades": 2
+    }
+  ],
+  "best_by_return": {
+    "params": {
+      "ema_fast": 5,
+      "ema_slow": 30
+    },
+    "total_return_pct": 0.026210350000000035,
+    "win_rate": 1.0,
+    "total_trades": 2
+  }
+}

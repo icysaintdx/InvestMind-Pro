@@ -1,0 +1,112 @@
+{
+  "stock_code": "600036",
+  "stock_name": "招商银行",
+  "industry": "金融/银行",
+  "success": true,
+  "data_period": {
+    "start": "2022-11-08",
+    "end": "2024-12-30",
+    "days": 522
+  },
+  "all_results": [
+    {
+      "params": {
+        "ema_fast": 5,
+        "ema_slow": 30
+      },
+      "success": true,
+      "total_return_pct": -0.19452370800000005,
+      "win_rate": 0.18181818181818182,
+      "total_trades": 23
+    },
+    {
+      "params": {
+        "ema_fast": 5,
+        "ema_slow": 60
+      },
+      "success": true,
+      "total_return_pct": -0.026975594999999884,
+      "win_rate": 0.0,
+      "total_trades": 14
+    },
+    {
+      "params": {
+        "ema_fast": 5,
+        "ema_slow": 120
+      },
+      "success": true,
+      "total_return_pct": 0,
+      "win_rate": 0,
+      "total_trades": 0
+    },
+    {
+      "params": {
+        "ema_fast": 10,
+        "ema_slow": 30
+      },
+      "success": true,
+      "total_return_pct": -0.0018898500000000058,
+      "win_rate": 0.0,
+      "total_trades": 4
+    },
+    {
+      "params": {
+        "ema_fast": 10,
+        "ema_slow": 60
+      },
+      "success": true,
+      "total_return_pct": -0.015455590000000083,
+      "win_rate": 0.0,
+      "total_trades": 4
+    },
+    {
+      "params": {
+        "ema_fast": 10,
+        "ema_slow": 120
+      },
+      "success": true,
+      "total_return_pct": -0.010015324999999867,
+      "win_rate": 0.0,
+      "total_trades": 2
+    },
+    {
+      "params": {
+        "ema_fast": 20,
+        "ema_slow": 60
+      },
+      "success": true,
+      "total_return_pct": -0.013261100000000007,
+      "win_rate": 0.0,
+      "total_trades": 2
+    },
+    {
+      "params": {
+        "ema_fast": 20,
+        "ema_slow": 120
+      },
+      "success": true,
+      "total_return_pct": -0.009408745000000053,
+      "win_rate": 0.0,
+      "total_trades": 2
+    },
+    {
+      "params": {
+        "ema_fast": 8,
+        "ema_slow": 25
+      },
+      "success": true,
+      "total_return_pct": 0.010911511999999929,
+      "win_rate": 0.25,
+      "total_trades": 16
+    }
+  ],
+  "best_by_return": {
+    "params": {
+      "ema_fast": 8,
+      "ema_slow": 25
+    },
+    "total_return_pct": 0.010911511999999929,
+    "win_rate": 0.25,
+    "total_trades": 16
+  }
+}

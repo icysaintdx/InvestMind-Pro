@@ -1,0 +1,112 @@
+{
+  "stock_code": "600887",
+  "stock_name": "伊利股份",
+  "industry": "消费/食品饮料",
+  "success": true,
+  "data_period": {
+    "start": "2022-11-08",
+    "end": "2024-12-30",
+    "days": 522
+  },
+  "all_results": [
+    {
+      "params": {
+        "ema_fast": 5,
+        "ema_slow": 30
+      },
+      "success": true,
+      "total_return_pct": -0.027874529000000182,
+      "win_rate": 0.125,
+      "total_trades": 16
+    },
+    {
+      "params": {
+        "ema_fast": 5,
+        "ema_slow": 60
+      },
+      "success": true,
+      "total_return_pct": -0.00813224199999997,
+      "win_rate": 0.25,
+      "total_trades": 8
+    },
+    {
+      "params": {
+        "ema_fast": 5,
+        "ema_slow": 120
+      },
+      "success": true,
+      "total_return_pct": -0.008256096000000107,
+      "win_rate": 0.25,
+      "total_trades": 8
+    },
+    {
+      "params": {
+        "ema_fast": 10,
+        "ema_slow": 30
+      },
+      "success": true,
+      "total_return_pct": -0.0027056539999999224,
+      "win_rate": 0.5,
+      "total_trades": 4
+    },
+    {
+      "params": {
+        "ema_fast": 10,
+        "ema_slow": 60
+      },
+      "success": true,
+      "total_return_pct": -0.01677513100000011,
+      "win_rate": 0.25,
+      "total_trades": 8
+    },
+    {
+      "params": {
+        "ema_fast": 10,
+        "ema_slow": 120
+      },
+      "success": true,
+      "total_return_pct": -0.01943673299999995,
+      "win_rate": 0.0,
+      "total_trades": 6
+    },
+    {
+      "params": {
+        "ema_fast": 20,
+        "ema_slow": 60
+      },
+      "success": true,
+      "total_return_pct": -0.03585759600000019,
+      "win_rate": 0.0,
+      "total_trades": 10
+    },
+    {
+      "params": {
+        "ema_fast": 20,
+        "ema_slow": 120
+      },
+      "success": true,
+      "total_return_pct": -0.18338499899999997,
+      "win_rate": 0,
+      "total_trades": 1
+    },
+    {
+      "params": {
+        "ema_fast": 8,
+        "ema_slow": 25
+      },
+      "success": true,
+      "total_return_pct": -0.01468447199999995,
+      "win_rate": 0.16666666666666666,
+      "total_trades": 12
+    }
+  ],
+  "best_by_return": {
+    "params": {
+      "ema_fast": 10,
+      "ema_slow": 30
+    },
+    "total_return_pct": -0.0027056539999999224,
+    "win_rate": 0.5,
+    "total_trades": 4
+  }
+}
