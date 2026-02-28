@@ -1,0 +1,112 @@
+{
+  "stock_code": "002415",
+  "stock_name": "海康威视",
+  "industry": "科技/安防",
+  "success": true,
+  "data_period": {
+    "start": "2022-11-08",
+    "end": "2024-12-30",
+    "days": 522
+  },
+  "all_results": [
+    {
+      "params": {
+        "ema_fast": 5,
+        "ema_slow": 30
+      },
+      "success": true,
+      "total_return_pct": -0.1879196299999999,
+      "win_rate": 0.4,
+      "total_trades": 21
+    },
+    {
+      "params": {
+        "ema_fast": 5,
+        "ema_slow": 60
+      },
+      "success": true,
+      "total_return_pct": -0.17862632599999984,
+      "win_rate": 0.3333333333333333,
+      "total_trades": 13
+    },
+    {
+      "params": {
+        "ema_fast": 5,
+        "ema_slow": 120
+      },
+      "success": true,
+      "total_return_pct": -0.1716176509999996,
+      "win_rate": 0.125,
+      "total_trades": 17
+    },
+    {
+      "params": {
+        "ema_fast": 10,
+        "ema_slow": 30
+      },
+      "success": true,
+      "total_return_pct": -0.18802364199999969,
+      "win_rate": 0.2857142857142857,
+      "total_trades": 15
+    },
+    {
+      "params": {
+        "ema_fast": 10,
+        "ema_slow": 60
+      },
+      "success": true,
+      "total_return_pct": 0.01904212299999999,
+      "win_rate": 0.25,
+      "total_trades": 8
+    },
+    {
+      "params": {
+        "ema_fast": 10,
+        "ema_slow": 120
+      },
+      "success": true,
+      "total_return_pct": -0.16898207999999998,
+      "win_rate": 0.3333333333333333,
+      "total_trades": 7
+    },
+    {
+      "params": {
+        "ema_fast": 20,
+        "ema_slow": 60
+      },
+      "success": true,
+      "total_return_pct": -0.16229577599999975,
+      "win_rate": 0.3333333333333333,
+      "total_trades": 7
+    },
+    {
+      "params": {
+        "ema_fast": 20,
+        "ema_slow": 120
+      },
+      "success": true,
+      "total_return_pct": -0.15781415600000007,
+      "win_rate": 0.5,
+      "total_trades": 5
+    },
+    {
+      "params": {
+        "ema_fast": 8,
+        "ema_slow": 25
+      },
+      "success": true,
+      "total_return_pct": 0.012831365999999834,
+      "win_rate": 0.375,
+      "total_trades": 16
+    }
+  ],
+  "best_by_return": {
+    "params": {
+      "ema_fast": 10,
+      "ema_slow": 60
+    },
+    "total_return_pct": 0.01904212299999999,
+    "win_rate": 0.25,
+    "total_trades": 8
+  }
+}
