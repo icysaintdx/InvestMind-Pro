@@ -1,0 +1,112 @@
+{
+  "stock_code": "600436",
+  "stock_name": "片仔癀",
+  "industry": "医药",
+  "success": true,
+  "data_period": {
+    "start": "2022-11-08",
+    "end": "2024-12-30",
+    "days": 522
+  },
+  "all_results": [
+    {
+      "params": {
+        "ema_fast": 5,
+        "ema_slow": 30
+      },
+      "success": true,
+      "total_return_pct": 0,
+      "win_rate": 0,
+      "total_trades": 0
+    },
+    {
+      "params": {
+        "ema_fast": 5,
+        "ema_slow": 60
+      },
+      "success": true,
+      "total_return_pct": 0,
+      "win_rate": 0,
+      "total_trades": 0
+    },
+    {
+      "params": {
+        "ema_fast": 5,
+        "ema_slow": 120
+      },
+      "success": true,
+      "total_return_pct": 0,
+      "win_rate": 0,
+      "total_trades": 0
+    },
+    {
+      "params": {
+        "ema_fast": 10,
+        "ema_slow": 30
+      },
+      "success": true,
+      "total_return_pct": 0,
+      "win_rate": 0,
+      "total_trades": 0
+    },
+    {
+      "params": {
+        "ema_fast": 10,
+        "ema_slow": 60
+      },
+      "success": true,
+      "total_return_pct": 0,
+      "win_rate": 0,
+      "total_trades": 0
+    },
+    {
+      "params": {
+        "ema_fast": 10,
+        "ema_slow": 120
+      },
+      "success": true,
+      "total_return_pct": 0,
+      "win_rate": 0,
+      "total_trades": 0
+    },
+    {
+      "params": {
+        "ema_fast": 20,
+        "ema_slow": 60
+      },
+      "success": true,
+      "total_return_pct": 0,
+      "win_rate": 0,
+      "total_trades": 0
+    },
+    {
+      "params": {
+        "ema_fast": 20,
+        "ema_slow": 120
+      },
+      "success": true,
+      "total_return_pct": 0,
+      "win_rate": 0,
+      "total_trades": 0
+    },
+    {
+      "params": {
+        "ema_fast": 8,
+        "ema_slow": 25
+      },
+      "success": true,
+      "total_return_pct": 0,
+      "win_rate": 0,
+      "total_trades": 0
+    }
+  ],
+  "best_by_return": {
+    "params": {
+      "ema_fast": 5,
+      "ema_slow": 30
+    },
+    "total_return_pct": 0,
+    "win_rate": 0,
+    "total_trades": 0
+  }
+}

@@ -1,0 +1,206 @@
+{
+  "stock_code": "000858",
+  "stock_name": "五粮液",
+  "total_return": 0.0020525535999995626,
+  "annual_return": 0.00041045509518622403,
+  "max_drawdown": -0.19940814405484872,
+  "sharpe_ratio": -0.2316100071581443,
+  "volatility": 0.12775589996251718,
+  "win_rate": 0.2222222222222222,
+  "total_trades": 18,
+  "buy_trades": 9,
+  "sell_trades": 9,
+  "stoploss_count": 0,
+  "final_value": 1002052.5535999995,
+  "trades": [
+    {
+      "date": "2021-04-06 00:00:00",
+      "action": "BUY",
+      "price": 262.38,
+      "shares": 3600,
+      "commission": 283.37039999999996,
+      "slippage": 472.284,
+      "reason": "EMA8/25金叉 | 中波动 - 标准止损 | ATR2.0倍止损=241.61 | Kelly仓位=20.0%"
+    },
+    {
+      "date": "2021-04-09 00:00:00",
+      "action": "SELL",
+      "price": 242.92,
+      "shares": 3600,
+      "commission": 262.3536,
+      "slippage": 437.25600000000003,
+      "stamp_tax": 874.5120000000001,
+      "profit": -71630.12160000007,
+      "profit_pct": -0.07583373732754028,
+      "is_stoploss": false
+    },
+    {
+      "date": "2021-04-23 00:00:00",
+      "action": "BUY",
+      "price": 257.62,
+      "shares": 3400,
+      "commission": 262.7724,
+      "slippage": 437.954,
+      "reason": "EMA8/25金叉 | 中波动 - 标准止损 | ATR2.0倍止损=238.34 | Kelly仓位=20.0%"
+    },
+    {
+      "date": "2021-06-17 00:00:00",
+      "action": "SELL",
+      "price": 271.84,
+      "shares": 3400,
+      "commission": 277.2767999999999,
+      "slippage": 462.12799999999993,
+      "stamp_tax": 924.2559999999999,
+      "profit": 46684.33919999981,
+      "profit_pct": 0.05329822218771813,
+      "is_stoploss": false
+    },
+    {
+      "date": "2022-09-30 00:00:00",
+      "action": "BUY",
+      "price": 152.46,
+      "shares": 6000,
+      "commission": 274.428,
+      "slippage": 457.38,
+      "reason": "EMA8/25金叉 | 中波动 - 标准止损 | ATR2.0倍止损=143.59 | Kelly仓位=20.0%"
+    },
+    {
+      "date": "2022-10-10 00:00:00",
+      "action": "SELL",
+      "price": 142.13,
+      "shares": 6000,
+      "commission": 255.83399999999997,
+      "slippage": 426.39,
+      "stamp_tax": 852.78,
+      "profit": -63515.00400000007,
+      "profit_pct": -0.06943351698806252,
+      "is_stoploss": false
+    },
+    {
+      "date": "2022-11-17 00:00:00",
+      "action": "BUY",
+      "price": 135.83,
+      "shares": 6300,
+      "commission": 256.7187,
+      "slippage": 427.8645000000001,
+      "reason": "EMA8/25金叉 | 中波动 - 标准止损 | ATR2.0倍止损=125.23 | Kelly仓位=20.0%"
+    },
+    {
+      "date": "2022-11-24 00:00:00",
+      "action": "SELL",
+      "price": 131.04,
+      "shares": 6300,
+      "commission": 247.66559999999998,
+      "slippage": 412.776,
+      "stamp_tax": 825.552,
+      "profit": -31662.993600000045,
+      "profit_pct": -0.03700119266730477,
+      "is_stoploss": false
+    },
+    {
+      "date": "2022-11-29 00:00:00",
+      "action": "BUY",
+      "price": 138.28,
+      "shares": 6000,
+      "commission": 248.90399999999997,
+      "slippage": 414.84000000000003,
+      "reason": "EMA8/25金叉 | 中波动 - 标准止损 | ATR2.0倍止损=128.42 | Kelly仓位=20.0%"
+    },
+    {
+      "date": "2023-03-08 00:00:00",
+      "action": "SELL",
+      "price": 182.53,
+      "shares": 6000,
+      "commission": 328.554,
+      "slippage": 547.59,
+      "stamp_tax": 1095.18,
+      "profit": 263528.676,
+      "profit_pct": 0.31762688747468903,
+      "is_stoploss": false
+    },
+    {
+      "date": "2023-07-13 00:00:00",
+      "action": "BUY",
+      "price": 159.66,
+      "shares": 6700,
+      "commission": 320.91659999999996,
+      "slippage": 534.861,
+      "reason": "EMA8/25金叉 | 中波动 - 标准止损 | ATR2.0倍止损=152.30 | Kelly仓位=20.0%"
+    },
+    {
+      "date": "2023-08-15 00:00:00",
+      "action": "SELL",
+      "price": 153.51,
+      "shares": 6700,
+      "commission": 308.5550999999999,
+      "slippage": 514.2584999999999,
+      "stamp_tax": 1028.5169999999998,
+      "profit": -43056.3306000001,
+      "profit_pct": -0.0402500187899287,
+      "is_stoploss": false
+    },
+    {
+      "date": "2023-11-02 00:00:00",
+      "action": "BUY",
+      "price": 144.91,
+      "shares": 7100,
+      "commission": 308.6583,
+      "slippage": 514.4305,
+      "reason": "EMA8/25金叉 | 中波动 - 标准止损 | ATR2.0倍止损=135.85 | Kelly仓位=20.0%"
+    },
+    {
+      "date": "2023-11-22 00:00:00",
+      "action": "SELL",
+      "price": 140.52,
+      "shares": 7100,
+      "commission": 299.30760000000004,
+      "slippage": 498.84600000000006,
+      "stamp_tax": 997.6920000000001,
+      "profit": -32964.845599999884,
+      "profit_pct": -0.032040135256365905,
+      "is_stoploss": false
+    },
+    {
+      "date": "2024-04-26 00:00:00",
+      "action": "BUY",
+      "price": 139.26,
+      "shares": 7200,
+      "commission": 300.80159999999995,
+      "slippage": 501.33599999999996,
+      "reason": "EMA8/25金叉 | 中波动 - 标准止损 | ATR2.0倍止损=132.39 | Kelly仓位=20.0%"
+    },
+    {
+      "date": "2024-05-29 00:00:00",
+      "action": "SELL",
+      "price": 136.22,
+      "shares": 7200,
+      "commission": 294.23519999999996,
+      "slippage": 490.392,
+      "stamp_tax": 980.784,
+      "profit": -23653.411199999857,
+      "profit_pct": -0.023590377710756717,
+      "is_stoploss": false
+    },
+    {
+      "date": "2024-12-11 00:00:00",
+      "action": "BUY",
+      "price": 141.08,
+      "shares": 6900,
+      "commission": 292.0356,
+      "slippage": 486.72600000000006,
+      "reason": "EMA8/25金叉 | 中波动 - 标准止损 | ATR2.0倍止损=133.21 | Kelly仓位=20.0%"
+    },
+    {
+      "date": "2024-12-16 00:00:00",
+      "action": "SELL",
+      "price": 136.27,
+      "shares": 6900,
+      "commission": 282.07890000000003,
+      "slippage": 470.1315000000001,
+      "stamp_tax": 940.2630000000001,
+      "profit": -34881.47340000002,
+      "profit_pct": -0.035832761553728394,
+      "is_stoploss": false
+    }
+  ]
+}

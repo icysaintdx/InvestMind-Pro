@@ -1,0 +1,112 @@
+{
+  "stock_code": "002271",
+  "stock_name": "东方雨虹",
+  "industry": "消费/建材",
+  "success": true,
+  "data_period": {
+    "start": "2022-11-08",
+    "end": "2024-12-30",
+    "days": 522
+  },
+  "all_results": [
+    {
+      "params": {
+        "ema_fast": 5,
+        "ema_slow": 30
+      },
+      "success": true,
+      "total_return_pct": -0.08641179199999999,
+      "win_rate": 0.0,
+      "total_trades": 22
+    },
+    {
+      "params": {
+        "ema_fast": 5,
+        "ema_slow": 60
+      },
+      "success": true,
+      "total_return_pct": -0.2295805770000002,
+      "win_rate": 0.0,
+      "total_trades": 9
+    },
+    {
+      "params": {
+        "ema_fast": 5,
+        "ema_slow": 120
+      },
+      "success": true,
+      "total_return_pct": -0.05908446499999991,
+      "win_rate": 0.0,
+      "total_trades": 12
+    },
+    {
+      "params": {
+        "ema_fast": 10,
+        "ema_slow": 30
+      },
+      "success": true,
+      "total_return_pct": -0.08522464999999982,
+      "win_rate": 0.0,
+      "total_trades": 16
+    },
+    {
+      "params": {
+        "ema_fast": 10,
+        "ema_slow": 60
+      },
+      "success": true,
+      "total_return_pct": -0.04057207200000004,
+      "win_rate": 0.0,
+      "total_trades": 6
+    },
+    {
+      "params": {
+        "ema_fast": 10,
+        "ema_slow": 120
+      },
+      "success": true,
+      "total_return_pct": -0.03391164300000004,
+      "win_rate": 0.0,
+      "total_trades": 4
+    },
+    {
+      "params": {
+        "ema_fast": 20,
+        "ema_slow": 60
+      },
+      "success": true,
+      "total_return_pct": -0.19666213400000007,
+      "win_rate": 0.0,
+      "total_trades": 3
+    },
+    {
+      "params": {
+        "ema_fast": 20,
+        "ema_slow": 120
+      },
+      "success": true,
+      "total_return_pct": -0.020944728999999933,
+      "win_rate": 0.0,
+      "total_trades": 2
+    },
+    {
+      "params": {
+        "ema_fast": 8,
+        "ema_slow": 25
+      },
+      "success": true,
+      "total_return_pct": -0.10139011499999993,
+      "win_rate": 0.0,
+      "total_trades": 22
+    }
+  ],
+  "best_by_return": {
+    "params": {
+      "ema_fast": 20,
+      "ema_slow": 120
+    },
+    "total_return_pct": -0.020944728999999933,
+    "win_rate": 0.0,
+    "total_trades": 2
+  }
+}
