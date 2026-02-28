@@ -120,7 +120,7 @@ class EMABreakoutV22Strategy(BaseStrategy):
         
         # 追踪止损参数
         self.trailing_stop_enabled = config.parameters.get('trailing_stop_enabled', vol_config['trailing_stop'])
-        self.trailing_activation_atr = config.parameters.get('trailing_activation_atr', 1.0)  # 盈利1倍ATR启动
+        self.trailing_activation_atr = config.parameters.get('trailing_activation_atr', 1.5)  # 盈利1.5倍ATR启动
         self.trailing_atr_multiplier = config.parameters.get('trailing_atr_multiplier', self.atr_multiplier * 0.8)
         
         # 交易状态
@@ -283,7 +283,7 @@ class EMABreakoutV22Strategy(BaseStrategy):
                 
                 position_size = self._calculate_kelly_position()
                 stop_loss = price - self.atr_multiplier * atr
-                take_profit = price + 2.5 * self.atr_multiplier * atr  # V2.2: 2.5倍ATR止盈
+                take_profit = price + 3.0 * self.atr_multiplier * atr  # V2.2优化: 3倍ATR止盈
                 
                 # 更新交易状态
                 self.entry_price = price
@@ -352,7 +352,7 @@ class EMABreakoutV22Strategy(BaseStrategy):
             
             # 止盈检查
             if self.stop_loss_price > 0:
-                profit_target = self.entry_price + 2.5 * self.atr_multiplier * atr
+                profit_target = self.entry_price + 3.0 * self.atr_multiplier * atr
                 if price >= profit_target:
                     self._record_trade(True)
                     profit_pct = (price - self.entry_price) / self.entry_price * 100
@@ -362,7 +362,7 @@ class EMABreakoutV22Strategy(BaseStrategy):
                         signal_type=SignalType.SELL,
                         confidence=0.7,
                         price=price,
-                        reason=f"达到止盈目标{self.atr_multiplier*2.5:.1f}倍ATR|盈利{profit_pct:.2f}%"
+                        reason=f"达到止盈目标{self.atr_multiplier*3.0:.1f}倍ATR|盈利{profit_pct:.2f}%"
                     )
         
         # 返回持有信号，附带详细元数据
