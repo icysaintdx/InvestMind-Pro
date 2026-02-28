@@ -1,0 +1,26 @@
+{
+  "stock_code": "601888",
+  "stock_name": "中国中免",
+  "start_date": "2024-01-01",
+  "end_date": "2024-06-30",
+  "statistics": {
+    "total_days": 100,
+    "avg_score": 55.5
+  },
+  "daily_sentiments": [
+    {
+      "date": "2024-01-15",
+      "sentiment_score": 65,
+      "sentiment_label": "positive",
+      "news_count": 5,
+      "positive_count": 3,
+      "negative_count": 1,
+      "urgency_score": 30,
+      "keywords": [
+        "增长",
+        "利好"
+      ],
+      "major_events": []
+    }
+  ]
+}
