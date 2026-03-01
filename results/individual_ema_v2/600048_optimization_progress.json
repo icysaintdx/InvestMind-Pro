@@ -1,0 +1,61 @@
+{
+  "600048": {
+    "symbol": "600048",
+    "name": "保利发展",
+    "optimization_history": [
+      {
+        "date": "2025-02-28",
+        "type": "首次优化",
+        "best_params": {
+          "ema_fast": 10,
+          "ema_slow": 18,
+          "atr_period": 14,
+          "atr_multiplier": 1.5,
+          "market_filter": true
+        },
+        "result": {
+          "return": -22.34,
+          "win_rate": 10.0,
+          "trades": 21,
+          "max_drawdown": 22.34,
+          "sharpe": -6.10
+        },
+        "tested_combinations": 29
+      },
+      {
+        "date": "2026-03-01",
+        "type": "二次优化",
+        "best_params": {
+          "ema_fast": 15,
+          "ema_slow": 25,
+          "atr_period": 14,
+          "atr_multiplier": 1.0,
+          "trailing_stop_activation": 1.5,
+          "profit_target_atr": 3.0,
+          "market_filter": true,
+          "hard_stop_loss": 0.05
+        },
+        "result": {
+          "return": 3.60,
+          "win_rate": 66.7,
+          "trades": 9,
+          "max_drawdown": -1.96,
+          "sharpe": -1.37
+        },
+        "tested_combinations": 216,
+        "positive_return_count": 60,
+        "improvement": "+25.94%"
+      }
+    ],
+    "current_best": {
+      "ema_fast": 15,
+      "ema_slow": 25,
+      "atr_multiplier": 1.0,
+      "return": 3.60,
+      "win_rate": 66.7,
+      "trades": 9
+    },
+    "status": "optimized",
+    "notes": "二次优化成功找到正收益参数，EMA(15,25)+ATR(1.0x)组合表现最佳"
+  }
+}
