@@ -159,6 +159,7 @@ from backend.api.auto_trade_api import (
 )  # 智能交易计划API（自动监控+自动执行）
 from backend.api.indicators_api import router as indicators_router  # 技术指标分析API
 from backend.api.paper_trading_api import router as paper_trading_router  # 模拟交易API
+from backend.api.realtime_flash_api import router as realtime_flash_router  # 实时快讯API
 
 # ==================== 配置 ====================
 
@@ -603,6 +604,7 @@ except ImportError as e:
 app.include_router(auto_trade_router)  # 智能交易计划API（自动监控+自动执行）
 app.include_router(indicators_router)  # 技术指标分析API
 app.include_router(paper_trading_router)  # 模拟交易API
+app.include_router(realtime_flash_router)  # 实时快讯API
 
 
 # ==================== 数据模型 ====================
