@@ -141,6 +141,9 @@
             <button @click="currentView = 'unified-news'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'unified-news' }]">
               <span class="item-icon">📰</span>新闻中心
             </button>
+            <button @click="currentView = 'realtime-flash'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'realtime-flash' }]">
+              <span class="item-icon">⚡</span>实时快讯
+            </button>
             <button @click="currentView = 'market-data'; activeNavGroup = null" :class="['dropdown-item', { active: currentView === 'market-data' }]">
               <span class="item-icon">📈</span>市场数据
             </button>
@@ -247,6 +250,9 @@
       <button @click="currentView = 'unified-news'" :class="['classic-tab', { active: currentView === 'unified-news' }]">
         <span class="tab-icon">📰</span><span class="tab-text">新闻中心</span>
       </button>
+      <button @click="currentView = 'realtime-flash'" :class="['classic-tab', { active: currentView === 'realtime-flash' }]">
+        <span class="tab-icon">⚡</span><span class="tab-text">实时快讯</span>
+      </button>
       <button @click="currentView = 'market-data'" :class="['classic-tab', { active: currentView === 'market-data' }]">
         <span class="tab-icon">📈</span><span class="tab-text">市场数据</span>
       </button>
@@ -316,6 +322,7 @@
             <button @click="currentView = 'sector-rotation'; showMobileMenu = false" :class="['mobile-menu-item', { active: currentView === 'sector-rotation' }]">板块轮动</button>
             <button @click="currentView = 'sentiment'; showMobileMenu = false" :class="['mobile-menu-item', { active: currentView === 'sentiment' }]">市场情绪</button>
             <button @click="currentView = 'unified-news'; showMobileMenu = false" :class="['mobile-menu-item', { active: currentView === 'unified-news' }]">新闻中心</button>
+            <button @click="currentView = 'realtime-flash'; showMobileMenu = false" :class="['mobile-menu-item', { active: currentView === 'realtime-flash' }]">实时快讯</button>
             <button @click="currentView = 'market-data'; showMobileMenu = false" :class="['mobile-menu-item', { active: currentView === 'market-data' }]">市场数据</button>
           </div>
           <!-- 工具 -->
@@ -371,6 +378,7 @@
       <SectorRotationView v-if="currentView === 'sector-rotation'" />
       <MarketSentimentView v-if="currentView === 'sentiment'" />
       <UnifiedNewsView v-if="currentView === 'unified-news'" />
+      <RealtimeFlashView v-if="currentView === 'realtime-flash'" />
       <MarketDataView v-if="currentView === 'market-data'" />
       <SystemSettingsView v-if="currentView === 'system-settings'" @show-project-info="showProjectInfo = true" @show-changelog="showChangelog = true" />
       <ApiMonitorView v-if="currentView === 'api-monitor'" />
@@ -507,6 +515,7 @@ import WencaiSelectorView from './views/WencaiSelectorView.vue'
 import SectorRotationView from './views/SectorRotationView.vue'
 import MarketSentimentView from './views/MarketSentimentView.vue'
 import UnifiedNewsView from './views/UnifiedNewsView.vue'
+import RealtimeFlashView from './views/RealtimeFlashView.vue'
 import MarketDataView from './views/MarketDataView.vue'
 import SystemSettingsView from './views/SystemSettingsView.vue'
 import ApiMonitorView from './views/ApiMonitorView.vue'
@@ -541,6 +550,7 @@ export default defineComponent({
     SectorRotationView,
     MarketSentimentView,
     UnifiedNewsView,
+    RealtimeFlashView,
     MarketDataView,
     SystemSettingsView,
     ApiMonitorView,
@@ -655,7 +665,7 @@ export default defineComponent({
       const groupPages = {
         analysis: ['analysis', 'analysis-summary'],
         trading: ['backtest', 'paper-trading', 'tracking-center', 'strategy-center'],
-        market: ['longhubang', 'sector-rotation', 'sentiment', 'unified-news', 'market-data'],
+        market: ['longhubang', 'sector-rotation', 'sentiment', 'unified-news', 'realtime-flash', 'market-data'],
         tools: ['dataflow', 'llm-config', 'wencai', 'api-monitor'],
         settings: ['system-settings']
       }
@@ -675,6 +685,7 @@ export default defineComponent({
         'sector-rotation': '🔄',
         'sentiment': '💹',
         'unified-news': '📰',
+        'realtime-flash': '⚡',
         'market-data': '📈',
         'dataflow': '📊',
         'llm-config': '⚙️',
@@ -698,6 +709,7 @@ export default defineComponent({
         'sector-rotation': '板块轮动',
         'sentiment': '市场情绪',
         'unified-news': '新闻中心',
+        'realtime-flash': '实时快讯',
         'market-data': '市场数据',
         'dataflow': '数据流',
         'llm-config': 'LLM配置',

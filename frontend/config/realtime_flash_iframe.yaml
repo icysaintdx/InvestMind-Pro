@@ -1,0 +1,34 @@
+realtime_flash_iframe:
+  enabled: true
+  default_provider: jin10
+  refresh_seconds: 30
+
+  providers:
+    jin10:
+      name: "JIN10"
+      iframe_url: "https://www.jin10.com/"
+      description: "金十财经快讯主页（若站点限制 iframe，请改为新窗口打开）"
+      fallback_open_in_new_tab: true
+
+    fx678:
+      name: "FX678"
+      iframe_url: "https://www.fx678.com/"
+      description: "汇通财经主页（若站点限制 iframe，请改为新窗口打开）"
+      fallback_open_in_new_tab: true
+
+  integration:
+    vue_example: |
+      <template>
+        <iframe
+          v-if="canEmbed"
+          :src="iframeUrl"
+          style="width:100%;height:760px;border:0;"
+          referrerpolicy="no-referrer-when-downgrade"
+        />
+        <a v-else :href="iframeUrl" target="_blank" rel="noopener noreferrer">
+          打开实时快讯
+        </a>
+      </template>
+
+      <script setup>
+      </script>
